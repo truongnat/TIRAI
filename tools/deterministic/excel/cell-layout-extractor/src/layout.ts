@@ -75,14 +75,17 @@ export function extractColumns(ws: ExcelJS.Worksheet): ColumnRaw[] {
   const columns: ColumnRaw[] = [];
 
   // ws.columns returns column objects for columns that have been defined.
-  for (const col of ws.columns) {
-    const colNumber = col.number;
-    const width = col.width ?? null;
-    const hidden = col.hidden ?? false;
-    const outlineLevel = (col as unknown as { outlineLevel?: number }).outlineLevel ?? 0;
+  const wsColumns = ws.columns;
+  if (wsColumns && typeof wsColumns[Symbol.iterator] === 'function') {
+    for (const col of wsColumns) {
+      const colNumber = col.number;
+      const width = col.width ?? null;
+      const hidden = col.hidden ?? false;
+      const outlineLevel = (col as unknown as { outlineLevel?: number }).outlineLevel ?? 0;
 
-    if (width !== null || hidden || outlineLevel > 0) {
-      columns.push({ column: colNumber, width, hidden, outlineLevel });
+      if (width !== null || hidden || outlineLevel > 0) {
+        columns.push({ column: colNumber, width, hidden, outlineLevel });
+      }
     }
   }
 

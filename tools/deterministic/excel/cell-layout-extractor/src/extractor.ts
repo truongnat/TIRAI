@@ -19,6 +19,7 @@ import { extractMergedRanges, extractRows, extractColumns } from './layout.js';
 import { extractValidations } from './validations.js';
 import { extractTables } from './tables.js';
 import { extractAnnotations } from './annotations.js';
+import { extractObjects } from './objects.js';
 import { columnToLetter } from './utils.js';
 
 // ---- Public API -----------------------------------------------------------
@@ -97,7 +98,9 @@ export async function extractWorkbook(
   // -- 5. Extract sheets ---------------------------------------------------
   const sheets: SheetLayoutData[] = [];
 
-  workbook.worksheets.forEach((ws, idx) => {
+  for (let idx = 0; idx < workbook.worksheets.length; idx++) {
+    const ws = workbook.worksheets[idx];
+
     // Filter by options if specified.
     if (options.sheets && options.sheets.length > 0) {
       const matchByName = options.sheets.some(
@@ -106,11 +109,11 @@ export async function extractWorkbook(
       const matchByIndex = options.sheets.some(
         (s) => typeof s === 'number' && s === idx,
       );
-      if (!matchByName && !matchByIndex) return;
+      if (!matchByName && !matchByIndex) continue;
     }
 
-    sheets.push(extractSheet(ws, idx, options));
-  });
+    sheets.push(await extractSheet(ws, idx, resolvedPath, options));
+  }
 
   return {
     schemaVersion: '1.0',
@@ -122,11 +125,12 @@ export async function extractWorkbook(
 
 // ---- Sheet extraction ----------------------------------------------------
 
-function extractSheet(
+async function extractSheet(
   ws: ExcelJS.Worksheet,
   index: number,
+  filePath: string,
   options: ExtractOptions,
-): SheetLayoutData {
+): Promise<SheetLayoutData> {
   const sheetName = ws.name;
   const sheetWarnings: Warning[] = [];
   const styleRegistry = new StyleRegistry();
@@ -168,6 +172,9 @@ function extractSheet(
   const tables = extractTables(ws, sheetName, sheetWarnings);
   const annotations = extractAnnotations(ws, sheetName, sheetWarnings);
 
+  // Phase 4: Drawing Objects (images, shapes, charts)
+  const objects = await extractObjects(filePath, index, sheetName, sheetWarnings, options);
+
   // Styles
   const styles = styleRegistry.toMap();
 
@@ -185,6 +192,7 @@ function extractSheet(
     validations,
     tables,
     annotations,
+    objects,
     warnings: sheetWarnings,
   };
 }

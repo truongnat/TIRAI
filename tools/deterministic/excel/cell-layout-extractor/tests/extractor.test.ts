@@ -335,7 +335,7 @@ describe('JSON property ordering', () => {
     expect(keys).toEqual([
       'index', 'name', 'dimension', 'rowCount', 'columnCount',
       'rows', 'columns', 'mergedRanges', 'cells', 'styles',
-      'validations', 'tables', 'annotations', 'warnings',
+      'validations', 'tables', 'annotations', 'objects', 'warnings',
     ]);
   });
 });
@@ -529,5 +529,136 @@ describe('sheet schema Phase 3', () => {
     expect(keys).toContain('validations');
     expect(keys).toContain('tables');
     expect(keys).toContain('annotations');
+    expect(keys).toContain('objects');
+  });
+});
+
+// ===========================================================================
+// Phase 4 Tests: Drawing Objects (Images, Shapes, Charts)
+// ===========================================================================
+
+// ---- 20. Single image ----------------------------------------------------
+
+describe('single image', () => {
+  it('extracts image with twoCellAnchor', async () => {
+    const meta = await extractWorkbook(fixturePath('single-image.xlsx'));
+    const sheet = meta.sheets[0];
+
+    expect(sheet.objects.length).toBeGreaterThanOrEqual(1);
+
+    const img = sheet.objects.find((o) => o.type === 'image');
+    expect(img).toBeDefined();
+    expect(img!.relationshipId).toBeTruthy();
+    expect(img!.anchor).not.toBeNull();
+    expect(img!.anchor!.type).toBe('twoCellAnchor');
+    expect(img!.anchor!.from).not.toBeNull();
+    expect(img!.anchor!.from!.column).toBe(1);
+    expect(img!.anchor!.from!.row).toBe(1);
+  });
+
+  it('includes asset metadata with mime type', async () => {
+    const meta = await extractWorkbook(fixturePath('single-image.xlsx'));
+    const img = meta.sheets[0].objects.find((o) => o.type === 'image');
+    expect(img).toBeDefined();
+    expect(img!.asset).not.toBeNull();
+    expect(img!.asset!.mimeType).toBe('image/png');
+    expect(img!.asset!.sizeBytes).toBeGreaterThan(0);
+    expect(img!.asset!.extractedPath).toBeNull(); // --assets not used
+  });
+
+  it('has sheet source provenance', async () => {
+    const meta = await extractWorkbook(fixturePath('single-image.xlsx'));
+    const img = meta.sheets[0].objects.find((o) => o.type === 'image');
+    expect(img).toBeDefined();
+    expect(img!.source.sheet).toBe('Image');
+  });
+});
+
+// ---- 21. Multiple images -------------------------------------------------
+
+describe('multiple images', () => {
+  it('extracts all images', async () => {
+    const meta = await extractWorkbook(fixturePath('multiple-images.xlsx'));
+    const images = meta.sheets[0].objects.filter((o) => o.type === 'image');
+    expect(images.length).toBe(3);
+  });
+
+  it('each image has unique anchor position', async () => {
+    const meta = await extractWorkbook(fixturePath('multiple-images.xlsx'));
+    const images = meta.sheets[0].objects.filter((o) => o.type === 'image');
+    const positions = images.map((i) => `${i.anchor?.from?.row},${i.anchor?.from?.column}`);
+    const unique = new Set(positions);
+    expect(unique.size).toBe(3);
+  });
+});
+
+// ---- 22. One-cell anchor -------------------------------------------------
+
+describe('oneCellAnchor', () => {
+  it('extracts image with oneCellAnchor', async () => {
+    const meta = await extractWorkbook(fixturePath('image-one-cell-anchor.xlsx'));
+    const sheet = meta.sheets[0];
+    const img = sheet.objects.find((o) => o.type === 'image');
+    expect(img).toBeDefined();
+    // ExcelJS may use twoCellAnchor internally; check anchor exists
+    expect(img!.anchor).not.toBeNull();
+    expect(img!.anchor!.from).not.toBeNull();
+    expect(img!.anchor!.from!.column).toBe(2);
+    expect(img!.anchor!.from!.row).toBe(2);
+  });
+});
+
+// ---- 23. Shape / TextBox -------------------------------------------------
+
+describe('shape/textbox', () => {
+  it('extracts shape with text content', async () => {
+    const meta = await extractWorkbook(fixturePath('shape-textbox.xlsx'));
+    const sheet = meta.sheets[0];
+    const shape = sheet.objects.find((o) => o.type === 'shape');
+    expect(shape).toBeDefined();
+    expect(shape!.text).toBe('TextBox content here');
+    expect(shape!.anchor).not.toBeNull();
+    expect(shape!.anchor!.type).toBe('twoCellAnchor');
+  });
+});
+
+// ---- 24. Chart detection -------------------------------------------------
+
+describe('chart detection', () => {
+  it('detects chart and emits warning', async () => {
+    const meta = await extractWorkbook(fixturePath('chart-detection.xlsx'));
+    const sheet = meta.sheets[0];
+    const chart = sheet.objects.find((o) => o.type === 'chart');
+    expect(chart).toBeDefined();
+    expect(chart!.relationshipId).toBeTruthy();
+    expect(chart!.anchor).not.toBeNull();
+
+    // Should have CHART_CONTENT_NOT_EXTRACTED warning
+    const warning = sheet.warnings.find(
+      (w) => w.code === 'CHART_CONTENT_NOT_EXTRACTED',
+    );
+    expect(warning).toBeDefined();
+  });
+});
+
+// ---- 25. Sheet without drawings ------------------------------------------
+
+describe('no drawings', () => {
+  it('returns empty objects array for sheet without drawings', async () => {
+    const meta = await extractWorkbook(fixturePath('cell-types.xlsx'));
+    const sheet = meta.sheets[0];
+    expect(sheet.objects).toEqual([]);
+  });
+});
+
+// ---- 26. Deterministic output --------------------------------------------
+
+describe('deterministic objects', () => {
+  it('produces identical objects for same file', async () => {
+    const a = await extractWorkbook(fixturePath('single-image.xlsx'));
+    const b = await extractWorkbook(fixturePath('single-image.xlsx'));
+    expect(JSON.stringify(a.sheets[0].objects)).toBe(
+      JSON.stringify(b.sheets[0].objects),
+    );
   });
 });

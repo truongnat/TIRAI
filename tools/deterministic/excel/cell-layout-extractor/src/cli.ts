@@ -17,6 +17,7 @@ async function main(): Promise<void> {
   const pretty = args.includes('--pretty');
   const sheetArgs = extractFlagValues(args, '--sheet');
   const includeEmptyAll = args.includes('--include-empty-all');
+  const assets = args.includes('--assets');
 
   const inputFile = args.filter(
     (a) => !a.startsWith('--') && !sheetArgs.includes(a),
@@ -36,6 +37,9 @@ async function main(): Promise<void> {
   }
   if (includeEmptyAll) {
     options.includeEmptyAll = true;
+  }
+  if (assets) {
+    options.assets = true;
   }
 
   try {
@@ -77,6 +81,7 @@ Options:
   --pretty               Format JSON output for readability.
   --sheet <name|index>   Extract only specific sheet(s). Repeatable.
   --include-empty-all    Include all empty cells in used range.
+  --assets               Extract binary assets (images) metadata.
   --help, -h             Show this help message.
 
 Output:
