@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test fixtures (generated at test time)
+tools/deterministic/excel/workbook-inspector/tests/fixtures/*.xlsx
+tools/deterministic/excel/workbook-inspector/tests/fixtures/*.xls
+tools/deterministic/excel/workbook-inspector/tests/fixtures/*.xlsm
+tools/deterministic/excel/workbook-inspector/tests/fixtures/expected.json
+
+# Env
+.env
+.env.*
