@@ -16,6 +16,9 @@ import type {
 import { StyleRegistry } from './styles.js';
 import { extractCells } from './cells.js';
 import { extractMergedRanges, extractRows, extractColumns } from './layout.js';
+import { extractValidations } from './validations.js';
+import { extractTables } from './tables.js';
+import { extractAnnotations } from './annotations.js';
 import { columnToLetter } from './utils.js';
 
 // ---- Public API -----------------------------------------------------------
@@ -160,6 +163,11 @@ function extractSheet(
   const rows = extractRows(ws);
   const columns = extractColumns(ws);
 
+  // Phase 3: Validations, Tables, Annotations
+  const validations = extractValidations(ws, sheetName, sheetWarnings);
+  const tables = extractTables(ws, sheetName, sheetWarnings);
+  const annotations = extractAnnotations(ws, sheetName, sheetWarnings);
+
   // Styles
   const styles = styleRegistry.toMap();
 
@@ -174,6 +182,9 @@ function extractSheet(
     mergedRanges,
     cells,
     styles,
+    validations,
+    tables,
+    annotations,
     warnings: sheetWarnings,
   };
 }

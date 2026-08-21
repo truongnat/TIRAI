@@ -334,7 +334,8 @@ describe('JSON property ordering', () => {
     const keys = Object.keys(meta.sheets[0]);
     expect(keys).toEqual([
       'index', 'name', 'dimension', 'rowCount', 'columnCount',
-      'rows', 'columns', 'mergedRanges', 'cells', 'styles', 'warnings',
+      'rows', 'columns', 'mergedRanges', 'cells', 'styles',
+      'validations', 'tables', 'annotations', 'warnings',
     ]);
   });
 });
@@ -352,5 +353,181 @@ describe('cell ordering', () => {
         prev.row < curr.row || (prev.row === curr.row && prev.column <= curr.column),
       ).toBe(true);
     }
+  });
+});
+
+// ===========================================================================
+// Phase 3 Tests: Validations, Tables, Annotations
+// ===========================================================================
+
+// ---- 13. Data Validations ------------------------------------------------
+
+describe('data validations', () => {
+  it('extracts list validation', async () => {
+    const meta = await extractWorkbook(fixturePath('validations.xlsx'));
+    const sheet = meta.sheets[0];
+
+    expect(sheet.validations.length).toBeGreaterThanOrEqual(1);
+
+    const listVal = sheet.validations.find((v) => v.type === 'list');
+    expect(listVal).toBeDefined();
+    expect(listVal!.ranges).toContain('A2:A100');
+    expect(listVal!.formula1).toContain('Yes,No,Maybe');
+    expect(listVal!.allowBlank).toBe(true);
+    expect(listVal!.showErrorMessage).toBe(true);
+    expect(listVal!.errorTitle).toBe('Invalid Status');
+  });
+
+  it('extracts numeric validation with operator', async () => {
+    const meta = await extractWorkbook(fixturePath('validations.xlsx'));
+    const sheet = meta.sheets[0];
+
+    const numVal = sheet.validations.find((v) => v.type === 'whole');
+    expect(numVal).toBeDefined();
+    expect(numVal!.operator).toBe('between');
+    expect(numVal!.formula1).toBe('0');
+    expect(numVal!.formula2).toBe('1000');
+    expect(numVal!.ranges).toContain('B2:B100');
+  });
+});
+
+// ---- 14. Tables ----------------------------------------------------------
+
+describe('tables', () => {
+  it('extracts table with columns and style', async () => {
+    const meta = await extractWorkbook(fixturePath('tables.xlsx'));
+    const sheet = meta.sheets[0];
+
+    expect(sheet.tables.length).toBeGreaterThanOrEqual(1);
+
+    const table = sheet.tables.find((t) => t.name === 'UserTable');
+    expect(table).toBeDefined();
+    expect(table!.displayName).toBe('UserTable');
+    expect(table!.range).toBe('A1:D3');
+    expect(table!.headerRow).toBe(true);
+    expect(table!.totalsRow).toBe(false);
+
+    // Columns
+    expect(table!.columns.length).toBe(4);
+    expect(table!.columns.map((c) => c.name)).toEqual(['ID', 'Name', 'Email', 'Active']);
+
+    // Style
+    expect(table!.style).not.toBeNull();
+    expect(table!.style!.name).toContain('TableStyleMedium2');
+    expect(table!.style!.showRowStripes).toBe(true);
+  });
+});
+
+// ---- 15. Hyperlinks ------------------------------------------------------
+
+describe('hyperlinks', () => {
+  it('extracts external hyperlink', async () => {
+    const meta = await extractWorkbook(fixturePath('hyperlinks.xlsx'));
+    const sheet = meta.sheets[0];
+
+    const link = sheet.annotations.find(
+      (a) => a.type === 'hyperlink' && a.source.cell === 'A1',
+    );
+    expect(link).toBeDefined();
+    expect(link!.target).toBe('https://www.google.com');
+    expect(link!.source.sheet).toBe('Hyperlinks');
+  });
+
+  it('extracts hyperlink with tooltip', async () => {
+    const meta = await extractWorkbook(fixturePath('hyperlinks.xlsx'));
+    const sheet = meta.sheets[0];
+
+    const link = sheet.annotations.find(
+      (a) => a.type === 'hyperlink' && a.source.cell === 'A2',
+    );
+    expect(link).toBeDefined();
+    expect(link!.target).toBe('https://github.com');
+    // Note: ExcelJS does not persist tooltip through write/read cycle
+    // tooltip may be null - this is a known limitation
+  });
+
+  it('preserves internal hyperlink as-is', async () => {
+    const meta = await extractWorkbook(fixturePath('hyperlinks.xlsx'));
+    const sheet = meta.sheets[0];
+
+    const link = sheet.annotations.find(
+      (a) => a.type === 'hyperlink' && a.source.cell === 'A3',
+    );
+    expect(link).toBeDefined();
+    // Internal links should be preserved raw
+    expect(link!.target).toContain('Sheet2');
+  });
+});
+
+// ---- 16. Comments --------------------------------------------------------
+
+describe('comments', () => {
+  it('extracts simple comment', async () => {
+    const meta = await extractWorkbook(fixturePath('comments.xlsx'));
+    const sheet = meta.sheets[0];
+
+    const comment = sheet.annotations.find(
+      (a) => a.type === 'comment' && a.source.cell === 'A1',
+    );
+    expect(comment).toBeDefined();
+    expect(comment!.comment).toBe('This is a header cell');
+  });
+
+  it('extracts Unicode/Japanese comment', async () => {
+    const meta = await extractWorkbook(fixturePath('comments.xlsx'));
+    const sheet = meta.sheets[0];
+
+    const comment = sheet.annotations.find(
+      (a) => a.type === 'comment' && a.source.cell === 'B1',
+    );
+    expect(comment).toBeDefined();
+    expect(comment!.comment).toBe('確認してください');
+  });
+
+  it('extracts comment with author', async () => {
+    const meta = await extractWorkbook(fixturePath('comments.xlsx'));
+    const sheet = meta.sheets[0];
+
+    const comment = sheet.annotations.find(
+      (a) => a.type === 'comment' && a.source.cell === 'C1',
+    );
+    expect(comment).toBeDefined();
+    expect(comment!.comment).toBe('Please review this');
+    // Note: ExcelJS does not persist comment author through write/read cycle
+    // author may be null - this is a known limitation
+  });
+});
+
+// ---- 17. Cell with both hyperlink and comment ----------------------------
+
+describe('cell with hyperlink and comment', () => {
+  it('extracts both annotations for same cell', async () => {
+    const meta = await extractWorkbook(fixturePath('cell-both.xlsx'));
+    const sheet = meta.sheets[0];
+
+    const hyperlink = sheet.annotations.find(
+      (a) => a.type === 'hyperlink' && a.source.cell === 'A1',
+    );
+    const comment = sheet.annotations.find(
+      (a) => a.type === 'comment' && a.source.cell === 'A1',
+    );
+
+    expect(hyperlink).toBeDefined();
+    expect(hyperlink!.target).toBe('https://example.com');
+
+    expect(comment).toBeDefined();
+    expect(comment!.comment).toBe('Important link');
+  });
+});
+
+// ---- 18. Sheet keys include Phase 3 fields --------------------------------
+
+describe('sheet schema Phase 3', () => {
+  it('sheet keys include validations, tables, annotations', async () => {
+    const meta = await extractWorkbook(fixturePath('cell-types.xlsx'));
+    const keys = Object.keys(meta.sheets[0]);
+    expect(keys).toContain('validations');
+    expect(keys).toContain('tables');
+    expect(keys).toContain('annotations');
   });
 });

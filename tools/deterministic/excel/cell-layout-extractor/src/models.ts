@@ -31,6 +31,9 @@ export interface SheetLayoutData {
   mergedRanges: MergeRangeRaw[];
   cells: CellRaw[];
   styles: Record<string, StyleRaw>;
+  validations: DataValidationRaw[];
+  tables: TableRaw[];
+  annotations: AnnotationRaw[];
   warnings: Warning[];
 }
 
@@ -160,6 +163,59 @@ export interface Warning {
   message: string;
   sheet?: string;
   cell?: string;
+}
+
+// ---- Data Validation -----------------------------------------------------
+
+export interface DataValidationRaw {
+  ranges: string[];
+  type: string | null;
+  operator: string | null;
+  formula1: string | null;
+  formula2: string | null;
+  allowBlank: boolean;
+  showInputMessage: boolean;
+  showErrorMessage: boolean;
+  promptTitle: string | null;
+  prompt: string | null;
+  errorTitle: string | null;
+  error: string | null;
+}
+
+// ---- Table ---------------------------------------------------------------
+
+export interface TableRaw {
+  name: string;
+  displayName: string;
+  range: string;
+  headerRow: boolean;
+  totalsRow: boolean;
+  columns: TableColumnRaw[];
+  style: TableStyleRaw | null;
+}
+
+export interface TableColumnRaw {
+  name: string;
+}
+
+export interface TableStyleRaw {
+  name: string | null;
+  showRowStripes: boolean;
+  showColumnStripes: boolean;
+}
+
+// ---- Annotation (Hyperlink + Comment) ------------------------------------
+
+export interface AnnotationRaw {
+  type: 'hyperlink' | 'comment';
+  source: SourceReference;
+  // Hyperlink fields
+  target?: string | null;
+  text?: string | null;
+  tooltip?: string | null;
+  // Comment fields
+  author?: string | null;
+  comment?: string | null;
 }
 
 // ---- Extraction options --------------------------------------------------

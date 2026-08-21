@@ -20,6 +20,13 @@ export async function createAllFixtures(): Promise<void> {
   await unicodeContent();
   await multiSheet();
   await corruptedFile();
+
+  // Phase 3 fixtures
+  await validations();
+  await tables();
+  await hyperlinks();
+  await comments();
+  await cellWithHyperLINKAndComment();
 }
 
 export function fixturePath(name: string): string {
@@ -208,4 +215,161 @@ function corruptedFile(): void {
     fixturePath('corrupted.xlsx'),
     Buffer.from('this is not a valid xlsx file'),
   );
+}
+
+// ---- 10. Data Validations ------------------------------------------------
+
+async function validations(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Validations');
+
+  // Header
+  ws.getCell('A1').value = 'Status';
+  ws.getCell('B1').value = 'Quantity';
+  ws.getCell('C1').value = 'Date';
+
+  // List validation on A2:A100
+  ws.getCell('A2').value = 'Yes';
+  ws.dataValidations.add('A2:A100', {
+    type: 'list',
+    allowBlank: true,
+    formulae: ['"Yes,No,Maybe"'],
+    showInputMessage: true,
+    showErrorMessage: true,
+    errorTitle: 'Invalid Status',
+    error: 'Please select Yes, No, or Maybe',
+  });
+
+  // Numeric validation on B2:B100
+  ws.getCell('B2').value = 50;
+  ws.dataValidations.add('B2:B100', {
+    type: 'whole',
+    operator: 'between',
+    formulae: ['0', '1000'],
+    allowBlank: false,
+    showErrorMessage: true,
+    errorTitle: 'Invalid Quantity',
+    error: 'Must be between 0 and 1000',
+  });
+
+  await wb.xlsx.writeFile(fixturePath('validations.xlsx'));
+}
+
+// ---- 11. Tables ----------------------------------------------------------
+
+async function tables(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Tables');
+
+  // Headers
+  ws.getCell('A1').value = 'ID';
+  ws.getCell('B1').value = 'Name';
+  ws.getCell('C1').value = 'Email';
+  ws.getCell('D1').value = 'Active';
+
+  // Data
+  ws.getCell('A2').value = 1;
+  ws.getCell('B2').value = 'Alice';
+  ws.getCell('C2').value = 'alice@example.com';
+  ws.getCell('D2').value = true;
+
+  ws.getCell('A3').value = 2;
+  ws.getCell('B3').value = 'Bob';
+  ws.getCell('C3').value = 'bob@example.com';
+  ws.getCell('D3').value = false;
+
+  // Add table
+  ws.addTable({
+    name: 'UserTable',
+    ref: 'A1:D3',
+    headerRow: true,
+    totalsRow: false,
+    style: {
+      theme: 'TableStyleMedium2',
+      showRowStripes: true,
+    },
+    columns: [
+      { name: 'ID' },
+      { name: 'Name' },
+      { name: 'Email' },
+      { name: 'Active' },
+    ],
+    rows: [
+      [1, 'Alice', 'alice@example.com', true],
+      [2, 'Bob', 'bob@example.com', false],
+    ],
+  });
+
+  await wb.xlsx.writeFile(fixturePath('tables.xlsx'));
+}
+
+// ---- 12. Hyperlinks ------------------------------------------------------
+
+async function hyperlinks(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Hyperlinks');
+
+  // External hyperlink
+  ws.getCell('A1').value = {
+    text: 'Open Google',
+    hyperlink: 'https://www.google.com',
+  };
+
+  // External with tooltip
+  ws.getCell('A2').value = {
+    text: 'Visit GitHub',
+    hyperlink: 'https://github.com',
+    tooltip: 'Go to GitHub',
+  };
+
+  // Internal hyperlink
+  ws.getCell('A3').value = {
+    text: 'Go to Sheet2',
+    hyperlink: "#'Sheet2'!A1",
+  };
+
+  // Another sheet for internal link target
+  const ws2 = wb.addWorksheet('Sheet2');
+  ws2.getCell('A1').value = 'Target';
+
+  await wb.xlsx.writeFile(fixturePath('hyperlinks.xlsx'));
+}
+
+// ---- 13. Comments --------------------------------------------------------
+
+async function comments(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Comments');
+
+  // Simple comment
+  ws.getCell('A1').value = 'Header';
+  ws.getCell('A1').note = 'This is a header cell';
+
+  // Comment with Unicode/Japanese
+  ws.getCell('B1').value = '出荷日';
+  ws.getCell('B1').note = '確認してください';
+
+  // Comment with author (using object format)
+  ws.getCell('C1').value = 'Review';
+  ws.getCell('C1').note = {
+    texts: [{ text: 'Please review this' }],
+    author: 'Reviewer',
+  } as ExcelJS.Comment;
+
+  await wb.xlsx.writeFile(fixturePath('comments.xlsx'));
+}
+
+// ---- 14. Cell with both hyperlink and comment ----------------------------
+
+async function cellWithHyperLINKAndComment(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Both');
+
+  ws.getCell('A1').value = {
+    text: 'Link with note',
+    hyperlink: 'https://example.com',
+  };
+  ws.getCell('A1').note = 'Important link';
+
+  await wb.xlsx.writeFile(fixturePath('cell-both.xlsx'));
 }
