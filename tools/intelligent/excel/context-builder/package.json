@@ -1,0 +1,22 @@
+{
+  "name": "excel-context-builder",
+  "version": "1.0.0",
+  "description": "Transform deterministic Excel outputs into AI-friendly context packages",
+  "type": "module",
+  "main": "dist/builder.js",
+  "types": "dist/builder.d.ts",
+  "bin": {
+    "excel-context-builder": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.0.0"
+  }
+}
