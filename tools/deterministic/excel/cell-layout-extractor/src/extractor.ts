@@ -12,6 +12,8 @@ import type {
   SheetLayoutData,
   Warning,
   ExtractOptions,
+  ArrayFormulaRaw,
+  SourceReference,
 } from './models.js';
 import { StyleRegistry } from './styles.js';
 import { extractCells } from './cells.js';
@@ -20,7 +22,10 @@ import { extractValidations } from './validations.js';
 import { extractTables } from './tables.js';
 import { extractAnnotations } from './annotations.js';
 import { extractObjects } from './objects.js';
+import { extractConditionalFormatting } from './conditional-formatting.js';
+import { extractPageSetup } from './page-setup.js';
 import { columnToLetter } from './utils.js';
+import { WarningCode, createWarning } from './warnings.js';
 
 // ---- Public API -----------------------------------------------------------
 
@@ -175,6 +180,16 @@ async function extractSheet(
   // Phase 4: Drawing Objects (images, shapes, charts)
   const objects = await extractObjects(filePath, index, sheetName, sheetWarnings, options);
 
+  // Phase 5: Conditional Formatting, Page Setup, Array Formulas
+  const conditionalFormatting = await extractConditionalFormatting(
+    filePath, index, sheetName, sheetWarnings,
+  );
+  const pageSetup = await extractPageSetup(filePath, index, sheetName, sheetWarnings);
+  const arrayFormulasFromModel = extractArrayFormulas(ws, sheetName, sheetWarnings);
+  const arrayFormulasFromXml = await extractArrayFormulasFromXml(filePath, index, sheetName, sheetWarnings);
+  // Merge: prefer XML results, add any from model that aren't in XML
+  const arrayFormulas = mergeArrayFormulas(arrayFormulasFromXml, arrayFormulasFromModel);
+
   // Styles
   const styles = styleRegistry.toMap();
 
@@ -193,8 +208,151 @@ async function extractSheet(
     tables,
     annotations,
     objects,
+    conditionalFormatting,
+    pageSetup,
+    arrayFormulas,
     warnings: sheetWarnings,
-  };
+  }
+}
+
+// ---- Array Formulas (Phase 5) -------------------------------------------
+
+function extractArrayFormulas(
+  ws: ExcelJS.Worksheet,
+  sheetName: string,
+  warnings: Warning[],
+): ArrayFormulaRaw[] {
+  const result: ArrayFormulaRaw[] = [];
+
+  // Try ExcelJS cell model first (for workbooks written by ExcelJS)
+  ws.eachRow({ includeEmpty: true }, (_row, _rowNumber) => {
+    _row.eachCell({ includeEmpty: false }, (cell, _colNumber) => {
+      const model = cell.model as { formulaType?: number; formula?: string; ref?: string; result?: unknown } | undefined;
+      if (!model || model.formulaType !== 2) return;
+
+      const formula = model.formula ?? null;
+      const ref = model.ref ?? null;
+
+      if (!formula || !ref) {
+        warnings.push(
+          createWarning(
+            WarningCode.ARRAY_FORMULA_PARTIAL,
+            `Array formula at ${cell.address} is missing formula or range.`,
+            sheetName,
+            cell.address,
+          ),
+        );
+        return;
+      }
+
+      const source: SourceReference = { sheet: sheetName, cell: cell.address };
+      const cachedResult = model.result ?? null;
+
+      result.push({
+        masterCell: cell.address,
+        range: ref,
+        formula,
+        cachedResult: cachedResult !== undefined ? cachedResult : null,
+        source,
+      });
+    });
+  });
+
+  // Sort deterministically by master cell position
+  result.sort((a, b) => a.masterCell.localeCompare(b.masterCell));
+
+  return result;
+}
+
+/**
+ * Extract array formulas from raw OOXML sheet XML via JSZip.
+ * This catches array formulas that ExcelJS doesn't expose via its cell model.
+ */
+async function extractArrayFormulasFromXml(
+  filePath: string,
+  sheetIndex: number,
+  sheetName: string,
+  warnings: Warning[],
+): Promise<ArrayFormulaRaw[]> {
+  const result: ArrayFormulaRaw[] = [];
+
+  try {
+    const JSZip = (await import('jszip')).default;
+    const fs = await import('node:fs');
+    const zip = await JSZip.loadAsync(fs.readFileSync(filePath));
+
+    const sheetPath = `xl/worksheets/sheet${sheetIndex + 1}.xml`;
+    const sheetFile = zip.file(sheetPath);
+    if (!sheetFile) return result;
+
+    const sheetXml = await sheetFile.async('string');
+
+    // Match cells with array formulas: <f t="array" ref="C2:C10">FORMULA</f>
+    // The cell is: <c r="C2" ...><f t="array" ref="C2:C10">...</f><v>...</v></c>
+    const cellRegex = /<c\s+r="([^"]+)"[^>]*>([\s\S]*?)<\/c>/g;
+    let cellMatch;
+
+    while ((cellMatch = cellRegex.exec(sheetXml)) !== null) {
+      const cellRef = cellMatch[1];
+      const cellContent = cellMatch[2];
+
+      // Check for array formula
+      const arrayMatch = /<f\s+t="array"\s+ref="([^"]+)">([\s\S]*?)<\/f>/.exec(cellContent);
+      if (!arrayMatch) continue;
+
+      const range = arrayMatch[1];
+      const formula = arrayMatch[2];
+
+      // Extract cached value
+      const valueMatch = /<v>([\s\S]*?)<\/v>/.exec(cellContent);
+      const cachedResult = valueMatch ? parseXmlValue(valueMatch[1]) : null;
+
+      const source: SourceReference = { sheet: sheetName, cell: cellRef };
+
+      result.push({
+        masterCell: cellRef,
+        range,
+        formula,
+        cachedResult,
+        source,
+      });
+    }
+  } catch (err) {
+    warnings.push(
+      createWarning(
+        WarningCode.ARRAY_FORMULA_PARTIAL,
+        `Failed to parse array formulas from XML: ${err instanceof Error ? err.message : String(err)}`,
+        sheetName,
+      ),
+    );
+  }
+
+  result.sort((a, b) => a.masterCell.localeCompare(b.masterCell));
+  return result;
+}
+
+function parseXmlValue(val: string): unknown {
+  if (val === '' || val === '#N/A') return null;
+  const num = Number(val);
+  if (!isNaN(num) && val.trim() !== '') return num;
+  if (val === 'TRUE') return true;
+  if (val === 'FALSE') return false;
+  return val;
+}
+
+function mergeArrayFormulas(
+  fromXml: ArrayFormulaRaw[],
+  fromModel: ArrayFormulaRaw[],
+): ArrayFormulaRaw[] {
+  const seen = new Set(fromXml.map((af) => af.masterCell));
+  const merged = [...fromXml];
+  for (const af of fromModel) {
+    if (!seen.has(af.masterCell)) {
+      merged.push(af);
+    }
+  }
+  merged.sort((a, b) => a.masterCell.localeCompare(b.masterCell));
+  return merged;
 }
 
 // ---- Error ---------------------------------------------------------------

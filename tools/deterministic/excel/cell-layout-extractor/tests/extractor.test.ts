@@ -335,7 +335,8 @@ describe('JSON property ordering', () => {
     expect(keys).toEqual([
       'index', 'name', 'dimension', 'rowCount', 'columnCount',
       'rows', 'columns', 'mergedRanges', 'cells', 'styles',
-      'validations', 'tables', 'annotations', 'objects', 'warnings',
+      'validations', 'tables', 'annotations', 'objects',
+      'conditionalFormatting', 'pageSetup', 'arrayFormulas', 'warnings',
     ]);
   });
 });
@@ -520,16 +521,19 @@ describe('cell with hyperlink and comment', () => {
   });
 });
 
-// ---- 18. Sheet keys include Phase 3 fields --------------------------------
+// ---- 18. Sheet keys include Phase 3+5 fields ------------------------------
 
-describe('sheet schema Phase 3', () => {
-  it('sheet keys include validations, tables, annotations', async () => {
+describe('sheet schema Phase 3+5', () => {
+  it('sheet keys include validations, tables, annotations, objects, Phase 5', async () => {
     const meta = await extractWorkbook(fixturePath('cell-types.xlsx'));
     const keys = Object.keys(meta.sheets[0]);
     expect(keys).toContain('validations');
     expect(keys).toContain('tables');
     expect(keys).toContain('annotations');
     expect(keys).toContain('objects');
+    expect(keys).toContain('conditionalFormatting');
+    expect(keys).toContain('pageSetup');
+    expect(keys).toContain('arrayFormulas');
   });
 });
 
@@ -659,6 +663,142 @@ describe('deterministic objects', () => {
     const b = await extractWorkbook(fixturePath('single-image.xlsx'));
     expect(JSON.stringify(a.sheets[0].objects)).toBe(
       JSON.stringify(b.sheets[0].objects),
+    );
+  });
+});
+
+// ===========================================================================
+// Phase 5 – Conditional Formatting / Page Setup / Array Formulas
+// ===========================================================================
+
+// ---- 27. Conditional Formatting (cellIs) ---------------------------------
+
+describe('conditional formatting cellIs', () => {
+  it('extracts cellIs rules with ranges', async () => {
+    const meta = await extractWorkbook(fixturePath('cf-cell-is.xlsx'));
+    const sheet = meta.sheets[0];
+    expect(sheet.conditionalFormatting).toHaveLength(1);
+
+    const cf = sheet.conditionalFormatting[0];
+    expect(cf.ranges).toEqual(['A2:A10']);
+    expect(cf.rules).toHaveLength(2);
+
+    // First rule: greaterThan 0
+    expect(cf.rules[0].type).toBe('cellIs');
+    expect(cf.rules[0].operator).toBe('greaterThan');
+    expect(cf.rules[0].formula).toEqual(['0']);
+    expect(cf.rules[0].priority).toBe(1);
+    expect(cf.rules[0].stopIfTrue).toBe(false);
+    expect(cf.rules[0].dxfId).toBe(0);
+
+    // Second rule: lessThan 50, stopIfTrue
+    expect(cf.rules[1].type).toBe('cellIs');
+    expect(cf.rules[1].operator).toBe('lessThan');
+    expect(cf.rules[1].formula).toEqual(['50']);
+    expect(cf.rules[1].priority).toBe(2);
+    expect(cf.rules[1].stopIfTrue).toBe(true);
+    expect(cf.rules[1].dxfId).toBe(1);
+  });
+});
+
+// ---- 28. Conditional Formatting (formula-based) --------------------------
+
+describe('conditional formatting formula', () => {
+  it('extracts expression-type rules with formulas', async () => {
+    const meta = await extractWorkbook(fixturePath('cf-formula.xlsx'));
+    const sheet = meta.sheets[0];
+    expect(sheet.conditionalFormatting).toHaveLength(1);
+
+    const cf = sheet.conditionalFormatting[0];
+    expect(cf.ranges).toEqual(['B2:B6']);
+    expect(cf.rules).toHaveLength(2);
+
+    // Rules sorted by priority
+    expect(cf.rules[0].type).toBe('expression');
+    expect(cf.rules[0].operator).toBeNull();
+    expect(cf.rules[0].priority).toBe(3);
+    expect(cf.rules[0].formula).toEqual(['A2>=80']);
+
+    expect(cf.rules[1].type).toBe('expression');
+    expect(cf.rules[1].priority).toBe(5);
+    expect(cf.rules[1].formula).toEqual(['A2<50']);
+  });
+});
+
+// ---- 29. Page Setup + Print ----------------------------------------------
+
+describe('page setup', () => {
+  it('extracts orientation, paper size, margins', async () => {
+    const meta = await extractWorkbook(fixturePath('page-setup.xlsx'));
+    const sheet = meta.sheets[0];
+    expect(sheet.pageSetup).not.toBeNull();
+
+    const ps = sheet.pageSetup!;
+    expect(ps.orientation).toBe('landscape');
+    expect(ps.paperSize).toBe(9);
+    expect(ps.fitToWidth).toBe(1);
+    expect(ps.fitToHeight).toBe(0);
+  });
+
+  it('extracts margins', async () => {
+    const meta = await extractWorkbook(fixturePath('page-setup.xlsx'));
+    const ps = meta.sheets[0].pageSetup!;
+    expect(ps.margins).not.toBeNull();
+    expect(ps.margins!.left).toBeCloseTo(0.7, 1);
+    expect(ps.margins!.top).toBeCloseTo(0.75, 1);
+  });
+
+  it('extracts print area from defined names', async () => {
+    const meta = await extractWorkbook(fixturePath('page-setup.xlsx'));
+    const ps = meta.sheets[0].pageSetup!;
+    expect(ps.printArea).toBe('A1:B20');
+  });
+
+  it('extracts print titles (repeat rows)', async () => {
+    const meta = await extractWorkbook(fixturePath('page-setup.xlsx'));
+    const ps = meta.sheets[0].pageSetup!;
+    expect(ps.printTitles).not.toBeNull();
+    expect(ps.printTitles!.rows).toBe('1:3');
+  });
+});
+
+// ---- 30. Array Formula ---------------------------------------------------
+
+describe('array formula', () => {
+  it('extracts array formula with range and cached result', async () => {
+    const meta = await extractWorkbook(fixturePath('array-formula.xlsx'));
+    const sheet = meta.sheets[0];
+    expect(sheet.arrayFormulas).toHaveLength(1);
+
+    const af = sheet.arrayFormulas[0];
+    expect(af.masterCell).toBe('C2');
+    expect(af.range).toBe('C2');
+    expect(af.formula).toBe('SUM(A2:A4*B2:B4)');
+    expect(af.cachedResult).toBe(7800);
+    expect(af.source.sheet).toBe('Array');
+    expect(af.source.cell).toBe('C2');
+  });
+});
+
+// ---- 31. No CF / No Page Setup / No Array --------------------------------
+
+describe('no Phase 5 data', () => {
+  it('returns empty/null for sheet without Phase 5 data', async () => {
+    const meta = await extractWorkbook(fixturePath('cell-types.xlsx'));
+    const sheet = meta.sheets[0];
+    expect(sheet.conditionalFormatting).toEqual([]);
+    expect(sheet.arrayFormulas).toEqual([]);
+  });
+});
+
+// ---- 32. Deterministic Phase 5 output ------------------------------------
+
+describe('deterministic Phase 5', () => {
+  it('produces identical Phase 5 output for same file', async () => {
+    const a = await extractWorkbook(fixturePath('cf-cell-is.xlsx'));
+    const b = await extractWorkbook(fixturePath('cf-cell-is.xlsx'));
+    expect(JSON.stringify(a.sheets[0].conditionalFormatting)).toBe(
+      JSON.stringify(b.sheets[0].conditionalFormatting),
     );
   });
 });
