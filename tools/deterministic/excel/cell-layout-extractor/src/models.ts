@@ -34,6 +34,7 @@ export interface SheetLayoutData {
   validations: DataValidationRaw[];
   tables: TableRaw[];
   annotations: AnnotationRaw[];
+  objects: ObjectRaw[];
   warnings: Warning[];
 }
 
@@ -216,6 +217,45 @@ export interface AnnotationRaw {
   // Comment fields
   author?: string | null;
   comment?: string | null;
+}
+
+// ---- Drawing Objects (Phase 4) -------------------------------------------
+
+export type ObjectType = 'image' | 'shape' | 'chart' | 'unknown';
+
+export type AnchorType = 'oneCellAnchor' | 'twoCellAnchor' | 'absoluteAnchor' | 'unknown';
+
+export interface ObjectRaw {
+  type: ObjectType;
+  relationshipId: string | null;
+  anchor: AnchorRaw | null;
+  asset: AssetReference | null;
+  text: string | null;
+  source: SheetSourceReference;
+}
+
+export interface AnchorRaw {
+  type: AnchorType;
+  from: AnchorPosition | null;
+  to: AnchorPosition | null;
+}
+
+export interface AnchorPosition {
+  row: number;
+  column: number;
+  rowOffset: number;
+  columnOffset: number;
+}
+
+export interface AssetReference {
+  target: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  extractedPath: string | null;
+}
+
+export interface SheetSourceReference {
+  sheet: string;
 }
 
 // ---- Extraction options --------------------------------------------------

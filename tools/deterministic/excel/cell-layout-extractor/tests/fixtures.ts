@@ -5,6 +5,7 @@
 import * as fs from 'node:fs';
 import * as fpath from 'node:path';
 import ExcelJS from 'exceljs';
+import JSZip from 'jszip';
 
 const FIXTURES_DIR = fpath.join(import.meta.dirname, 'fixtures');
 
@@ -27,6 +28,13 @@ export async function createAllFixtures(): Promise<void> {
   await hyperlinks();
   await comments();
   await cellWithHyperLINKAndComment();
+
+  // Phase 4 fixtures
+  await singleImage();
+  await multipleImages();
+  await imageOneCellAnchor();
+  await shapeTextBox();
+  await chartDetection();
 }
 
 export function fixturePath(name: string): string {
@@ -372,4 +380,266 @@ async function cellWithHyperLINKAndComment(): Promise<void> {
   ws.getCell('A1').note = 'Important link';
 
   await wb.xlsx.writeFile(fixturePath('cell-both.xlsx'));
+}
+
+// ---- Phase 4: Drawing Objects --------------------------------------------
+
+// Minimal 1x1 red PNG (67 bytes)
+function createMinimalPng(): Buffer {
+  return Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwADhQGAWjR9awAAAABJRU5ErkJggg==',
+    'base64',
+  );
+}
+
+// ---- 15. Single image ----------------------------------------------------
+
+async function singleImage(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Image');
+
+  ws.getCell('A1').value = 'Sheet with image';
+
+  const imageId = wb.addImage({
+    buffer: createMinimalPng(),
+    extension: 'png',
+  });
+
+  ws.addImage(imageId, {
+    tl: { col: 1, row: 1 },
+    br: { col: 4, row: 10 },
+    editAs: 'oneCell',
+  });
+
+  await wb.xlsx.writeFile(fixturePath('single-image.xlsx'));
+}
+
+// ---- 16. Multiple images -------------------------------------------------
+
+async function multipleImages(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('MultiImage');
+
+  const imageId = wb.addImage({
+    buffer: createMinimalPng(),
+    extension: 'png',
+  });
+
+  ws.addImage(imageId, {
+    tl: { col: 0, row: 0 },
+    br: { col: 3, row: 5 },
+    editAs: 'oneCell',
+  });
+
+  ws.addImage(imageId, {
+    tl: { col: 5, row: 0 },
+    br: { col: 8, row: 5 },
+    editAs: 'oneCell',
+  });
+
+  ws.addImage(imageId, {
+    tl: { col: 0, row: 7 },
+    br: { col: 3, row: 12 },
+    editAs: 'oneCell',
+  });
+
+  await wb.xlsx.writeFile(fixturePath('multiple-images.xlsx'));
+}
+
+// ---- 17. Image with oneCellAnchor ----------------------------------------
+
+async function imageOneCellAnchor(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('OneCell');
+
+  const imageId = wb.addImage({
+    buffer: createMinimalPng(),
+    extension: 'png',
+  });
+
+  ws.addImage(imageId, {
+    tl: { col: 2, row: 2 },
+    ext: { width: 200, height: 150 },
+    editAs: 'oneCell',
+  });
+
+  await wb.xlsx.writeFile(fixturePath('image-one-cell-anchor.xlsx'));
+}
+
+// ---- 18. Shape / TextBox (via raw XML injection) -------------------------
+
+async function shapeTextBox(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Shape');
+  ws.getCell('A1').value = 'Sheet with shape';
+
+  const buf = await wb.xlsx.writeBuffer();
+  const zip = await JSZip.loadAsync(buf);
+
+  const drawingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
+          xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <xdr:twoCellAnchor editAs="oneCell">
+    <xdr:from><xdr:col>1</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>1</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+    <xdr:to><xdr:col>5</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>8</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+    <xdr:sp macro="" textlink="">
+      <xdr:nvSpPr>
+        <xdr:cNvPr id="2" name="TextBox 1"/>
+        <xdr:cNvSpPr txBox="1"/>
+      </xdr:nvSpPr>
+      <xdr:spPr>
+        <a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm>
+        <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+        <a:noFill/>
+      </xdr:spPr>
+      <xdr:txBody>
+        <a:bodyPr wrap="square" rtlCol="0"/>
+        <a:lstStyle/>
+        <a:p>
+          <a:r>
+            <a:rPr lang="en-US" dirty="0"/>
+            <a:t>TextBox content here</a:t>
+          </a:r>
+        </a:p>
+      </xdr:txBody>
+    </xdr:sp>
+    <xdr:clientData/>
+  </xdr:twoCellAnchor>
+</xdr:wsDr>`;
+
+  zip.file('xl/drawings/drawing1.xml', drawingXml);
+
+  const drawingRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+</Relationships>`;
+  zip.file('xl/drawings/_rels/drawing1.xml.rels', drawingRels);
+
+  const sheet1Xml = await zip.file('xl/worksheets/sheet1.xml')!.async('string');
+  const updatedSheet = sheet1Xml.replace(
+    '</worksheet>',
+    '<drawing r:id="rId1"/></worksheet>',
+  );
+  zip.file('xl/worksheets/sheet1.xml', updatedSheet);
+
+  const sheetRelsPath = 'xl/worksheets/_rels/sheet1.xml.rels';
+  let sheetRels = '';
+  const existingRels = zip.file(sheetRelsPath);
+  if (existingRels) {
+    sheetRels = await existingRels.async('string');
+    sheetRels = sheetRels.replace(
+      '</Relationships>',
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>',
+    );
+  } else {
+    sheetRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>
+</Relationships>`;
+  }
+  zip.file(sheetRelsPath, sheetRels);
+
+  const contentTypes = await zip.file('[Content_Types].xml')!.async('string');
+  const updatedCT = contentTypes.replace(
+    '</Types>',
+    '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>',
+  );
+  zip.file('[Content_Types].xml', updatedCT);
+
+  const outBuf = await zip.generateAsync({ type: 'nodebuffer' });
+  fs.writeFileSync(fixturePath('shape-textbox.xlsx'), outBuf);
+}
+
+// ---- 19. Chart detection (via raw XML injection) -------------------------
+
+async function chartDetection(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Chart');
+
+  ws.getCell('A1').value = 'Category';
+  ws.getCell('B1').value = 'Value';
+  ws.getCell('A2').value = 'A';
+  ws.getCell('B2').value = 10;
+  ws.getCell('A3').value = 'B';
+  ws.getCell('B3').value = 20;
+
+  const buf = await wb.xlsx.writeBuffer();
+  const zip = await JSZip.loadAsync(buf);
+
+  const chartXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"
+              xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <c:chart>
+    <c:title><c:tx><c:rich><a:bodyPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/><a:lstStyle xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/><a:p xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:r><a:t>Test Chart</a:t></a:r></a:p></c:rich></c:tx></c:title>
+    <c:plotArea><c:barChart><c:barDir val="col"/></c:barChart></c:plotArea>
+  </c:chart>
+</c:chartSpace>`;
+  zip.file('xl/charts/chart1.xml', chartXml);
+
+  const drawingXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <xdr:twoCellAnchor>
+    <xdr:from><xdr:col>3</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>1</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+    <xdr:to><xdr:col>8</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>15</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+    <xdr:graphicFrame macro="">
+      <xdr:nvGraphicFramePr>
+        <xdr:cNvPr id="2" name="Chart 1"/>
+        <xdr:cNvGraphicFramePr/>
+      </xdr:nvGraphicFramePr>
+      <xdr:xfrm><a:off x="0" y="0" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/><a:ext cx="0" cy="0" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></xdr:xfrm>
+      <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+        <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart">
+          <c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="rId1"/>
+        </a:graphicData>
+      </a:graphic>
+    </xdr:graphicFrame>
+    <xdr:clientData/>
+  </xdr:twoCellAnchor>
+</xdr:wsDr>`;
+  zip.file('xl/drawings/drawing1.xml', drawingXml);
+
+  const drawingRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/>
+</Relationships>`;
+  zip.file('xl/drawings/_rels/drawing1.xml.rels', drawingRels);
+
+  const sheet1Xml = await zip.file('xl/worksheets/sheet1.xml')!.async('string');
+  const updatedSheet = sheet1Xml.replace(
+    '</worksheet>',
+    '<drawing r:id="rId1"/></worksheet>',
+  );
+  zip.file('xl/worksheets/sheet1.xml', updatedSheet);
+
+  const sheetRelsPath = 'xl/worksheets/_rels/sheet1.xml.rels';
+  let sheetRels = '';
+  const existingRels = zip.file(sheetRelsPath);
+  if (existingRels) {
+    sheetRels = await existingRels.async('string');
+    sheetRels = sheetRels.replace(
+      '</Relationships>',
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>',
+    );
+  } else {
+    sheetRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>
+</Relationships>`;
+  }
+  zip.file(sheetRelsPath, sheetRels);
+
+  const contentTypes = await zip.file('[Content_Types].xml')!.async('string');
+  let updatedCT = contentTypes.replace(
+    '</Types>',
+    '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>',
+  );
+  updatedCT = updatedCT.replace(
+    '</Types>',
+    '<Override PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.chart+xml"/></Types>',
+  );
+  zip.file('[Content_Types].xml', updatedCT);
+
+  const outBuf = await zip.generateAsync({ type: 'nodebuffer' });
+  fs.writeFileSync(fixturePath('chart-detection.xlsx'), outBuf);
 }
