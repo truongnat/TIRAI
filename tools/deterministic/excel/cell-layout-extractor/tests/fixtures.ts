@@ -35,6 +35,12 @@ export async function createAllFixtures(): Promise<void> {
   await imageOneCellAnchor();
   await shapeTextBox();
   await chartDetection();
+
+  // Phase 5 fixtures
+  await conditionalFormattingCellIs();
+  await conditionalFormattingFormula();
+  await pageSetupPrint();
+  await arrayFormula();
 }
 
 export function fixturePath(name: string): string {
@@ -642,4 +648,158 @@ async function chartDetection(): Promise<void> {
 
   const outBuf = await zip.generateAsync({ type: 'nodebuffer' });
   fs.writeFileSync(fixturePath('chart-detection.xlsx'), outBuf);
+}
+
+// ---- Phase 5: Conditional Formatting / Page Setup / Array Formulas --------
+
+// ---- 20. Conditional Formatting (cellIs) ---------------------------------
+
+async function conditionalFormattingCellIs(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('CF');
+
+  // Header
+  ws.getCell('A1').value = 'Value';
+  ws.getCell('B1').value = 'Status';
+
+  // Data
+  for (let i = 2; i <= 10; i++) {
+    ws.getCell(`A${i}`).value = i * 10;
+    ws.getCell(`B${i}`).value = `Item ${i}`;
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
+  const zip = await JSZip.loadAsync(buf);
+
+  // Inject conditional formatting XML into sheet
+  const sheetXml = await zip.file('xl/worksheets/sheet1.xml')!.async('string');
+  const cfXml = `<conditionalFormatting sqref="A2:A10"><cfRule type="cellIs" dxfId="0" priority="1" operator="greaterThan"><formula>0</formula></cfRule><cfRule type="cellIs" dxfId="1" priority="2" stopIfTrue="1" operator="lessThan"><formula>50</formula></cfRule></conditionalFormatting>`;
+  const updatedSheet = sheetXml.replace('</worksheet>', cfXml + '</worksheet>');
+  zip.file('xl/worksheets/sheet1.xml', updatedSheet);
+
+  // Add dxfs to styles.xml
+  const stylesXml = await zip.file('xl/styles.xml')!.async('string');
+  const dxfsXml = '<dxfs count="2"><dxf id="0"><font><b/><color rgb="FFFF0000"/></font></dxf><dxf id="1"><fill><bgColor rgb="FFFFFF00"/></fill></dxf></dxfs>';
+  const updatedStyles = stylesXml.replace('</styleSheet>', dxfsXml + '</styleSheet>');
+  zip.file('xl/styles.xml', updatedStyles);
+
+  const outBuf = await zip.generateAsync({ type: 'nodebuffer' });
+  fs.writeFileSync(fixturePath('cf-cell-is.xlsx'), outBuf);
+}
+
+// ---- 21. Conditional Formatting (formula-based + multiple priorities) -----
+
+async function conditionalFormattingFormula(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('CFFormula');
+
+  ws.getCell('A1').value = 'Score';
+  ws.getCell('B1').value = 'Grade';
+  for (let i = 2; i <= 6; i++) {
+    ws.getCell(`A${i}`).value = i * 15;
+    ws.getCell(`B${i}`).value = `Student ${i}`;
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
+  const zip = await JSZip.loadAsync(buf);
+
+  const sheetXml = await zip.file('xl/worksheets/sheet1.xml')!.async('string');
+  const cfXml = `<conditionalFormatting sqref="B2:B6"><cfRule type="expression" dxfId="0" priority="3"><formula>A2&gt;=80</formula></cfRule><cfRule type="expression" dxfId="1" priority="5"><formula>A2&lt;50</formula></cfRule></conditionalFormatting>`;
+  const updatedSheet = sheetXml.replace('</worksheet>', cfXml + '</worksheet>');
+  zip.file('xl/worksheets/sheet1.xml', updatedSheet);
+
+  const stylesXml = await zip.file('xl/styles.xml')!.async('string');
+  const dxfsXml = '<dxfs count="2"><dxf id="0"><font><color rgb="FF008000"/></font></dxf><dxf id="1"><font><color rgb="FFFF0000"/></font></dxf></dxfs>';
+  const updatedStyles = stylesXml.replace('</styleSheet>', dxfsXml + '</styleSheet>');
+  zip.file('xl/styles.xml', updatedStyles);
+
+  const outBuf = await zip.generateAsync({ type: 'nodebuffer' });
+  fs.writeFileSync(fixturePath('cf-formula.xlsx'), outBuf);
+}
+
+// ---- 22. Page Setup + Print Area + Print Titles --------------------------
+
+async function pageSetupPrint(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Print');
+
+  // Header rows (will be print titles)
+  ws.getCell('A1').value = 'Report Title';
+  ws.getCell('A2').value = 'Generated Date';
+  ws.getCell('A3').value = 'Category';
+  ws.getCell('B3').value = 'Amount';
+
+  // Data
+  for (let i = 4; i <= 20; i++) {
+    ws.getCell(`A${i}`).value = `Item ${i - 3}`;
+    ws.getCell(`B${i}`).value = (i - 3) * 100;
+  }
+
+  // Page setup
+  ws.pageSetup.orientation = 'landscape';
+  ws.pageSetup.paperSize = 9; // A4
+  ws.pageSetup.fitToPage = true;
+  ws.pageSetup.fitToWidth = 1;
+  ws.pageSetup.fitToHeight = 0;
+  ws.pageSetup.scale = 75;
+
+  // Margins (in inches)
+  ws.pageMargins = {
+    left: 0.7,
+    right: 0.7,
+    top: 0.75,
+    bottom: 0.75,
+    header: 0.3,
+    footer: 0.3,
+  };
+
+  await wb.xlsx.writeFile(fixturePath('page-setup.xlsx'));
+
+  // Now inject print area and print titles via raw XML
+  const buf = fs.readFileSync(fixturePath('page-setup.xlsx'));
+  const zip = await JSZip.loadAsync(buf);
+
+  const wbXml = await zip.file('xl/workbook.xml')!.async('string');
+  const definedNames = `<definedNames><definedName name="_xlnm.Print_Area" localSheetId="0">Print!$A$1:$B$20</definedName><definedName name="_xlnm.Print_Titles" localSheetId="0">Print!$1:$3</definedName></definedNames>`;
+  const updatedWb = wbXml.replace('</workbook>', definedNames + '</workbook>');
+  zip.file('xl/workbook.xml', updatedWb);
+
+  const outBuf = await zip.generateAsync({ type: 'nodebuffer' });
+  fs.writeFileSync(fixturePath('page-setup.xlsx'), outBuf);
+}
+
+// ---- 23. Array Formula ---------------------------------------------------
+
+async function arrayFormula(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Array');
+
+  // Input data
+  ws.getCell('A1').value = 'X';
+  ws.getCell('B1').value = 'Y';
+  ws.getCell('A2').value = 10;
+  ws.getCell('B2').value = 20;
+  ws.getCell('A3').value = 30;
+  ws.getCell('B3').value = 40;
+  ws.getCell('A4').value = 50;
+  ws.getCell('B4').value = 60;
+
+  // C2 will be the array formula master cell: SUM(A2:A4*B2:B4)
+  ws.getCell('C1').value = 'Product Sum';
+  ws.getCell('C2').value = 7800; // cached result
+
+  const buf = await wb.xlsx.writeBuffer();
+  const zip = await JSZip.loadAsync(buf);
+
+  // Inject array formula into sheet XML
+  const sheetXml = await zip.file('xl/worksheets/sheet1.xml')!.async('string');
+  // Replace the existing C2 cell with an array formula cell
+  const updatedSheet = sheetXml.replace(
+    '<c r="C2"><v>7800</v></c>',
+    '<c r="C2"><f t="array" ref="C2">SUM(A2:A4*B2:B4)</f><v>7800</v></c>',
+  );
+  zip.file('xl/worksheets/sheet1.xml', updatedSheet);
+
+  const outBuf = await zip.generateAsync({ type: 'nodebuffer' });
+  fs.writeFileSync(fixturePath('array-formula.xlsx'), outBuf);
 }

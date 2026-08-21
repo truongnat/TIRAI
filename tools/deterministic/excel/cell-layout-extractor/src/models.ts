@@ -35,6 +35,9 @@ export interface SheetLayoutData {
   tables: TableRaw[];
   annotations: AnnotationRaw[];
   objects: ObjectRaw[];
+  conditionalFormatting: ConditionalFormattingRaw[];
+  pageSetup: PageSetupRaw | null;
+  arrayFormulas: ArrayFormulaRaw[];
   warnings: Warning[];
 }
 
@@ -256,6 +259,65 @@ export interface AssetReference {
 
 export interface SheetSourceReference {
   sheet: string;
+}
+
+// ---- Conditional Formatting (Phase 5) ------------------------------------
+
+export interface ConditionalFormattingRaw {
+  ranges: string[];
+  rules: ConditionalFormattingRuleRaw[];
+}
+
+export interface ConditionalFormattingRuleRaw {
+  type: string;
+  operator: string | null;
+  formula: string[];
+  priority: number;
+  stopIfTrue: boolean;
+  dxfId: number | null;
+}
+
+// ---- Page Setup / Print (Phase 5) ----------------------------------------
+
+export interface PageSetupRaw {
+  orientation: 'portrait' | 'landscape' | null;
+  paperSize: number | null;
+  scale: number | null;
+  fitToWidth: number | null;
+  fitToHeight: number | null;
+  margins: PageMarginsRaw | null;
+  printArea: string | null;
+  printTitles: PrintTitlesRaw | null;
+  pageBreaks: PageBreaksRaw | null;
+}
+
+export interface PageMarginsRaw {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  header: number;
+  footer: number;
+}
+
+export interface PrintTitlesRaw {
+  rows: string | null;
+  columns: string | null;
+}
+
+export interface PageBreaksRaw {
+  rowBreaks: number[];
+  columnBreaks: number[];
+}
+
+// ---- Array Formula (Phase 5) ---------------------------------------------
+
+export interface ArrayFormulaRaw {
+  masterCell: string;
+  range: string;
+  formula: string;
+  cachedResult: unknown;
+  source: SourceReference;
 }
 
 // ---- Extraction options --------------------------------------------------
