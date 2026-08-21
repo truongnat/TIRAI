@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-s001-c000",
+  "type": "tabular",
+  "sheet": {
+    "index": 1,
+    "name": "Thiết kế UI"
+  },
+  "range": "A1:I13",
+  "content": "Sheet: Thiết kế UI\nRange: A1:I13\n\nColumns:\nA: STT\nB: Mã thành phần\nC: Tên thành phần\nD: Loại\nE: Vị trí\nF: Thuộc tính\nG: Sự kiện\nH: Kiểu dáng\nI: Ghi chú\n\nRows:\n2 | 1 | UI-001 | Logo | Hình ảnh | Giữa trên cùng của form | src: logo.png\nalt: mSale Logo | - | .login-form__logo\nwidth: auto\nheight: 60px | \n3 | 2 | UI-002 | Tiêu đề | Nhãn | Phía dưới logo | text: \"Đăng nhập\"\ntag: h1 | - | .login-form__title\nfont-size: 24px\nfont-weight: bold | \n4 | 3 | UI-003 | Danh sách mô tả | Danh sách | Phía dưới tiêu đề | items: Danh sách tính năng\ntag: ul | - | .login-form__description\nlist-style: none | \n5 | 4 | UI-004 | Ô nhập tên đăng nhập | Input | Giữa form | name: \"username\"\ntype: \"text\"\nplaceholder: \"Nhập tên đăng nhập\"\nautocomplete: \"off\" | focus\nblur\ninput | .login-form__input\nwidth: 100%\npadding: 12px | Tự động focus\n6 | 5 | UI-005 | Ô nhập mật khẩu | Input | Phía dưới tên đăng nhập | name: \"password\"\ntype: \"password\"\nplaceholder: \"Nhập mật khẩu\"\nautocomplete: \"off\" | focus\nblur\ninput | .login-form__input\nwidth: 100%\npadding: 12px | \n7 | 6 | UI-006 | Nút ẩn/hiện mật khẩu | Button | Bên phải ô mật khẩu | tag: button\nicon: eye icon | click: Chuyển đổi type | .login-form__toggle-password\nposition: absolute\nright: 12px | \n8 | 7 | UI-007 | Nút đăng nhập | Button | Phía dưới mật khẩu | text: \"ĐĂNG NHẬP\"\ntag: button\ntype: \"submit\" | click: Gửi form | .login-form__submit\nwidth: 100%\npadding: 14px\nbackground: primary-color | Có trạng thái vô hiệu\n9 | 8 | UI-008 | Nút SSO | Button | Phía dưới nút đăng nhập | text: \"SSO\"\ntag: button | click: Bắt đầu xác thực SSO | .login-form__sso\nwidth: 100%\npadding: 14px | \n10 | 9 | UI-009 | Link quên mật khẩu | Link | Phía dưới form | text: \"Quên mật khẩu\"\nhref: /forgot-password | click: Chuyển màn hình | .login-form__link\ncolor: primary-color | \n11 | 10 | UI-010 | Link đăng ký | Link | Phía dưới form | text: \"Đăng ký\"\nhref: /register | click: Chuyển màn hình | .login-form__link\ncolor: primary-color | \n12 | 11 | UI-011 | Thông báo lỗi | Nhãn | Phía dưới各 input | tag: span\ntext: Nội dung lỗi | - | .login-form__error\ncolor: red\nfont-size: 12px | Hiển thị động\n13 | 12 | UI-012 | Footer | Nhãn | Cuối màn hình | text: \"© Copyright\"\ntag: div | - | .login-form__footer\ntext-align: center\ncolor: gray | ",
+  "provenance": {
+    "sheetIndex": 1,
+    "sheetName": "Thiết kế UI",
+    "ranges": [
+      "A1:I13"
+    ]
+  },
+  "relations": {
+    "previous": null,
+    "next": null,
+    "references": []
+  },
+  "layoutHints": {
+    "headerRows": [
+      1
+    ]
+  },
+  "stats": {
+    "cells": 117,
+    "characters": 2250,
+    "estimatedTokens": 563
+  },
+  "warnings": []
+}

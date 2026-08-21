@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-s000-c000",
+  "type": "tabular",
+  "sheet": {
+    "index": 0,
+    "name": "Luồng nghiệp vụ"
+  },
+  "range": "A1:I8",
+  "content": "Sheet: Luồng nghiệp vụ\nRange: A1:I8\n\nColumns:\nA: STT\nB: Mã xử lý\nC: Tên xử lý\nD: Nội dung xử lý\nE: Đầu vào\nF: Đầu ra\nG: API sử dụng\nH: Điều kiện rẽ nhánh\nI: Ghi chú\n\nRows:\n2 | 1 | BF-001 | Hiển thị màn hình đăng nhập | Người dùng truy cập vào màn hình đăng nhập | URL | Form đăng nhập | - | - | GET /msale-csdbh/#/login\n3 | 2 | BF-002 | Nhập thông tin xác thực | Người dùng nhập tên đăng nhập và mật khẩu | Tên đăng nhập, Mật khẩu | Dữ liệu form | - | - | \n4 | 3 | BF-003 | Kiểm tra dữ liệu đầu vào | Kiểm tra bắt buộc, định dạng dữ liệu | Dữ liệu form | Kết quả kiểm tra | - | Lỗi đầu vào → BF-004\nBình thường → BF-005 | Kiểm tra ở frontend\n5 | 4 | BF-004 | Hiển thị lỗi | Hiển thị thông báo lỗi trên màn hình | Kết quả kiểm tra | Thông báo lỗi | - | - | \n6 | 5 | BF-005 | Gửi yêu cầu xác thực | Gọi API xác thực người dùng | Tên đăng nhập, Mật khẩu | Kết quả API | POST /smartsales-api-v2/auth/verifyUser/v1 | Xác thực thành công → BF-006\nXác thực thất bại → BF-007 | \n7 | 6 | BF-006 | Lưu token và chuyển màn hình | Lưu JWT token và chuyển sang trang chủ | verifiedToken | Phiên đã xác thực | - | - | Lưu vào localStorage\n8 | 7 | BF-007 | Xử lý xác thực thất bại | Hiển thị thông báo lỗi và cho phép nhập lại | Kết quả lỗi | Thông báo lỗi | - | - | 401 Unauthorized",
+  "provenance": {
+    "sheetIndex": 0,
+    "sheetName": "Luồng nghiệp vụ",
+    "ranges": [
+      "A1:I8"
+    ]
+  },
+  "relations": {
+    "previous": null,
+    "next": null,
+    "references": []
+  },
+  "layoutHints": {
+    "headerRows": [
+      1
+    ]
+  },
+  "stats": {
+    "cells": 72,
+    "characters": 1268,
+    "estimatedTokens": 317
+  },
+  "warnings": []
+}

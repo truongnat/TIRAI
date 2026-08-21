@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-s003-c000",
+  "type": "tabular",
+  "sheet": {
+    "index": 3,
+    "name": "Thiết kế FE"
+  },
+  "range": "A1:H7",
+  "content": "Sheet: Thiết kế FE\nRange: A1:H7\n\nColumns:\nA: STT\nB: Tên module\nC: Đường dẫn file\nD: Trách nhiệm\nE: Phụ thuộc\nF: Interface công khai\nG: Quản lý trạng thái\nH: Ghi chú\n\nRows:\n2 | 1 | LoginPage | src/pages/login.page.ts | Thao tác UI màn hình đăng nhập, gửi form, kiểm tra dữ liệu | BasePage\nPlaywright Page | open()\nlogin(username, password)\nfillUsername(value)\nfillPassword(value)\ntogglePassword() | Trạng thái form (giá trị nhập, lỗi) | Mô hình POM\n3 | 2 | BasePage | src/pages/base.page.ts | Thao tác chung cho tất cả trang (điều hướng, đợi) | Playwright Page | goto(route)\nwaitForReady()\nfillInput(locator, value) | - | Lớp trừu tượng\n4 | 3 | TestFixture | src/fixtures/test.fixture.ts | Cung cấp fixture tùy chỉnh cho test | LoginPage\nPlaywright test | test.extend({ loginPage }) | - | DI Container\n5 | 4 | EnvConfig | src/config/env.ts | Đọc biến môi trường, cung cấp cấu hình | dotenv | env.baseURL\nenv.credentials | Biến môi trường | \n6 | 5 | TestData | src/helpers/test-data.ts | Cung cấp dữ liệu kiểm thử | - | testData.validCredentials\ntestData.invalidCredentials | - | \n7 | 6 | GlobalSetup | src/global-setup.ts | Kiểm tra trạng thái server trước khi chạy test | EnvConfig | globalSetup() | - | Playwright globalSetup",
+  "provenance": {
+    "sheetIndex": 3,
+    "sheetName": "Thiết kế FE",
+    "ranges": [
+      "A1:H7"
+    ]
+  },
+  "relations": {
+    "previous": null,
+    "next": null,
+    "references": []
+  },
+  "layoutHints": {
+    "headerRows": [
+      1
+    ]
+  },
+  "stats": {
+    "cells": 56,
+    "characters": 1226,
+    "estimatedTokens": 307
+  },
+  "warnings": []
+}

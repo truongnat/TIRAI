@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-s004-c000",
+  "type": "tabular",
+  "sheet": {
+    "index": 4,
+    "name": "Thiết kế API"
+  },
+  "range": "A1:L2",
+  "content": "Sheet: Thiết kế API\nRange: A1:L2\n\nColumns:\nA: STT\nB: Mã API\nC: Endpoint\nD: Phương thức HTTP\nE: Mô tả\nF: Header yêu cầu\nG: Body yêu cầu\nH: Response (Thành công)\nI: Response (Thất bại)\nJ: Mã trạng thái\nK: Xác thực\nL: Ghi chú\n\nRows:\n2 | 1 | API-001 | /smartsales-api-v2/auth/verifyUser/v1 | POST | Xác thực người dùng | Content-Type: application/json | {\n  \"username\": \"string\",\n  \"password\": \"string\"\n} | {\n  \"isdn\": \"string\",\n  \"email\": \"string\",\n  \"verifiedToken\": \"string (JWT)\",\n  \"isByPassVerifyOtp\": boolean\n} | {\n  \"timestamp\": \"string\",\n  \"httpStatus\": 401,\n  \"message\": \"string\",\n  \"errors\": [\n    {\n      \"errorCode\": \"string\",\n      \"errorMessage\": \"string\"\n    }\n  ]\n} | 200: Thành công\n401: Xác thực thất bại\n400: Lỗi kiểm tra dữ liệu | Không cần | ",
+  "provenance": {
+    "sheetIndex": 4,
+    "sheetName": "Thiết kế API",
+    "ranges": [
+      "A1:L2"
+    ]
+  },
+  "relations": {
+    "previous": null,
+    "next": null,
+    "references": []
+  },
+  "layoutHints": {
+    "headerRows": [
+      1
+    ]
+  },
+  "stats": {
+    "cells": 24,
+    "characters": 760,
+    "estimatedTokens": 190
+  },
+  "warnings": []
+}

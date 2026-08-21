@@ -1,0 +1,677 @@
+{
+  "index": 4,
+  "name": "Thiết kế API",
+  "dimension": "A1:L2",
+  "rowCount": 2,
+  "columnCount": 12,
+  "rows": [
+    {
+      "row": 1,
+      "height": 25,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "row": 2,
+      "height": 120,
+      "hidden": false,
+      "outlineLevel": 0
+    }
+  ],
+  "columns": [
+    {
+      "column": 1,
+      "width": 6,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 2,
+      "width": 12,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 3,
+      "width": 45,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 4,
+      "width": 12,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 5,
+      "width": 40,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 6,
+      "width": 40,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 7,
+      "width": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 8,
+      "width": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 9,
+      "width": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 10,
+      "width": 30,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 11,
+      "width": 15,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 12,
+      "width": 30,
+      "hidden": false,
+      "outlineLevel": 0
+    }
+  ],
+  "mergedRanges": [],
+  "cells": [
+    {
+      "address": "A1",
+      "row": 1,
+      "column": 1,
+      "rawValue": "STT",
+      "displayValue": "STT",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "A1"
+      }
+    },
+    {
+      "address": "B1",
+      "row": 1,
+      "column": 2,
+      "rawValue": "Mã API",
+      "displayValue": "Mã API",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "B1"
+      }
+    },
+    {
+      "address": "C1",
+      "row": 1,
+      "column": 3,
+      "rawValue": "Endpoint",
+      "displayValue": "Endpoint",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "C1"
+      }
+    },
+    {
+      "address": "D1",
+      "row": 1,
+      "column": 4,
+      "rawValue": "Phương thức HTTP",
+      "displayValue": "Phương thức HTTP",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "D1"
+      }
+    },
+    {
+      "address": "E1",
+      "row": 1,
+      "column": 5,
+      "rawValue": "Mô tả",
+      "displayValue": "Mô tả",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "E1"
+      }
+    },
+    {
+      "address": "F1",
+      "row": 1,
+      "column": 6,
+      "rawValue": "Header yêu cầu",
+      "displayValue": "Header yêu cầu",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "F1"
+      }
+    },
+    {
+      "address": "G1",
+      "row": 1,
+      "column": 7,
+      "rawValue": "Body yêu cầu",
+      "displayValue": "Body yêu cầu",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "G1"
+      }
+    },
+    {
+      "address": "H1",
+      "row": 1,
+      "column": 8,
+      "rawValue": "Response (Thành công)",
+      "displayValue": "Response (Thành công)",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "H1"
+      }
+    },
+    {
+      "address": "I1",
+      "row": 1,
+      "column": 9,
+      "rawValue": "Response (Thất bại)",
+      "displayValue": "Response (Thất bại)",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "I1"
+      }
+    },
+    {
+      "address": "J1",
+      "row": 1,
+      "column": 10,
+      "rawValue": "Mã trạng thái",
+      "displayValue": "Mã trạng thái",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "J1"
+      }
+    },
+    {
+      "address": "K1",
+      "row": 1,
+      "column": 11,
+      "rawValue": "Xác thực",
+      "displayValue": "Xác thực",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "K1"
+      }
+    },
+    {
+      "address": "L1",
+      "row": 1,
+      "column": 12,
+      "rawValue": "Ghi chú",
+      "displayValue": "Ghi chú",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "L1"
+      }
+    },
+    {
+      "address": "A2",
+      "row": 2,
+      "column": 1,
+      "rawValue": 1,
+      "displayValue": "1",
+      "type": "number",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "A2"
+      }
+    },
+    {
+      "address": "B2",
+      "row": 2,
+      "column": 2,
+      "rawValue": "API-001",
+      "displayValue": "API-001",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "B2"
+      }
+    },
+    {
+      "address": "C2",
+      "row": 2,
+      "column": 3,
+      "rawValue": "/smartsales-api-v2/auth/verifyUser/v1",
+      "displayValue": "/smartsales-api-v2/auth/verifyUser/v1",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "C2"
+      }
+    },
+    {
+      "address": "D2",
+      "row": 2,
+      "column": 4,
+      "rawValue": "POST",
+      "displayValue": "POST",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "D2"
+      }
+    },
+    {
+      "address": "E2",
+      "row": 2,
+      "column": 5,
+      "rawValue": "Xác thực người dùng",
+      "displayValue": "Xác thực người dùng",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "E2"
+      }
+    },
+    {
+      "address": "F2",
+      "row": 2,
+      "column": 6,
+      "rawValue": "Content-Type: application/json",
+      "displayValue": "Content-Type: application/json",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "F2"
+      }
+    },
+    {
+      "address": "G2",
+      "row": 2,
+      "column": 7,
+      "rawValue": "{\n  \"username\": \"string\",\n  \"password\": \"string\"\n}",
+      "displayValue": "{\n  \"username\": \"string\",\n  \"password\": \"string\"\n}",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "G2"
+      }
+    },
+    {
+      "address": "H2",
+      "row": 2,
+      "column": 8,
+      "rawValue": "{\n  \"isdn\": \"string\",\n  \"email\": \"string\",\n  \"verifiedToken\": \"string (JWT)\",\n  \"isByPassVerifyOtp\": boolean\n}",
+      "displayValue": "{\n  \"isdn\": \"string\",\n  \"email\": \"string\",\n  \"verifiedToken\": \"string (JWT)\",\n  \"isByPassVerifyOtp\": boolean\n}",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "H2"
+      }
+    },
+    {
+      "address": "I2",
+      "row": 2,
+      "column": 9,
+      "rawValue": "{\n  \"timestamp\": \"string\",\n  \"httpStatus\": 401,\n  \"message\": \"string\",\n  \"errors\": [\n    {\n      \"errorCode\": \"string\",\n      \"errorMessage\": \"string\"\n    }\n  ]\n}",
+      "displayValue": "{\n  \"timestamp\": \"string\",\n  \"httpStatus\": 401,\n  \"message\": \"string\",\n  \"errors\": [\n    {\n      \"errorCode\": \"string\",\n      \"errorMessage\": \"string\"\n    }\n  ]\n}",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "I2"
+      }
+    },
+    {
+      "address": "J2",
+      "row": 2,
+      "column": 10,
+      "rawValue": "200: Thành công\n401: Xác thực thất bại\n400: Lỗi kiểm tra dữ liệu",
+      "displayValue": "200: Thành công\n401: Xác thực thất bại\n400: Lỗi kiểm tra dữ liệu",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "J2"
+      }
+    },
+    {
+      "address": "K2",
+      "row": 2,
+      "column": 11,
+      "rawValue": "Không cần",
+      "displayValue": "Không cần",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "K2"
+      }
+    },
+    {
+      "address": "L2",
+      "row": 2,
+      "column": 12,
+      "rawValue": "",
+      "displayValue": "",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Thiết kế API",
+        "cell": "L2"
+      }
+    }
+  ],
+  "styles": {
+    "s0": {
+      "font": {
+        "name": null,
+        "size": null,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "strike": false,
+        "color": "FFFFFFFF",
+        "family": null,
+        "charset": null
+      },
+      "fill": {
+        "type": "pattern",
+        "pattern": "solid",
+        "fgColor": "FF4472C4",
+        "bgColor": null
+      },
+      "border": {
+        "top": {
+          "style": "thin",
+          "color": null
+        },
+        "bottom": {
+          "style": "thin",
+          "color": null
+        },
+        "left": {
+          "style": "thin",
+          "color": null
+        },
+        "right": {
+          "style": "thin",
+          "color": null
+        },
+        "diagonal": null
+      },
+      "alignment": {
+        "horizontal": "center",
+        "vertical": "middle",
+        "wrapText": true,
+        "textRotation": null,
+        "indent": null,
+        "shrinkToFit": false
+      },
+      "numFmt": null,
+      "protection": null
+    },
+    "s1": {
+      "font": {
+        "name": "Calibri",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "strike": false,
+        "color": "1",
+        "family": 2,
+        "charset": null
+      },
+      "fill": {
+        "type": "pattern",
+        "pattern": "none",
+        "fgColor": null,
+        "bgColor": null
+      },
+      "border": {
+        "top": {
+          "style": "thin",
+          "color": null
+        },
+        "bottom": {
+          "style": "thin",
+          "color": null
+        },
+        "left": {
+          "style": "thin",
+          "color": null
+        },
+        "right": {
+          "style": "thin",
+          "color": null
+        },
+        "diagonal": null
+      },
+      "alignment": {
+        "horizontal": null,
+        "vertical": "top",
+        "wrapText": true,
+        "textRotation": null,
+        "indent": null,
+        "shrinkToFit": false
+      },
+      "numFmt": null,
+      "protection": null
+    }
+  },
+  "validations": [],
+  "tables": [],
+  "annotations": [],
+  "objects": [],
+  "conditionalFormatting": [],
+  "pageSetup": {
+    "orientation": "portrait",
+    "paperSize": null,
+    "scale": 100,
+    "fitToWidth": 1,
+    "fitToHeight": 1,
+    "margins": {
+      "left": 0.7,
+      "right": 0.7,
+      "top": 0.75,
+      "bottom": 0.75,
+      "header": 0.3,
+      "footer": 0.3
+    },
+    "printArea": null,
+    "printTitles": null,
+    "pageBreaks": null
+  },
+  "arrayFormulas": [],
+  "warnings": []
+}

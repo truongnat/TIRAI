@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0",
+  "file": {
+    "name": "thiet-ke-chi-tiet.xlsx"
+  },
+  "sheets": [
+    {
+      "index": 0,
+      "name": "Luồng nghiệp vụ",
+      "dimension": "A1:I8"
+    },
+    {
+      "index": 1,
+      "name": "Thiết kế UI",
+      "dimension": "A1:I13"
+    },
+    {
+      "index": 2,
+      "name": "Thiết kế DB",
+      "dimension": "A1:K22"
+    },
+    {
+      "index": 3,
+      "name": "Thiết kế FE",
+      "dimension": "A1:H7"
+    },
+    {
+      "index": 4,
+      "name": "Thiết kế API",
+      "dimension": "A1:L2"
+    }
+  ]
+}

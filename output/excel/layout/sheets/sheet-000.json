@@ -1,0 +1,1607 @@
+{
+  "index": 0,
+  "name": "Luồng nghiệp vụ",
+  "dimension": "A1:I8",
+  "rowCount": 8,
+  "columnCount": 9,
+  "rows": [
+    {
+      "row": 1,
+      "height": 25,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "row": 2,
+      "height": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "row": 3,
+      "height": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "row": 4,
+      "height": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "row": 5,
+      "height": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "row": 6,
+      "height": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "row": 7,
+      "height": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "row": 8,
+      "height": 50,
+      "hidden": false,
+      "outlineLevel": 0
+    }
+  ],
+  "columns": [
+    {
+      "column": 1,
+      "width": 6,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 2,
+      "width": 12,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 3,
+      "width": 30,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 4,
+      "width": 60,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 5,
+      "width": 30,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 6,
+      "width": 30,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 7,
+      "width": 40,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 8,
+      "width": 40,
+      "hidden": false,
+      "outlineLevel": 0
+    },
+    {
+      "column": 9,
+      "width": 30,
+      "hidden": false,
+      "outlineLevel": 0
+    }
+  ],
+  "mergedRanges": [],
+  "cells": [
+    {
+      "address": "A1",
+      "row": 1,
+      "column": 1,
+      "rawValue": "STT",
+      "displayValue": "STT",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "A1"
+      }
+    },
+    {
+      "address": "B1",
+      "row": 1,
+      "column": 2,
+      "rawValue": "Mã xử lý",
+      "displayValue": "Mã xử lý",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "B1"
+      }
+    },
+    {
+      "address": "C1",
+      "row": 1,
+      "column": 3,
+      "rawValue": "Tên xử lý",
+      "displayValue": "Tên xử lý",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "C1"
+      }
+    },
+    {
+      "address": "D1",
+      "row": 1,
+      "column": 4,
+      "rawValue": "Nội dung xử lý",
+      "displayValue": "Nội dung xử lý",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "D1"
+      }
+    },
+    {
+      "address": "E1",
+      "row": 1,
+      "column": 5,
+      "rawValue": "Đầu vào",
+      "displayValue": "Đầu vào",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "E1"
+      }
+    },
+    {
+      "address": "F1",
+      "row": 1,
+      "column": 6,
+      "rawValue": "Đầu ra",
+      "displayValue": "Đầu ra",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "F1"
+      }
+    },
+    {
+      "address": "G1",
+      "row": 1,
+      "column": 7,
+      "rawValue": "API sử dụng",
+      "displayValue": "API sử dụng",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "G1"
+      }
+    },
+    {
+      "address": "H1",
+      "row": 1,
+      "column": 8,
+      "rawValue": "Điều kiện rẽ nhánh",
+      "displayValue": "Điều kiện rẽ nhánh",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "H1"
+      }
+    },
+    {
+      "address": "I1",
+      "row": 1,
+      "column": 9,
+      "rawValue": "Ghi chú",
+      "displayValue": "Ghi chú",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s0",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "I1"
+      }
+    },
+    {
+      "address": "A2",
+      "row": 2,
+      "column": 1,
+      "rawValue": 1,
+      "displayValue": "1",
+      "type": "number",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "A2"
+      }
+    },
+    {
+      "address": "B2",
+      "row": 2,
+      "column": 2,
+      "rawValue": "BF-001",
+      "displayValue": "BF-001",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "B2"
+      }
+    },
+    {
+      "address": "C2",
+      "row": 2,
+      "column": 3,
+      "rawValue": "Hiển thị màn hình đăng nhập",
+      "displayValue": "Hiển thị màn hình đăng nhập",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "C2"
+      }
+    },
+    {
+      "address": "D2",
+      "row": 2,
+      "column": 4,
+      "rawValue": "Người dùng truy cập vào màn hình đăng nhập",
+      "displayValue": "Người dùng truy cập vào màn hình đăng nhập",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "D2"
+      }
+    },
+    {
+      "address": "E2",
+      "row": 2,
+      "column": 5,
+      "rawValue": "URL",
+      "displayValue": "URL",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "E2"
+      }
+    },
+    {
+      "address": "F2",
+      "row": 2,
+      "column": 6,
+      "rawValue": "Form đăng nhập",
+      "displayValue": "Form đăng nhập",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "F2"
+      }
+    },
+    {
+      "address": "G2",
+      "row": 2,
+      "column": 7,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "G2"
+      }
+    },
+    {
+      "address": "H2",
+      "row": 2,
+      "column": 8,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "H2"
+      }
+    },
+    {
+      "address": "I2",
+      "row": 2,
+      "column": 9,
+      "rawValue": "GET /msale-csdbh/#/login",
+      "displayValue": "GET /msale-csdbh/#/login",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "I2"
+      }
+    },
+    {
+      "address": "A3",
+      "row": 3,
+      "column": 1,
+      "rawValue": 2,
+      "displayValue": "2",
+      "type": "number",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "A3"
+      }
+    },
+    {
+      "address": "B3",
+      "row": 3,
+      "column": 2,
+      "rawValue": "BF-002",
+      "displayValue": "BF-002",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "B3"
+      }
+    },
+    {
+      "address": "C3",
+      "row": 3,
+      "column": 3,
+      "rawValue": "Nhập thông tin xác thực",
+      "displayValue": "Nhập thông tin xác thực",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "C3"
+      }
+    },
+    {
+      "address": "D3",
+      "row": 3,
+      "column": 4,
+      "rawValue": "Người dùng nhập tên đăng nhập và mật khẩu",
+      "displayValue": "Người dùng nhập tên đăng nhập và mật khẩu",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "D3"
+      }
+    },
+    {
+      "address": "E3",
+      "row": 3,
+      "column": 5,
+      "rawValue": "Tên đăng nhập, Mật khẩu",
+      "displayValue": "Tên đăng nhập, Mật khẩu",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "E3"
+      }
+    },
+    {
+      "address": "F3",
+      "row": 3,
+      "column": 6,
+      "rawValue": "Dữ liệu form",
+      "displayValue": "Dữ liệu form",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "F3"
+      }
+    },
+    {
+      "address": "G3",
+      "row": 3,
+      "column": 7,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "G3"
+      }
+    },
+    {
+      "address": "H3",
+      "row": 3,
+      "column": 8,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "H3"
+      }
+    },
+    {
+      "address": "I3",
+      "row": 3,
+      "column": 9,
+      "rawValue": "",
+      "displayValue": "",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "I3"
+      }
+    },
+    {
+      "address": "A4",
+      "row": 4,
+      "column": 1,
+      "rawValue": 3,
+      "displayValue": "3",
+      "type": "number",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "A4"
+      }
+    },
+    {
+      "address": "B4",
+      "row": 4,
+      "column": 2,
+      "rawValue": "BF-003",
+      "displayValue": "BF-003",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "B4"
+      }
+    },
+    {
+      "address": "C4",
+      "row": 4,
+      "column": 3,
+      "rawValue": "Kiểm tra dữ liệu đầu vào",
+      "displayValue": "Kiểm tra dữ liệu đầu vào",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "C4"
+      }
+    },
+    {
+      "address": "D4",
+      "row": 4,
+      "column": 4,
+      "rawValue": "Kiểm tra bắt buộc, định dạng dữ liệu",
+      "displayValue": "Kiểm tra bắt buộc, định dạng dữ liệu",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "D4"
+      }
+    },
+    {
+      "address": "E4",
+      "row": 4,
+      "column": 5,
+      "rawValue": "Dữ liệu form",
+      "displayValue": "Dữ liệu form",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "E4"
+      }
+    },
+    {
+      "address": "F4",
+      "row": 4,
+      "column": 6,
+      "rawValue": "Kết quả kiểm tra",
+      "displayValue": "Kết quả kiểm tra",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "F4"
+      }
+    },
+    {
+      "address": "G4",
+      "row": 4,
+      "column": 7,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "G4"
+      }
+    },
+    {
+      "address": "H4",
+      "row": 4,
+      "column": 8,
+      "rawValue": "Lỗi đầu vào → BF-004\nBình thường → BF-005",
+      "displayValue": "Lỗi đầu vào → BF-004\nBình thường → BF-005",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "H4"
+      }
+    },
+    {
+      "address": "I4",
+      "row": 4,
+      "column": 9,
+      "rawValue": "Kiểm tra ở frontend",
+      "displayValue": "Kiểm tra ở frontend",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "I4"
+      }
+    },
+    {
+      "address": "A5",
+      "row": 5,
+      "column": 1,
+      "rawValue": 4,
+      "displayValue": "4",
+      "type": "number",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "A5"
+      }
+    },
+    {
+      "address": "B5",
+      "row": 5,
+      "column": 2,
+      "rawValue": "BF-004",
+      "displayValue": "BF-004",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "B5"
+      }
+    },
+    {
+      "address": "C5",
+      "row": 5,
+      "column": 3,
+      "rawValue": "Hiển thị lỗi",
+      "displayValue": "Hiển thị lỗi",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "C5"
+      }
+    },
+    {
+      "address": "D5",
+      "row": 5,
+      "column": 4,
+      "rawValue": "Hiển thị thông báo lỗi trên màn hình",
+      "displayValue": "Hiển thị thông báo lỗi trên màn hình",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "D5"
+      }
+    },
+    {
+      "address": "E5",
+      "row": 5,
+      "column": 5,
+      "rawValue": "Kết quả kiểm tra",
+      "displayValue": "Kết quả kiểm tra",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "E5"
+      }
+    },
+    {
+      "address": "F5",
+      "row": 5,
+      "column": 6,
+      "rawValue": "Thông báo lỗi",
+      "displayValue": "Thông báo lỗi",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "F5"
+      }
+    },
+    {
+      "address": "G5",
+      "row": 5,
+      "column": 7,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "G5"
+      }
+    },
+    {
+      "address": "H5",
+      "row": 5,
+      "column": 8,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "H5"
+      }
+    },
+    {
+      "address": "I5",
+      "row": 5,
+      "column": 9,
+      "rawValue": "",
+      "displayValue": "",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "I5"
+      }
+    },
+    {
+      "address": "A6",
+      "row": 6,
+      "column": 1,
+      "rawValue": 5,
+      "displayValue": "5",
+      "type": "number",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "A6"
+      }
+    },
+    {
+      "address": "B6",
+      "row": 6,
+      "column": 2,
+      "rawValue": "BF-005",
+      "displayValue": "BF-005",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "B6"
+      }
+    },
+    {
+      "address": "C6",
+      "row": 6,
+      "column": 3,
+      "rawValue": "Gửi yêu cầu xác thực",
+      "displayValue": "Gửi yêu cầu xác thực",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "C6"
+      }
+    },
+    {
+      "address": "D6",
+      "row": 6,
+      "column": 4,
+      "rawValue": "Gọi API xác thực người dùng",
+      "displayValue": "Gọi API xác thực người dùng",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "D6"
+      }
+    },
+    {
+      "address": "E6",
+      "row": 6,
+      "column": 5,
+      "rawValue": "Tên đăng nhập, Mật khẩu",
+      "displayValue": "Tên đăng nhập, Mật khẩu",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "E6"
+      }
+    },
+    {
+      "address": "F6",
+      "row": 6,
+      "column": 6,
+      "rawValue": "Kết quả API",
+      "displayValue": "Kết quả API",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "F6"
+      }
+    },
+    {
+      "address": "G6",
+      "row": 6,
+      "column": 7,
+      "rawValue": "POST /smartsales-api-v2/auth/verifyUser/v1",
+      "displayValue": "POST /smartsales-api-v2/auth/verifyUser/v1",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "G6"
+      }
+    },
+    {
+      "address": "H6",
+      "row": 6,
+      "column": 8,
+      "rawValue": "Xác thực thành công → BF-006\nXác thực thất bại → BF-007",
+      "displayValue": "Xác thực thành công → BF-006\nXác thực thất bại → BF-007",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "H6"
+      }
+    },
+    {
+      "address": "I6",
+      "row": 6,
+      "column": 9,
+      "rawValue": "",
+      "displayValue": "",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "I6"
+      }
+    },
+    {
+      "address": "A7",
+      "row": 7,
+      "column": 1,
+      "rawValue": 6,
+      "displayValue": "6",
+      "type": "number",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "A7"
+      }
+    },
+    {
+      "address": "B7",
+      "row": 7,
+      "column": 2,
+      "rawValue": "BF-006",
+      "displayValue": "BF-006",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "B7"
+      }
+    },
+    {
+      "address": "C7",
+      "row": 7,
+      "column": 3,
+      "rawValue": "Lưu token và chuyển màn hình",
+      "displayValue": "Lưu token và chuyển màn hình",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "C7"
+      }
+    },
+    {
+      "address": "D7",
+      "row": 7,
+      "column": 4,
+      "rawValue": "Lưu JWT token và chuyển sang trang chủ",
+      "displayValue": "Lưu JWT token và chuyển sang trang chủ",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "D7"
+      }
+    },
+    {
+      "address": "E7",
+      "row": 7,
+      "column": 5,
+      "rawValue": "verifiedToken",
+      "displayValue": "verifiedToken",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "E7"
+      }
+    },
+    {
+      "address": "F7",
+      "row": 7,
+      "column": 6,
+      "rawValue": "Phiên đã xác thực",
+      "displayValue": "Phiên đã xác thực",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "F7"
+      }
+    },
+    {
+      "address": "G7",
+      "row": 7,
+      "column": 7,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "G7"
+      }
+    },
+    {
+      "address": "H7",
+      "row": 7,
+      "column": 8,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "H7"
+      }
+    },
+    {
+      "address": "I7",
+      "row": 7,
+      "column": 9,
+      "rawValue": "Lưu vào localStorage",
+      "displayValue": "Lưu vào localStorage",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "I7"
+      }
+    },
+    {
+      "address": "A8",
+      "row": 8,
+      "column": 1,
+      "rawValue": 7,
+      "displayValue": "7",
+      "type": "number",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "A8"
+      }
+    },
+    {
+      "address": "B8",
+      "row": 8,
+      "column": 2,
+      "rawValue": "BF-007",
+      "displayValue": "BF-007",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "B8"
+      }
+    },
+    {
+      "address": "C8",
+      "row": 8,
+      "column": 3,
+      "rawValue": "Xử lý xác thực thất bại",
+      "displayValue": "Xử lý xác thực thất bại",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "C8"
+      }
+    },
+    {
+      "address": "D8",
+      "row": 8,
+      "column": 4,
+      "rawValue": "Hiển thị thông báo lỗi và cho phép nhập lại",
+      "displayValue": "Hiển thị thông báo lỗi và cho phép nhập lại",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "D8"
+      }
+    },
+    {
+      "address": "E8",
+      "row": 8,
+      "column": 5,
+      "rawValue": "Kết quả lỗi",
+      "displayValue": "Kết quả lỗi",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "E8"
+      }
+    },
+    {
+      "address": "F8",
+      "row": 8,
+      "column": 6,
+      "rawValue": "Thông báo lỗi",
+      "displayValue": "Thông báo lỗi",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "F8"
+      }
+    },
+    {
+      "address": "G8",
+      "row": 8,
+      "column": 7,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "G8"
+      }
+    },
+    {
+      "address": "H8",
+      "row": 8,
+      "column": 8,
+      "rawValue": "-",
+      "displayValue": "-",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "H8"
+      }
+    },
+    {
+      "address": "I8",
+      "row": 8,
+      "column": 9,
+      "rawValue": "401 Unauthorized",
+      "displayValue": "401 Unauthorized",
+      "type": "string",
+      "formula": null,
+      "cachedResult": null,
+      "numFmt": null,
+      "styleId": "s1",
+      "hyperlink": null,
+      "comment": null,
+      "isRichText": false,
+      "source": {
+        "sheet": "Luồng nghiệp vụ",
+        "cell": "I8"
+      }
+    }
+  ],
+  "styles": {
+    "s0": {
+      "font": {
+        "name": null,
+        "size": null,
+        "bold": true,
+        "italic": false,
+        "underline": false,
+        "strike": false,
+        "color": "FFFFFFFF",
+        "family": null,
+        "charset": null
+      },
+      "fill": {
+        "type": "pattern",
+        "pattern": "solid",
+        "fgColor": "FF4472C4",
+        "bgColor": null
+      },
+      "border": {
+        "top": {
+          "style": "thin",
+          "color": null
+        },
+        "bottom": {
+          "style": "thin",
+          "color": null
+        },
+        "left": {
+          "style": "thin",
+          "color": null
+        },
+        "right": {
+          "style": "thin",
+          "color": null
+        },
+        "diagonal": null
+      },
+      "alignment": {
+        "horizontal": "center",
+        "vertical": "middle",
+        "wrapText": true,
+        "textRotation": null,
+        "indent": null,
+        "shrinkToFit": false
+      },
+      "numFmt": null,
+      "protection": null
+    },
+    "s1": {
+      "font": {
+        "name": "Calibri",
+        "size": 11,
+        "bold": false,
+        "italic": false,
+        "underline": false,
+        "strike": false,
+        "color": "1",
+        "family": 2,
+        "charset": null
+      },
+      "fill": {
+        "type": "pattern",
+        "pattern": "none",
+        "fgColor": null,
+        "bgColor": null
+      },
+      "border": {
+        "top": {
+          "style": "thin",
+          "color": null
+        },
+        "bottom": {
+          "style": "thin",
+          "color": null
+        },
+        "left": {
+          "style": "thin",
+          "color": null
+        },
+        "right": {
+          "style": "thin",
+          "color": null
+        },
+        "diagonal": null
+      },
+      "alignment": {
+        "horizontal": null,
+        "vertical": "top",
+        "wrapText": true,
+        "textRotation": null,
+        "indent": null,
+        "shrinkToFit": false
+      },
+      "numFmt": null,
+      "protection": null
+    }
+  },
+  "validations": [],
+  "tables": [],
+  "annotations": [],
+  "objects": [],
+  "conditionalFormatting": [],
+  "pageSetup": {
+    "orientation": "portrait",
+    "paperSize": null,
+    "scale": 100,
+    "fitToWidth": 1,
+    "fitToHeight": 1,
+    "margins": {
+      "left": 0.7,
+      "right": 0.7,
+      "top": 0.75,
+      "bottom": 0.75,
+      "header": 0.3,
+      "footer": 0.3
+    },
+    "printArea": null,
+    "printTitles": null,
+    "pageBreaks": null
+  },
+  "arrayFormulas": [],
+  "warnings": []
+}

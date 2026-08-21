@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1.0",
+  "file": {
+    "path": "/Users/truongdev/Documents/projects/products/TIRAI/thiet-ke-chi-tiet.xlsx",
+    "name": "thiet-ke-chi-tiet.xlsx",
+    "extension": ".xlsx",
+    "sizeBytes": 15442
+  },
+  "workbook": {
+    "properties": {
+      "title": null,
+      "subject": null,
+      "creator": "Design Team",
+      "keywords": null,
+      "description": null,
+      "lastModifiedBy": "Unknown",
+      "created": "2026-08-21T14:58:32.000Z",
+      "modified": "2026-08-21T14:58:32.000Z",
+      "category": null
+    },
+    "sheets": [
+      {
+        "index": 0,
+        "name": "Luồng nghiệp vụ",
+        "state": "visible",
+        "dimension": "A1:I8",
+        "minRow": 1,
+        "maxRow": 8,
+        "minColumn": 1,
+        "maxColumn": 9,
+        "freezePane": "A2",
+        "autoFilter": null
+      },
+      {
+        "index": 1,
+        "name": "Thiết kế UI",
+        "state": "visible",
+        "dimension": "A1:I13",
+        "minRow": 1,
+        "maxRow": 13,
+        "minColumn": 1,
+        "maxColumn": 9,
+        "freezePane": "A2",
+        "autoFilter": null
+      },
+      {
+        "index": 2,
+        "name": "Thiết kế DB",
+        "state": "visible",
+        "dimension": "A1:K22",
+        "minRow": 1,
+        "maxRow": 22,
+        "minColumn": 1,
+        "maxColumn": 11,
+        "freezePane": "A2",
+        "autoFilter": null
+      },
+      {
+        "index": 3,
+        "name": "Thiết kế FE",
+        "state": "visible",
+        "dimension": "A1:H7",
+        "minRow": 1,
+        "maxRow": 7,
+        "minColumn": 1,
+        "maxColumn": 8,
+        "freezePane": "A2",
+        "autoFilter": null
+      },
+      {
+        "index": 4,
+        "name": "Thiết kế API",
+        "state": "visible",
+        "dimension": "A1:L2",
+        "minRow": 1,
+        "maxRow": 2,
+        "minColumn": 1,
+        "maxColumn": 12,
+        "freezePane": "A2",
+        "autoFilter": null
+      }
+    ],
+    "definedNames": [],
+    "externalLinks": [],
+    "calculation": {
+      "mode": "auto",
+      "fullCalcOnLoad": null,
+      "forceFullCalc": null,
+      "calcId": "171027"
+    }
+  },
+  "warnings": [
+    {
+      "code": "EXTERNAL_LINKS_NOT_FULLY_SUPPORTED",
+      "message": "External workbook links may not be fully detectable by the current parser."
+    }
+  ]
+}

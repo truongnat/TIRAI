@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0",
+  "file": {
+    "path": "/Users/truongdev/Documents/projects/products/TIRAI/thiet-ke-chi-tiet.xlsx",
+    "name": "thiet-ke-chi-tiet.xlsx",
+    "extension": ".xlsx",
+    "sizeBytes": 15442
+  },
+  "extractedAt": "2026-08-21T17:55:10.307Z",
+  "sheetCount": 5,
+  "sheets": [
+    {
+      "index": 0,
+      "name": "Luồng nghiệp vụ",
+      "dimension": "A1:I8",
+      "rowCount": 8,
+      "columnCount": 9,
+      "file": "sheets/sheet-000.json"
+    },
+    {
+      "index": 1,
+      "name": "Thiết kế UI",
+      "dimension": "A1:I13",
+      "rowCount": 13,
+      "columnCount": 9,
+      "file": "sheets/sheet-001.json"
+    },
+    {
+      "index": 2,
+      "name": "Thiết kế DB",
+      "dimension": "A1:K22",
+      "rowCount": 22,
+      "columnCount": 11,
+      "file": "sheets/sheet-002.json"
+    },
+    {
+      "index": 3,
+      "name": "Thiết kế FE",
+      "dimension": "A1:H7",
+      "rowCount": 7,
+      "columnCount": 8,
+      "file": "sheets/sheet-003.json"
+    },
+    {
+      "index": 4,
+      "name": "Thiết kế API",
+      "dimension": "A1:L2",
+      "rowCount": 2,
+      "columnCount": 12,
+      "file": "sheets/sheet-004.json"
+    }
+  ],
+  "assets": {
+    "count": 0,
+    "dir": "assets/"
+  },
+  "warnings": []
+}

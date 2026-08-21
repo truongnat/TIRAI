@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0",
+  "source": {
+    "file": "thiet-ke-chi-tiet.xlsx",
+    "sizeBytes": 15442
+  },
+  "stats": {
+    "sheets": 5,
+    "chunks": 5,
+    "characters": 7587,
+    "estimatedTokens": 1897
+  },
+  "sheets": [
+    {
+      "index": 0,
+      "name": "Luồng nghiệp vụ",
+      "dimension": "A1:I8",
+      "chunks": [
+        "ctx-s000-c000"
+      ]
+    },
+    {
+      "index": 1,
+      "name": "Thiết kế UI",
+      "dimension": "A1:I13",
+      "chunks": [
+        "ctx-s001-c000"
+      ]
+    },
+    {
+      "index": 2,
+      "name": "Thiết kế DB",
+      "dimension": "A1:K22",
+      "chunks": [
+        "ctx-s002-c000"
+      ]
+    },
+    {
+      "index": 3,
+      "name": "Thiết kế FE",
+      "dimension": "A1:H7",
+      "chunks": [
+        "ctx-s003-c000"
+      ]
+    },
+    {
+      "index": 4,
+      "name": "Thiết kế API",
+      "dimension": "A1:L2",
+      "chunks": [
+        "ctx-s004-c000"
+      ]
+    }
+  ],
+  "warnings": []
+}

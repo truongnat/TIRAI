@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-s002-c000",
+  "type": "tabular",
+  "sheet": {
+    "index": 2,
+    "name": "Thiết kế DB"
+  },
+  "range": "A1:K22",
+  "content": "Sheet: Thiết kế DB\nRange: A1:K22\n\nColumns:\nA: STT\nB: Tên bảng\nC: Tên cột\nD: Kiểu dữ liệu\nE: Độ dài\nF: Cho phép NULL\nG: PK\nH: FK\nI: UNIQUE\nJ: Giá trị mặc định\nK: Mô tả\n\nRows:\n2 | 1 | users | id | BIGINT | - | KHÔNG | CÓ | - | CÓ | - | ID người dùng (tự động tăng)\n3 | 2 | users | username | VARCHAR | 100 | KHÔNG | - | - | CÓ | - | Tên đăng nhập (Login ID)\n4 | 3 | users | password_hash | VARCHAR | 255 | KHÔNG | - | - | - | - | Mật khẩu đã mã hóa\n5 | 4 | users | email | VARCHAR | 255 | CÓ | - | - | CÓ | - | Địa chỉ email\n6 | 5 | users | isdn | VARCHAR | 20 | CÓ | - | - | - | - | Số điện thoại (ISDN)\n7 | 6 | users | status | TINYINT | - | KHÔNG | - | - | - | 1 | Trạng thái (1:Hoạt động, 0:Khóa)\n8 | 7 | users | created_at | TIMESTAMP | - | KHÔNG | - | - | - | CURRENT_TIMESTAMP | Thời gian tạo\n9 | 8 | users | updated_at | TIMESTAMP | - | KHÔNG | - | - | - | CURRENT_TIMESTAMP | Thời gian cập nhật\n10 | 9 | sessions | id | BIGINT | - | KHÔNG | CÓ | - | CÓ | - | ID phiên làm việc\n11 | 10 | sessions | user_id | BIGINT | - | KHÔNG | - | CÓ | - | - | ID người dùng (FK)\n12 | 11 | sessions | token | TEXT | - | KHÔNG | - | - | CÓ | - | JWT token\n13 | 12 | sessions | expires_at | TIMESTAMP | - | KHÔNG | - | - | - | - | Thời gian hết hạn\n14 | 13 | sessions | created_at | TIMESTAMP | - | KHÔNG | - | - | - | CURRENT_TIMESTAMP | Thời gian tạo\n15 | 14 | login_logs | id | BIGINT | - | KHÔNG | CÓ | - | CÓ | - | ID log\n16 | 15 | login_logs | user_id | BIGINT | - | CÓ | - | CÓ | - | - | ID người dùng (NULL khi thất bại)\n17 | 16 | login_logs | username | VARCHAR | 100 | KHÔNG | - | - | - | - | Tên đăng nhập đã nhập\n18 | 17 | login_logs | ip_address | VARCHAR | 45 | KHÔNG | - | - | - | - | Địa chỉ IP\n19 | 18 | login_logs | user_agent | TEXT | - | CÓ | - | - | - | - | Thông tin trình duyệt\n20 | 19 | login_logs | status | VARCHAR | 20 | KHÔNG | - | - | - | - | Kết quả (SUCCESS/FAILED)\n21 | 20 | login_logs | failed_reason | VARCHAR | 255 | CÓ | - | - | - | - | Lý do thất bại\n22 | 21 | login_logs | created_at | TIMESTAMP | - | KHÔNG | - | - | - | CURRENT_TIMESTAMP | Thời gian thử",
+  "provenance": {
+    "sheetIndex": 2,
+    "sheetName": "Thiết kế DB",
+    "ranges": [
+      "A1:K22"
+    ]
+  },
+  "relations": {
+    "previous": null,
+    "next": null,
+    "references": []
+  },
+  "layoutHints": {
+    "headerRows": [
+      1
+    ]
+  },
+  "stats": {
+    "cells": 242,
+    "characters": 2083,
+    "estimatedTokens": 521
+  },
+  "warnings": []
+}
