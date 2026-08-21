@@ -111,9 +111,8 @@ describe('very hidden sheet', () => {
   it('detects veryHidden state', () => {
     expect(meta.workbook.sheets).toHaveLength(2);
     expect(meta.workbook.sheets[0].state).toBe('visible');
-    // ExcelJS may map veryHidden differently; accept veryHidden or hidden.
-    const veryHiddenState = meta.workbook.sheets[1].state;
-    expect(['veryHidden', 'hidden']).toContain(veryHiddenState);
+    expect(meta.workbook.sheets[1].state).toBe('veryHidden');
+    expect(meta.workbook.sheets[1].name).toBe('VeryHiddenSheet');
   });
 });
 
