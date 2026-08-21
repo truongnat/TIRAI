@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-test-001",
+  "type": "tabular",
+  "sheet": { "index": 1, "name": "UI Design" },
+  "range": "A1:D5",
+  "content": "Sheet: UI Design\nRange: A1:D5\n\nColumns:\nA: Screen\nB: Component\nC: Field\nD: Notes\n\nRows:\n1 | Login Screen | Form | username | Input field for username\n2 | Login Screen | Form | password | Password field with mask\n3 | Login Screen | Button | Submit | Triggers authentication",
+  "provenance": {
+    "sheetIndex": 1,
+    "sheetName": "UI Design",
+    "ranges": ["A1:D5"]
+  },
+  "relations": { "previous": "ctx-test-000", "next": null, "references": [] },
+  "layoutHints": { "headerRows": [1] },
+  "stats": { "cells": 20, "characters": 250, "estimatedTokens": 63 },
+  "warnings": []
+}
