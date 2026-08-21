@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-test-000",
+  "type": "tabular",
+  "sheet": { "index": 0, "name": "Business Rules" },
+  "range": "A1:D5",
+  "content": "Sheet: Business Rules\nRange: A1:D5\n\nColumns:\nA: Rule ID\nB: Rule Name\nC: Description\nD: Condition\n\nRows:\n1 | R001 | Username required | Username field must not be empty | required(username)\n2 | R002 | Password length | Password must be at least 8 characters | len(password) >= 8\n3 | R003 | Email format | Email must be valid format | regex(email)",
+  "provenance": {
+    "sheetIndex": 0,
+    "sheetName": "Business Rules",
+    "ranges": ["A1:D5"]
+  },
+  "relations": { "previous": null, "next": "ctx-test-001", "references": [] },
+  "layoutHints": { "headerRows": [1] },
+  "stats": { "cells": 20, "characters": 250, "estimatedTokens": 63 },
+  "warnings": []
+}

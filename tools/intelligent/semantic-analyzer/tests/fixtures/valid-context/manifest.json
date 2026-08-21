@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "source": { "file": "test-spec.xlsx", "sizeBytes": 1024 },
+  "stats": { "sheets": 2, "chunks": 2, "characters": 500, "estimatedTokens": 125 },
+  "sheets": [
+    { "index": 0, "name": "Business Rules", "dimension": "A1:D5", "chunks": ["ctx-test-000"] },
+    { "index": 1, "name": "UI Design", "dimension": "A1:D5", "chunks": ["ctx-test-001"] }
+  ],
+  "warnings": []
+}
