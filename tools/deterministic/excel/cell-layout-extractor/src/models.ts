@@ -1,0 +1,174 @@
+// ---------------------------------------------------------------------------
+// Cell + Layout Extractor – output contract (Phase 1 + 2)
+// ---------------------------------------------------------------------------
+
+// ---- Top-level -----------------------------------------------------------
+
+export interface WorkbookLayoutMetadata {
+  schemaVersion: '1.0';
+  file: FileMetadata;
+  sheets: SheetLayoutData[];
+  warnings: Warning[];
+}
+
+export interface FileMetadata {
+  path: string;
+  name: string;
+  extension: string;
+  sizeBytes: number;
+}
+
+// ---- Sheet ---------------------------------------------------------------
+
+export interface SheetLayoutData {
+  index: number;
+  name: string;
+  dimension: string | null;
+  rowCount: number | null;
+  columnCount: number | null;
+  rows: RowRaw[];
+  columns: ColumnRaw[];
+  mergedRanges: MergeRangeRaw[];
+  cells: CellRaw[];
+  styles: Record<string, StyleRaw>;
+  warnings: Warning[];
+}
+
+// ---- Cell ----------------------------------------------------------------
+
+export interface CellRaw {
+  address: string;
+  row: number;
+  column: number;
+  rawValue: unknown;
+  displayValue: string | null;
+  type: CellType | null;
+  formula: string | null;
+  cachedResult: unknown;
+  numFmt: string | null;
+  styleId: string | null;
+  hyperlink: string | null;
+  comment: string | null;
+  isRichText: boolean;
+  source: SourceReference;
+}
+
+export type CellType =
+  | 'number'
+  | 'string'
+  | 'boolean'
+  | 'date'
+  | 'error'
+  | 'richtext'
+  | 'formula';
+
+// ---- Source provenance ---------------------------------------------------
+
+export interface SourceReference {
+  sheet: string;
+  cell: string;
+}
+
+// ---- Row / Column --------------------------------------------------------
+
+export interface RowRaw {
+  row: number;
+  height: number | null;
+  hidden: boolean;
+  outlineLevel: number;
+}
+
+export interface ColumnRaw {
+  column: number;
+  width: number | null;
+  hidden: boolean;
+  outlineLevel: number;
+}
+
+// ---- Merged cells --------------------------------------------------------
+
+export interface MergeRangeRaw {
+  range: string;
+  masterCell: string;
+  topRow: number;
+  leftColumn: number;
+  bottomRow: number;
+  rightColumn: number;
+}
+
+// ---- Style ---------------------------------------------------------------
+
+export interface StyleRaw {
+  font: FontRaw | null;
+  fill: FillRaw | null;
+  border: BorderRaw | null;
+  alignment: AlignmentRaw | null;
+  numFmt: string | null;
+  protection: ProtectionRaw | null;
+}
+
+export interface FontRaw {
+  name: string | null;
+  size: number | null;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean | string;
+  strike: boolean;
+  color: string | null;
+  family: number | null;
+  charset: number | null;
+}
+
+export interface FillRaw {
+  type: string | null;
+  pattern: string | null;
+  fgColor: string | null;
+  bgColor: string | null;
+}
+
+export interface BorderRaw {
+  top: BorderEdgeRaw | null;
+  bottom: BorderEdgeRaw | null;
+  left: BorderEdgeRaw | null;
+  right: BorderEdgeRaw | null;
+  diagonal: BorderEdgeRaw | null;
+}
+
+export interface BorderEdgeRaw {
+  style: string | null;
+  color: string | null;
+}
+
+export interface AlignmentRaw {
+  horizontal: string | null;
+  vertical: string | null;
+  wrapText: boolean;
+  textRotation: number | null;
+  indent: number | null;
+  shrinkToFit: boolean;
+}
+
+export interface ProtectionRaw {
+  locked: boolean;
+  hidden: boolean;
+}
+
+// ---- Warning -------------------------------------------------------------
+
+export interface Warning {
+  code: string;
+  message: string;
+  sheet?: string;
+  cell?: string;
+}
+
+// ---- Extraction options --------------------------------------------------
+
+export interface ExtractOptions {
+  /** Only extract specific sheets (by name or 0-based index). */
+  sheets?: (string | number)[];
+  /** Extract binary assets (images). Default: false. */
+  assets?: boolean;
+  /** Include all empty cells in used range. Default: false (only styled). */
+  includeEmptyAll?: boolean;
+}

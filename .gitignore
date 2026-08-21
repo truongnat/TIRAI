@@ -19,6 +19,9 @@ tools/deterministic/excel/workbook-inspector/tests/fixtures/*.xlsx
 tools/deterministic/excel/workbook-inspector/tests/fixtures/*.xls
 tools/deterministic/excel/workbook-inspector/tests/fixtures/*.xlsm
 tools/deterministic/excel/workbook-inspector/tests/fixtures/expected.json
+tools/deterministic/excel/cell-layout-extractor/tests/fixtures/*.xlsx
+tools/deterministic/excel/cell-layout-extractor/tests/fixtures/*.xls
+tools/deterministic/excel/cell-layout-extractor/tests/fixtures/*.xlsm
 
 # Env
 .env
