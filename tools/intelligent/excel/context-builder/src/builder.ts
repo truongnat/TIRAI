@@ -9,6 +9,7 @@ import { planChunks, generateChunkContent } from './chunker.js';
 import { buildProvenance, generateChunkId } from './provenance.js';
 import { detectCrossSheetReferences, buildContinuationRelations } from './relations.js';
 import type {
+  CellInput,
   ContextBuilderOptions,
   ExcelContextPackage,
   ContextChunk,
@@ -209,7 +210,7 @@ export function writeContextPackage(
 /**
  * Check if cells form a tabular pattern (multiple columns, contiguous rows).
  */
-function isTabular(cells: import('./models.js').CellInput[]): boolean {
+function isTabular(cells: CellInput[]): boolean {
   if (cells.length < 2) return false;
   const cols = new Set(cells.map((c) => c.column));
   return cols.size >= 2;

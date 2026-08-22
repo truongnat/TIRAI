@@ -47,7 +47,7 @@ async function main(): Promise<void> {
     const json = pretty
       ? JSON.stringify(metadata, null, 2)
       : JSON.stringify(metadata);
-    process.stdout.write(json + '\n');
+    process.stdout.write(`${json}\n`);
   } catch (err: unknown) {
     if (err instanceof ExtractorError) {
       process.stderr.write(`ERROR [${err.code}]: ${err.message}\n`);

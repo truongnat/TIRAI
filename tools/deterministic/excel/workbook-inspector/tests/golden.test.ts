@@ -43,7 +43,7 @@ describe('golden test', () => {
 
     // If expected.json does not exist yet, generate it.
     if (!fs.existsSync(EXPECTED_PATH)) {
-      fs.writeFileSync(EXPECTED_PATH, JSON.stringify(actual, null, 2) + '\n');
+      fs.writeFileSync(EXPECTED_PATH, `${JSON.stringify(actual, null, 2)}\n`);
     }
 
     const expected = JSON.parse(fs.readFileSync(EXPECTED_PATH, 'utf-8'));
@@ -54,7 +54,7 @@ describe('golden test', () => {
     // This test simply verifies the regeneration path works.
     const meta = await inspectWorkbook(fixturePath('with-properties.xlsx'));
     const actual = stripNonDeterministic(meta);
-    fs.writeFileSync(EXPECTED_PATH, JSON.stringify(actual, null, 2) + '\n');
+    fs.writeFileSync(EXPECTED_PATH, `${JSON.stringify(actual, null, 2)}\n`);
     const regenerated = JSON.parse(fs.readFileSync(EXPECTED_PATH, 'utf-8'));
     expect(regenerated).toEqual(actual);
   });

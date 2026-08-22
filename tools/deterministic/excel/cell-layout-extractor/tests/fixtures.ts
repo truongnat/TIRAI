@@ -674,13 +674,13 @@ async function conditionalFormattingCellIs(): Promise<void> {
   // Inject conditional formatting XML into sheet
   const sheetXml = await zip.file('xl/worksheets/sheet1.xml')!.async('string');
   const cfXml = `<conditionalFormatting sqref="A2:A10"><cfRule type="cellIs" dxfId="0" priority="1" operator="greaterThan"><formula>0</formula></cfRule><cfRule type="cellIs" dxfId="1" priority="2" stopIfTrue="1" operator="lessThan"><formula>50</formula></cfRule></conditionalFormatting>`;
-  const updatedSheet = sheetXml.replace('</worksheet>', cfXml + '</worksheet>');
+  const updatedSheet = sheetXml.replace('</worksheet>', `${cfXml}</worksheet>`);
   zip.file('xl/worksheets/sheet1.xml', updatedSheet);
 
   // Add dxfs to styles.xml
   const stylesXml = await zip.file('xl/styles.xml')!.async('string');
   const dxfsXml = '<dxfs count="2"><dxf id="0"><font><b/><color rgb="FFFF0000"/></font></dxf><dxf id="1"><fill><bgColor rgb="FFFFFF00"/></fill></dxf></dxfs>';
-  const updatedStyles = stylesXml.replace('</styleSheet>', dxfsXml + '</styleSheet>');
+  const updatedStyles = stylesXml.replace('</styleSheet>', `${dxfsXml}</styleSheet>`);
   zip.file('xl/styles.xml', updatedStyles);
 
   const outBuf = await zip.generateAsync({ type: 'nodebuffer' });
@@ -705,12 +705,12 @@ async function conditionalFormattingFormula(): Promise<void> {
 
   const sheetXml = await zip.file('xl/worksheets/sheet1.xml')!.async('string');
   const cfXml = `<conditionalFormatting sqref="B2:B6"><cfRule type="expression" dxfId="0" priority="3"><formula>A2&gt;=80</formula></cfRule><cfRule type="expression" dxfId="1" priority="5"><formula>A2&lt;50</formula></cfRule></conditionalFormatting>`;
-  const updatedSheet = sheetXml.replace('</worksheet>', cfXml + '</worksheet>');
+  const updatedSheet = sheetXml.replace('</worksheet>', `${cfXml}</worksheet>`);
   zip.file('xl/worksheets/sheet1.xml', updatedSheet);
 
   const stylesXml = await zip.file('xl/styles.xml')!.async('string');
   const dxfsXml = '<dxfs count="2"><dxf id="0"><font><color rgb="FF008000"/></font></dxf><dxf id="1"><font><color rgb="FFFF0000"/></font></dxf></dxfs>';
-  const updatedStyles = stylesXml.replace('</styleSheet>', dxfsXml + '</styleSheet>');
+  const updatedStyles = stylesXml.replace('</styleSheet>', `${dxfsXml}</styleSheet>`);
   zip.file('xl/styles.xml', updatedStyles);
 
   const outBuf = await zip.generateAsync({ type: 'nodebuffer' });
@@ -761,7 +761,7 @@ async function pageSetupPrint(): Promise<void> {
 
   const wbXml = await zip.file('xl/workbook.xml')!.async('string');
   const definedNames = `<definedNames><definedName name="_xlnm.Print_Area" localSheetId="0">Print!$A$1:$B$20</definedName><definedName name="_xlnm.Print_Titles" localSheetId="0">Print!$1:$3</definedName></definedNames>`;
-  const updatedWb = wbXml.replace('</workbook>', definedNames + '</workbook>');
+  const updatedWb = wbXml.replace('</workbook>', `${definedNames}</workbook>`);
   zip.file('xl/workbook.xml', updatedWb);
 
   const outBuf = await zip.generateAsync({ type: 'nodebuffer' });

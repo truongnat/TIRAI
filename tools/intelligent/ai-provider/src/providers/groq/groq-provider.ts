@@ -10,8 +10,7 @@
 // 6. Normalize errors
 // 7. Return generic response
 
-import Groq from 'groq-sdk';
-import type { ClientOptions as GroqClientOptions } from 'groq-sdk';
+import Groq, { type ClientOptions as GroqClientOptions } from 'groq-sdk';
 import type { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions';
 import type { AIProvider } from '../../provider.js';
 import type {
@@ -90,7 +89,7 @@ export class GroqProvider implements AIProvider {
    * Check whether a given model supports structured output on Groq.
    * Currently all chat models on Groq support json_object mode.
    */
-  supportsStructuredOutput(model?: string): boolean {
+  supportsStructuredOutput(_model?: string): boolean {
     // Groq's json_object mode is broadly supported across chat models
     return true;
   }

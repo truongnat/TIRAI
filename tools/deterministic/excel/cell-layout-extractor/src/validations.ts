@@ -62,8 +62,8 @@ export function extractValidations(
     try {
       // Parse formulae
       const formulae = rule.formulae ?? [];
-      const formula1 = formulae[0] != null ? String(formulae[0]) : null;
-      const formula2 = formulae[1] != null ? String(formulae[1]) : null;
+      const formula1 = formulae[0] !== null && formulae[0] !== undefined ? String(formulae[0]) : null;
+      const formula2 = formulae[1] !== null && formulae[1] !== undefined ? String(formulae[1]) : null;
 
       // Convert cell list to range(s)
       const ranges = cellsToRanges(cells);

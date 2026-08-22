@@ -251,7 +251,6 @@ function extractDimension(
   // If the dimension object has no meaningful data, treat as unknown.
   if (
     !dim ||
-    dim.isEmpty ||
     (dim.top === 0 && dim.left === 0 && dim.bottom === 0 && dim.right === 0)
   ) {
     warnings.push(
@@ -314,11 +313,11 @@ function extractDimension(
 }
 
 function extractFreezePane(ws: ExcelJS.Worksheet): string | null {
-  const view = ws.views?.[0];
+  // WorksheetView is a union type; xSplit/ySplit only exist on frozen/split variants.
+  const view = ws.views?.[0] as unknown as { xSplit?: number; ySplit?: number } | undefined;
   if (!view || (!view.xSplit && !view.ySplit)) {
     return null;
   }
-  // The freeze pane cell is (xSplit+1, ySplit+1) in 1-based.
   const col = (view.xSplit ?? 0) + 1;
   const row = (view.ySplit ?? 0) + 1;
   return `${columnToLetter(col)}${row}`;
@@ -397,8 +396,8 @@ function parseDefinedNamesFromXml(xml: string): DefinedNameInfo[] {
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(xml)) !== null) {
-    const attrs = match[1];
-    const value = match[2].trim();
+    const attrs = match[1]!;
+    const value = match[2]!.trim();
 
     const nameMatch = /name="([^"]*)"/.exec(attrs);
     const localSheetIdMatch = /localSheetId="([^"]*)"/.exec(attrs);
@@ -406,9 +405,9 @@ function parseDefinedNamesFromXml(xml: string): DefinedNameInfo[] {
 
     if (!nameMatch) continue;
 
-    const name = nameMatch[1];
+    const name = nameMatch[1]!;
     const scope: 'workbook' | 'sheet' = localSheetIdMatch ? 'sheet' : 'workbook';
-    const sheetIndex = localSheetIdMatch ? parseInt(localSheetIdMatch[1], 10) : null;
+    const sheetIndex = localSheetIdMatch ? parseInt(localSheetIdMatch[1]!, 10) : null;
     const hidden = hiddenMatch
       ? hiddenMatch[1] === '1' || hiddenMatch[1] === 'true'
       : false;
@@ -470,7 +469,7 @@ function extractCalculation(
         mode: (calc.calcMode as string) ?? 'auto',
         fullCalcOnLoad: toBoolOrNull(calc.fullCalcOnLoad),
         forceFullCalc: toBoolOrNull(calc.forceFullCalc),
-        calcId: calc.calcId != null ? String(calc.calcId) : null,
+        calcId: calc.calcId !== null && calc.calcId !== undefined ? String(calc.calcId) : null,
       };
     }
   } catch {
@@ -484,17 +483,17 @@ function extractCalculation(
         /<calcPr\s+([^/]*?)\/>/s.exec(workbookXml) ??
         /<calcPr\s+([^>]*)>/s.exec(workbookXml);
       if (calcMatch) {
-        const attrs = calcMatch[1];
+        const attrs = calcMatch[1]!;
         const calcMode = /calcMode="([^"]*)"/.exec(attrs);
         const fullCalcOnLoad = /fullCalcOnLoad="([^"]*)"/.exec(attrs);
         const forceFullCalc = /forceFullCalc="([^"]*)"/.exec(attrs);
         const calcId = /calcId="([^"]*)"/.exec(attrs);
 
         return {
-          mode: calcMode ? calcMode[1] : 'auto',
-          fullCalcOnLoad: fullCalcOnLoad ? toBoolOrNull(fullCalcOnLoad[1]) : null,
-          forceFullCalc: forceFullCalc ? toBoolOrNull(forceFullCalc[1]) : null,
-          calcId: calcId ? calcId[1] : null,
+          mode: calcMode ? calcMode[1]! : 'auto',
+          fullCalcOnLoad: fullCalcOnLoad ? toBoolOrNull(fullCalcOnLoad[1]!) : null,
+          forceFullCalc: forceFullCalc ? toBoolOrNull(forceFullCalc[1]!) : null,
+          calcId: calcId ? calcId[1]! : null,
         };
       }
     } catch {

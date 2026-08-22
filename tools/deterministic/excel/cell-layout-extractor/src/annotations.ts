@@ -109,8 +109,8 @@ function extractComments(
   annotations: AnnotationRaw[],
 ): void {
   // Iterate all cells to find those with notes/comments
-  ws.eachRow({ includeEmpty: true }, (row, rowNumber) => {
-    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+  ws.eachRow({ includeEmpty: true }, (row, _rowNumber) => {
+    row.eachCell({ includeEmpty: true }, (cell, _colNumber) => {
       if (!cell.note) return;
 
       const address = cell.address;
@@ -157,19 +157,28 @@ function extractComments(
 /**
  * Parse a cell note into text + author.
  * Handles string notes, Comment objects, and rich text.
+ *
+ * ExcelJS.Comment type definition omits `author` and `text` even though
+ * they may appear at runtime. We narrow via a local interface.
  */
+interface CommentRuntime {
+  texts?: Array<{ text?: string }>;
+  author?: string;
+  text?: string;
+}
+
 function parseComment(note: string | ExcelJS.Comment | unknown): { text: string; author: string | null } {
   if (typeof note === 'string') {
     return { text: note, author: null };
   }
 
   if (typeof note === 'object' && note !== null) {
-    const comment = note as ExcelJS.Comment;
+    const comment = note as CommentRuntime;
 
     // Rich text format
     if (comment.texts && Array.isArray(comment.texts)) {
       const text = comment.texts.map((t) => t.text ?? '').join('');
-      const author = comment.author ?? (comment as { editAs?: string }).editAs ?? null;
+      const author = comment.author ?? null;
       return { text, author };
     }
 

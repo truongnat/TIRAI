@@ -8,12 +8,10 @@ import type {
   SheetLayoutInput,
   ContextBuilderOptions,
   ContextWarning,
-  ContextChunk,
   LayoutHints,
 } from './models.js';
 import { WarningCode } from './warnings.js';
 import { formatTabular, formatTabularRows } from './table-view.js';
-import { buildProvenance } from './provenance.js';
 
 const DEFAULT_MAX_CHARS = 50_000;
 const DEFAULT_MAX_CELLS = 500;

@@ -3,8 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { AIProvider } from './provider.js';
-import { AIProviderError } from './provider.js';
+import { type AIProvider, AIProviderError } from './provider.js';
 import type { SemanticIR } from './models.js';
 
 export interface GeminiProviderOptions {

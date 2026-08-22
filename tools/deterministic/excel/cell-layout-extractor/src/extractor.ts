@@ -146,7 +146,7 @@ async function extractSheet(
   let rowCount: number | null = null;
   let columnCount: number | null = null;
 
-  if (dim && !dim.isEmpty && !(dim.top === 0 && dim.left === 0 && dim.bottom === 0 && dim.right === 0)) {
+  if (dim && !(dim.top === 0 && dim.left === 0 && dim.bottom === 0 && dim.right === 0)) {
     dimension = `${columnToLetter(dim.left)}${dim.top}:${columnToLetter(dim.right)}${dim.bottom}`;
     rowCount = dim.bottom;
     columnCount = dim.right;

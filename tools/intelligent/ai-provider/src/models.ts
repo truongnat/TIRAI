@@ -16,8 +16,11 @@ export interface AIMessage {
  */
 export type JSONSchema = Record<string, unknown>;
 
-/** Generic generation request. `T` is the expected parsed response type. */
+/** Generic generation request. `T` is a phantom type forwarded to `AIGenerationResponse<T>`. */
 export interface AIGenerationRequest<T = unknown> {
+  /** Phantom type brand – never set at runtime. Forwards `T` to the response type. */
+  readonly _responseType?: T;
+
   /** Override the provider's default model. */
   model?: string;
 

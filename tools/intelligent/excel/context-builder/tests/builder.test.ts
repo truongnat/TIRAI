@@ -2,13 +2,12 @@
 // Excel AI Context Builder – tests
 // ---------------------------------------------------------------------------
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { buildExcelContext, writeContextPackage } from '../src/builder.js';
 import { ContextBuilderError } from '../src/warnings.js';
-import type { ExcelContextPackage, ContextChunk } from '../src/models.js';
 import {
   simpleSmallSheet,
   multipleSheets,

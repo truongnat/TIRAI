@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "document": {
+    "title": "File Upload Feature",
+    "summary": "A simple file upload feature specification",
+    "provenance": [{ "contextId": "ctx-upload-000", "sheet": "Upload Spec" }]
+  },
+  "sections": [
+    { "id": "sec-0001", "title": "Upload Process", "provenance": [{ "contextId": "ctx-upload-000", "sheet": "Upload Spec" }], "confidence": 0.9 }
+  ],
+  "entities": [
+    { "id": "ent-0001", "name": "Upload Form", "type": "ui", "provenance": [{ "contextId": "ctx-upload-000", "sheet": "Upload Spec" }], "confidence": 0.9 },
+    { "id": "ent-0002", "name": "User", "type": "actor", "provenance": [{ "contextId": "ctx-upload-000", "sheet": "Upload Spec" }], "confidence": 0.9 }
+  ],
+  "flows": [
+    {
+      "id": "flow-0001",
+      "name": "File Upload Process",
+      "steps": [
+        { "order": 1, "action": "User selects file", "actor": "User", "provenance": [{ "contextId": "ctx-upload-000", "sheet": "Upload Spec" }] },
+        { "order": 2, "action": "System validates file type", "actor": "System", "provenance": [{ "contextId": "ctx-upload-000", "sheet": "Upload Spec" }] },
+        { "order": 3, "action": "System stores valid file", "actor": "System", "provenance": [{ "contextId": "ctx-upload-000", "sheet": "Upload Spec" }] }
+      ],
+      "provenance": [{ "contextId": "ctx-upload-000", "sheet": "Upload Spec" }],
+      "confidence": 0.9
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule-0001",
+      "type": "validation",
+      "statement": "Only PDF and PNG files are accepted",
+      "provenance": [{ "contextId": "ctx-upload-000", "sheet": "Upload Spec" }],
+      "confidence": 0.9
+    }
+  ],
+  "relationships": [],
+  "unresolved": [],
+  "analysis": {
+    "provider": "test",
+    "model": "test-model",
+    "promptVersion": "1.1",
+    "chunksAnalyzed": 1,
+    "aiRequests": 1,
+    "usage": { "inputTokens": 50, "outputTokens": 25, "totalTokens": 75 },
+    "warnings": []
+  }
+}

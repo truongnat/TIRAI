@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "1.0",
+  "document": {
+    "title": "User Authentication Feature",
+    "summary": "Login, registration, password reset, and session management for the TIRAI platform",
+    "provenance": [
+      { "contextId": "ctx-auth-000", "sheet": "Authentication Spec" },
+      { "contextId": "ctx-auth-001", "sheet": "Security Requirements" }
+    ]
+  },
+  "sections": [
+    { "id": "sec-0001", "title": "Login Process", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }], "confidence": 0.95 },
+    { "id": "sec-0002", "title": "Registration", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }], "confidence": 0.9 },
+    { "id": "sec-0003", "title": "Password Reset", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }], "confidence": 0.85 },
+    { "id": "sec-0004", "title": "Session Management", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }], "confidence": 0.9 }
+  ],
+  "entities": [
+    { "id": "ent-0001", "name": "User Account", "type": "domain", "description": "Represents a registered user with credentials and profile", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }], "confidence": 0.95 },
+    { "id": "ent-0002", "name": "Login Form", "type": "ui", "description": "Web form for username/password entry", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }], "confidence": 0.9 },
+    { "id": "ent-0003", "name": "Session Token", "type": "domain", "description": "JWT token for authenticated sessions", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }], "confidence": 0.9 },
+    { "id": "ent-0004", "name": "Password Policy", "type": "rule-set", "description": "Rules governing password strength", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }], "confidence": 0.85 },
+    { "id": "ent-0005", "name": "Admin Dashboard", "type": "ui", "description": "Administrative interface accessible only to admin roles", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }], "confidence": 0.8 }
+  ],
+  "flows": [
+    {
+      "id": "flow-0001",
+      "name": "User Login",
+      "description": "User authenticates with username and password",
+      "steps": [
+        { "order": 1, "action": "User navigates to login page", "actor": "User", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 2, "action": "User enters username and password", "actor": "User", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 3, "action": "System validates credentials against stored hash", "actor": "System", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 4, "action": "System generates JWT session token on success", "actor": "System", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }] },
+        { "order": 5, "action": "System redirects to dashboard", "actor": "System", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] }
+      ],
+      "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }],
+      "confidence": 0.95
+    },
+    {
+      "id": "flow-0002",
+      "name": "Failed Login Handling",
+      "description": "System handles authentication failures with rate limiting",
+      "steps": [
+        { "order": 1, "action": "User submits invalid credentials", "actor": "User", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 2, "action": "System increments failed attempt counter", "actor": "System", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 3, "action": "System displays generic error message (no user enumeration)", "actor": "System", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }] },
+        { "order": 4, "action": "System locks account after 5 consecutive failures for 15 minutes", "actor": "System", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }] }
+      ],
+      "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }, { "contextId": "ctx-auth-001", "sheet": "Security Requirements" }],
+      "confidence": 0.9
+    },
+    {
+      "id": "flow-0003",
+      "name": "User Registration",
+      "description": "New user creates an account",
+      "steps": [
+        { "order": 1, "action": "User fills registration form with email, username, password", "actor": "User", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 2, "action": "System validates email format and uniqueness", "actor": "System", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 3, "action": "System validates password meets policy requirements", "actor": "System", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }] },
+        { "order": 4, "action": "System hashes password with bcrypt (cost factor 12)", "actor": "System", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }] },
+        { "order": 5, "action": "System sends verification email", "actor": "System", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 6, "action": "User clicks verification link to activate account", "actor": "User", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] }
+      ],
+      "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }],
+      "confidence": 0.9
+    },
+    {
+      "id": "flow-0004",
+      "name": "Password Reset",
+      "description": "User resets forgotten password via email",
+      "steps": [
+        { "order": 1, "action": "User requests password reset with email", "actor": "User", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 2, "action": "System generates time-limited reset token (1 hour expiry)", "actor": "System", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }] },
+        { "order": 3, "action": "System sends reset link via email", "actor": "System", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 4, "action": "User submits new password with reset token", "actor": "User", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 5, "action": "System validates token and updates password", "actor": "System", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }] },
+        { "order": 6, "action": "System invalidates all existing sessions", "actor": "System", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }] }
+      ],
+      "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }],
+      "confidence": 0.85
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule-0001",
+      "type": "validation",
+      "statement": "Username must be between 3 and 50 characters, alphanumeric plus underscores only",
+      "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }],
+      "confidence": 0.95
+    },
+    {
+      "id": "rule-0002",
+      "type": "validation",
+      "statement": "Password must be at least 8 characters with one uppercase, one lowercase, one digit, and one special character",
+      "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }],
+      "confidence": 0.95
+    },
+    {
+      "id": "rule-0003",
+      "type": "security",
+      "statement": "Passwords must never be stored in plain text; use bcrypt with cost factor 12",
+      "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }],
+      "confidence": 0.95
+    },
+    {
+      "id": "rule-0004",
+      "type": "business-rule",
+      "statement": "Account locks after 5 consecutive failed login attempts for 15 minutes",
+      "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }],
+      "confidence": 0.9
+    },
+    {
+      "id": "rule-0005",
+      "type": "security",
+      "statement": "Login error messages must not reveal whether the username or password was incorrect",
+      "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }],
+      "confidence": 0.95
+    },
+    {
+      "id": "rule-0006",
+      "type": "business-rule",
+      "statement": "Session tokens expire after 24 hours of inactivity",
+      "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }],
+      "confidence": 0.9
+    },
+    {
+      "id": "rule-0007",
+      "type": "validation",
+      "statement": "Email must be a valid format and unique across all accounts",
+      "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }],
+      "confidence": 0.95
+    },
+    {
+      "id": "rule-0008",
+      "type": "security",
+      "statement": "All authentication endpoints must use HTTPS",
+      "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }],
+      "confidence": 0.95
+    },
+    {
+      "id": "rule-0009",
+      "type": "business-rule",
+      "statement": "Users with admin role can access admin dashboard; non-admin users are redirected to home",
+      "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }],
+      "confidence": 0.85
+    },
+    {
+      "id": "rule-0010",
+      "type": "business-rule",
+      "statement": "Password reset tokens are single-use and expire after 1 hour",
+      "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }],
+      "confidence": 0.9
+    }
+  ],
+  "relationships": [
+    { "id": "rel-0001", "type": "uses", "source": "flow-0001", "target": "ent-0002", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }], "confidence": 0.9 },
+    { "id": "rel-0002", "type": "produces", "source": "flow-0001", "target": "ent-0003", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }], "confidence": 0.9 },
+    { "id": "rel-0003", "type": "governed-by", "source": "flow-0003", "target": "ent-0004", "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }], "confidence": 0.85 },
+    { "id": "rel-0004", "type": "accesses", "source": "flow-0001", "target": "ent-0005", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }], "confidence": 0.8 },
+    { "id": "rel-0005", "type": "modifies", "source": "flow-0004", "target": "ent-0001", "provenance": [{ "contextId": "ctx-auth-000", "sheet": "Authentication Spec" }], "confidence": 0.9 }
+  ],
+  "unresolved": [
+    {
+      "id": "unres-0001",
+      "description": "MFA/2FA requirements not explicitly stated in specification",
+      "provenance": [{ "contextId": "ctx-auth-001", "sheet": "Security Requirements" }],
+      "confidence": 0.5
+    }
+  ],
+  "analysis": {
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile",
+    "promptVersion": "1.1",
+    "chunksAnalyzed": 4,
+    "aiRequests": 6,
+    "usage": { "inputTokens": 12500, "outputTokens": 8200, "totalTokens": 20700 },
+    "warnings": [
+      { "code": "AMBIGUOUS_SCOPE", "message": "Section 'Session Management' overlaps with security rules", "severity": "info" }
+    ]
+  }
+}

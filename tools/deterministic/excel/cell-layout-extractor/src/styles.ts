@@ -2,6 +2,7 @@
 // Style registry – deduplication of cell styles
 // ---------------------------------------------------------------------------
 
+import type ExcelJS from 'exceljs';
 import type {
   StyleRaw,
   FontRaw,
@@ -125,7 +126,7 @@ function extractFont(f: Partial<ExcelJS.Font> | undefined): FontRaw | null {
 function extractFill(f: Partial<ExcelJS.Fill> | undefined): FillRaw | null {
   if (!f || !f.type) return null;
 
-  const patternFill = f.type === 'pattern' ? (f as ExcelJS.PatternFill) : null;
+  const patternFill = f.type === 'pattern' ? (f as ExcelJS.FillPattern) : null;
   if (patternFill) {
     return {
       type: 'pattern',
@@ -135,7 +136,7 @@ function extractFill(f: Partial<ExcelJS.Fill> | undefined): FillRaw | null {
     };
   }
 
-  const gradientFill = f.type === 'gradient' ? (f as ExcelJS.GradientFill) : null;
+  const gradientFill = f.type === 'gradient' ? (f as ExcelJS.FillGradientAngle) : null;
   if (gradientFill) {
     return {
       type: 'gradient',
@@ -176,7 +177,7 @@ function extractAlignment(a: Partial<ExcelJS.Alignment> | undefined): AlignmentR
     horizontal: a.horizontal ?? null,
     vertical: a.vertical ?? null,
     wrapText: a.wrapText ?? false,
-    textRotation: a.textRotation ?? null,
+    textRotation: typeof a.textRotation === 'number' ? a.textRotation : (a.textRotation === 'vertical' ? 255 : null),
     indent: a.indent ?? null,
     shrinkToFit: a.shrinkToFit ?? false,
   };
