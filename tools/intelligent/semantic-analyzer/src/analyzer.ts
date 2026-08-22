@@ -16,6 +16,7 @@ import type {
   SemanticRelationship,
   SemanticUnresolved,
   SemanticWarning,
+  SemanticQualityMetrics,
   ChunkSemanticResult,
   AnalysisManifest,
   SemanticAnalyzerOptions,
@@ -282,6 +283,33 @@ export async function analyzeSemanticContext(
 
   // ---- Build analysis metadata --------------------------------------------
   const totalTokens = totalInputTokens + totalOutputTokens;
+
+  // Compute quality metrics (v1.1)
+  const totalFlowSteps = finalFlows.reduce((sum, f) => sum + f.steps.length, 0);
+  const allSemanticObjects = [
+    ...finalEntities,
+    ...finalFlows,
+    ...finalRules,
+    ...finalRelationships,
+    ...finalSections,
+  ];
+  const lowConfCount = allSemanticObjects.filter((o) => o.confidence < CONFIDENCE_THRESHOLD.MEDIUM).length;
+  const withProvenance = allSemanticObjects.filter((o) => o.provenance.length > 0).length;
+  const provCoverage = allSemanticObjects.length > 0
+    ? Math.round((withProvenance / allSemanticObjects.length) * 100) / 100
+    : 1;
+
+  const quality: SemanticQualityMetrics = {
+    entities: finalEntities.length,
+    flows: finalFlows.length,
+    flowSteps: totalFlowSteps,
+    rules: finalRules.length,
+    relationships: finalRelationships.length,
+    unresolved: finalUnresolved.length,
+    lowConfidenceCount: lowConfCount,
+    provenanceCoverage: provCoverage,
+  };
+
   const analysis = {
     provider: provider.name,
     model: '', // Will be set from response
@@ -294,6 +322,7 @@ export async function analyzeSemanticContext(
       totalTokens,
     },
     warnings: allWarnings,
+    quality,
   };
 
   // ---- Assemble final IR --------------------------------------------------
@@ -322,6 +351,7 @@ export async function analyzeSemanticContext(
         entities: finalEntities.length,
         sections: finalSections.length,
         flows: finalFlows.length,
+        flowSteps: totalFlowSteps,
         rules: finalRules.length,
         relationships: finalRelationships.length,
         unresolved: finalUnresolved.length,
@@ -355,12 +385,21 @@ function validateChunkProvenance(
   }
   for (const f of result.flows) {
     warnings.push(...validateProvenanceArray(f.provenance, validContextIds, contextSheetMap, f.localId));
+    // Also validate individual flow step provenance
+    for (const step of f.steps) {
+      if (step.provenance && step.provenance.length > 0) {
+        warnings.push(...validateProvenanceArray(step.provenance, validContextIds, contextSheetMap, `${f.localId}:step-${step.order}`));
+      }
+    }
   }
   for (const r of result.rules) {
     warnings.push(...validateProvenanceArray(r.provenance, validContextIds, contextSheetMap, r.localId));
   }
   for (const s of result.sections) {
     warnings.push(...validateProvenanceArray(s.provenance, validContextIds, contextSheetMap, s.localId));
+  }
+  for (const rel of result.relationships) {
+    warnings.push(...validateProvenanceArray(rel.provenance, validContextIds, contextSheetMap, rel.localId));
   }
 }
 
