@@ -415,7 +415,7 @@ describe('analyzeSemanticContext', () => {
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
       expect(manifest.schemaVersion).toBe('1.0');
       expect(manifest.provider.name).toBe('fake');
-      expect(manifest.promptVersion).toBe('1.0');
+      expect(manifest.promptVersion).toBe('1.1');
       expect(manifest.stats.chunks).toBe(2);
       expect(manifest.stats.entities).toBeGreaterThanOrEqual(1);
       expect(manifest.usage).toBeDefined();

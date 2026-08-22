@@ -163,6 +163,20 @@ export interface SemanticAnalysisMetadata {
     totalTokens: number;
   };
   warnings: SemanticWarning[];
+  quality?: SemanticQualityMetrics;
+}
+
+// ---- Quality metrics (v1.1) ----------------------------------------------
+
+export interface SemanticQualityMetrics {
+  entities: number;
+  flows: number;
+  flowSteps: number;
+  rules: number;
+  relationships: number;
+  unresolved: number;
+  lowConfidenceCount: number;
+  provenanceCoverage: number;
 }
 
 // ---- Warning model -------------------------------------------------------
@@ -301,6 +315,7 @@ export interface AnalysisManifest {
     entities: number;
     sections: number;
     flows: number;
+    flowSteps: number;
     rules: number;
     relationships: number;
     unresolved: number;
