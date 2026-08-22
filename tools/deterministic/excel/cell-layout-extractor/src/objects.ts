@@ -31,7 +31,7 @@ export async function extractObjects(
 
   try {
     const zip = await JSZip.loadAsync(
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       (await import('node:fs')).readFileSync(filePath),
     );
 
@@ -253,7 +253,7 @@ function parsePosition(content: string, tag: 'from' | 'to'): AnchorPosition | nu
   return {
     column: col,
     columnOffset: colOff ?? 0,
-    row: row,
+    row,
     rowOffset: rowOff ?? 0,
   };
 }
@@ -350,7 +350,7 @@ function parseImageObject(
   source: SheetSourceReference,
   warnings: Warning[],
   options: ExtractOptions,
-  filePath: string,
+  _filePath: string,
 ): ObjectRaw {
   // Find blip with r:embed
   const blipMatch = /r:embed="([^"]+)"/.exec(picContent);
@@ -444,7 +444,7 @@ function parseShapeObject(
   spContent: string,
   anchor: AnchorRaw,
   source: SheetSourceReference,
-  warnings: Warning[],
+  _warnings: Warning[],
 ): ObjectRaw {
   // Extract text from <a:t> elements within <xdr:txBody>
   const textParts: string[] = [];

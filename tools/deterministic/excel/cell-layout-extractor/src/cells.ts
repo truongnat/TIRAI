@@ -9,7 +9,7 @@ import type {
   SourceReference,
   Warning,
 } from './models.js';
-import { StyleRegistry, extractStyleFromCell, isDefaultStyle } from './styles.js';
+import { type StyleRegistry, extractStyleFromCell, isDefaultStyle } from './styles.js';
 import { WarningCode, createWarning } from './warnings.js';
 
 /**
@@ -23,13 +23,13 @@ export function extractCells(
   sheetName: string,
   styleRegistry: StyleRegistry,
   warnings: Warning[],
-  includeEmptyAll: boolean,
+  _includeEmptyAll: boolean,
 ): CellRaw[] {
   const cells: CellRaw[] = [];
 
   // Always iterate with includeEmpty: true so we can detect empty cells
   // that have style significance (borders, fills, etc.).
-  ws.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+  ws.eachRow({ includeEmpty: true }, (row, _rowNumber) => {
     const maxCol = ws.columnCount ?? row.cellCount ?? 0;
 
     row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
@@ -58,8 +58,8 @@ export function extractCells(
 
       cells.push({
         address: cell.address,
-        row: cell.row,
-        column: cell.col,
+        row: cell.fullAddress.row,
+        column: cell.fullAddress.col,
         rawValue,
         displayValue,
         type,
@@ -105,10 +105,10 @@ function extractCellValue(
   // Formula cell
   if (hasFormula) {
     const formulaStr =
-      (cell.value as ExcelJS.FormulaCellValue).formula ??
-      (cell.value as ExcelJS.SharedFormulaCellValue).sharedFormula ??
+      (cell.value as ExcelJS.CellFormulaValue).formula ??
+      (cell.value as ExcelJS.CellSharedFormulaValue).sharedFormula ??
       null;
-    const result = (cell.value as ExcelJS.FormulaCellValue).result ?? null;
+    const result = (cell.value as ExcelJS.CellFormulaValue).result ?? null;
 
     if (result === null && formulaStr !== null) {
       warnings.push(
@@ -151,7 +151,7 @@ function extractCellValue(
 
   // Hyperlink (cell with hyperlink but no formula)
   if (cell.type === ExcelJS.ValueType.Hyperlink) {
-    const hv = cell.value as ExcelJS.HyperlinkValue;
+    const hv = cell.value as ExcelJS.CellHyperlinkValue;
     return {
       rawValue: hv.text ?? null,
       displayValue: cell.text || hv.text || null,
@@ -256,15 +256,22 @@ function extractCellValue(
 
 function extractHyperlink(cell: ExcelJS.Cell): string | null {
   if (!cell.hyperlink) return null;
-  if (typeof cell.hyperlink === 'string') return cell.hyperlink;
-  return (cell.hyperlink as ExcelJS.Hyperlink).hyperlink ?? null;
+  // cell.hyperlink is typed as string in ExcelJS; return directly.
+  return typeof cell.hyperlink === 'string' ? cell.hyperlink : null;
+}
+
+/**
+ * ExcelJS.Comment omits `text` in types but it may appear at runtime.
+ */
+interface CommentText {
+  texts?: Array<{ text?: string }>;
+  text?: string;
 }
 
 function extractComment(cell: ExcelJS.Cell): string | null {
   if (!cell.note) return null;
   if (typeof cell.note === 'string') return cell.note;
-  // Comment object
-  const note = cell.note as ExcelJS.Comment;
+  const note = cell.note as CommentText;
   if (note.texts) {
     return note.texts.map((t) => t.text ?? '').join('');
   }

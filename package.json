@@ -1,0 +1,34 @@
+{
+  "private": true,
+  "name": "tirai",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "TIRAI – TypeScript toolchain for Excel intelligence",
+  "scripts": {
+    "check:deterministic": "npm run check --workspace=tools/deterministic/excel/workbook-inspector && npm run check --workspace=tools/deterministic/excel/cell-layout-extractor",
+    "check:intelligent": "npm run check --workspace=tools/intelligent/ai-provider && npm run check --workspace=tools/intelligent/excel/context-builder && npm run check --workspace=tools/intelligent/excel/analyzer && npm run check --workspace=tools/intelligent/semantic-analyzer && npm run check --workspace=tools/intelligent/requirement-builder",
+    "check": "npm run check:deterministic && npm run check:intelligent",
+    "build:all": "npm run build --workspaces --if-present",
+    "test:all": "npm test --workspaces --if-present",
+    "typecheck:all": "npm run typecheck --workspaces --if-present",
+    "lint:all": "npm run lint --workspaces --if-present"
+  },
+  "workspaces": [
+    "tools/deterministic/excel/workbook-inspector",
+    "tools/deterministic/excel/cell-layout-extractor",
+    "tools/intelligent/ai-provider",
+    "tools/intelligent/excel/context-builder",
+    "tools/intelligent/excel/analyzer",
+    "tools/intelligent/semantic-analyzer",
+    "tools/intelligent/requirement-builder"
+  ],
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0",
+    "prettier": "^3.3.0"
+  }
+}

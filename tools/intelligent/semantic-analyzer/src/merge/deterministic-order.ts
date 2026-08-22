@@ -25,8 +25,8 @@ export function orderEntities(
     r.entities.map((e) => ({ contextId: r.contextId, entity: e })),
   );
   return flat.sort((a, b) => {
-    const ka = sortKey(a.contextId, a.entity.provenance) + '|' + a.entity.name.toLowerCase();
-    const kb = sortKey(b.contextId, b.entity.provenance) + '|' + b.entity.name.toLowerCase();
+    const ka = `${sortKey(a.contextId, a.entity.provenance)}|${a.entity.name.toLowerCase()}`;
+    const kb = `${sortKey(b.contextId, b.entity.provenance)}|${b.entity.name.toLowerCase()}`;
     return ka.localeCompare(kb);
   });
 }
@@ -39,8 +39,8 @@ export function orderSections(
     r.sections.map((s) => ({ contextId: r.contextId, section: s })),
   );
   return flat.sort((a, b) => {
-    const ka = sortKey(a.contextId, a.section.provenance) + '|' + a.section.title.toLowerCase();
-    const kb = sortKey(b.contextId, b.section.provenance) + '|' + b.section.title.toLowerCase();
+    const ka = `${sortKey(a.contextId, a.section.provenance)}|${a.section.title.toLowerCase()}`;
+    const kb = `${sortKey(b.contextId, b.section.provenance)}|${b.section.title.toLowerCase()}`;
     return ka.localeCompare(kb);
   });
 }
@@ -53,8 +53,8 @@ export function orderFlows(
     r.flows.map((f) => ({ contextId: r.contextId, flow: f })),
   );
   return flat.sort((a, b) => {
-    const ka = sortKey(a.contextId, a.flow.provenance) + '|' + a.flow.name.toLowerCase();
-    const kb = sortKey(b.contextId, b.flow.provenance) + '|' + b.flow.name.toLowerCase();
+    const ka = `${sortKey(a.contextId, a.flow.provenance)}|${a.flow.name.toLowerCase()}`;
+    const kb = `${sortKey(b.contextId, b.flow.provenance)}|${b.flow.name.toLowerCase()}`;
     return ka.localeCompare(kb);
   });
 }
@@ -67,8 +67,8 @@ export function orderRules(
     r.rules.map((rl) => ({ contextId: r.contextId, rule: rl })),
   );
   return flat.sort((a, b) => {
-    const ka = sortKey(a.contextId, a.rule.provenance) + '|' + a.rule.statement.toLowerCase().slice(0, 50);
-    const kb = sortKey(b.contextId, b.rule.provenance) + '|' + b.rule.statement.toLowerCase().slice(0, 50);
+    const ka = `${sortKey(a.contextId, a.rule.provenance)}|${a.rule.statement.toLowerCase().slice(0, 50)}`;
+    const kb = `${sortKey(b.contextId, b.rule.provenance)}|${b.rule.statement.toLowerCase().slice(0, 50)}`;
     return ka.localeCompare(kb);
   });
 }
@@ -95,8 +95,8 @@ export function orderUnresolved(
     r.unresolved.map((u) => ({ contextId: r.contextId, item: u })),
   );
   return flat.sort((a, b) => {
-    const ka = sortKey(a.contextId, a.item.provenance) + '|' + a.item.description.toLowerCase().slice(0, 50);
-    const kb = sortKey(b.contextId, b.item.provenance) + '|' + b.item.description.toLowerCase().slice(0, 50);
+    const ka = `${sortKey(a.contextId, a.item.provenance)}|${a.item.description.toLowerCase().slice(0, 50)}`;
+    const kb = `${sortKey(b.contextId, b.item.provenance)}|${b.item.description.toLowerCase().slice(0, 50)}`;
     return ka.localeCompare(kb);
   });
 }

@@ -2,7 +2,7 @@
 // Excel AI Context Builder – cross-reference / relation builder
 // ---------------------------------------------------------------------------
 
-import type { CellInput, CrossReference, SheetLayoutInput } from './models.js';
+import type { CrossReference, SheetLayoutInput } from './models.js';
 
 /**
  * Detect cross-sheet formula references in cells.

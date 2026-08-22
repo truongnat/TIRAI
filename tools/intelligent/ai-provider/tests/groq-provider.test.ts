@@ -11,17 +11,15 @@ import type { GroqRawResponse } from '../src/providers/groq/groq-mapper.js';
 const mockCreate = vi.fn();
 
 // Mock the Groq SDK to return our shared mock
-vi.mock('groq-sdk', () => {
-  return {
-    default: vi.fn().mockImplementation(() => ({
-      chat: {
-        completions: {
-          create: mockCreate,
-        },
+vi.mock('groq-sdk', () => ({
+  default: vi.fn().mockImplementation(() => ({
+    chat: {
+      completions: {
+        create: mockCreate,
       },
-    })),
-  };
-});
+    },
+  })),
+}));
 
 function makeResponse(overrides: Partial<GroqRawResponse> = {}): GroqRawResponse {
   return {

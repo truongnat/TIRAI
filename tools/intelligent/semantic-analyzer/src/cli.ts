@@ -43,7 +43,7 @@ async function main(): Promise<void> {
   const startTime = Date.now();
 
   const ir = await analyzeSemanticContext(inputDir, provider, {
-    outputDir: outputDir,
+    outputDir,
     concurrency: (args.concurrency as number) ?? 2,
     resume: args.resume as boolean | undefined,
     sheets: args.sheet ? [args.sheet as string] : undefined,

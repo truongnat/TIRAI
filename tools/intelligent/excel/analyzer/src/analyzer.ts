@@ -7,7 +7,6 @@ import { join, resolve } from 'node:path';
 import type { SemanticIR, AnalyzerOptions, AnalyzerWarning } from './models.js';
 import type { AIProvider } from './provider.js';
 import { GeminiProvider } from './gemini-provider.js';
-import { AIProviderError } from './provider.js';
 import { SYSTEM_PROMPT, buildUserContent } from './prompts.js';
 
 /**

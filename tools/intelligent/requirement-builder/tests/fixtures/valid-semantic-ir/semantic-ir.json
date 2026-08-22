@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "document": {
+    "title": "Test Specification",
+    "summary": "A test specification for unit tests",
+    "provenance": [{ "contextId": "ctx-s000-c000", "sheet": "Business Flow" }]
+  },
+  "sections": [
+    { "id": "sec-0001", "title": "Business Flow", "provenance": [{ "contextId": "ctx-s000-c000", "sheet": "Business Flow" }], "confidence": 0.9 }
+  ],
+  "entities": [
+    { "id": "ent-0001", "name": "Login Screen", "type": "ui", "provenance": [{ "contextId": "ctx-s000-c000", "sheet": "Business Flow" }], "confidence": 0.9 },
+    { "id": "ent-0002", "name": "User", "type": "actor", "provenance": [{ "contextId": "ctx-s000-c000", "sheet": "Business Flow" }], "confidence": 0.9 }
+  ],
+  "flows": [
+    {
+      "id": "flow-0001",
+      "name": "Login Process",
+      "steps": [
+        { "order": 1, "action": "User enters username", "actor": "User", "provenance": [{ "contextId": "ctx-s000-c000", "sheet": "Business Flow" }] },
+        { "order": 2, "action": "User enters password", "actor": "User", "provenance": [{ "contextId": "ctx-s000-c000", "sheet": "Business Flow" }] },
+        { "order": 3, "action": "System validates credentials", "actor": "System", "provenance": [{ "contextId": "ctx-s000-c000", "sheet": "Business Flow" }] }
+      ],
+      "provenance": [{ "contextId": "ctx-s000-c000", "sheet": "Business Flow" }],
+      "confidence": 0.9
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule-0001",
+      "type": "validation",
+      "statement": "Username is required",
+      "provenance": [{ "contextId": "ctx-s000-c000", "sheet": "Business Flow" }],
+      "confidence": 0.9
+    }
+  ],
+  "relationships": [],
+  "unresolved": [],
+  "analysis": {
+    "provider": "fake",
+    "model": "fake-model",
+    "promptVersion": "1.1",
+    "chunksAnalyzed": 1,
+    "aiRequests": 2,
+    "usage": { "inputTokens": 100, "outputTokens": 50, "totalTokens": 150 },
+    "warnings": []
+  }
+}

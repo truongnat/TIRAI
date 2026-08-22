@@ -4,9 +4,8 @@
 // Checks that every provenance reference in AI output points to a real
 // context chunk and valid sheet/range that exists in the source.
 
-import type { ProvenanceReference } from '../models.js';
+import type { ProvenanceReference, SemanticWarning } from '../models.js';
 import type { ContextChunk } from '../persistence/loader.js';
-import type { SemanticWarning } from '../models.js';
 import { SemanticWarningCode } from '../warnings.js';
 
 /** Build a set of valid context IDs from the loaded chunks. */

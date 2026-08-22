@@ -9,8 +9,8 @@ import { analyzeSemanticContext } from '../src/analyzer.js';
 import { PROMPT_VERSION } from '../src/prompts/system.js';
 import { buildChunkAnalysisPrompt } from '../src/prompts/chunk.js';
 import { buildConsolidationPrompt } from '../src/prompts/consolidation.js';
-import { contextChunk } from './fixtures/helpers.js';
 import {
+  contextChunk,
   VALID_CONTEXT_DIR,
   prov,
   chunkEntity,
@@ -18,7 +18,6 @@ import {
   chunkRule,
   chunkRel,
   chunkResult,
-  consolidationResult,
   buildFakeProvider,
 } from './fixtures/helpers.js';
 import type { ChunkSemanticResult, ConsolidationResult } from '../src/models.js';

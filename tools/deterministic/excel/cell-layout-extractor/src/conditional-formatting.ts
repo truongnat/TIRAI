@@ -80,8 +80,8 @@ export async function extractConditionalFormatting(
 
 function parseCFRules(
   cfContent: string,
-  sheetName: string,
-  warnings: Warning[],
+  _sheetName: string,
+  _warnings: Warning[],
 ): ConditionalFormattingRuleRaw[] {
   const rules: ConditionalFormattingRuleRaw[] = [];
 

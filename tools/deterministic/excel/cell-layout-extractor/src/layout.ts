@@ -7,9 +7,7 @@ import type {
   RowRaw,
   ColumnRaw,
   MergeRangeRaw,
-  Warning,
 } from './models.js';
-import { WarningCode, createWarning } from './warnings.js';
 import { columnToLetter } from './utils.js';
 
 // ---- Merged cells --------------------------------------------------------
@@ -79,6 +77,7 @@ export function extractColumns(ws: ExcelJS.Worksheet): ColumnRaw[] {
   if (wsColumns && typeof wsColumns[Symbol.iterator] === 'function') {
     for (const col of wsColumns) {
       const colNumber = col.number;
+      if (colNumber === undefined) continue;
       const width = col.width ?? null;
       const hidden = col.hidden ?? false;
       const outlineLevel = (col as unknown as { outlineLevel?: number }).outlineLevel ?? 0;

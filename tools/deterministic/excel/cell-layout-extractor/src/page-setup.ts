@@ -148,7 +148,7 @@ function parseBreakList(sheetXml: string, tag: string): number[] {
   const blockMatch = blockRegex.exec(sheetXml);
   if (!blockMatch) {
     // Also try self-closing tag
-    const selfClose = new RegExp(`<${tag}[^>]*count="(\\d+)"[^>]*\\/>`).exec(sheetXml);
+    const _selfClose = new RegExp(`<${tag}[^>]*count="(\\d+)"[^>]*\\/>`).exec(sheetXml);
     return [];
   }
 
@@ -170,7 +170,7 @@ async function parseWorkbookDefinedNames(
   zip: JSZip,
   sheetName: string,
   sheetIndex: number,
-  warnings: Warning[],
+  _warnings: Warning[],
 ): Promise<{ printArea: string | null; printTitles: PrintTitlesRaw | null }> {
   const wbFile = zip.file('xl/workbook.xml');
   if (!wbFile) return { printArea: null, printTitles: null };

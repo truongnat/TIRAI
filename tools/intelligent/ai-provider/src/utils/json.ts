@@ -4,7 +4,7 @@
 // Uses Ajv for standards-compliant JSON Schema validation. This ensures
 // the provider's response actually conforms to what the caller requested.
 
-import Ajv from 'ajv';
+import { Ajv, type ErrorObject } from 'ajv';
 import { AIProviderError, AIProviderErrorCode } from '../errors.js';
 import type { JSONSchema } from '../models.js';
 
@@ -43,7 +43,7 @@ export function parseAndValidate<T>(
     const valid = validate(parsed);
     if (!valid) {
       const details = validate.errors
-        ?.map((e) => `${e.instancePath || '/'} ${e.message}`)
+        ?.map((e: ErrorObject) => `${e.instancePath || '/'} ${e.message}`)
         .join('; ');
       throw new AIProviderError({
         code: AIProviderErrorCode.RESPONSE_SCHEMA_ERROR,
