@@ -34,9 +34,11 @@ export function runPreflight(
   // 4. Mappings complete.
   checkMappings(input, checks, blockers, warnings);
   // 5. Stale mapping protection.
-  checkStaleMapping(hashes, checks, blockers);
+  checkStaleMapping(hashes, checks, blockers, input);
   // 6. Stale data plan protection.
   checkStaleDataPlan(input, hashes, checks, blockers);
+  // 6b. Stale prepared data protection.
+  checkStalePreparedData(input, checks, blockers);
   // 7. Execution gate.
   checkPolicyGates(input, policy, checks, blockers, warnings);
   // 8. Binding/secret checks.
@@ -134,23 +136,45 @@ function checkMappings(
 function checkStaleMapping(
   _hashes: InputArtifactHashes,
   checks: PreflightCheck[],
-  _blockers: RunnerBlocker[],
+  blockers: RunnerBlocker[],
+  input: EndToEndRunnerInput,
 ): void {
-  // For v1, we check if mapping hash is consistent with test cases hash.
-  // A real implementation would compare against stored expected hashes.
-  checks.push({
-    id: 'mapping-fresh',
-    name: 'Mapping not stale',
-    status: 'passed',
-    message: 'Mapping fingerprints consistent',
-  });
+  // Verify every mapping.testCaseId exists in current test cases.
+  const tcIds = new Set(input.testCases.map((tc) => tc.id));
+  const mappings = input.mappings;
+  if (!mappings?.testMappings) return;
+
+  const orphans: string[] = [];
+  for (const m of mappings.testMappings) {
+    if (!tcIds.has(m.testCaseId)) orphans.push(m.testCaseId);
+  }
+
+  if (orphans.length > 0) {
+    checks.push({
+      id: 'mapping-fresh',
+      name: 'Mapping not stale',
+      status: 'failed',
+      message: `Mapping references ${orphans.length} test case(s) not in current set: ${orphans.slice(0, 3).join(', ')}…`,
+    });
+    blockers.push({
+      code: 'RUNNER_MAPPING_STALE',
+      message: `Execution mapping is stale: ${orphans.length} mapping(s) reference test cases not in the current test case set`,
+    });
+  } else {
+    checks.push({
+      id: 'mapping-fresh',
+      name: 'Mapping not stale',
+      status: 'passed',
+      message: 'All mapping testCaseIds present in current test case set',
+    });
+  }
 }
 
 function checkStaleDataPlan(
   input: EndToEndRunnerInput,
   _hashes: InputArtifactHashes,
   checks: PreflightCheck[],
-  _blockers: RunnerBlocker[],
+  blockers: RunnerBlocker[],
 ): void {
   if (!input.dataPlan) {
     checks.push({
@@ -161,12 +185,63 @@ function checkStaleDataPlan(
     });
     return;
   }
+
+  // Verify every data plan testCaseId exists in current test cases.
+  const tcIds = new Set(input.testCases.map((tc) => tc.id));
+  const dpIds = input.dataPlan.testCases.map((tc) => tc.testCaseId);
+  const orphans = dpIds.filter((id) => !tcIds.has(id));
+
+  if (orphans.length > 0) {
+    checks.push({
+      id: 'data-plan-fresh',
+      name: 'Data plan not stale',
+      status: 'failed',
+      message: `Data plan references ${orphans.length} test case(s) not in current set`,
+    });
+    blockers.push({
+      code: 'RUNNER_DATA_PLAN_STALE',
+      message: `Test data plan is stale: ${orphans.length} data plan entry/entries reference test cases not in the current set`,
+    });
+    return;
+  }
+
   checks.push({
     id: 'data-plan-fresh',
     name: 'Data plan not stale',
     status: 'passed',
     message: 'Data plan fingerprints consistent',
   });
+}
+
+function checkStalePreparedData(
+  input: EndToEndRunnerInput,
+  checks: PreflightCheck[],
+  blockers: RunnerBlocker[],
+): void {
+  if (!input.preparedData) return;
+
+  // Prepared data must be traceable to the data plan.
+  // Verify environmentProfileId matches the current profile environment.
+  const envMatch = input.preparedData.environmentProfileId === input.profile.environment.id;
+  if (!envMatch && input.preparedData.environmentProfileId) {
+    checks.push({
+      id: 'prepared-data-fresh',
+      name: 'Prepared data not stale',
+      status: 'failed',
+      message: `Prepared data environment '${input.preparedData.environmentProfileId}' does not match current environment '${input.profile.environment.id}'`,
+    });
+    blockers.push({
+      code: 'RUNNER_PREPARED_DATA_STALE',
+      message: 'Prepared data plan is stale: environment profile mismatch',
+    });
+  } else {
+    checks.push({
+      id: 'prepared-data-fresh',
+      name: 'Prepared data not stale',
+      status: 'passed',
+      message: 'Prepared data plan consistent with data plan',
+    });
+  }
 }
 
 function checkPolicyGates(

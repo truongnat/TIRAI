@@ -268,7 +268,7 @@ describe('runner — result structure', () => {
     expect(result.quality).toBeDefined();
     expect(result.timings).toBeDefined();
     expect(result.inputHashes).toBeDefined();
-    expect(result.runnerVersion).toBe('1.0.0');
+    expect(result.runnerVersion).toBe('1.0.1');
   });
 
   it('records input hashes (§19)', async () => {

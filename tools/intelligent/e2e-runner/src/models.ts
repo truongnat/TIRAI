@@ -69,6 +69,7 @@ import type {
   Clock,
   RunIdProvider,
   TestRunAuditRecorder,
+  TestExecutionOrchestrator,
 } from 'test-execution-orchestrator';
 
 // Re-export upstream types for downstream consumers.
@@ -118,6 +119,7 @@ export type {
   Clock,
   RunIdProvider,
   TestRunAuditRecorder,
+  TestExecutionOrchestrator,
 };
 
 // ---- Run mode (spec §6) ---------------------------------------------------
@@ -175,6 +177,7 @@ export type RunnerBlockerCode =
   | 'RUNNER_MAPPING_INCOMPLETE'
   | 'RUNNER_MAPPING_STALE'
   | 'RUNNER_DATA_PLAN_STALE'
+  | 'RUNNER_PREPARED_DATA_STALE'
   | 'RUNNER_DATA_PLAN_INVALID'
   | 'RUNNER_TEST_CASES_MISSING'
   | 'RUNNER_TEST_CASES_INVALID'
@@ -466,6 +469,7 @@ export interface EndToEndRunnerOptions {
   runtimeManager?: ProjectRuntimeManager;
   commandExecutor?: ProjectCommandExecutor;
   auditRecorder?: RunnerAuditRecorder;
+  orchestrator?: TestExecutionOrchestrator;
   pretty?: boolean;
 }
 
