@@ -11,7 +11,7 @@
 // 7. Return generic response
 
 import Groq, { type ClientOptions as GroqClientOptions } from 'groq-sdk';
-import type { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions';
+import type { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions.js';
 import type { AIProvider } from '../../provider.js';
 import type {
   AIGenerationRequest,

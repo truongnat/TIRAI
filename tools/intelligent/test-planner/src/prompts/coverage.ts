@@ -1,0 +1,69 @@
+// ---------------------------------------------------------------------------
+// Test Planner – coverage analysis prompt
+// ---------------------------------------------------------------------------
+
+import type { RequirementIRInput } from '../models.js';
+
+/**
+ * Build the user prompt for coverage analysis of a requirement batch.
+ */
+export function buildCoveragePrompt(
+  requirements: RequirementIRInput['requirements'],
+): string {
+  const reqSummaries = requirements.map((r) => {
+    const parts = [
+      `ID: ${r.id}`,
+      `Type: ${r.type}`,
+      `Statement: ${r.statement}`,
+      `Nature: ${r.sourceNature}`,
+      `Testability: ${r.testability.status}`,
+    ];
+    if (r.actor) parts.push(`Actor: ${r.actor}`);
+    if (r.trigger) parts.push(`Trigger: ${r.trigger}`);
+    if (r.expectedBehaviors.length > 0) {
+      parts.push(`Expected behaviors: ${r.expectedBehaviors.map((b) => b.description).join('; ')}`);
+    }
+    if (r.constraints.length > 0) {
+      parts.push(`Constraints: ${r.constraints.map((c) => c.description).join('; ')}`);
+    }
+    if (r.inputs.length > 0) {
+      parts.push(`Inputs: ${r.inputs.map((i) => `${i.name}${i.required ? ' (required)' : ''}${i.constraints?.length ? ` [${i.constraints.join(', ')}]` : ''}`).join(', ')}`);
+    }
+    return parts.join('\n  ');
+  }).join('\n\n');
+
+  return `Analyze the following requirements and determine what testing strategies are justified for each.
+
+For each requirement, select ONLY the strategies that are supported by the requirement evidence:
+- positive: The requirement describes expected behavior that should work
+- negative: The requirement describes invalid/failure behavior that should be tested
+- boundary: The requirement contains a measurable constraint with explicit limits
+- validation: The requirement describes input validation
+- state-transition: The requirement describes a state change
+- error-handling: The requirement explicitly describes error/failure handling
+- interface: The requirement describes an API or system interface
+- data: The requirement describes data constraints or integrity
+- security: The requirement describes authentication or authorization
+
+Do NOT assign strategies that are not justified by the requirement evidence.
+If a requirement is not-testable, explain why and suggest unresolved if appropriate.
+
+Requirements:
+${reqSummaries}
+
+Return exactly one JSON object with this structure:
+{
+  "coverageCandidates": [
+    {
+      "requirementId": "REQ-XXXX",
+      "strategies": ["positive", "validation"],
+      "reasons": ["Justification for each strategy"],
+      "confidence": 0.9
+    }
+  ],
+  "unresolvedCandidates": []
+}
+
+Do not use alternative keys like coverage_analysis, requirements, or coverage.
+Do not add markdown or explanations outside the JSON.`;
+}

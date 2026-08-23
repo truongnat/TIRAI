@@ -1,7 +1,7 @@
 {
   "name": "ai-provider",
   "version": "1.0.0",
-  "description": "Provider-agnostic AI abstraction layer with Groq implementation",
+  "description": "Provider-agnostic AI abstraction layer with Groq and DeepSeek implementations",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

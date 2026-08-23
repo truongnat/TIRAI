@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "1.0",
+  "document": {
+    "title": "Test Login Specification",
+    "summary": "Login flow with username/password validation",
+    "sourceSemanticIR": "test-semantic-ir",
+    "provenance": [
+      { "contextId": "ctx-s001-c000", "sheet": "Login", "ranges": ["A1:D20"] }
+    ]
+  },
+  "requirements": [
+    {
+      "id": "REQ-0001",
+      "title": "Username required for login",
+      "type": "validation",
+      "statement": "The system shall require a non-empty username for login.",
+      "sourceNature": "explicit",
+      "actor": "User",
+      "trigger": "Login submission",
+      "preconditions": [
+        { "description": "User is on the login page", "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "inputs": [
+        { "name": "username", "description": "User login name", "dataType": "string", "required": true, "constraints": ["non-empty"], "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "expectedBehaviors": [
+        { "description": "System validates username is not empty", "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "outcomes": [
+        { "description": "Login proceeds if username is provided", "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "constraints": [
+        { "type": "required", "description": "Username must not be empty", "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "relatedSemanticIds": ["flow-0001", "rule-0001"],
+      "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login", "ranges": ["A5:A10"] }],
+      "confidence": 0.95,
+      "testability": { "status": "testable", "reasons": ["Has measurable expected behaviors"] }
+    },
+    {
+      "id": "REQ-0002",
+      "title": "Password must be at least 8 characters",
+      "type": "validation",
+      "statement": "The system shall require a password of at least 8 characters.",
+      "sourceNature": "explicit",
+      "actor": "User",
+      "preconditions": [],
+      "inputs": [
+        { "name": "password", "description": "User password", "dataType": "string", "required": true, "constraints": ["min-length:8"], "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "expectedBehaviors": [
+        { "description": "System rejects passwords shorter than 8 characters", "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "outcomes": [],
+      "constraints": [
+        { "type": "min-length", "description": "Password must be at least 8 characters", "value": 8, "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "relatedSemanticIds": ["rule-0002"],
+      "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login", "ranges": ["B5:B10"] }],
+      "confidence": 0.9,
+      "testability": { "status": "testable", "reasons": ["Has measurable constraint"] }
+    },
+    {
+      "id": "REQ-0003",
+      "title": "Successful login redirects to dashboard",
+      "type": "functional",
+      "statement": "Upon successful authentication, the system shall redirect the user to the dashboard.",
+      "sourceNature": "explicit",
+      "actor": "System",
+      "preconditions": [
+        { "description": "Valid credentials provided", "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "inputs": [],
+      "expectedBehaviors": [
+        { "description": "User is redirected to dashboard page", "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "outcomes": [
+        { "description": "User is on the dashboard", "state": "authenticated", "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login" }] }
+      ],
+      "constraints": [],
+      "relatedSemanticIds": ["flow-0001"],
+      "provenance": [{ "contextId": "ctx-s001-c000", "sheet": "Login", "ranges": ["C5:C10"] }],
+      "confidence": 0.85,
+      "testability": { "status": "testable", "reasons": ["Has clear expected behavior"] }
+    }
+  ],
+  "unresolved": [],
+  "conflicts": [],
+  "quality": {
+    "total": 3,
+    "explicit": 3,
+    "derived": 0,
+    "testable": 3,
+    "partiallyTestable": 0,
+    "notTestable": 0,
+    "unknownTestability": 0,
+    "lowConfidence": 0,
+    "unresolved": 0,
+    "conflicts": 0,
+    "provenanceCoverage": 1.0
+  }
+}
