@@ -15,6 +15,7 @@ import type {
   ProjectRuntimeSummary,
   TestRunResultIR,
   TestRunSummary,
+  TestCase,
 } from './models.js';
 import { runPreflight } from './preflight.js';
 import { selectTests, applyMaxTests } from './selection.js';
@@ -25,7 +26,7 @@ import { computeRunQuality } from './quality/index.js';
 import { writeRunOutput } from './persistence/index.js';
 import { InMemoryRunAuditRecorder } from './audit/index.js';
 
-const RUNNER_VERSION = '1.0.0';
+const RUNNER_VERSION = '1.0.1';
 
 export class EndToEndRunner {
   private options: EndToEndRunnerOptions;
@@ -106,7 +107,14 @@ export class EndToEndRunner {
       selectTests(input.testCases, this.options.selection),
       this.policy.maxTests,
     );
-    const testResults = this.executeTests(runId, selectedTests, input);
+
+    let testResults: TestRunResultIR;
+    if (this.options.orchestrator && this.policy.mode === 'execute') {
+      // Delegate to real orchestrator for execute mode.
+      testResults = await this.options.orchestrator.run(selectedTests as TestCase[]);
+    } else {
+      testResults = this.executeTests(runId, selectedTests, input);
+    }
     this.audit.record('tests-end', `Tests: ${testResults.status}`);
 
     // Cleanup.
@@ -146,6 +154,13 @@ export class EndToEndRunner {
     // In validate/dry-run modes, no actual execution.
     if (this.policy.mode === 'validate' || this.policy.mode === 'dry-run') {
       return emptyTestResults(runId);
+    }
+
+    // If an orchestrator is provided, delegate to it for real execution.
+    // (This path is only reached when orchestrator is NOT provided — the
+    // run() method handles the orchestrator case separately.)
+    if (this.options.orchestrator) {
+      throw new Error('Orchestrator must be invoked via run() method, not executeTests()');
     }
 
     // In simulate/execute modes, produce test results based on mappings.
