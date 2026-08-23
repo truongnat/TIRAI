@@ -30,6 +30,7 @@ export type {
   DataValueExpression,
   IdempotencyPolicy,
   DatabasePreparationSpec,
+  DatabaseOperationMode,
   ApiPreparationSpec,
   DataResolverManifest,
   DataResolverWarning,
