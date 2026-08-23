@@ -30,7 +30,6 @@ import type {
   CoverageAnalysisResult,
   CoverageCandidate,
   ScenarioCandidate,
-  TestCaseCandidate,
   TestCaseExtractionResult,
   TestProvenance,
   UnresolvedReason,

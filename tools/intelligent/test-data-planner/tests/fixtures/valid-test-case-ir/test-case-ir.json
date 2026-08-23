@@ -1,0 +1,373 @@
+{
+  "schemaVersion": "1.0",
+  "testCases": [
+    {
+      "id": "TC-0001",
+      "scenarioId": "SCN-0001",
+      "requirementIds": [
+        "REQ-0001"
+      ],
+      "title": "Successful authentication stores JWT and navigates to home page",
+      "objective": "Verify that upon successful authentication, the returned JWT token is stored in localStorage and the user is navigated to the home page.",
+      "type": "unknown",
+      "priority": "medium",
+      "preconditions": [
+        {
+          "description": "User has valid credentials and is on the login page.",
+          "sourceRequirementIds": [
+            "REQ-0001"
+          ]
+        }
+      ],
+      "inputs": [
+        {
+          "name": "credentials",
+          "valueStrategy": "valid",
+          "description": "A valid username and password pair."
+        }
+      ],
+      "dataNeeds": [],
+      "steps": [
+        {
+          "order": 1,
+          "action": "Enter valid username and password into the login form."
+        },
+        {
+          "order": 2,
+          "action": "Submit the authentication request."
+        },
+        {
+          "order": 3,
+          "action": "Observe client storage for the JWT token and observe navigation."
+        }
+      ],
+      "expectedResults": [
+        {
+          "description": "JWT token is stored in client storage (localStorage).",
+          "verificationType": "other",
+          "target": "localStorage"
+        },
+        {
+          "description": "The user is navigated to the home page.",
+          "verificationType": "other",
+          "target": "home page URL or view"
+        }
+      ],
+      "cleanup": [],
+      "automation": {
+        "status": "unknown",
+        "reasons": [
+          "Can be automated with browser automation tools to verify localStorage and navigation."
+        ]
+      },
+      "provenance": [
+        {
+          "requirementId": "REQ-0001"
+        }
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "TC-0002",
+      "scenarioId": "SCN-0002",
+      "requirementIds": [
+        "REQ-0002"
+      ],
+      "title": "Authentication failure displays 401 Unauthorized error message",
+      "objective": "Verify that when authentication fails, the system displays a 401 Unauthorized error message to the user.",
+      "type": "unknown",
+      "priority": "medium",
+      "preconditions": [
+        {
+          "description": "User has invalid credentials.",
+          "sourceRequirementIds": [
+            "REQ-0002"
+          ]
+        }
+      ],
+      "inputs": [
+        {
+          "name": "credentials",
+          "valueStrategy": "invalid",
+          "description": "An invalid username/password pair."
+        }
+      ],
+      "dataNeeds": [],
+      "steps": [
+        {
+          "order": 1,
+          "action": "Enter invalid credentials into the login form."
+        },
+        {
+          "order": 2,
+          "action": "Submit the authentication request."
+        },
+        {
+          "order": 3,
+          "action": "Observe the displayed error message."
+        }
+      ],
+      "expectedResults": [
+        {
+          "description": "A 401 Unauthorized error message is displayed to the user.",
+          "verificationType": "other",
+          "target": "error message element"
+        }
+      ],
+      "cleanup": [],
+      "automation": {
+        "status": "unknown",
+        "reasons": [
+          "Can be automated with browser automation tools to assert error message presence."
+        ]
+      },
+      "provenance": [
+        {
+          "requirementId": "REQ-0002"
+        }
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "TC-0003",
+      "scenarioId": "SCN-0003",
+      "requirementIds": [
+        "REQ-0003"
+      ],
+      "title": "Authentication request sent to Authentication API endpoint",
+      "objective": "Verify that the system sends an authentication request to the Authentication API (POST /smartsales-api-v2/auth/verifyUser/v1) with the user's credentials.",
+      "type": "unknown",
+      "priority": "medium",
+      "preconditions": [
+        {
+          "description": "User is on the login page with credentials ready.",
+          "sourceRequirementIds": [
+            "REQ-0003"
+          ]
+        }
+      ],
+      "inputs": [
+        {
+          "name": "credentials",
+          "valueStrategy": "valid",
+          "description": "A valid username and password pair."
+        }
+      ],
+      "dataNeeds": [],
+      "steps": [
+        {
+          "order": 1,
+          "action": "Enter credentials."
+        },
+        {
+          "order": 2,
+          "action": "Submit login."
+        },
+        {
+          "order": 3,
+          "action": "Capture the network request sent to the authentication API."
+        }
+      ],
+      "expectedResults": [
+        {
+          "description": "The request method is POST.",
+          "verificationType": "other",
+          "target": "HTTP method"
+        },
+        {
+          "description": "The request URL is /smartsales-api-v2/auth/verifyUser/v1.",
+          "verificationType": "other",
+          "target": "request URL"
+        },
+        {
+          "description": "The request body contains the user's credentials.",
+          "verificationType": "other",
+          "target": "request body"
+        }
+      ],
+      "cleanup": [],
+      "automation": {
+        "status": "unknown",
+        "reasons": [
+          "Can be automated with API testing or network interception."
+        ]
+      },
+      "provenance": [
+        {
+          "requirementId": "REQ-0003"
+        }
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "TC-0004",
+      "scenarioId": "SCN-0004",
+      "requirementIds": [
+        "REQ-0004"
+      ],
+      "title": "Login input validation displays error for invalid data",
+      "objective": "Verify that the system validates login form input data and displays an error message when the input is invalid.",
+      "type": "unknown",
+      "priority": "medium",
+      "preconditions": [
+        {
+          "description": "User is on the login page.",
+          "sourceRequirementIds": [
+            "REQ-0004"
+          ]
+        }
+      ],
+      "inputs": [
+        {
+          "name": "loginFormData",
+          "valueStrategy": "invalid",
+          "description": "Invalid login form data (e.g., missing username or password, malformed email)."
+        }
+      ],
+      "dataNeeds": [],
+      "steps": [
+        {
+          "order": 1,
+          "action": "Enter invalid data into the login form fields."
+        },
+        {
+          "order": 2,
+          "action": "Submit the form."
+        },
+        {
+          "order": 3,
+          "action": "Observe validation messages."
+        }
+      ],
+      "expectedResults": [
+        {
+          "description": "The system validates the input data.",
+          "verificationType": "other",
+          "target": "validation logic"
+        },
+        {
+          "description": "An error message is displayed to the user.",
+          "verificationType": "other",
+          "target": "error message element"
+        }
+      ],
+      "cleanup": [],
+      "automation": {
+        "status": "unknown",
+        "reasons": [
+          "Can be automated with UI test frameworks to check validation messages."
+        ]
+      },
+      "provenance": [
+        {
+          "requirementId": "REQ-0004"
+        }
+      ],
+      "confidence": 0.9
+    },
+    {
+      "id": "TC-0005",
+      "scenarioId": "SCN-0005",
+      "requirementIds": [
+        "REQ-0005"
+      ],
+      "title": "Column allows NULL values",
+      "objective": "Verify that the database column associated with rule-0000 accepts NULL values.",
+      "type": "unknown",
+      "priority": "medium",
+      "preconditions": [
+        {
+          "description": "The database table and column exist.",
+          "sourceRequirementIds": [
+            "REQ-0005"
+          ]
+        }
+      ],
+      "inputs": [
+        {
+          "name": "columnValue",
+          "valueStrategy": "unknown",
+          "description": "NULL value for the column."
+        }
+      ],
+      "dataNeeds": [],
+      "steps": [
+        {
+          "order": 1,
+          "action": "Insert a record with a NULL value for the specified column."
+        },
+        {
+          "order": 2,
+          "action": "Verify the operation succeeds."
+        }
+      ],
+      "expectedResults": [
+        {
+          "description": "The insert or update operation with NULL value succeeds.",
+          "verificationType": "other",
+          "target": "database response"
+        }
+      ],
+      "cleanup": [],
+      "automation": {
+        "status": "unknown",
+        "reasons": [
+          "Can be automated with SQL scripts to test NULL acceptance."
+        ]
+      },
+      "provenance": [
+        {
+          "requirementId": "REQ-0005"
+        }
+      ],
+      "confidence": 0.9
+    }
+  ],
+  "dataNeeds": [
+    {
+      "id": "DATA-0001",
+      "description": "JWT token returned by the authentication API.",
+      "type": "other",
+      "constraints": [],
+      "relatedRequirementIds": [
+        "REQ-0001"
+      ]
+    },
+    {
+      "id": "DATA-0002",
+      "description": "Invalid credentials causing authentication failure.",
+      "type": "other",
+      "constraints": [],
+      "relatedRequirementIds": [
+        "REQ-0002"
+      ]
+    },
+    {
+      "id": "DATA-0003",
+      "description": "User credentials to be sent in the authentication request.",
+      "type": "other",
+      "constraints": [],
+      "relatedRequirementIds": [
+        "REQ-0003"
+      ]
+    },
+    {
+      "id": "DATA-0004",
+      "description": "Invalid login form input data.",
+      "type": "other",
+      "constraints": [],
+      "relatedRequirementIds": [
+        "REQ-0004"
+      ]
+    },
+    {
+      "id": "DATA-0005",
+      "description": "A NULL value for the database column associated with rule-0000.",
+      "type": "other",
+      "constraints": [],
+      "relatedRequirementIds": [
+        "REQ-0005"
+      ]
+    }
+  ]
+}

@@ -169,6 +169,7 @@ export class DeepSeekProvider implements AIProvider {
         } catch {
           errorBody = { message: response.statusText };
         }
+        // eslint-disable-next-line no-throw-literal
         throw {
           status: response.status,
           error: errorBody,
