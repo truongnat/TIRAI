@@ -1,0 +1,26 @@
+{
+  "name": "test-data-planner",
+  "version": "1.0.0",
+  "description": "Test Data Planner v1 – Test Case IR → Test Data Plan IR",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "format": "prettier --write \"src/**/*.{ts,json}\" \"tests/**/*.{ts,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,json}\" \"tests/**/*.{ts,json}\"",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "ai-provider": "file:../ai-provider"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.0.0"
+  }
+}
