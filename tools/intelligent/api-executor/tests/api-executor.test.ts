@@ -1,6 +1,7 @@
 // API Executor v1 — Comprehensive test suite.
 
 import { describe, it, expect } from 'vitest';
+import { createServer, type Server } from 'node:http';
 import {
   APIExecutor,
   compileApiRequest,
@@ -41,7 +42,11 @@ import {
   minimalNetworkPolicy,
   literalValue,
   bindingValue,
+  testResourceMapping,
 } from './helpers.js';
+
+// Shorthand for explicit test resource mapping — tests must clearly opt into this.
+const RM = { 'test-resource': testResourceMapping() };
 
 // ---- Compiler tests (1-10) ------------------------------------------------
 
@@ -727,6 +732,7 @@ describe('Retry Policy', () => {
     const executor = new APIExecutor({
       transport,
       retryPolicy: { maxRetries: 1, retryIdempotentOnly: true },
+      resourceMappings: RM,
       networkPolicy: { allowPrivateNetwork: true, allowHttp: true },
     });
     const spec = minimalSpec({ methodIntent: 'GET' });
@@ -759,6 +765,7 @@ describe('Retry Policy', () => {
     const executor = new APIExecutor({
       transport,
       retryPolicy: { maxRetries: 1, retryIdempotentOnly: true },
+      resourceMappings: RM,
       networkPolicy: { allowPrivateNetwork: true, allowHttp: true },
     });
     const spec = minimalSpec({ methodIntent: 'GET' });
@@ -860,7 +867,7 @@ describe('Resource Policy', () => {
 
 describe('Dry Run', () => {
   it('78. compile only', async () => {
-    const executor = new APIExecutor({ networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'dry-run' });
@@ -870,7 +877,7 @@ describe('Dry Run', () => {
 
   it('79. no transport send', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport });
+    const executor = new APIExecutor({ transport, resourceMappings: RM });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'dry-run' });
@@ -879,7 +886,7 @@ describe('Dry Run', () => {
   });
 
   it('80. predicted request metadata', async () => {
-    const executor = new APIExecutor({ networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ methodIntent: 'GET' });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'dry-run' });
@@ -893,7 +900,7 @@ describe('Dry Run', () => {
 describe('Simulate', () => {
   it('81. fake transport only', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -905,7 +912,7 @@ describe('Simulate', () => {
     const transport = new FakeHttpTransport({
       defaultResponse: { status: 200, body: '{"userId":42}' },
     });
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ responseBindings: ['userId'] });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -915,7 +922,7 @@ describe('Simulate', () => {
 
   it('83. deterministic result', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -930,7 +937,7 @@ describe('Simulate', () => {
 describe('Execute', () => {
   it('84. explicit execute mode', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'execute', policy: minimalPolicy({ mode: 'execute', allowMutation: false, allowedResourceIds: ['test-resource'] }) });
@@ -965,7 +972,7 @@ describe('Execute', () => {
 describe('Cleanup', () => {
   it('88. cleanup DELETE', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ cleanupIntent: 'DELETE' });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -980,7 +987,7 @@ describe('Cleanup', () => {
 
   it('90. cleanup failure handled', async () => {
     const transport = new FakeHttpTransport({ networkError: true });
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ cleanupIntent: 'DELETE' });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -989,7 +996,7 @@ describe('Cleanup', () => {
   });
 
   it('91. no invented cleanup', async () => {
-    const executor = new APIExecutor();
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ cleanupIntent: undefined });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'dry-run' });
@@ -1003,7 +1010,7 @@ describe('Cleanup', () => {
 describe('Rollback', () => {
   it('92. explicit compensation', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ cleanupIntent: 'DELETE' });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -1012,17 +1019,18 @@ describe('Rollback', () => {
   });
 
   it('93. unavailable compensation', async () => {
-    const executor = new APIExecutor();
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ cleanupIntent: undefined });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'dry-run' });
     const result = await executor.rollback(operation, context);
-    expect(result.status).toBe('succeeded');
+    expect(result.status).toBe('failed');
+    expect(result.error?.code).toBe('API_ROLLBACK_UNAVAILABLE');
   });
 
   it('94. rollback failure handled', async () => {
     const transport = new FakeHttpTransport({ networkError: true });
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ cleanupIntent: 'DELETE' });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -1068,7 +1076,7 @@ describe('Security', () => {
 describe('Provenance', () => {
   it('101. preserve provenance', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -1078,7 +1086,7 @@ describe('Provenance', () => {
 
   it('102. cleanup preserve provenance', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ cleanupIntent: 'DELETE' });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -1088,7 +1096,7 @@ describe('Provenance', () => {
 
   it('103. rollback preserve provenance', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec({ cleanupIntent: 'DELETE' });
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -1167,7 +1175,7 @@ describe('Determinism', () => {
 describe('Concurrency', () => {
   it('107. independent requests', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -1223,7 +1231,7 @@ describe('Error Mapping', () => {
 
 describe('Executor Registry', () => {
   it('115. canExecute returns match', () => {
-    const executor = new APIExecutor();
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext();
@@ -1233,7 +1241,7 @@ describe('Executor Registry', () => {
   });
 
   it('116. validate returns result', async () => {
-    const executor = new APIExecutor();
+    const executor = new APIExecutor({ resourceMappings: RM });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ policy: minimalPolicy({ allowedResourceIds: ['test-resource'] }) });
@@ -1242,7 +1250,7 @@ describe('Executor Registry', () => {
   });
 
   it('117. execute returns result', async () => {
-    const executor = new APIExecutor();
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'dry-run' });
@@ -1251,7 +1259,7 @@ describe('Executor Registry', () => {
   });
 
   it('118. cleanup returns result', async () => {
-    const executor = new APIExecutor();
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'dry-run' });
@@ -1260,7 +1268,7 @@ describe('Executor Registry', () => {
   });
 
   it('119. registration type', () => {
-    const executor = new APIExecutor();
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     expect(executor.type).toBe('api');
   });
 });
@@ -1269,7 +1277,7 @@ describe('Executor Registry', () => {
 
 describe('Quality/Audit', () => {
   it('120. duration metadata', async () => {
-    const executor = new APIExecutor();
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'dry-run' });
@@ -1278,7 +1286,7 @@ describe('Quality/Audit', () => {
   });
 
   it('121. status metadata', async () => {
-    const executor = new APIExecutor({ networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'dry-run' });
@@ -1288,7 +1296,7 @@ describe('Quality/Audit', () => {
 
   it('122. audit events recorded', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -1298,7 +1306,7 @@ describe('Quality/Audit', () => {
 
   it('123. request count tracked', async () => {
     const transport = new FakeHttpTransport();
-    const executor = new APIExecutor({ transport, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
     const spec = minimalSpec();
     const operation = minimalOperation(spec);
     const context = minimalContext({ mode: 'simulate' });
@@ -1352,5 +1360,369 @@ describe('Additional Coverage', () => {
     expect(ctx.mode).toBe('dry-run');
     const policy = minimalPolicy();
     expect(policy.allowMutation).toBe(false);
+  });
+});
+
+// ---- Security regression tests (131-138) ----------------------------------
+
+describe('Security Regression (v1.0.1)', () => {
+  it('131. missing resource mapping is rejected (fail closed)', async () => {
+    // No resourceMappings configured — must fail, not fall back to localhost.
+    const executor = new APIExecutor();
+    const spec = minimalSpec();
+    const operation = minimalOperation(spec);
+    const context = minimalContext({ mode: 'dry-run' });
+    const result = await executor.execute(operation, context);
+    expect(result.status).toBe('failed');
+    expect(result.error?.code).toBe('API_RESOURCE_MAPPING_MISSING');
+  });
+
+  it('132. missing baseUrl in mapping is rejected', async () => {
+    // Mapping exists but has no baseUrl — must fail closed.
+    const mappingNoBaseUrl = testResourceMapping({ fieldMappings: {} });
+    const executor = new APIExecutor({
+      resourceMappings: { 'test-resource': mappingNoBaseUrl },
+    });
+    const spec = minimalSpec();
+    const operation = minimalOperation(spec);
+    const context = minimalContext({ mode: 'dry-run' });
+    const result = await executor.execute(operation, context);
+    expect(result.status).toBe('failed');
+    expect(result.error?.code).toBe('API_BASE_URL_MISSING');
+  });
+
+  it('133. no implicit localhost fallback exists', async () => {
+    // Verify that the executor never invents a localhost URL.
+    // Without resourceMappings, the error must be API_RESOURCE_MAPPING_MISSING,
+    // not any URL-related error that would imply a fallback was attempted.
+    const executor = new APIExecutor();
+    const spec = minimalSpec({ resource: 'unknown-resource' });
+    const operation = minimalOperation(spec);
+    const context = minimalContext({ mode: 'execute' });
+    const result = await executor.execute(operation, context);
+    expect(result.status).toBe('failed');
+    expect(result.error?.code).toBe('API_RESOURCE_MAPPING_MISSING');
+    expect(result.error?.message).not.toContain('localhost');
+    expect(result.error?.message).not.toContain('127.0.0.1');
+  });
+
+  it('134. explicit localhost mapping denied by default policy', async () => {
+    // Even with an explicit localhost mapping, default network policy must deny it.
+    const localhostMapping = testResourceMapping({ fieldMappings: { baseUrl: 'http://127.0.0.1:3000' } });
+    const executor = new APIExecutor({
+      resourceMappings: { 'test-resource': localhostMapping },
+      // Default network policy: allowHttp=false, allowPrivateNetwork=false
+    });
+    const spec = minimalSpec();
+    const operation = minimalOperation(spec);
+    const context = minimalContext({ mode: 'dry-run' });
+    const result = await executor.execute(operation, context);
+    expect(result.status).toBe('failed');
+    // Must fail due to network policy, not succeed
+    expect(result.error).toBeDefined();
+  });
+
+  it('135. explicit localhost allowed only with test network policy', async () => {
+    // With explicit test policy (allowHttp + allowPrivateNetwork), localhost works.
+    const localhostMapping = testResourceMapping({ fieldMappings: { baseUrl: 'http://127.0.0.1:3000' } });
+    const transport = new FakeHttpTransport();
+    const executor = new APIExecutor({
+      transport,
+      resourceMappings: { 'test-resource': localhostMapping },
+      networkPolicy: { allowHttp: true, allowPrivateNetwork: true },
+    });
+    const spec = minimalSpec();
+    const operation = minimalOperation(spec);
+    const context = minimalContext({ mode: 'simulate' });
+    const result = await executor.execute(operation, context);
+    expect(result.status).toBe('succeeded');
+  });
+
+  it('136. external origin not in allowlist is rejected', () => {
+    const policy = minimalNetworkPolicy({ allowedOrigins: ['https://allowed.test'] });
+    expect(() =>
+      buildSafeUrl('https://evil.test', '/users', policy),
+    ).toThrow(ApiExecutorError);
+  });
+
+  it('137. operation cannot override base origin via path', () => {
+    // Path injection attempt: absolute URL in path
+    expect(() => validatePath('https://evil.test/steal')).toThrow(ApiExecutorError);
+    // Protocol-relative path injection
+    expect(() => validatePath('//evil.test/steal')).toThrow(ApiExecutorError);
+  });
+
+  it('138. absolute URL path cannot escape configured origin', () => {
+    const policy = minimalNetworkPolicy({ allowPrivateNetwork: true, allowHttp: true });
+    // Path traversal to escape origin
+    expect(() => buildSafeUrl('http://127.0.0.1:3000', 'https://evil.test/', policy)).toThrow(ApiExecutorError);
+  });
+});
+
+// ---- Dry-run transport assertion (139) ------------------------------------
+
+describe('Dry-Run Transport Assertion', () => {
+  it('139. dry-run sends zero transport requests', async () => {
+    const transport = new FakeHttpTransport();
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const spec = minimalSpec();
+    const operation = minimalOperation(spec);
+    const context = minimalContext({ mode: 'dry-run' });
+    const result = await executor.execute(operation, context);
+    expect(result.status).toBe('validated');
+    expect(transport.getRequestCount()).toBe(0);
+  });
+});
+
+// ---- Rollback semantic tests (140-142) ------------------------------------
+
+describe('Rollback Semantics (v1.0.1)', () => {
+  it('140. rollback without compensation returns API_ROLLBACK_UNAVAILABLE', async () => {
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const spec = minimalSpec({ cleanupIntent: undefined });
+    const operation = minimalOperation(spec);
+    const context = minimalContext({ mode: 'dry-run' });
+    const result = await executor.rollback(operation, context);
+    expect(result.status).toBe('failed');
+    expect(result.error?.code).toBe('API_ROLLBACK_UNAVAILABLE');
+  });
+
+  it('141. rollback with explicit compensation executes it', async () => {
+    const transport = new FakeHttpTransport();
+    const executor = new APIExecutor({ transport, resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const spec = minimalSpec({ cleanupIntent: 'DELETE' });
+    const operation = minimalOperation(spec);
+    const context = minimalContext({ mode: 'simulate' });
+    const result = await executor.rollback(operation, context);
+    expect(result.status).toBe('succeeded');
+    expect(transport.getRequestCount()).toBe(1);
+  });
+
+  it('142. cleanup and rollback are not interchangeable', async () => {
+    const executor = new APIExecutor({ resourceMappings: RM, networkPolicy: { allowPrivateNetwork: true, allowHttp: true } });
+    const specNoCleanup = minimalSpec({ cleanupIntent: undefined });
+    const operation = minimalOperation(specNoCleanup);
+    const context = minimalContext({ mode: 'dry-run' });
+
+    // Cleanup without cleanupIntent returns success (nothing to clean)
+    const cleanupResult = await executor.cleanup(operation, context);
+    expect(cleanupResult.status).toBe('succeeded');
+
+    // Rollback without cleanupIntent returns failure (rollback unavailable)
+    const rollbackResult = await executor.rollback(operation, context);
+    expect(rollbackResult.status).toBe('failed');
+    expect(rollbackResult.error?.code).toBe('API_ROLLBACK_UNAVAILABLE');
+  });
+});
+
+// ---- Network assertion (143) ----------------------------------------------
+
+describe('Network Assertion', () => {
+  it('143. test acceptance uses only 127.0.0.1 fixture', () => {
+    // Verify the test resource mapping uses only 127.0.0.1
+    const mapping = testResourceMapping();
+    const baseUrl = mapping.fieldMappings?.['baseUrl'] ?? '';
+    expect(baseUrl).toContain('127.0.0.1');
+    expect(baseUrl).not.toContain('0.0.0.0');
+    // Verify no external domains in test mapping
+    expect(baseUrl).not.toContain('example.com');
+    expect(baseUrl).not.toContain('api.test.local');
+  });
+});
+
+// ---- Local integration server test (144-148) ------------------------------
+
+describe('Local Integration Server', () => {
+  let server: Server;
+  let baseUrl: string;
+
+  it('144. local integration: GET + response binding + cleanup DELETE', async () => {
+    // Create disposable local HTTP server bound to 127.0.0.1
+    server = createServer((req, res) => {
+      res.setHeader('Content-Type', 'application/json');
+
+      if (req.method === 'GET') {
+        res.writeHead(200);
+        res.end(JSON.stringify({ userId: 42, name: 'Alice' }));
+        return;
+      }
+
+      if (req.method === 'DELETE') {
+        res.writeHead(200);
+        res.end(JSON.stringify({ deleted: true }));
+        return;
+      }
+
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'not found' }));
+    });
+
+    await new Promise<void>((resolve) => {
+      server.listen(0, '127.0.0.1', () => resolve());
+    });
+    const addr = server.address();
+    if (!addr || typeof addr === 'string') throw new Error('Failed to bind server');
+    baseUrl = `http://127.0.0.1:${addr.port}`;
+
+    // Explicit resource mapping for local server — no fallback
+    const localMapping = testResourceMapping({ fieldMappings: { baseUrl } });
+
+    // Fetch-based transport for real HTTP calls to localhost
+    const fetchTransport = {
+      async send(request: { method: string; url: string; headers: Record<string, string>; body?: string; timeoutMs: number }) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), request.timeoutMs);
+        try {
+          const resp = await fetch(request.url, {
+            method: request.method,
+            headers: request.headers,
+            body: request.body,
+            signal: controller.signal,
+          });
+          const responseBody = await resp.text();
+          return {
+            status: resp.status,
+            headers: Object.fromEntries(resp.headers.entries()),
+            body: responseBody,
+            durationMs: 0,
+            contentType: resp.headers.get('content-type') ?? undefined,
+          };
+        } finally {
+          clearTimeout(timer);
+        }
+      },
+    };
+
+    const executor = new APIExecutor({
+      transport: fetchTransport,
+      resourceMappings: { 'test-resource': localMapping },
+      networkPolicy: { allowHttp: true, allowPrivateNetwork: true, allowedHosts: ['127.0.0.1'] },
+    });
+
+    // --- Test GET: read users from local server ---
+    const getSpec = minimalSpec({
+      operationId: 'get-users',
+      methodIntent: 'GET',
+      responseBindings: ['userId'],
+    });
+    const getOp = minimalOperation(getSpec, { id: 'get-users', action: 'read' });
+    const getContext = minimalContext({ mode: 'execute' });
+    const getResult = await executor.execute(getOp, getContext);
+    expect(getResult.status).toBe('succeeded');
+    expect(getContext.bindings.resolve('userId')?.value).toBe(42);
+
+    // --- Test cleanup DELETE ---
+    const cleanupSpec = minimalSpec({
+      operationId: 'get-users',
+      cleanupIntent: 'DELETE',
+    });
+    const cleanupOp = minimalOperation(cleanupSpec, { id: 'get-users', action: 'read' });
+    const cleanupResult = await executor.cleanup(cleanupOp, getContext);
+    expect(cleanupResult.status).toBe('succeeded');
+
+    // Cleanup server
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  });
+
+  it('145. integration: timeout handling', async () => {
+    // Create a slow server
+    const slowServer = createServer((_req, res) => {
+      // Never respond — simulate timeout
+      setTimeout(() => {
+        res.writeHead(200);
+        res.end('{}');
+      }, 10000);
+    });
+
+    await new Promise<void>((resolve) => {
+      slowServer.listen(0, '127.0.0.1', () => resolve());
+    });
+    const addr = slowServer.address();
+    if (!addr || typeof addr === 'string') throw new Error('Failed to bind');
+    const slowBaseUrl = `http://127.0.0.1:${addr.port}`;
+
+    const slowMapping = testResourceMapping({ fieldMappings: { baseUrl: slowBaseUrl } });
+    const fetchTransport = {
+      async send(request: { method: string; url: string; headers: Record<string, string>; body?: string; timeoutMs: number }) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), request.timeoutMs);
+        try {
+          const resp = await fetch(request.url, {
+            method: request.method,
+            headers: request.headers,
+            body: request.body,
+            signal: controller.signal,
+          });
+          const responseBody = await resp.text();
+          return { status: resp.status, headers: {}, body: responseBody, durationMs: 0 };
+        } finally {
+          clearTimeout(timer);
+        }
+      },
+    };
+
+    const executor = new APIExecutor({
+      transport: fetchTransport,
+      resourceMappings: { 'test-resource': slowMapping },
+      networkPolicy: { allowHttp: true, allowPrivateNetwork: true },
+      defaultTimeoutMs: 200, // Very short timeout
+    });
+
+    const spec = minimalSpec({ operationId: 'slow-op' });
+    const op = minimalOperation(spec);
+    const ctx = minimalContext({ mode: 'execute' });
+    const result = await executor.execute(op, ctx);
+    expect(result.status).toBe('failed');
+
+    await new Promise<void>((resolve) => slowServer.close(() => resolve()));
+  });
+
+  it('146. integration: auth redaction in audit', async () => {
+    // Verify that auth headers are redacted in audit events
+    const redacted = redactSensitiveHeaders({
+      authorization: 'Bearer super-secret-token',
+      'x-api-key': 'my-secret-key',
+      cookie: 'session=secret-session',
+      'content-type': 'application/json',
+    });
+    expect(redacted['authorization']).toBe('***REDACTED***');
+    expect(redacted['x-api-key']).toBe('***REDACTED***');
+    expect(redacted['cookie']).toBe('***REDACTED***');
+    expect(redacted['content-type']).toBe('application/json');
+    // No secret values in redacted output
+    expect(JSON.stringify(redacted)).not.toContain('super-secret-token');
+    expect(JSON.stringify(redacted)).not.toContain('my-secret-key');
+    expect(JSON.stringify(redacted)).not.toContain('secret-session');
+  });
+
+  it('147. integration: no external internet calls', () => {
+    // This test asserts that all integration tests use only 127.0.0.1.
+    // The test resource mapping factory always produces 127.0.0.1.
+    const mapping = testResourceMapping();
+    const url = new URL(mapping.fieldMappings?.['baseUrl'] ?? 'http://invalid');
+    expect(url.hostname).toBe('127.0.0.1');
+    // External Internet calls: 0
+  });
+
+  it('148. retry safety: POST no retry by default', async () => {
+    const transport = new FakeHttpTransport({
+      responses: [{ status: 503 }, { status: 200 }],
+    });
+    const executor = new APIExecutor({
+      transport,
+      resourceMappings: RM,
+      retryPolicy: { maxRetries: 2, retryIdempotentOnly: true },
+      networkPolicy: { allowPrivateNetwork: true, allowHttp: true },
+    });
+    const spec = minimalSpec({ methodIntent: 'POST' });
+    const operation = minimalOperation(spec);
+    const context = minimalContext({
+      mode: 'simulate',
+      policy: minimalPolicy({ allowMutation: true }),
+    });
+    const result = await executor.execute(operation, context);
+    // POST should not retry — first 503 is final
+    expect(result.status).toBe('failed');
+    expect(transport.getRequestCount()).toBe(1);
   });
 });

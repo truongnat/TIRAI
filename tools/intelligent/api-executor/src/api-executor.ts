@@ -220,7 +220,37 @@ export class APIExecutor implements PreparationExecutor {
     operation: PreparationOperation,
     context: ExecutionContext,
   ): Promise<OperationExecutionResult> {
-    // HTTP has no generic rollback. Only explicit compensation is supported.
+    // HTTP has no generic rollback. Rollback requires explicit compensation
+    // defined in the operation's cleanupIntent. Do NOT silently delegate to
+    // cleanup — cleanup and rollback are semantically distinct.
+    const startTime = Date.now();
+    const spec = this.extractApiSpec(operation);
+
+    if (!spec.cleanupIntent) {
+      // No explicit compensation defined — rollback is unavailable.
+      return {
+        operationId: spec.operationId,
+        dataItemId: operation.dataItemId,
+        status: 'failed',
+        executorType: 'api',
+        action: operation.action,
+        startedAt: new Date(startTime).toISOString(),
+        finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - startTime,
+        producedBindings: [],
+        warnings: [{ code: ApiErrorCode.API_ROLLBACK_UNAVAILABLE, message: 'Rollback unavailable: no explicit compensation defined for this operation.' }],
+        error: {
+          code: ApiErrorCode.API_ROLLBACK_UNAVAILABLE,
+          message: `No explicit compensation defined for rollback of operation '${spec.operationId}'.`,
+          retryable: false,
+          executorType: 'api',
+        },
+        provenance: operation.provenance,
+        retryCount: 0,
+      };
+    }
+
+    // Explicit compensation exists — execute it as rollback.
     return this.cleanup(operation, context);
   }
 
@@ -237,19 +267,30 @@ export class APIExecutor implements PreparationExecutor {
   }
 
   private getResourceMapping(spec: ApiPreparationSpec, _context: ExecutionContext): ResourceMapping {
-    // Check configured resource mappings first
+    // Base URLs come exclusively from explicit environment resource configuration.
+    // Missing mapping must fail closed — no localhost or default origin fallback.
     const configured = this.resourceMappings[spec.resource];
-    if (configured) return configured;
+    if (!configured) {
+      throw new ApiExecutorError(
+        ApiErrorCode.API_RESOURCE_MAPPING_MISSING,
+        `No resource mapping configured for '${spec.resource}'. ` +
+        'Resource mappings must be explicitly provided via environment profile.',
+        { operationId: spec.operationId },
+      );
+    }
 
-    // Base URLs come exclusively from environment resources. When no mapping
-    // is configured, fall back to a localhost default for testing convenience.
-    // Production deployments should always provide explicit resource mappings.
-    return {
-      logicalEntity: spec.resource,
-      resourceId: spec.resource,
-      resourceName: spec.resource,
-      fieldMappings: { baseUrl: 'http://localhost' },
-    };
+    // Even when a mapping exists, baseUrl must be explicitly configured.
+    const baseUrl = configured.fieldMappings?.['baseUrl'] ?? configured.fieldMappings?.['__baseUrl'];
+    if (!baseUrl) {
+      throw new ApiExecutorError(
+        ApiErrorCode.API_BASE_URL_MISSING,
+        `Resource '${spec.resource}' has no baseUrl configured. ` +
+        'A baseUrl is required for API request compilation.',
+        { operationId: spec.operationId },
+      );
+    }
+
+    return configured;
   }
 
   private buildRequestSpec(spec: ApiPreparationSpec): ApiRequestSpec {
