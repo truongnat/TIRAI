@@ -1,0 +1,34 @@
+{
+  "environmentId": "local",
+  "pages": [
+    {
+      "id": "login-page",
+      "route": "/login",
+      "elements": [
+        {
+          "logicalName": "username-field",
+          "locator": { "strategy": "test-id", "value": "username" }
+        },
+        {
+          "logicalName": "password-field",
+          "locator": { "strategy": "test-id", "value": "password" },
+          "sensitive": true
+        },
+        {
+          "logicalName": "login-button",
+          "locator": { "strategy": "test-id", "value": "login-btn" }
+        }
+      ]
+    },
+    {
+      "id": "dashboard-page",
+      "route": "/dashboard",
+      "elements": [
+        {
+          "logicalName": "welcome-marker",
+          "locator": { "strategy": "test-id", "value": "welcome" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "resources": [
+    {
+      "id": "auth-api",
+      "baseUrlRef": "environment.apiBaseUrl",
+      "allowedOrigins": ["http://localhost:3001"],
+      "authStrategy": {
+        "kind": "bearer",
+        "secretRef": "AUTH_TOKEN"
+      }
+    }
+  ],
+  "operations": [
+    {
+      "id": "login",
+      "resourceId": "auth-api",
+      "method": "POST",
+      "path": "/auth/login",
+      "inputSchemaHints": { "username": "string", "password": "string" },
+      "responseSchemaHints": { "token": "string", "userId": "string" }
+    },
+    {
+      "id": "get-user",
+      "resourceId": "auth-api",
+      "method": "GET",
+      "path": "/users/{id}"
+    }
+  ],
+  "mappings": [
+    {
+      "logicalEntity": "user",
+      "resourceId": "auth-api",
+      "operationIds": ["login", "get-user"]
+    }
+  ]
+}

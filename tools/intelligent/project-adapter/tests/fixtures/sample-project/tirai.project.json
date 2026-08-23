@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "project": {
+    "id": "sample-app",
+    "name": "Sample App",
+    "version": "1.0.0"
+  },
+  "environments": {
+    "local": {
+      "name": "Local Development",
+      "safety": "isolated",
+      "baseUrl": "http://localhost:3000",
+      "apiBaseUrl": "http://localhost:3001",
+      "databaseHost": "localhost",
+      "databasePort": 5432,
+      "databaseName": "sample_app_test"
+    },
+    "test": {
+      "name": "Test Environment",
+      "safety": "shared-nonprod",
+      "baseUrl": "http://test.sample-app.local",
+      "apiBaseUrl": "http://api.test.sample-app.local",
+      "databaseHost": "db.test.local",
+      "databasePort": 5432,
+      "databaseName": "sample_app_test"
+    }
+  },
+  "ui": {
+    "catalog": "./tirai/ui-catalog.json",
+    "baseUrl": "http://localhost:3000",
+    "allowedOrigins": ["http://localhost:3000"],
+    "browser": "chromium",
+    "headless": true,
+    "testIdAttribute": "data-testid"
+  },
+  "api": {
+    "catalog": "./tirai/api-catalog.json"
+  },
+  "database": {
+    "catalog": "./tirai/database-catalog.json",
+    "resources": [
+      {
+        "id": "db-main",
+        "dialect": "postgresql",
+        "hostRef": "environment.databaseHost",
+        "port": 5432,
+        "database": "sample_app_test",
+        "schema": "public",
+        "connectionSecretRef": "DB_PASSWORD"
+      }
+    ]
+  },
+  "bindings": {
+    "definitions": [
+      {
+        "name": "runtime.username",
+        "type": "runtime",
+        "sensitive": false,
+        "description": "Test user username"
+      },
+      {
+        "name": "runtime.userId",
+        "type": "runtime",
+        "sensitive": false,
+        "description": "Test user ID"
+      }
+    ]
+  },
+  "secrets": {
+    "references": [
+      {
+        "name": "DB_PASSWORD",
+        "description": "Database password"
+      },
+      {
+        "name": "AUTH_TOKEN",
+        "description": "Auth bearer token"
+      }
+    ]
+  },
+  "commands": {
+    "commands": [
+      {
+        "id": "npm-start",
+        "purpose": "start",
+        "command": "npm",
+        "args": ["run", "start"],
+        "envRefs": [],
+        "safeForAutomation": true
+      },
+      {
+        "id": "npm-test",
+        "purpose": "test",
+        "command": "npm",
+        "args": ["test"],
+        "envRefs": [],
+        "safeForAutomation": true
+      }
+    ]
+  }
+}
