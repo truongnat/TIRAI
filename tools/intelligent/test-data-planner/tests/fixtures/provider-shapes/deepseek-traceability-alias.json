@@ -1,0 +1,26 @@
+{
+  "_comment": "Captured DeepSeek response using 'traceability' array for TC references. Regression evidence.",
+  "dataCandidates": [
+    {
+      "temporaryId": "TMP-DATA-0001",
+      "name": "NULL value for rule-0000",
+      "description": "NULL value for the database column associated with rule-0000",
+      "type": "input",
+      "lifecycle": "temporary",
+      "strategy": "generate",
+      "traceability": ["TC-0005"],
+      "constraints": ["NULL value"],
+      "relatedRequirementIds": [],
+      "provenance": [],
+      "confidence": 0.7
+    }
+  ],
+  "unresolvedCandidates": [
+    {
+      "traceability": ["TC-0005", "TC-0006"],
+      "description": "Mapping of rule IDs to actual DB table/column names",
+      "reason": "other",
+      "provenance": []
+    }
+  ]
+}

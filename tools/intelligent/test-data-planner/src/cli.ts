@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- CLI tool legitimately uses console for output */
 // ---------------------------------------------------------------------------
 // Test Data Planner – CLI entry point
 // ---------------------------------------------------------------------------

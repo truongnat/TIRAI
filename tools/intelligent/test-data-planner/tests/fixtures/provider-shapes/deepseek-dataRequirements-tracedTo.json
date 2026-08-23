@@ -1,0 +1,19 @@
+{
+  "_comment": "Captured DeepSeek response using 'dataRequirements' root key and 'tracedTo' for TC references. Regression evidence for provider compatibility adapter.",
+  "dataRequirements": [
+    {
+      "temporaryId": "TMP-DATA-0001",
+      "name": "Existing user account",
+      "description": "Existing user account with valid credentials",
+      "type": "account",
+      "lifecycle": "existing",
+      "strategy": "select-existing",
+      "tracedTo": ["TC-0001"],
+      "constraints": ["Must have valid username/password credentials"],
+      "relatedRequirementIds": [],
+      "provenance": [],
+      "confidence": 0.7
+    }
+  ],
+  "unresolvedCandidates": []
+}
