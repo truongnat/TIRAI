@@ -1,0 +1,14 @@
+[
+  {
+    "logicalEntity": "User",
+    "resourceId": "postgres-main",
+    "resourceName": "users",
+    "fieldMappings": {
+      "id": "user_id",
+      "username": "user_name",
+      "password": "user_password_hash",
+      "email": "user_email",
+      "status": "account_status"
+    }
+  }
+]
