@@ -305,7 +305,8 @@ export type UIErrorCode =
   | 'UI_BROWSER_START_FAILED'
   | 'UI_BROWSER_CLOSED'
   | 'UI_UNEXPECTED_POPUP'
-  | 'UI_INTERNAL_ERROR';
+  | 'UI_INTERNAL_ERROR'
+  | 'UI_BROWSER_SESSION_MISSING';
 
 // ---- UI Executor Options --------------------------------------------------
 
@@ -315,7 +316,25 @@ export interface UIExecutorOptions {
   browserPolicy?: Partial<UIBrowserPolicy>;
   environment?: Partial<UIEnvironmentConfig>;
   browserSession?: BrowserSession;
+  sessionFactory?: BrowserSessionFactory;
   evidenceRoot?: string;
+}
+
+// ---- Browser Session Factory ----------------------------------------------
+
+export interface BrowserSessionFactory {
+  create(): BrowserSession;
+}
+
+// ---- Browser Lifecycle Counters -------------------------------------------
+
+export interface BrowserLifecycleCounters {
+  browsersLaunched: number;
+  browsersClosed: number;
+  contextsCreated: number;
+  contextsClosed: number;
+  pagesCreated: number;
+  pagesClosed: number;
 }
 
 // ---- UI Executor Action Result --------------------------------------------

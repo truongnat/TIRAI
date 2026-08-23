@@ -24,6 +24,7 @@ export const UI_ERROR_CODES = new Set<UIErrorCode>([
   'UI_BROWSER_CLOSED',
   'UI_UNEXPECTED_POPUP',
   'UI_INTERNAL_ERROR',
+  'UI_BROWSER_SESSION_MISSING',
 ]);
 
 export class UIExecutorError extends Error {

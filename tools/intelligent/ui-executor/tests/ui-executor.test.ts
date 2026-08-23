@@ -922,31 +922,67 @@ describe('UIExecutor — dry-run', () => {
 // ===========================================================================
 
 describe('UIExecutor — simulate', () => {
-  it('returns passed status', async () => {
-    const executor = makeExecutor();
+  it('returns passed status with configured session', async () => {
+    // Simulate now actually runs through the injected session
+    const elements = new Map([
+      ['test-id=username', { visible: true }],
+      ['test-id=password', { visible: true }],
+      ['role=button', { visible: true }],
+      ['test-id=welcome', { visible: true }],
+    ]);
+    const session = makeFakeSession({ elements, currentUrl: 'http://127.0.0.1:3000/dashboard' });
+    // Use custom mapping with assertions that pass against the fake session
+    const mapping = makeMapping({
+      assertionMappings: [
+        { expectedResultIndex: 0, assertionType: 'url-contains', expectedValue: '/login' },
+        { expectedResultIndex: 1, assertionType: 'visible', targetLogicalName: 'welcome-text' },
+      ],
+    });
+    const executor = makeExecutor({ session, mappings: [mapping] });
     const ctx = makeContext({ mode: 'simulate', policy: makePolicy({ mode: 'simulate' }) });
     const result = await executor.execute(makeTestCase(), ctx);
     expect(result.status).toBe('passed');
   });
 
-  it('returns steps with passed status', async () => {
-    const executor = makeExecutor();
+  it('returns steps with passed status when session configured', async () => {
+    const elements = new Map([
+      ['test-id=username', { visible: true }],
+      ['test-id=password', { visible: true }],
+      ['role=button', { visible: true }],
+      ['test-id=welcome', { visible: true }],
+    ]);
+    const session = makeFakeSession({ elements, currentUrl: 'http://127.0.0.1:3000/dashboard' });
+    const mapping = makeMapping({
+      assertionMappings: [
+        { expectedResultIndex: 0, assertionType: 'url-contains', expectedValue: '/login' },
+        { expectedResultIndex: 1, assertionType: 'visible', targetLogicalName: 'welcome-text' },
+      ],
+    });
+    const executor = makeExecutor({ session, mappings: [mapping] });
     const ctx = makeContext({ mode: 'simulate', policy: makePolicy({ mode: 'simulate' }) });
     const result = await executor.execute(makeTestCase(), ctx);
     expect(result.steps.every((s) => s.status === 'passed')).toBe(true);
   });
 
-  it('returns assertions with passed status', async () => {
-    const executor = makeExecutor();
+  it('can produce failed assertions in simulate mode', async () => {
+    // Simulate with wrong URL → assertion fails
+    const session = makeFakeSession({ currentUrl: 'http://127.0.0.1:3000/login' });
+    const executor = makeExecutor({ session });
     const ctx = makeContext({ mode: 'simulate', policy: makePolicy({ mode: 'simulate' }) });
     const result = await executor.execute(makeTestCase(), ctx);
-    expect(result.assertions.every((a) => a.status === 'passed')).toBe(true);
+    // url-contains '/dashboard' should fail since URL is /login
+    expect(result.assertions.some((a) => a.status === 'failed')).toBe(true);
   });
 
-  it('includes simulate warning', async () => {
-    const executor = makeExecutor();
+  it('returns passed with warning when no session injected', async () => {
+    const executor = new UIExecutor({
+      catalog: makeCatalog(),
+      mappings: [makeMapping()],
+      environment: { baseUrl: 'http://127.0.0.1:3000', allowedOrigins: ['http://127.0.0.1:3000'] },
+    });
     const ctx = makeContext({ mode: 'simulate', policy: makePolicy({ mode: 'simulate' }) });
     const result = await executor.execute(makeTestCase(), ctx);
+    expect(result.status).toBe('passed');
     expect(result.warnings.some((w) => w.code === UIWarningCode.UI_TEST_SKIPPED)).toBe(true);
   });
 });
@@ -1022,14 +1058,34 @@ describe('UIExecutor — execute mode', () => {
   });
 
   it('captures failure screenshot on assertion failure', async () => {
+    // Use a mapping without secret fills so screenshot is not suppressed
+    const mapping = makeMapping({
+      stepMappings: [
+        { stepOrder: 1, action: 'navigate', valueLiteral: '/login' },
+        { stepOrder: 2, action: 'fill', targetLogicalName: 'username-field', valueLiteral: 'admin' },
+        { stepOrder: 3, action: 'click', targetLogicalName: 'login-button' },
+      ],
+    });
     const elements = new Map([['test-id=welcome', { visible: false }]]);
     const session = makeFakeSession({ elements, currentUrl: 'http://127.0.0.1:3000/login' });
-    const executor = makeExecutor({ session });
+    const executor = makeExecutor({ session, mappings: [mapping] });
     const ctx = makeContext();
     const _result = await executor.execute(makeTestCase(), ctx);
     // Evidence should contain screenshot
     const screenshots = ctx.evidence.list().filter((e) => e.type === 'screenshot');
     expect(screenshots.length).toBeGreaterThan(0);
+  });
+
+  it('suppresses screenshot after sensitive fill', async () => {
+    // Default mapping includes secret fill → screenshot suppressed
+    const elements = new Map([['test-id=welcome', { visible: false }]]);
+    const session = makeFakeSession({ elements, currentUrl: 'http://127.0.0.1:3000/login' });
+    const executor = makeExecutor({ session });
+    const ctx = makeContext();
+    const _result = await executor.execute(makeTestCase(), ctx);
+    // No screenshot because sensitive field was filled
+    const screenshots = ctx.evidence.list().filter((e) => e.type === 'screenshot');
+    expect(screenshots.length).toBe(0);
   });
 });
 
@@ -1428,7 +1484,7 @@ describe('Additional integration tests', () => {
   it('UI_ERROR_CODES contains all expected codes', () => {
     expect(UI_ERROR_CODES.has('UI_ORIGIN_DENIED')).toBe(true);
     expect(UI_ERROR_CODES.has('UI_BROWSER_START_FAILED')).toBe(true);
-    expect(UI_ERROR_CODES.size).toBe(21);
+    expect(UI_ERROR_CODES.size).toBe(22);
   });
 
   it('binding store tracks produced values', () => {

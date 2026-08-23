@@ -19,6 +19,8 @@ export type { MappingValidationResult } from './mapping/index.js';
 // Browser
 export { FakeBrowserSession, FakeBrowserPage } from './browser/index.js';
 export type { FakeBrowserConfig, FakeElementState } from './browser/index.js';
+export { PlaywrightBrowserSession, mapLocator } from './browser/index.js';
+export type { PlaywrightSessionOptions } from './browser/index.js';
 
 // Browser policy
 export {
@@ -59,6 +61,8 @@ export type {
   UIErrorCode,
   UIExecutorOptions,
   UIActionResult,
+  BrowserSessionFactory,
+  BrowserLifecycleCounters,
 } from './models.js';
 
 // Re-export upstream orchestrator types consumed by downstream

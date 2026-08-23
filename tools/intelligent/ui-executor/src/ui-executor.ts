@@ -3,6 +3,13 @@
 // Plugs into the Test Execution Orchestrator as a TestExecutor plugin.
 // Handles test cases with explicit TestExecutionMapping. Supports dry-run,
 // simulate, and execute modes. No AI at runtime. No real internet targets.
+//
+// v1.1 — Real Playwright layer:
+// - Removed silent FakeBrowserSession fallback
+// - Session ownership + lifecycle counters
+// - Context isolation per test case
+// - Evidence wiring (screenshot → evidenceIds)
+// - Sensitive field tracking (screenshot suppression + assertion redaction)
 
 import type {
   TestCase,
@@ -23,13 +30,14 @@ import type {
   UIEnvironmentConfig,
   UIElementCatalog,
   BrowserSession,
+  BrowserLifecycleCounters,
+  BrowserSessionFactory,
   TestExecutionMapping,
 } from './models.js';
 import { LocatorResolver } from './catalog/index.js';
 import { ActionPlanner } from './planner/index.js';
 import { AssertionVerifier } from './assertion/index.js';
 import { MappingValidator } from './mapping/index.js';
-import { FakeBrowserSession } from './browser/index.js';
 import {
   mergeBrowserPolicy,
   validateOrigin,
@@ -50,9 +58,19 @@ export class UIExecutor implements TestExecutor {
   private policy: UIBrowserPolicy;
   private mappings: TestExecutionMapping[];
   private environment: Partial<UIEnvironmentConfig>;
-  private session: BrowserSession;
+  private session: BrowserSession | null;
+  private sessionFactory: BrowserSessionFactory | null;
   private sessionOwned = false;
   private started = false;
+  private sensitiveFilled = false;
+  private counters: BrowserLifecycleCounters = {
+    browsersLaunched: 0,
+    browsersClosed: 0,
+    contextsCreated: 0,
+    contextsClosed: 0,
+    pagesCreated: 0,
+    pagesClosed: 0,
+  };
 
   constructor(options: {
     catalog: UIElementCatalog;
@@ -60,6 +78,7 @@ export class UIExecutor implements TestExecutor {
     browserPolicy?: Partial<UIBrowserPolicy>;
     environment?: Partial<UIEnvironmentConfig>;
     browserSession?: BrowserSession;
+    sessionFactory?: BrowserSessionFactory;
   }) {
     this.mappings = options.mappings ?? [];
     this.policy = mergeBrowserPolicy(options.browserPolicy);
@@ -68,7 +87,9 @@ export class UIExecutor implements TestExecutor {
     this.planner = new ActionPlanner(this.resolver);
     this.verifier = new AssertionVerifier(this.resolver);
     this.mappingValidator = new MappingValidator(this.resolver);
-    this.session = options.browserSession ?? new FakeBrowserSession();
+    // No silent fake fallback — session must be explicitly provided
+    this.session = options.browserSession ?? null;
+    this.sessionFactory = options.sessionFactory ?? null;
   }
 
   // ---- TestExecutor contract: canExecute -----------------------------------
@@ -158,35 +179,39 @@ export class UIExecutor implements TestExecutor {
       };
     }
 
-    // Simulate: report pass without real browser
+    // Simulate: use explicitly injected FakeBrowserSession
     if (context.mode === 'simulate') {
-      return {
-        status: 'passed',
-        steps: testCase.steps.map((s) => ({
-          order: s.order,
-          action: `ui:${this.getActionLabel(mapping, s.order)}`,
-          status: 'passed' as const,
-          startedAt: context.clock.nowIso(),
-          finishedAt: context.clock.nowIso(),
-          evidenceIds: [],
-        })),
-        assertions: testCase.expectedResults.map((er, idx) => ({
-          id: `ASR-${String(idx + 1).padStart(3, '0')}`,
-          expectedResultIndex: idx,
-          description: er.description,
-          verificationType: er.verificationType,
-          status: 'passed' as const,
-          evidenceIds: [],
-        })),
-        evidence: [],
-        warnings: [{ code: UIWarningCode.UI_TEST_SKIPPED, message: 'Simulate mode — UI test not executed.', testCaseId: testCase.id }],
-      };
+      return this.executeSimulate(testCase, context, mapping, warnings, evidence);
     }
 
     // Execute mode: real browser interaction
     try {
+      // Fail closed if no session available
+      if (!this.session && !this.sessionFactory) {
+        throw new UIExecutorError(
+          'UI_BROWSER_SESSION_MISSING',
+          'Execute mode requires a BrowserSession or BrowserSessionFactory. ' +
+          'FakeBrowserSession must not be used in execute mode.',
+        );
+      }
+
+      // Create session from factory if needed
+      if (!this.session && this.sessionFactory) {
+        this.session = this.sessionFactory.create();
+        this.sessionOwned = true;
+      }
+
+      // Reset sensitive tracking
+      this.sensitiveFilled = false;
+
       // Ensure browser session is started
       await this.ensureSessionStarted(context);
+
+      // Create isolated context for this test case (if PlaywrightBrowserSession)
+      if ('createIsolatedPage' in this.session! && typeof (this.session as Record<string, unknown>).createIsolatedPage === 'function') {
+        await (this.session as BrowserSession & { createIsolatedPage(): Promise<unknown> }).createIsolatedPage();
+        this.syncCounters();
+      }
 
       // Navigate to page route if mapping specifies pageId
       if (mapping.pageId) {
@@ -195,39 +220,53 @@ export class UIExecutor implements TestExecutor {
           const envConfig = this.buildEnvironmentConfig(context);
           const fullUrl = resolveUrl(envConfig.baseUrl, route);
           validateOrigin(fullUrl, this.policy);
-          await this.session.page().goto(fullUrl, { timeoutMs: this.policy.navigationTimeoutMs });
+          await this.session!.page().goto(fullUrl, { timeoutMs: this.policy.navigationTimeoutMs });
         }
       }
 
       // Compile and execute action plans
       const actionPlans = await this.planner.compileActions(mapping, context.bindings, context.secrets);
       for (const plan of actionPlans) {
-        const stepResult = await this.executeAction(plan, context, testCase.id);
+        const stepResult = await this.executeAction(plan, context, testCase.id, evidence);
         steps.push(stepResult);
         if (stepResult.status === 'failed' || stepResult.status === 'blocked') {
-          // Capture failure screenshot
-          await this.captureFailureScreenshot(context, testCase.id, plan.stepOrder);
+          // Capture failure screenshot (if not suppressed by sensitive fill)
+          const screenshotEvId = await this.captureFailureScreenshot(context, testCase.id, plan.stepOrder);
+          if (screenshotEvId) {
+            stepResult.evidenceIds = [...stepResult.evidenceIds, screenshotEvId];
+            evidence.push(context.evidence.list().find((e) => e.id === screenshotEvId)!);
+          }
           break;
         }
       }
 
       // Compile and verify assertion plans
       const assertionPlans = this.compileAssertions(mapping, testCase);
-      const assertionResults = await this.verifier.verifyAll(assertionPlans, this.session.page());
+      const assertionResults = await this.verifier.verifyAll(assertionPlans, this.session!.page());
       for (const ar of assertionResults) {
         const assertionId = `ASR-${String(ar.plan.expectedResultIndex + 1).padStart(3, '0')}`;
         const er = testCase.expectedResults[ar.plan.expectedResultIndex];
+
+        // Redact actual if assertion reads a sensitive element
+        let actual = ar.actual;
+        if (ar.plan.target && this.resolver.isSensitive(ar.plan.target.logicalName)) {
+          actual = '***REDACTED***';
+        }
+
         assertions.push({
           id: assertionId,
           expectedResultIndex: ar.plan.expectedResultIndex,
           description: ar.plan.description,
           verificationType: er?.verificationType ?? 'automated',
           status: ar.status === 'blocked' ? 'blocked' : ar.status === 'failed' ? 'failed' : 'passed',
-          actual: ar.actual,
+          actual,
           evidenceIds: [],
         });
         if (ar.status === 'failed') {
-          await this.captureFailureScreenshot(context, testCase.id);
+          const screenshotEvId = await this.captureFailureScreenshot(context, testCase.id);
+          if (screenshotEvId) {
+            assertions[assertions.length - 1].evidenceIds = [screenshotEvId];
+          }
         }
       }
 
@@ -252,10 +291,29 @@ export class UIExecutor implements TestExecutor {
   // ---- TestExecutor contract: cleanup --------------------------------------
 
   async cleanup(_testCase: TestCase, _context: TestExecutionContext): Promise<TestCleanupResult> {
-    if (this.sessionOwned && !this.session.isClosed()) {
-      await this.session.close();
+    try {
+      if (this.sessionOwned && this.session && !this.session.isClosed()) {
+        await this.session.close();
+      }
+      this.syncCounters();
+    } finally {
+      this.started = false;
+      this.sensitiveFilled = false;
     }
     return { status: 'succeeded', startedAt: new Date().toISOString(), finishedAt: new Date().toISOString() };
+  }
+
+  // ---- Lifecycle counters --------------------------------------------------
+
+  getLifecycleCounters(): Readonly<BrowserLifecycleCounters> {
+    return { ...this.counters };
+  }
+
+  private syncCounters(): void {
+    if (this.session && 'getCounters' in this.session && typeof (this.session as Record<string, unknown>).getCounters === 'function') {
+      const c = (this.session as BrowserSession & { getCounters(): BrowserLifecycleCounters }).getCounters();
+      this.counters = { ...c };
+    }
   }
 
   // ---- Internal helpers ----------------------------------------------------
@@ -274,7 +332,7 @@ export class UIExecutor implements TestExecutor {
     const envConfig = this.buildEnvironmentConfig(context);
     validateBaseUrl(envConfig);
     try {
-      await this.session.start(envConfig);
+      await this.session!.start(envConfig);
       this.started = true;
     } catch (err) {
       throw new UIExecutorError(
@@ -294,13 +352,102 @@ export class UIExecutor implements TestExecutor {
     };
   }
 
+  // ---- Simulate mode: use injected FakeBrowserSession ----------------------
+
+  private async executeSimulate(
+    testCase: TestCase,
+    context: TestExecutionContext,
+    mapping: TestExecutionMapping,
+    warnings: TestExecutionWarning[],
+    evidence: EvidenceReference[],
+  ): Promise<TestExecutorResult> {
+    // If no session injected, simulate produces pass with warning
+    if (!this.session) {
+      return {
+        status: 'passed',
+        steps: testCase.steps.map((s) => ({
+          order: s.order,
+          action: `ui:${this.getActionLabel(mapping, s.order)}`,
+          status: 'passed' as const,
+          startedAt: context.clock.nowIso(),
+          finishedAt: context.clock.nowIso(),
+          evidenceIds: [],
+        })),
+        assertions: testCase.expectedResults.map((er, idx) => ({
+          id: `ASR-${String(idx + 1).padStart(3, '0')}`,
+          expectedResultIndex: idx,
+          description: er.description,
+          verificationType: er.verificationType,
+          status: 'passed' as const,
+          evidenceIds: [],
+        })),
+        evidence: [],
+        warnings: [{ code: UIWarningCode.UI_TEST_SKIPPED, message: 'Simulate mode — no browser session injected.', testCaseId: testCase.id }],
+      };
+    }
+
+    // With injected session, actually run through the actions
+    try {
+      const envConfig = this.buildEnvironmentConfig(context);
+      validateBaseUrl(envConfig);
+      await this.session.start(envConfig);
+
+      if (mapping.pageId) {
+        const route = this.resolver.getPageRoute(mapping.pageId);
+        if (route) {
+          const fullUrl = resolveUrl(envConfig.baseUrl, route);
+          validateOrigin(fullUrl, this.policy);
+          await this.session.page().goto(fullUrl, { timeoutMs: this.policy.navigationTimeoutMs });
+        }
+      }
+
+      const steps: TestStepExecutionResult[] = [];
+      const actionPlans = await this.planner.compileActions(mapping, context.bindings, context.secrets);
+      for (const plan of actionPlans) {
+        const stepResult = await this.executeAction(plan, context, testCase.id, evidence);
+        steps.push(stepResult);
+        if (stepResult.status === 'failed' || stepResult.status === 'blocked') break;
+      }
+
+      const assertionPlans = this.compileAssertions(mapping, testCase);
+      const assertionResults = await this.verifier.verifyAll(assertionPlans, this.session.page());
+      const assertions: AssertionResult[] = assertionResults.map((ar, _idx) => {
+        const er = testCase.expectedResults[ar.plan.expectedResultIndex];
+        return {
+          id: `ASR-${String(ar.plan.expectedResultIndex + 1).padStart(3, '0')}`,
+          expectedResultIndex: ar.plan.expectedResultIndex,
+          description: ar.plan.description,
+          verificationType: er?.verificationType ?? 'automated',
+          status: ar.status === 'blocked' ? 'blocked' : ar.status === 'failed' ? 'failed' : 'passed',
+          actual: ar.actual,
+          evidenceIds: [],
+        };
+      });
+
+      const status = this.computeStatus(steps, assertions);
+      return { status, steps, assertions, evidence, warnings };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const code = err instanceof UIExecutorError ? err.code : 'UI_INTERNAL_ERROR';
+      return {
+        status: 'error',
+        steps: [],
+        assertions: [],
+        evidence,
+        error: { code, message, retryable: false, executorType: 'ui' },
+        warnings,
+      };
+    }
+  }
+
   private async executeAction(
     plan: UIActionPlan,
     context: TestExecutionContext,
     _testCaseId: string,
+    _evidence: EvidenceReference[],
   ): Promise<TestStepExecutionResult> {
     const startedAt = context.clock.nowIso();
-    const page = this.session.page();
+    const page = this.session!.page();
 
     try {
       const resolvedValue = await ActionPlanner.resolveValue(plan.value, context.bindings, context.secrets);
@@ -321,12 +468,25 @@ export class UIExecutor implements TestExecutor {
         case 'fill': {
           if (!plan.target) throw new UIExecutorError('UI_LOCATOR_MAPPING_MISSING', 'fill requires target');
           const loc = this.resolver.resolve(plan.target);
+          // Track sensitive fills
+          if (plan.target.logicalName && this.resolver.isSensitive(plan.target.logicalName)) {
+            this.sensitiveFilled = true;
+          }
+          if (plan.value?.kind === 'secret') {
+            this.sensitiveFilled = true;
+          }
           await page.fill(loc, resolvedValue ?? '', { timeoutMs: plan.timeoutMs ?? this.policy.actionTimeoutMs });
           break;
         }
         case 'type': {
           if (!plan.target) throw new UIExecutorError('UI_LOCATOR_MAPPING_MISSING', 'type requires target');
           const loc = this.resolver.resolve(plan.target);
+          if (plan.target.logicalName && this.resolver.isSensitive(plan.target.logicalName)) {
+            this.sensitiveFilled = true;
+          }
+          if (plan.value?.kind === 'secret') {
+            this.sensitiveFilled = true;
+          }
           await page.type(loc, resolvedValue ?? '', { timeoutMs: plan.timeoutMs ?? this.policy.actionTimeoutMs });
           break;
         }
@@ -376,7 +536,6 @@ export class UIExecutor implements TestExecutor {
         }
         case 'scroll':
         case 'noop':
-          // No-op actions
           break;
         default:
           throw new UIExecutorError('UI_ACTION_UNSUPPORTED', `Unsupported action: '${plan.action}'.`);
@@ -426,11 +585,17 @@ export class UIExecutor implements TestExecutor {
     context: TestExecutionContext,
     testCaseId: string,
     stepOrder?: number,
-  ): Promise<void> {
-    if (this.policy.captureScreenshots === 'never') return;
+  ): Promise<string | null> {
+    if (this.policy.captureScreenshots === 'never') return null;
+
+    // Suppress screenshot if sensitive field was filled
+    if (this.sensitiveFilled) {
+      return null;
+    }
+
     try {
-      const buf = await this.session.screenshot();
-      context.evidence.add({
+      const buf = await this.session!.screenshot();
+      const ref = context.evidence.add({
         type: 'screenshot',
         sourceExecutor: 'ui',
         testCaseId,
@@ -439,8 +604,9 @@ export class UIExecutor implements TestExecutor {
         metadata: { size: buf.length, format: 'png' },
         sensitive: false,
       });
+      return ref.id;
     } catch {
-      // Screenshot failure is non-fatal
+      return null;
     }
   }
 
