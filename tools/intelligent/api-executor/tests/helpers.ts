@@ -132,6 +132,20 @@ export function minimalMapping(overrides?: Partial<ResourceMapping>): ResourceMa
   };
 }
 
+// Explicit test-only resource mapping. Tests must clearly opt into this.
+// No production code should ever inject a localhost default.
+export function testResourceMapping(overrides?: Partial<ResourceMapping>): ResourceMapping {
+  return {
+    logicalEntity: 'test-resource',
+    resourceId: 'test-resource',
+    resourceName: 'Test Resource',
+    fieldMappings: {
+      baseUrl: 'http://127.0.0.1:3000',
+    },
+    ...overrides,
+  };
+}
+
 export function minimalSpec(overrides?: Partial<ApiPreparationSpec>): ApiPreparationSpec {
   return {
     operationId: 'test-op',
