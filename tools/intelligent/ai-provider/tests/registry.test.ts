@@ -126,6 +126,7 @@ describe('FakeAIProvider', () => {
 describe('Provider Registry', () => {
   beforeEach(() => {
     vi.stubEnv('GROQ_API_KEY', 'test-key');
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-ds-key');
   });
 
   afterEach(() => {
@@ -135,6 +136,19 @@ describe('Provider Registry', () => {
   it('creates Groq provider via factory', () => {
     const provider = createAIProvider({ provider: 'groq' });
     expect(provider.name).toBe('groq');
+  });
+
+  it('creates DeepSeek provider via factory', () => {
+    const provider = createAIProvider({ provider: 'deepseek' });
+    expect(provider.name).toBe('deepseek');
+  });
+
+  it('creates DeepSeek provider with config', () => {
+    const provider = createAIProvider({
+      provider: 'deepseek',
+      config: { model: 'deepseek-v4-flash' },
+    });
+    expect(provider.name).toBe('deepseek');
   });
 
   it('creates Groq provider with config', () => {
@@ -153,6 +167,7 @@ describe('Provider Registry', () => {
   it('lists registered providers', () => {
     const providers = listProviders();
     expect(providers).toContain('groq');
+    expect(providers).toContain('deepseek');
   });
 
   it('allows registering custom providers', () => {

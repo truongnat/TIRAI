@@ -34,6 +34,11 @@ export { GroqProvider } from './providers/groq/groq-provider.js';
 export type { GroqProviderConfig } from './providers/groq/groq-config.js';
 export { resolveGroqConfig } from './providers/groq/groq-config.js';
 
+// DeepSeek provider
+export { DeepSeekProvider } from './providers/deepseek/deepseek-provider.js';
+export type { DeepSeekProviderConfig } from './providers/deepseek/deepseek-config.js';
+export { resolveDeepSeekConfig } from './providers/deepseek/deepseek-config.js';
+
 // Utilities
 export { withRetry, DEFAULT_RETRY_OPTIONS } from './utils/retry.js';
 export type { RetryOptions } from './utils/retry.js';

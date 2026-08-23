@@ -1,7 +1,7 @@
 {
-  "name": "ai-provider",
+  "name": "test-planner",
   "version": "1.0.0",
-  "description": "Provider-agnostic AI abstraction layer with Groq and DeepSeek implementations",
+  "description": "Test Planner v1 – Canonical Requirement IR → Traceable Test Plan IR / Test Case IR",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,8 +16,7 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
-    "groq-sdk": "^0.15.0",
-    "ajv": "^8.17.0"
+    "ai-provider": "file:../ai-provider"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

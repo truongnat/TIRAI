@@ -1,17 +1,17 @@
 // ---------------------------------------------------------------------------
-// GroqProvider – AIProvider implementation for Groq
+// DeepSeekProvider – AIProvider implementation for DeepSeek
 // ---------------------------------------------------------------------------
 // Responsibilities:
 // 1. Validate config
-// 2. Map generic request → Groq API request
-// 3. Execute request (with timeout + retry)
+// 2. Map generic request → DeepSeek API request (OpenAI-compatible)
+// 3. Execute request via fetch (with timeout + retry)
 // 4. Handle structured output (json_object mode + local schema validation)
 // 5. Parse + validate response
 // 6. Normalize errors
 // 7. Return generic response
+//
+// Uses native fetch – no DeepSeek/OpenAI SDK dependency.
 
-import Groq, { type ClientOptions as GroqClientOptions } from 'groq-sdk';
-import type { ChatCompletionCreateParamsNonStreaming, ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions.js';
 import type { AIProvider } from '../../provider.js';
 import type {
   AIGenerationRequest,
@@ -23,39 +23,30 @@ import type {
 import { AIProviderError, AIProviderErrorCode } from '../../errors.js';
 import { withRetry } from '../../utils/retry.js';
 import { parseAndValidate } from '../../utils/json.js';
-import { resolveGroqConfig, type GroqProviderConfig } from './groq-config.js';
-import { mapGroqError } from './groq-errors.js';
-import { mapGroqResponse, type GroqRawResponse } from './groq-mapper.js';
+import { resolveDeepSeekConfig, type DeepSeekProviderConfig } from './deepseek-config.js';
+import { mapDeepSeekError } from './deepseek-errors.js';
+import { mapDeepSeekResponse, type DeepSeekRawResponse } from './deepseek-mapper.js';
 
 /**
- * Groq AI provider.
+ * DeepSeek AI provider.
  *
- * Uses Groq's OpenAI-compatible chat completions endpoint.
+ * Uses DeepSeek's OpenAI-compatible chat completions endpoint via native fetch.
  * Structured output is enforced via `response_format: { type: "json_object" }`
  * plus local JSON Schema validation using Ajv.
  */
-export class GroqProvider implements AIProvider {
-  public readonly name = 'groq';
+export class DeepSeekProvider implements AIProvider {
+  public readonly name = 'deepseek';
   public readonly capabilities: AIProviderCapabilities = {
     structuredOutput: true,
-    // Groq supports json_object mode but not arbitrary JSON Schema enforcement
+    // DeepSeek supports json_object mode but not arbitrary JSON Schema enforcement
     strictStructuredOutput: false,
     streaming: false,
   };
 
-  private readonly config: GroqProviderConfig;
-  private readonly client: Groq;
+  private readonly config: DeepSeekProviderConfig;
 
-  constructor(config?: Partial<GroqProviderConfig>) {
-    this.config = resolveGroqConfig(config);
-
-    const clientOpts: GroqClientOptions = {
-      apiKey: this.config.apiKey,
-    };
-    if (this.config.baseUrl) {
-      clientOpts.baseURL = this.config.baseUrl;
-    }
-    this.client = new Groq(clientOpts);
+  constructor(config?: Partial<DeepSeekProviderConfig>) {
+    this.config = resolveDeepSeekConfig(config);
   }
 
   async generate<T>(
@@ -64,7 +55,7 @@ export class GroqProvider implements AIProvider {
     const model = request.model ?? this.config.model;
     const timeoutMs = request.timeoutMs ?? this.config.timeoutMs;
 
-    // Build the Groq API request body
+    // Build the DeepSeek API request body
     const body = this.buildRequestBody(model, request);
 
     // Execute with retry for transient errors
@@ -82,15 +73,14 @@ export class GroqProvider implements AIProvider {
     // Parse and validate
     const data = parseAndValidate<T>(rawText, request.responseSchema, this.name);
 
-    return mapGroqResponse(raw, data, rawText);
+    return mapDeepSeekResponse(raw, data, rawText);
   }
 
   /**
-   * Check whether a given model supports structured output on Groq.
-   * Currently all chat models on Groq support json_object mode.
+   * Check whether a given model supports structured output on DeepSeek.
+   * All current DeepSeek chat models support json_object mode.
    */
   supportsStructuredOutput(_model?: string): boolean {
-    // Groq's json_object mode is broadly supported across chat models
     return true;
   }
 
@@ -99,7 +89,7 @@ export class GroqProvider implements AIProvider {
   private buildRequestBody<T>(
     model: string,
     request: AIGenerationRequest<T>,
-  ): ChatCompletionCreateParamsNonStreaming {
+  ): Record<string, unknown> {
     const messages = request.messages.map((m) => this.mapMessage(m));
 
     // If a response schema is provided, inject a system instruction and
@@ -112,12 +102,15 @@ export class GroqProvider implements AIProvider {
       });
     }
 
-    const body: ChatCompletionCreateParamsNonStreaming = {
+    const body: Record<string, unknown> = {
       model,
       messages,
       temperature: request.temperature ?? 0,
-      max_tokens: request.maxOutputTokens,
     };
+
+    if (request.maxOutputTokens) {
+      body.max_tokens = request.maxOutputTokens;
+    }
 
     if (request.responseSchema) {
       body.response_format = { type: 'json_object' };
@@ -126,7 +119,7 @@ export class GroqProvider implements AIProvider {
     return body;
   }
 
-  private mapMessage(msg: AIMessage): ChatCompletionMessageParam {
+  private mapMessage(msg: AIMessage): Record<string, string> {
     return {
       role: msg.role,
       content: msg.content,
@@ -137,8 +130,8 @@ export class GroqProvider implements AIProvider {
    * Build a system message that instructs the model to output JSON
    * conforming to the provided schema.
    *
-   * Groq's json_object mode guarantees valid JSON output, but the schema
-   * must be communicated in the prompt since Groq does not support
+   * DeepSeek's json_object mode guarantees valid JSON output, but the schema
+   * must be communicated in the prompt since DeepSeek does not support
    * server-side schema enforcement like OpenAI's strict mode.
    */
   private buildSchemaInstruction(schema: JSONSchema): string {
@@ -150,31 +143,56 @@ export class GroqProvider implements AIProvider {
   }
 
   private async executeRequest(
-    body: ChatCompletionCreateParamsNonStreaming,
+    body: Record<string, unknown>,
     timeoutMs: number,
-  ): Promise<GroqRawResponse> {
+  ): Promise<DeepSeekRawResponse> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
+    const url = `${this.config.baseUrl}/v1/chat/completions`;
+
     try {
-      const response = await this.client.chat.completions.create(body, {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.config.apiKey}`,
+        },
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
-      return response as unknown as GroqRawResponse;
+
+      if (!response.ok) {
+        let errorBody: unknown;
+        try {
+          errorBody = await response.json();
+        } catch {
+          errorBody = { message: response.statusText };
+        }
+        throw {
+          status: response.status,
+          error: errorBody,
+        };
+      }
+
+      const raw = await response.json() as DeepSeekRawResponse;
+      return raw;
     } catch (err) {
-      throw mapGroqError(err, this.name);
+      // Re-throw AIProviderError as-is (from non-OK response)
+      if (err instanceof AIProviderError) throw err;
+      throw mapDeepSeekError(err, this.name);
     } finally {
       clearTimeout(timer);
     }
   }
 
-  private extractContent(raw: GroqRawResponse): string {
+  private extractContent(raw: DeepSeekRawResponse): string {
     const content = raw.choices?.[0]?.message?.content;
     if (!content || content.trim().length === 0) {
       throw new AIProviderError({
         code: AIProviderErrorCode.RESPONSE_EMPTY,
         provider: this.name,
-        message: 'Groq returned an empty response.',
+        message: 'DeepSeek returned an empty response.',
         requestId: raw.id,
       });
     }

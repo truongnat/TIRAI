@@ -6,7 +6,7 @@
   "description": "TIRAI – TypeScript toolchain for Excel intelligence",
   "scripts": {
     "check:deterministic": "npm run check --workspace=tools/deterministic/excel/workbook-inspector && npm run check --workspace=tools/deterministic/excel/cell-layout-extractor",
-    "check:intelligent": "npm run check --workspace=tools/intelligent/ai-provider && npm run check --workspace=tools/intelligent/excel/context-builder && npm run check --workspace=tools/intelligent/excel/analyzer && npm run check --workspace=tools/intelligent/semantic-analyzer && npm run check --workspace=tools/intelligent/requirement-builder",
+    "check:intelligent": "npm run check --workspace=tools/intelligent/ai-provider && npm run check --workspace=tools/intelligent/excel/context-builder && npm run check --workspace=tools/intelligent/excel/analyzer && npm run check --workspace=tools/intelligent/semantic-analyzer && npm run check --workspace=tools/intelligent/requirement-builder && npm run check --workspace=tools/intelligent/test-planner",
     "check": "npm run check:deterministic && npm run check:intelligent",
     "build:all": "npm run build --workspaces --if-present",
     "test:all": "npm test --workspaces --if-present",
@@ -20,7 +20,8 @@
     "tools/intelligent/excel/context-builder",
     "tools/intelligent/excel/analyzer",
     "tools/intelligent/semantic-analyzer",
-    "tools/intelligent/requirement-builder"
+    "tools/intelligent/requirement-builder",
+    "tools/intelligent/test-planner"
   ],
   "devDependencies": {
     "typescript": "^5.5.0",
