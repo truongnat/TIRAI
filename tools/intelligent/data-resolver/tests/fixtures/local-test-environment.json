@@ -1,0 +1,71 @@
+{
+  "id": "local-test-environment",
+  "resources": [
+    {
+      "id": "postgres-main",
+      "type": "database",
+      "name": "Primary PostgreSQL Database",
+      "capabilities": ["select", "insert", "update", "delete", "schema-introspection"],
+      "metadata": {
+        "engine": "postgres",
+        "version": "15.0"
+      }
+    },
+    {
+      "id": "auth-api",
+      "type": "api",
+      "name": "Authentication API",
+      "capabilities": ["login", "verify", "logout", "token-refresh"],
+      "metadata": {
+        "baseUrl": "http://localhost:3000/smartsales-api-v2",
+        "authMechanism": "bearer-token"
+      }
+    },
+    {
+      "id": "local-filesystem",
+      "type": "filesystem",
+      "name": "Local Test Filesystem",
+      "capabilities": ["read", "write", "template-copy"],
+      "metadata": {
+        "baseDir": "/tmp/test-data"
+      }
+    },
+    {
+      "id": "app-config",
+      "type": "configuration",
+      "name": "Application Configuration Store",
+      "capabilities": ["read", "write", "restore"],
+      "metadata": {
+        "format": "json"
+      }
+    },
+    {
+      "id": "value-gen",
+      "type": "generator",
+      "name": "Deterministic Value Generator",
+      "capabilities": ["uuid", "unique-string", "boundary-value", "random-seeded"],
+      "metadata": {}
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "cap-db",
+      "name": "Database Operations",
+      "description": "Can perform CRUD operations on PostgreSQL"
+    },
+    {
+      "id": "cap-api",
+      "name": "API Calls",
+      "description": "Can make HTTP calls to local test APIs"
+    },
+    {
+      "id": "cap-gen",
+      "name": "Value Generation",
+      "description": "Can generate deterministic test values"
+    }
+  ],
+  "metadata": {
+    "description": "Synthetic local test environment for acceptance testing",
+    "version": "1.0.0"
+  }
+}
