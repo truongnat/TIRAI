@@ -1,0 +1,43 @@
+{
+  "catalogs": [
+    {
+      "resourceId": "db-main",
+      "schemas": [
+        {
+          "name": "public",
+          "tables": [
+            {
+              "name": "users",
+              "columns": [
+                { "name": "id", "dataType": "uuid", "nullable": false },
+                { "name": "username", "dataType": "varchar", "nullable": false },
+                { "name": "email", "dataType": "varchar", "nullable": false },
+                { "name": "created_at", "dataType": "timestamp", "nullable": false }
+              ],
+              "primaryKey": ["id"],
+              "uniqueConstraints": [["username"]],
+              "foreignKeys": []
+            },
+            {
+              "name": "sessions",
+              "columns": [
+                { "name": "id", "dataType": "uuid", "nullable": false },
+                { "name": "user_id", "dataType": "uuid", "nullable": false },
+                { "name": "token", "dataType": "varchar", "nullable": false },
+                { "name": "expires_at", "dataType": "timestamp", "nullable": false }
+              ],
+              "primaryKey": ["id"],
+              "foreignKeys": [
+                {
+                  "columns": ["user_id"],
+                  "referencedTable": "users",
+                  "referencedColumns": ["id"]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

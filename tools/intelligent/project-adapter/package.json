@@ -1,0 +1,35 @@
+{
+  "name": "project-adapter",
+  "version": "1.0.0",
+  "description": "Project Adapter Architecture v1 – project-specific metadata → canonical Project Execution Profile",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "project-adapter": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "format": "prettier --write \"src/**/*.{ts,json}\" \"tests/**/*.{ts,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,json}\" \"tests/**/*.{ts,json}\"",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "ui-executor": "file:../ui-executor",
+    "api-executor": "file:../api-executor",
+    "database-executor": "file:../database-executor",
+    "execution-engine": "file:../execution-engine",
+    "data-resolver": "file:../data-resolver",
+    "test-execution-orchestrator": "file:../test-execution-orchestrator",
+    "execution-mapping-builder": "file:../execution-mapping-builder"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.0.0"
+  }
+}

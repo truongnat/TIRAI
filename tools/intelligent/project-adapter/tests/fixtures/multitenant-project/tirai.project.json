@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0",
+  "project": {
+    "id": "multitenant-app",
+    "name": "MultiTenant App"
+  },
+  "environments": {
+    "local": {
+      "name": "Local",
+      "safety": "isolated"
+    }
+  },
+  "database": {
+    "resources": [
+      {
+        "id": "db-tenant",
+        "dialect": "postgresql",
+        "database": "multitenant",
+        "tenantStrategy": {
+          "strategy": "schema-per-tenant",
+          "schemaPattern": "tenant{tenantId}",
+          "defaultTestTenant": "1"
+        },
+        "connectionSecretRef": "DB_PASSWORD"
+      }
+    ]
+  },
+  "secrets": {
+    "references": [
+      { "name": "DB_PASSWORD" }
+    ]
+  }
+}
