@@ -6,7 +6,7 @@
   "description": "TIRAI – TypeScript toolchain for Excel intelligence",
   "scripts": {
     "check:deterministic": "npm run check --workspace=tools/deterministic/excel/workbook-inspector && npm run check --workspace=tools/deterministic/excel/cell-layout-extractor",
-    "check:intelligent": "npm run check --workspace=tools/intelligent/ai-provider && npm run check --workspace=tools/intelligent/excel/context-builder && npm run check --workspace=tools/intelligent/excel/analyzer && npm run check --workspace=tools/intelligent/semantic-analyzer && npm run check --workspace=tools/intelligent/requirement-builder && npm run check --workspace=tools/intelligent/test-planner && npm run check --workspace=tools/intelligent/test-data-planner && npm run check --workspace=tools/intelligent/data-resolver && npm run check --workspace=tools/intelligent/execution-engine",
+    "check:intelligent": "npm run check --workspace=tools/intelligent/ai-provider && npm run check --workspace=tools/intelligent/excel/context-builder && npm run check --workspace=tools/intelligent/excel/analyzer && npm run check --workspace=tools/intelligent/semantic-analyzer && npm run check --workspace=tools/intelligent/requirement-builder && npm run check --workspace=tools/intelligent/test-planner && npm run check --workspace=tools/intelligent/test-data-planner && npm run check --workspace=tools/intelligent/data-resolver && npm run check --workspace=tools/intelligent/execution-engine && npm run check --workspace=tools/intelligent/database-executor",
     "check": "npm run check:deterministic && npm run check:intelligent",
     "build:all": "npm run build --workspaces --if-present",
     "test:all": "npm test --workspaces --if-present",
@@ -24,7 +24,8 @@
     "tools/intelligent/test-planner",
     "tools/intelligent/test-data-planner",
     "tools/intelligent/data-resolver",
-    "tools/intelligent/execution-engine"
+    "tools/intelligent/execution-engine",
+    "tools/intelligent/database-executor"
   ],
   "devDependencies": {
     "typescript": "^5.5.0",
