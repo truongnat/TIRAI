@@ -42,6 +42,8 @@ import { writeDataOutput, writeDataIntermediate } from './persistence/writer.js'
 import { loadDataCheckpoint, writeDataStageCheckpoint, writeDataCheckpointMeta } from './persistence/checkpoint.js';
 import { computeFingerprint } from './fingerprint.js';
 import { TEST_DATA_PLANNER_PROMPT_VERSION } from './prompts/system.js';
+import { classifyConstraints } from './normalization/constraint-classifier.js';
+import { applyProvenanceInheritance } from './normalization/provenance-inheritance.js';
 
 /**
  * Build a test data plan from a Test Case IR.
@@ -154,7 +156,7 @@ export async function buildTestDataPlan(
         operator: con.operator,
         value: con.value,
         description: con.description,
-        provenance: [],
+        provenance: [],  // Will be enriched by constraint classifier + provenance inheritance
       })),
       dependencies: [],
       relatedTestCaseIds: relatedTCIds.filter((tcId) => validTCIds.has(tcId)),
@@ -166,6 +168,18 @@ export async function buildTestDataPlan(
       confidence: c.confidence,
     });
   }
+
+  // ---- Post-processing: constraint classification --------------------------
+  // Deterministically upgrade type='other' constraints where safe.
+  for (const item of dataItems) {
+    item.constraints = classifyConstraints(item.constraints);
+  }
+
+  // ---- Post-processing: provenance inheritance ----------------------------
+  // Inherit provenance from Test Case IR references deterministically.
+  // Provenance is inherited because source traceability is deterministic
+  // and should not depend on model reproduction.
+  applyProvenanceInheritance(dataItems, testCases);
 
   // ---- Build dependency graph ---------------------------------------------
   const depCandidates = depResult.dependencyCandidates

@@ -1,0 +1,18 @@
+{
+  "_comment": "Captured DeepSeek dependency response using 'dependencies' with 'source'/'target' and 'reuse_opportunities'. Regression evidence.",
+  "dependencies": [
+    {
+      "source": "TMP-DATA-0001",
+      "target": "TMP-DATA-0002",
+      "type": "derived-from",
+      "description": "Credentials derived from account"
+    }
+  ],
+  "reuse_opportunities": [
+    {
+      "temporaryIds": ["TMP-DATA-0001", "TMP-DATA-0003"],
+      "reason": "Shared auth data",
+      "reusePolicy": "safe"
+    }
+  ]
+}

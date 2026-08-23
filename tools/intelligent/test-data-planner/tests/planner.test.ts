@@ -78,6 +78,7 @@ describe('Data extraction – types', () => {
     const tmpDir = createTempTestCaseIR(ir);
     const provider = buildDataPlannerFakeProvider(
       dataReqResult({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid type
         dataCandidates: [dataCandidate('TMP-DATA-0001', 'TC-0001', 'mystery', { type: 'bogus' as any })],
       }),
     );
@@ -307,6 +308,7 @@ describe('Reuse', () => {
     );
     await buildTestDataPlan(tmpDir, provider, { outputDir: outDir });
     const manifest = JSON.parse(fs.readFileSync(path.join(outDir, 'manifest.json'), 'utf-8'));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON parsed result
     const unsafeWarnings = manifest.warnings.filter((w: any) => w.code === 'DATA_UNSAFE_REUSE');
     expect(unsafeWarnings.length).toBeGreaterThan(0);
     fs.rmSync(tmpDir, { recursive: true });
@@ -355,6 +357,7 @@ describe('Setup intents', () => {
       const tmpDir = createTempTestCaseIR(ir);
       const provider = buildDataPlannerFakeProvider(
         dataReqResult({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing all strategy strings
           dataCandidates: [dataCandidate('TMP-DATA-0001', 'TC-0001', `${strategy} item`, { strategy: strategy as any })],
         }),
       );
@@ -640,6 +643,7 @@ describe('Unresolved', () => {
     const provider = buildDataPlannerFakeProvider(
       dataReqResult({
         unresolvedCandidates: [
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing unknown reason
           { testCaseIds: ['TC-0001'], description: 'Weird', reason: 'totally-unknown' as any, provenance: [] },
         ],
       }),
@@ -768,18 +772,21 @@ describe('Quality metrics', () => {
   });
 
   it('provenance coverage is computed correctly', async () => {
+    // With provenance inheritance, both items gain TC-0001's provenance {REQ-0001}.
+    // Item 1 already has it (deduped), item 2 inherits it → coverage = 1.0
     const ir = minimalTestCaseIR();
     const tmpDir = createTempTestCaseIR(ir);
     const provider = buildDataPlannerFakeProvider(
       dataReqResult({
         dataCandidates: [
           dataCandidate('TMP-DATA-0001', 'TC-0001', 'provenanced', { provenance: [testProv('REQ-0001')] }),
-          dataCandidate('TMP-DATA-0002', 'TC-0001', 'no-provenance', { provenance: [] }),
+          dataCandidate('TMP-DATA-0002', 'TC-0001', 'inherited', { provenance: [] }),
         ],
       }),
     );
     const result = await buildTestDataPlan(tmpDir, provider);
-    expect(result.quality.provenanceCoverage).toBe(0.5);
+    // Both items have provenance after inheritance from TC-0001
+    expect(result.quality.provenanceCoverage).toBe(1);
     fs.rmSync(tmpDir, { recursive: true });
   });
 });
