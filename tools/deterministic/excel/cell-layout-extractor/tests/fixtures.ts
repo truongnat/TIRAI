@@ -15,6 +15,7 @@ export async function createAllFixtures(): Promise<void> {
   await cellTypes();
   await formulas();
   await mergedCells();
+  await emptyMergedCells();
   await styles();
   await hiddenRowsCols();
   await emptyStyled();
@@ -100,6 +101,29 @@ async function mergedCells(): Promise<void> {
   ws.getCell('D1').value = 'Solo';
 
   await wb.xlsx.writeFile(fixturePath('merged-cells.xlsx'));
+}
+
+// ---- 3b. Empty merged cells ----------------------------------------------
+
+async function emptyMergedCells(): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('EmptyMerged');
+
+  for (let row = 1; row <= 50; row++) {
+    const start = row * 2 - 1;
+    const master = ws.getCell(start, 1);
+    master.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF2F2F2' },
+    };
+    ws.getCell(start, 2).fill = master.fill;
+    ws.getCell(start + 1, 1).fill = master.fill;
+    ws.getCell(start + 1, 2).fill = master.fill;
+    ws.mergeCells(start, 1, start + 1, 2);
+  }
+
+  await wb.xlsx.writeFile(fixturePath('empty-merged-cells.xlsx'));
 }
 
 // ---- 4. Styles -----------------------------------------------------------

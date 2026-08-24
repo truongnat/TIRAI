@@ -127,6 +127,37 @@ describe('merged cells', () => {
   });
 });
 
+describe('empty merged cells', () => {
+  it('extracts empty merged masters and children without throwing', async () => {
+    const meta = await extractWorkbook(fixturePath('empty-merged-cells.xlsx'));
+    const sheet = meta.sheets[0];
+    const byAddr = Object.fromEntries(sheet.cells.map((c) => [c.address, c]));
+
+    expect(sheet.mergedRanges).toHaveLength(50);
+    expect(byAddr.A1).toMatchObject({
+      rawValue: null,
+      displayValue: null,
+      type: null,
+      formula: null,
+      cachedResult: null,
+      isRichText: false,
+    });
+    expect(byAddr.B2).toMatchObject({
+      rawValue: null,
+      displayValue: null,
+      type: null,
+    });
+  });
+
+  it('preserves deterministic output for empty merged cells', async () => {
+    const input = fixturePath('empty-merged-cells.xlsx');
+    const first = await extractWorkbook(input);
+    const second = await extractWorkbook(input);
+
+    expect(JSON.stringify(first)).toBe(JSON.stringify(second));
+  });
+});
+
 // ---- 4. Styles -----------------------------------------------------------
 
 describe('styles', () => {
