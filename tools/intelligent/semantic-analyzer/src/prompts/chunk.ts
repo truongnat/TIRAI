@@ -98,6 +98,7 @@ export function buildChunkAnalysisPrompt(chunk: ContextChunk): string {
 
   // ---- OUTPUT REQUIREMENTS ------------------------------------------------
   parts.push('## OUTPUT REQUIREMENTS');
+  parts.push('Return JSON only. Do not wrap the JSON object in Markdown or add commentary.');
   parts.push(`1. Set contextId to "${chunk.id}" in your response.`);
   parts.push('2. Use local IDs: "local-section-001", "local-entity-001", "local-flow-001", "local-rule-001", etc.');
   parts.push(`3. For provenance, use contextId="${chunk.id}", sheet="${chunk.sheet.name}".`);

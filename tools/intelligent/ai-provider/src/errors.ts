@@ -21,6 +21,10 @@ export const AIProviderErrorCode = {
   PROVIDER_UNAVAILABLE: 'AI_PROVIDER_UNAVAILABLE',
   /** Response body was empty. */
   RESPONSE_EMPTY: 'AI_RESPONSE_EMPTY',
+  /** Provider stopped because the output token limit was reached. */
+  OUTPUT_LIMIT_EXCEEDED: 'AI_OUTPUT_LIMIT_EXCEEDED',
+  /** Provider returned a structurally invalid response envelope. */
+  MALFORMED_PROVIDER_RESPONSE: 'AI_MALFORMED_PROVIDER_RESPONSE',
   /** Response could not be parsed as JSON. */
   RESPONSE_PARSE_ERROR: 'AI_RESPONSE_PARSE_ERROR',
   /** Parsed JSON did not conform to the requested schema. */
@@ -57,12 +61,13 @@ export class AIProviderError extends Error {
     requestId?: string;
     retryAfterMs?: number;
     cause?: unknown;
+    retryable?: boolean;
   }) {
     super(opts.message);
     this.name = 'AIProviderError';
     this.code = opts.code;
     this.provider = opts.provider;
-    this.retryable = RETRYABLE_CODES.has(opts.code);
+    this.retryable = opts.retryable ?? RETRYABLE_CODES.has(opts.code);
     this.statusCode = opts.statusCode;
     this.requestId = opts.requestId;
     this.retryAfterMs = opts.retryAfterMs;

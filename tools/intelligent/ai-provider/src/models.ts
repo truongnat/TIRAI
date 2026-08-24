@@ -44,6 +44,9 @@ export interface AIGenerationRequest<T = unknown> {
 
   /** Arbitrary metadata forwarded to the provider (e.g. request tracing). */
   metadata?: Record<string, string>;
+
+  /** Provider-specific options, namespaced by provider name. */
+  providerOptions?: Record<string, unknown>;
 }
 
 /** Token usage breakdown returned by the provider. */

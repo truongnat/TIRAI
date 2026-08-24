@@ -400,6 +400,7 @@ describe('Prompt structure (v1.1)', () => {
     expect(prompt).toContain('RELATIONSHIP DETECTION');
     expect(prompt).toContain('EVIDENCE REQUIREMENTS');
     expect(prompt).toContain('SOURCE SAFETY');
+    expect(prompt).toContain('Return JSON only');
   });
 
   it('chunk prompt should emphasize flows over entities for ordered content', () => {

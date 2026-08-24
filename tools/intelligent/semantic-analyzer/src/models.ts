@@ -316,6 +316,8 @@ export interface SemanticAnalyzerOptions {
   sheets?: string[];
   /** Explicit model identity used for request/checkpoint compatibility. */
   model?: string;
+  /** Provider-specific options forwarded through the provider abstraction. */
+  providerOptions?: Record<string, unknown>;
   /** Request and consolidation safety limits. */
   budget?: Partial<SemanticAnalyzerBudget>;
 }

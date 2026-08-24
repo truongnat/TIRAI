@@ -549,6 +549,20 @@ describe('analyzeSemanticContext', () => {
     });
   });
 
+  it('forwards provider-specific options to chunk and consolidation requests', async () => {
+    const provider = buildFakeProvider([chunkResult({ contextId: 'ctx-test-000' })]);
+    await analyzeSemanticContext(VALID_CONTEXT_DIR, provider, {
+      outputDir,
+      providerOptions: { deepseek: { thinking: 'disabled' } },
+    });
+
+    expect(provider.requestLog.length).toBeGreaterThan(0);
+    expect(provider.requestLog.every((request) =>
+      request.providerOptions?.deepseek &&
+      (request.providerOptions.deepseek as { thinking?: string }).thinking === 'disabled'))
+      .toBe(true);
+  });
+
   // Cross-chunk relationships from consolidation
   describe('cross-chunk relationships', () => {
     it('adds cross-chunk relationships from consolidation', async () => {

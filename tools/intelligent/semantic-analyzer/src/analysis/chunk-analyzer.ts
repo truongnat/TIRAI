@@ -129,6 +129,7 @@ export async function analyzeChunk(
   chunk: ContextChunk,
   provider: AIProvider,
   budget: SemanticAnalyzerBudget = DEFAULT_SEMANTIC_BUDGET,
+  providerOptions?: Record<string, unknown>,
 ): Promise<{ result: ChunkSemanticResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number }; warnings?: SemanticWarning[]; metrics: { requests: number; schemaRepairs: number; estimatedInputTokens: number; maxEstimatedInputTokens: number } }> {
   const systemPrompt = SEMANTIC_SYSTEM_PROMPT;
   const userPrompt = buildChunkAnalysisPrompt(chunk);
@@ -159,6 +160,7 @@ export async function analyzeChunk(
         messages,
         responseSchema: lenientObjectSchema,
         temperature: 0,
+        providerOptions,
       }, budget, { phase: attempt === 0 ? 'chunk-analysis' : 'chunk-schema-repair', contextIds: [chunk.id] });
       estimatedInputTokens += response.request.estimatedInputTokens;
       maxEstimatedInputTokens = Math.max(maxEstimatedInputTokens, response.request.estimatedInputTokens);
