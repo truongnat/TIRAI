@@ -5,7 +5,7 @@
 // hashing.  Used for stale mapping/data-plan detection.
 
 import { createHash } from 'node:crypto';
-import type { InputArtifactHashes } from './models.js';
+import type { InputArtifactHashes, TestCase } from './models.js';
 
 // ---- Canonical JSON serialization -----------------------------------------
 
@@ -42,6 +42,26 @@ export function computeObjectHash(obj: unknown): string {
   return computeHash(canonicalJson(obj));
 }
 
+/** Hash execution-relevant Test Case semantics, excluding run/artifact metadata. */
+export function computeTestCasesSemanticHash(testCases: TestCase[]): string {
+  return computeObjectHash(testCases.map((testCase) => ({
+    id: testCase.id,
+    scenarioId: testCase.scenarioId ?? null,
+    requirementIds: testCase.requirementIds ?? [],
+    title: testCase.title,
+    objective: testCase.objective,
+    type: testCase.type,
+    priority: testCase.priority,
+    preconditions: testCase.preconditions ?? [],
+    inputs: testCase.inputs ?? [],
+    dataNeeds: testCase.dataNeeds ?? [],
+    steps: testCase.steps ?? [],
+    expectedResults: testCase.expectedResults ?? [],
+    cleanup: testCase.cleanup ?? [],
+    automation: testCase.automation ?? null,
+  })));
+}
+
 export function computeInputHashes(
   profileFingerprint: string,
   testCases: unknown,
@@ -49,12 +69,20 @@ export function computeInputHashes(
   dataPlan?: unknown,
   preparedData?: unknown,
 ): InputArtifactHashes {
+  const testCasesSemanticHash = computeTestCasesSemanticHash(testCases as TestCase[]);
+  const mappingArtifactHash = computeObjectHash(mappings);
+  const dataPlanArtifactHash = dataPlan ? computeObjectHash(dataPlan) : undefined;
+  const preparedDataArtifactHash = preparedData ? computeObjectHash(preparedData) : undefined;
   return {
     profileFingerprint,
-    testCasesHash: computeObjectHash(testCases),
-    mappingHash: computeObjectHash(mappings),
-    dataPlanHash: dataPlan ? computeObjectHash(dataPlan) : undefined,
-    preparedDataHash: preparedData ? computeObjectHash(preparedData) : undefined,
+    testCasesSemanticHash,
+    testCasesHash: testCasesSemanticHash,
+    mappingArtifactHash,
+    mappingHash: mappingArtifactHash,
+    dataPlanArtifactHash,
+    dataPlanHash: dataPlanArtifactHash,
+    preparedDataArtifactHash,
+    preparedDataHash: preparedDataArtifactHash,
   };
 }
 

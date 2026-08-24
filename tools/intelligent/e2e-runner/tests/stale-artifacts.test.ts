@@ -17,9 +17,11 @@ import {
   verifyMappingTestCaseConsistency,
   verifyDataPlanTestCaseConsistency,
   verifyPreparedDataConsistency,
+  computeTestCasesSemanticHash,
 } from '../src/fingerprints.js';
 import { runPreflight } from '../src/preflight.js';
-import { makeTestCase, makeMapping, makeInput, makePolicy, makeDataPlan, makePreparedData } from './fixtures.js';
+import { EndToEndRunner } from '../src/runner.js';
+import { makeTestCase, makeMapping, makeInput, makePolicy, makeExecutePolicy, makeDataPlan, makePreparedData } from './fixtures.js';
 
 // ---- Canonical JSON (§2-3) ------------------------------------------------
 
@@ -79,6 +81,16 @@ describe('canonical object hash', () => {
   it('computeHash produces SHA-256 of string', () => {
     const h = computeHash('hello');
     expect(h).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe('semantic Test Case fingerprint', () => {
+  it('excludes volatile metadata but detects semantic changes', () => {
+    const base = makeTestCase({ id: 'TC-SEM', expectedResults: [{ description: 'A', verificationType: 'visual' }] });
+    const withVolatile = { ...base, generatedAt: 'different', outputPath: '/tmp/other', quality: { score: 0 } } as typeof base;
+    const changed = makeTestCase({ id: 'TC-SEM', expectedResults: [{ description: 'B', verificationType: 'visual' }] });
+    expect(computeTestCasesSemanticHash([base])).toBe(computeTestCasesSemanticHash([withVolatile]));
+    expect(computeTestCasesSemanticHash([base])).not.toBe(computeTestCasesSemanticHash([changed]));
   });
 });
 
@@ -192,6 +204,7 @@ describe('stale prepared data detection', () => {
     const input = makeInput({
       testCases: [tcA],
       mappings: { schemaVersion: '1.0' as const, testMappings: [mapping], unresolved: [], catalogs: {}, quality: {} as never },
+      dataPlan: makeDataPlan(),
       preparedData,
     });
     const policy = makePolicy({ mode: 'execute', allowExecution: true });
@@ -208,6 +221,7 @@ describe('stale prepared data detection', () => {
     const input = makeInput({
       testCases: [tcA],
       mappings: { schemaVersion: '1.0' as const, testMappings: [mapping], unresolved: [], catalogs: {}, quality: {} as never },
+      dataPlan: makeDataPlan(),
       preparedData,
     });
     const policy = makePolicy({ mode: 'execute', allowExecution: true });
@@ -253,5 +267,86 @@ describe('preflight side-effect zero on stale artifact', () => {
   it('verifyDataPlanTestCaseConsistency returns orphans', () => {
     expect(verifyDataPlanTestCaseConsistency(['TC-A'], ['TC-A', 'TC-B'])).toEqual([]);
     expect(verifyDataPlanTestCaseConsistency(['TC-A', 'TC-MISSING'], ['TC-A'])).toEqual(['TC-MISSING']);
+  });
+
+  it('blocks same-ID Test Case semantic changes before orchestration', async () => {
+    const original = makeTestCase({ id: 'TC-0001', expectedResults: [{ description: 'A', verificationType: 'visual' }] });
+    const changed = makeTestCase({ id: 'TC-0001', expectedResults: [{ description: 'B', verificationType: 'visual' }] });
+    const input = makeInput({ testCases: [changed], mappings: {
+      ...makeInput({ testCases: [original] }).mappings,
+    } });
+    let orchestratorCalls = 0;
+    const runner = new EndToEndRunner({
+      policy: makeExecutePolicy(),
+      orchestrator: { run: async () => { orchestratorCalls++; throw new Error('must not execute'); } } as never,
+    });
+    const result = await runner.run(input);
+    expect(result.status).toBe('blocked');
+    expect(result.preflight.blockers.some((b) => b.code === 'RUNNER_MAPPING_STALE')).toBe(true);
+    expect(orchestratorCalls).toBe(0);
+  });
+
+  it('blocks a mapping built against a different Project Profile', () => {
+    const tc = makeTestCase({ id: 'TC-PROFILE' });
+    const input = makeInput({ testCases: [tc], mappings: {
+      ...makeInput({ testCases: [tc] }).mappings,
+      sourceProjectFingerprint: 'old-project-profile',
+    } });
+    const result = runPreflight(input, makeExecutePolicy(), {
+      profileFingerprint: input.profile.fingerprint,
+      testCasesSemanticHash: 'unused', testCasesHash: 'unused',
+      mappingArtifactHash: 'unused', mappingHash: 'unused',
+    });
+    expect(result.status).toBe('blocked');
+    expect(result.blockers.some((b) => b.code === 'RUNNER_MAPPING_STALE')).toBe(true);
+  });
+
+  it('blocks legacy execute artifacts with no source compatibility metadata', () => {
+    const tc = makeTestCase({ id: 'TC-LEGACY' });
+    const input = makeInput({ testCases: [tc], mappings: {
+      schemaVersion: '1.0', testMappings: [makeMapping({ testCaseId: tc.id })], unresolved: [], catalogs: {}, quality: {} as never,
+    } });
+    delete (input.mappings as { sourceTestCasesHash?: string; sourceProjectFingerprint?: string }).sourceTestCasesHash;
+    delete (input.mappings as { sourceTestCasesHash?: string; sourceProjectFingerprint?: string }).sourceProjectFingerprint;
+    const result = runPreflight(input, makeExecutePolicy(), {
+      profileFingerprint: input.profile.fingerprint,
+      testCasesSemanticHash: 'unused', testCasesHash: 'unused',
+      mappingArtifactHash: 'unused', mappingHash: 'unused',
+    });
+    expect(result.status).toBe('blocked');
+    expect(result.blockers.some((b) => b.code === 'RUNNER_MAPPING_STALE')).toBe(true);
+  });
+
+  it('blocks same-ID Test Case semantic changes for a reused data plan', () => {
+    const original = makeTestCase({ id: 'TC-DP', expectedResults: [{ description: 'A', verificationType: 'visual' }] });
+    const originalInput = makeInput({ testCases: [original], dataPlan: makeDataPlan() });
+    const changed = makeTestCase({ id: 'TC-DP', expectedResults: [{ description: 'B', verificationType: 'visual' }] });
+    const input = makeInput({ testCases: [changed], dataPlan: originalInput.dataPlan });
+    const result = runPreflight(input, makeExecutePolicy(), {
+      profileFingerprint: input.profile.fingerprint,
+      testCasesSemanticHash: 'unused', testCasesHash: 'unused',
+      mappingArtifactHash: 'unused', mappingHash: 'unused',
+      dataPlanArtifactHash: 'unused', dataPlanHash: 'unused',
+    });
+    expect(result.status).toBe('blocked');
+    expect(result.blockers.some((b) => b.code === 'RUNNER_DATA_PLAN_STALE')).toBe(true);
+  });
+
+  it('blocks prepared data reused with a different data plan', () => {
+    const tc = makeTestCase({ id: 'TC-PREP' });
+    const planA = makeDataPlan({ dataItems: [{ id: 'DI-A', name: 'A', description: 'A', type: 'account', lifecycle: 'temporary', strategy: 'create-new' }] });
+    const prepared = makePreparedData({ environmentProfileId: 'local' });
+    const source = makeInput({ testCases: [tc], dataPlan: planA, preparedData: prepared });
+    const planB = makeDataPlan({ dataItems: [{ id: 'DI-B', name: 'B', description: 'B', type: 'account', lifecycle: 'temporary', strategy: 'create-new' }] });
+    const input = makeInput({ testCases: [tc], dataPlan: planB, preparedData: source.preparedData });
+    const result = runPreflight(input, makeExecutePolicy(), {
+      profileFingerprint: input.profile.fingerprint,
+      testCasesSemanticHash: 'unused', testCasesHash: 'unused',
+      mappingArtifactHash: 'unused', mappingHash: 'unused',
+      dataPlanArtifactHash: 'unused', dataPlanHash: 'unused',
+      preparedDataArtifactHash: 'unused', preparedDataHash: 'unused',
+    });
+    expect(result.status).toBe('blocked');
+    expect(result.blockers.some((b) => b.code === 'RUNNER_PREPARED_DATA_STALE')).toBe(true);
   });
 });

@@ -16,7 +16,7 @@ export { runPreflight } from './preflight.js';
 export { selectTests, sortByTestId, applyMaxTests } from './selection.js';
 
 // Fingerprints
-export { computeHash, computeObjectHash, computeInputHashes, isMappingStale, isDataPlanStale, isPreparedDataStale, canonicalJson, verifyMappingTestCaseConsistency, verifyDataPlanTestCaseConsistency, verifyPreparedDataConsistency } from './fingerprints.js';
+export { computeHash, computeObjectHash, computeInputHashes, computeTestCasesSemanticHash, isMappingStale, isDataPlanStale, isPreparedDataStale, canonicalJson, verifyMappingTestCaseConsistency, verifyDataPlanTestCaseConsistency, verifyPreparedDataConsistency } from './fingerprints.js';
 
 // Loader
 export { loadAllInputs, loadProfile, loadTestCases, loadMappings, loadDataPlan, loadPreparedData, assertWithinRoot } from './loader.js';
@@ -84,6 +84,9 @@ export type {
   RunnerAuditRecorder,
   EndToEndRunStatus,
   InputArtifactHashes,
+  MappingSourceCompatibility,
+  DataPlanSourceCompatibility,
+  PreparedDataSourceCompatibility,
   EndToEndRunResultIR,
   EndToEndRunManifest,
   EndToEndExitCode,
