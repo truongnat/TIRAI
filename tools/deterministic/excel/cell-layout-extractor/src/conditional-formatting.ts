@@ -2,13 +2,13 @@
 // Conditional Formatting extraction – raw OOXML parsing via JSZip
 // ---------------------------------------------------------------------------
 
-import JSZip from 'jszip';
 import type {
   ConditionalFormattingRaw,
   ConditionalFormattingRuleRaw,
   Warning,
 } from './models.js';
 import { WarningCode, createWarning } from './warnings.js';
+import { WorkbookOOXMLContext } from './ooxml-context.js';
 
 /**
  * Extract conditional formatting rules from a worksheet by parsing raw OOXML.
@@ -21,19 +21,16 @@ export async function extractConditionalFormatting(
   sheetIndex: number,
   sheetName: string,
   warnings: Warning[],
+  ooxmlContext?: WorkbookOOXMLContext,
 ): Promise<ConditionalFormattingRaw[]> {
   const result: ConditionalFormattingRaw[] = [];
 
   try {
-    const zip = await JSZip.loadAsync(
-      (await import('node:fs')).readFileSync(filePath),
-    );
+    const context = ooxmlContext ?? await WorkbookOOXMLContext.fromFile(filePath);
 
     const sheetPath = `xl/worksheets/sheet${sheetIndex + 1}.xml`;
-    const sheetFile = zip.file(sheetPath);
-    if (!sheetFile) return result;
-
-    const sheetXml = await sheetFile.async('string');
+    const sheetXml = await context.text(sheetPath);
+    if (sheetXml === null) return result;
 
     // Match all <conditionalFormatting> elements
     const cfRegex = /<conditionalFormatting\s+([^>]*?)>([\s\S]*?)<\/conditionalFormatting>/g;

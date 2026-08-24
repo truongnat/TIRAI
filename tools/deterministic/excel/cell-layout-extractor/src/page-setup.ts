@@ -2,7 +2,6 @@
 // Page Setup / Print metadata extraction – raw OOXML parsing via JSZip
 // ---------------------------------------------------------------------------
 
-import JSZip from 'jszip';
 import type {
   PageSetupRaw,
   PageMarginsRaw,
@@ -11,6 +10,7 @@ import type {
   Warning,
 } from './models.js';
 import { WarningCode, createWarning } from './warnings.js';
+import { WorkbookOOXMLContext } from './ooxml-context.js';
 
 /**
  * Extract page setup, print area, print titles, and page breaks from a
@@ -24,18 +24,15 @@ export async function extractPageSetup(
   sheetIndex: number,
   sheetName: string,
   warnings: Warning[],
+  ooxmlContext?: WorkbookOOXMLContext,
 ): Promise<PageSetupRaw | null> {
   try {
-    const zip = await JSZip.loadAsync(
-      (await import('node:fs')).readFileSync(filePath),
-    );
+    const context = ooxmlContext ?? await WorkbookOOXMLContext.fromFile(filePath);
 
     // 1. Sheet-level: pageSetup, pageMargins, printOptions, page breaks
     const sheetPath = `xl/worksheets/sheet${sheetIndex + 1}.xml`;
-    const sheetFile = zip.file(sheetPath);
-    if (!sheetFile) return null;
-
-    const sheetXml = await sheetFile.async('string');
+    const sheetXml = await context.text(sheetPath);
+    if (sheetXml === null) return null;
 
     const orientation = parseOrientation(sheetXml);
     const paperSize = parseIntAttr(sheetXml, 'paperSize');
@@ -47,7 +44,7 @@ export async function extractPageSetup(
 
     // 2. Workbook-level: print area, print titles
     const { printArea, printTitles } = await parseWorkbookDefinedNames(
-      zip,
+      context,
       sheetName,
       sheetIndex,
       warnings,
@@ -167,15 +164,13 @@ function parseBreakList(sheetXml: string, tag: string): number[] {
 // ---- Workbook-level defined names ----------------------------------------
 
 async function parseWorkbookDefinedNames(
-  zip: JSZip,
+  context: WorkbookOOXMLContext,
   sheetName: string,
   sheetIndex: number,
   _warnings: Warning[],
 ): Promise<{ printArea: string | null; printTitles: PrintTitlesRaw | null }> {
-  const wbFile = zip.file('xl/workbook.xml');
-  if (!wbFile) return { printArea: null, printTitles: null };
-
-  const wbXml = await wbFile.async('string');
+  const wbXml = await context.text('xl/workbook.xml');
+  if (wbXml === null) return { printArea: null, printTitles: null };
 
   // Find <definedNames> section
   const dnBlockMatch = /<definedNames>([\s\S]*?)<\/definedNames>/.exec(wbXml);

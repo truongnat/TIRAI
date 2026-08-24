@@ -2,7 +2,7 @@
 // Drawing Objects extraction – images, shapes, charts via raw OOXML (JSZip)
 // ---------------------------------------------------------------------------
 
-import JSZip from 'jszip';
+import type JSZip from 'jszip';
 import type {
   ObjectRaw,
   AnchorRaw,
@@ -14,6 +14,7 @@ import type {
   ExtractOptions,
 } from './models.js';
 import { WarningCode, createWarning } from './warnings.js';
+import { WorkbookOOXMLContext } from './ooxml-context.js';
 
 /**
  * Extract drawing objects from a worksheet by parsing raw OOXML.
@@ -26,23 +27,20 @@ export async function extractObjects(
   sheetName: string,
   warnings: Warning[],
   options: ExtractOptions,
+  ooxmlContext?: WorkbookOOXMLContext,
 ): Promise<ObjectRaw[]> {
   const objects: ObjectRaw[] = [];
 
   try {
-    const zip = await JSZip.loadAsync(
-       
-      (await import('node:fs')).readFileSync(filePath),
-    );
+    const context = ooxmlContext ?? await WorkbookOOXMLContext.fromFile(filePath);
+    const zip = context.zip;
 
     // 1. Find drawing reference in sheet XML
     const sheetPath = `xl/worksheets/sheet${sheetIndex + 1}.xml`;
-    const sheetXml = zip.file(sheetPath);
-    if (!sheetXml) {
+    const sheetContent = await context.text(sheetPath);
+    if (sheetContent === null) {
       return objects;
     }
-
-    const sheetContent = await sheetXml.async('string');
     const drawingRef = extractDrawingReference(sheetContent);
     if (!drawingRef) {
       return objects;

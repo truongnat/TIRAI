@@ -29,6 +29,7 @@ import { extractPageSetup } from './page-setup.js';
 import { columnToLetter } from './utils.js';
 import { WarningCode, createWarning } from './warnings.js';
 import { classifyCells, createProfile, now, rssBytes } from './performance.js';
+import { WorkbookOOXMLContext } from './ooxml-context.js';
 
 // ---- Public API -----------------------------------------------------------
 
@@ -86,9 +87,11 @@ export async function extractWorkbook(
 
   // -- 3. Open workbook ----------------------------------------------------
   const workbook = new ExcelJS.Workbook();
+  let ooxmlContext: WorkbookOOXMLContext | undefined;
   try {
     const loadStart = profile ? now() : 0;
     await workbook.xlsx.readFile(resolvedPath);
+    ooxmlContext = await WorkbookOOXMLContext.fromFile(resolvedPath);
     if (profile) {
       profile.workbookLoadMs = now() - loadStart;
       profile.rssAfterLoadBytes = rssBytes();
@@ -127,7 +130,7 @@ export async function extractWorkbook(
       if (!matchByName && !matchByIndex) continue;
     }
 
-    sheets.push(await extractSheet(ws, idx, resolvedPath, options, profile));
+    sheets.push(await extractSheet(ws, idx, resolvedPath, options, profile, ooxmlContext));
   }
 
   const result: WorkbookLayoutMetadata = {
@@ -153,6 +156,7 @@ async function extractSheet(
   filePath: string,
   options: ExtractOptions,
   profile?: PerformanceProfile,
+  ooxmlContext?: WorkbookOOXMLContext,
 ): Promise<SheetLayoutData> {
   const sheetStart = profile ? now() : 0;
   const rssBeforeBytes = profile ? rssBytes() : 0;
@@ -209,21 +213,21 @@ async function extractSheet(
 
   // Phase 4: Drawing Objects (images, shapes, charts)
   const objectsStart = profile ? now() : 0;
-  const objects = await extractObjects(filePath, index, sheetName, sheetWarnings, options);
+  const objects = await extractObjects(filePath, index, sheetName, sheetWarnings, options, ooxmlContext);
   const objectsMs = profile ? now() - objectsStart : 0;
 
   // Phase 5: Conditional Formatting, Page Setup, Array Formulas
   const conditionalFormattingStart = profile ? now() : 0;
   const conditionalFormatting = await extractConditionalFormatting(
-    filePath, index, sheetName, sheetWarnings,
+    filePath, index, sheetName, sheetWarnings, ooxmlContext,
   );
   const conditionalFormattingMs = profile ? now() - conditionalFormattingStart : 0;
   const pageSetupStart = profile ? now() : 0;
-  const pageSetup = await extractPageSetup(filePath, index, sheetName, sheetWarnings);
+  const pageSetup = await extractPageSetup(filePath, index, sheetName, sheetWarnings, ooxmlContext);
   const pageSetupMs = profile ? now() - pageSetupStart : 0;
   const arrayFormulasStart = profile ? now() : 0;
   const arrayFormulasFromModel = extractArrayFormulas(ws, sheetName, sheetWarnings);
-  const arrayFormulasFromXml = await extractArrayFormulasFromXml(filePath, index, sheetName, sheetWarnings);
+  const arrayFormulasFromXml = await extractArrayFormulasFromXml(filePath, index, sheetName, sheetWarnings, ooxmlContext);
   // Merge: prefer XML results, add any from model that aren't in XML
   const arrayFormulas = mergeArrayFormulas(arrayFormulasFromXml, arrayFormulasFromModel);
   const arrayFormulasMs = profile ? now() - arrayFormulasStart : 0;
@@ -351,19 +355,16 @@ async function extractArrayFormulasFromXml(
   sheetIndex: number,
   sheetName: string,
   warnings: Warning[],
+  ooxmlContext?: WorkbookOOXMLContext,
 ): Promise<ArrayFormulaRaw[]> {
   const result: ArrayFormulaRaw[] = [];
 
   try {
-    const JSZip = (await import('jszip')).default;
-    const fs = await import('node:fs');
-    const zip = await JSZip.loadAsync(fs.readFileSync(filePath));
+    const context = ooxmlContext ?? await WorkbookOOXMLContext.fromFile(filePath);
 
     const sheetPath = `xl/worksheets/sheet${sheetIndex + 1}.xml`;
-    const sheetFile = zip.file(sheetPath);
-    if (!sheetFile) return result;
-
-    const sheetXml = await sheetFile.async('string');
+    const sheetXml = await context.text(sheetPath);
+    if (sheetXml === null) return result;
 
     // Match cells with array formulas: <f t="array" ref="C2:C10">FORMULA</f>
     // The cell is: <c r="C2" ...><f t="array" ref="C2:C10">...</f><v>...</v></c>
