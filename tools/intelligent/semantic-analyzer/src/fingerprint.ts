@@ -14,7 +14,28 @@ export function computeFingerprint(
   chunkContent: string,
   promptVersion: string,
   model: string,
+  analyzerVersion = 'semantic-analyzer@1.2',
+  schemaVersion = '1.0',
 ): string {
-  const data = `${chunkContent}|||${promptVersion}|||${model}`;
+  const data = `${chunkContent}|||${promptVersion}|||${model}|||${analyzerVersion}|||${schemaVersion}`;
   return crypto.createHash('sha256').update(data).digest('hex').slice(0, 16);
+}
+
+export function hashSemanticResult(value: unknown): string {
+  return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+export function computeConsolidationFingerprint(
+  results: unknown[],
+  promptVersion: string,
+  model: string,
+  batchConfiguration: unknown,
+): string {
+  return hashSemanticResult({
+    results: results.map(hashSemanticResult),
+    promptVersion,
+    model,
+    batchConfiguration,
+    analyzerVersion: 'semantic-analyzer@1.2',
+  }).slice(0, 16);
 }

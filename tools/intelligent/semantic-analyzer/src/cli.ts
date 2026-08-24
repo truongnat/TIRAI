@@ -4,6 +4,7 @@
 
 import { createAIProvider } from 'ai-provider';
 import { analyzeSemanticContext } from './analyzer.js';
+import { preflightSemanticContext } from './preflight.js';
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
@@ -19,14 +20,20 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  if (!args.output) {
+  if (!args.output && !args.plan) {
     console.error('Error: --output is required');
     printUsage();
     process.exit(1);
   }
 
   const inputDir = args.input as string;
-  const outputDir = args.output as string;
+  const outputDir = args.output as string | undefined;
+
+  if (args.plan) {
+    const report = preflightSemanticContext(inputDir, { concurrency: args.concurrency as number | undefined });
+    console.log(JSON.stringify(report, null, 2));
+    return;
+  }
 
   const providerName = (args.provider as string) ?? 'groq';
   const provider = createAIProvider({
@@ -47,6 +54,7 @@ async function main(): Promise<void> {
     concurrency: (args.concurrency as number) ?? 2,
     resume: args.resume as boolean | undefined,
     sheets: args.sheet ? [args.sheet as string] : undefined,
+    model: args.model as string | undefined,
   });
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -110,6 +118,7 @@ Options:
   --model <model>     Model override
   --concurrency <n>   Concurrent chunk analysis (default: 2)
   --resume            Resume from cached intermediate results
+  --plan              Print offline capacity preflight without provider calls
   --sheet <name>      Analyze only a specific sheet
   --help              Show this help
 `);

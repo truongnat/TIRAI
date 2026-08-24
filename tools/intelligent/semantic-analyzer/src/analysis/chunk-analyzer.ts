@@ -16,6 +16,7 @@ import { SemanticAnalyzerError, SemanticErrorCode } from '../errors.js';
 import { SemanticWarningCode } from '../warnings.js';
 import { SEMANTIC_SYSTEM_PROMPT } from '../prompts/system.js';
 import { buildChunkAnalysisPrompt } from '../prompts/chunk.js';
+import { DEFAULT_SEMANTIC_BUDGET, generateBudgeted, type SemanticAnalyzerBudget } from '../budget.js';
 
 /**
  * Lenient schema used to force json_object mode at the provider level.
@@ -127,13 +128,17 @@ function normalizeChunkResponse(raw: Record<string, unknown>, contextId: string)
 export async function analyzeChunk(
   chunk: ContextChunk,
   provider: AIProvider,
-): Promise<{ result: ChunkSemanticResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number }; warnings?: SemanticWarning[] }> {
+  budget: SemanticAnalyzerBudget = DEFAULT_SEMANTIC_BUDGET,
+): Promise<{ result: ChunkSemanticResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number }; warnings?: SemanticWarning[]; metrics: { requests: number; schemaRepairs: number; estimatedInputTokens: number; maxEstimatedInputTokens: number } }> {
   const systemPrompt = SEMANTIC_SYSTEM_PROMPT;
   const userPrompt = buildChunkAnalysisPrompt(chunk);
   const warnings: SemanticWarning[] = [];
+  let requests = 0;
+  let estimatedInputTokens = 0;
+  let maxEstimatedInputTokens = 0;
 
   let lastError: unknown;
-  for (let attempt = 0; attempt <= MAX_REPAIR_ATTEMPTS; attempt++) {
+  for (let attempt = 0; attempt <= Math.min(MAX_REPAIR_ATTEMPTS, budget.maxRepairAttempts); attempt++) {
     try {
       const messages = attempt === 0
         ? [
@@ -149,14 +154,17 @@ export async function analyzeChunk(
 
       // Request JSON output using a lenient schema to enable json_object mode.
       // Detailed normalization is done afterwards.
-      const response = await provider.generate<Record<string, unknown>>({
+      requests++;
+      const response = await generateBudgeted(provider, {
         messages,
         responseSchema: lenientObjectSchema,
         temperature: 0,
-      });
+      }, budget, { phase: attempt === 0 ? 'chunk-analysis' : 'chunk-schema-repair', contextIds: [chunk.id] });
+      estimatedInputTokens += response.request.estimatedInputTokens;
+      maxEstimatedInputTokens = Math.max(maxEstimatedInputTokens, response.request.estimatedInputTokens);
 
       // Normalize the raw response to fill missing defaults
-      const result = normalizeChunkResponse(response.data, chunk.id);
+      const result = normalizeChunkResponse(response.response.data as Record<string, unknown>, chunk.id);
 
       // Ensure contextId matches the source chunk
       if (result.contextId !== chunk.id) {
@@ -173,8 +181,9 @@ export async function analyzeChunk(
 
       return {
         result,
-        usage: response.usage ?? {},
+        usage: response.response.usage ?? {},
         warnings: warnings.length > 0 ? warnings : undefined,
+        metrics: { requests, schemaRepairs: warnings.length, estimatedInputTokens, maxEstimatedInputTokens },
       };
     } catch (err) {
       lastError = err;
@@ -184,7 +193,7 @@ export async function analyzeChunk(
   // All attempts exhausted
   throw new SemanticAnalyzerError(
     SemanticErrorCode.SCHEMA_FAILURE,
-    `Chunk "${chunk.id}" failed after ${MAX_REPAIR_ATTEMPTS + 1} attempt(s): ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+    `Chunk "${chunk.id}" failed after ${Math.min(MAX_REPAIR_ATTEMPTS, budget.maxRepairAttempts) + 1} attempt(s): ${lastError instanceof Error ? lastError.message : String(lastError)}`,
     lastError,
   );
 }

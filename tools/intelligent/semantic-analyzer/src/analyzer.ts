@@ -20,19 +20,21 @@ import type {
   ChunkSemanticResult,
   AnalysisManifest,
   SemanticAnalyzerOptions,
+  SemanticExecutionMetrics,
 } from './models.js';
 import { SemanticWarningCode, CONFIDENCE_THRESHOLD } from './warnings.js';
 import { loadContextPackage } from './persistence/loader.js';
 import { analyzeChunk } from './analysis/chunk-analyzer.js';
-import { consolidate } from './analysis/consolidator.js';
+import { consolidateHierarchically } from './analysis/consolidator.js';
 import { buildValidContextIds, buildContextSheetMap, validateProvenanceArray } from './validation/provenance-validator.js';
 import { validateRelationships } from './validation/relationship-validator.js';
 import { orderEntities, orderSections, orderFlows, orderRules, orderRelationships, orderUnresolved } from './merge/deterministic-order.js';
 import { findDuplicateCandidates, applyEntityMerge } from './merge/entity-merger.js';
 import { createIdGenerator, buildLocalToGlobalMap, resolveLocalId } from './merge/id-remapper.js';
-import { computeFingerprint } from './fingerprint.js';
-import { writeOutput, writeIntermediateResult, readIntermediateResult } from './persistence/writer.js';
+import { computeConsolidationFingerprint, computeFingerprint } from './fingerprint.js';
+import { writeOutput, writeIntermediateResult, readIntermediateResult, readConsolidationCheckpoint, writeConsolidationCheckpoint } from './persistence/writer.js';
 import { PROMPT_VERSION } from './prompts/system.js';
+import { resolveSemanticBudget, SEMANTIC_REQUEST_LIMIT_EXCEEDED } from './budget.js';
 
 /**
  * Run the full semantic analysis pipeline.
@@ -48,9 +50,13 @@ export async function analyzeSemanticContext(
   options?: SemanticAnalyzerOptions,
 ): Promise<SemanticIR> {
   const promptVersion = options?.promptVersion ?? PROMPT_VERSION;
-  const concurrency = options?.concurrency ?? 2;
+  const budget = resolveSemanticBudget(options?.budget);
+  const requestedConcurrency = options?.concurrency ?? budget.maxConcurrentRequests;
+  if (requestedConcurrency < 1) throw new Error('Semantic analyzer concurrency must be positive.');
+  const concurrency = Math.min(requestedConcurrency, budget.maxConcurrentRequests);
   const outputDir = options?.outputDir;
   const resume = options?.resume ?? false;
+  const model = options?.model ?? provider.name;
 
   // ---- Load context package -----------------------------------------------
   const loaded = loadContextPackage(contextPath);
@@ -68,6 +74,16 @@ export async function analyzeSemanticContext(
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
   let aiRequests = 0;
+  let requestStarts = 0;
+  let contextsReused = 0;
+  let contextsFailed = 0;
+  let checkpointHits = 0;
+  let checkpointMisses = 0;
+  let peakConcurrency = 0;
+  let activeConcurrency = 0;
+  let schemaRepairs = 0;
+  let estimatedInputTokens = 0;
+  let maxEstimatedTokensPerRequest = 0;
 
   const validContextIds = buildValidContextIds(chunks);
   const contextSheetMap = buildContextSheetMap(chunks);
@@ -79,26 +95,50 @@ export async function analyzeSemanticContext(
     async (chunk) => {
       // Check resume cache
       if (resume && outputDir) {
-        const fp = computeFingerprint(chunk.content, promptVersion, provider.name);
-        const cached = readIntermediateResult(outputDir, chunk.id, fp);
+        const fp = computeFingerprint(chunk.content, promptVersion, model);
+        const cached = readIntermediateResult(outputDir, chunk.id, fp, provider.name, model, promptVersion);
         if (cached) {
-          return { result: cached.result, usage: cached.usage as { inputTokens?: number; outputTokens?: number; totalTokens?: number } };
+          checkpointHits++;
+          contextsReused++;
+          return { result: cached.result, usage: cached.usage as { inputTokens?: number; outputTokens?: number; totalTokens?: number }, reused: true, fingerprint: fp, repairs: 0, metrics: { requests: 0, schemaRepairs: 0, estimatedInputTokens: 0, maxEstimatedInputTokens: 0 } };
         }
+        checkpointMisses++;
       }
 
-      const analysis = await analyzeChunk(chunk, provider);
-      return analysis;
+      requestStarts++;
+      if (budget.maxTotalRequests && requestStarts > budget.maxTotalRequests) {
+        throw new Error(`${SEMANTIC_REQUEST_LIMIT_EXCEEDED}: ${budget.maxTotalRequests}`);
+      }
+      activeConcurrency++;
+      peakConcurrency = Math.max(peakConcurrency, activeConcurrency);
+      try {
+        const analysis = await analyzeChunk(chunk, provider, budget);
+        const fingerprint = computeFingerprint(chunk.content, promptVersion, model);
+        if (outputDir) {
+          writeIntermediateResult(outputDir, chunk.id, analysis.result, provider.name, model, analysis.usage as Record<string, unknown>, fingerprint, promptVersion);
+        }
+        return { ...analysis, reused: false, fingerprint, repairs: analysis.warnings?.length ?? 0 };
+      } catch (error) {
+        contextsFailed++;
+        throw error;
+      } finally {
+        activeConcurrency--;
+      }
     },
   );
 
   for (let i = 0; i < chunksToAnalyze.length; i++) {
-    const chunk = chunksToAnalyze[i]!;
     const { result, usage, warnings: repairWarnings } = results[i]!;
 
     chunkResults.push(result);
-    aiRequests++;
+    if (!results[i]!.reused) aiRequests++;
     totalInputTokens += usage.inputTokens ?? 0;
     totalOutputTokens += usage.outputTokens ?? 0;
+    schemaRepairs += results[i]!.repairs;
+    if (!results[i]!.reused) {
+      estimatedInputTokens += results[i]!.metrics.estimatedInputTokens;
+      maxEstimatedTokensPerRequest = Math.max(maxEstimatedTokensPerRequest, results[i]!.metrics.maxEstimatedInputTokens);
+    }
 
     // Collect repair warnings from schema repair attempts
     if (repairWarnings) {
@@ -111,23 +151,39 @@ export async function analyzeSemanticContext(
     // Check confidence levels
     checkConfidence(result, allWarnings);
 
-    // Persist intermediate result
-    if (outputDir) {
-      writeIntermediateResult(outputDir, chunk.id, result, provider.name, provider.capabilities ? '' : '', usage as Record<string, unknown>);
-    }
   }
 
   // ---- Pass 2: Global consolidation ---------------------------------------
   const sheetNames = manifest.sheets.map((s) => s.name);
   let consolidationResult;
+  let consolidationComplete = true;
+  let consolidationRequests = 0;
+  const consolidationFingerprint = computeConsolidationFingerprint(
+    chunkResults.map((result, i) => ({ result, sourceFingerprint: results[i]!.fingerprint })),
+    promptVersion,
+    model,
+    { maxContextsPerBatch: budget.maxContextsPerBatch, maxConsolidationItemsPerBatch: budget.maxConsolidationItemsPerBatch, maxConsolidationInputTokens: budget.maxConsolidationInputTokens },
+  );
 
   try {
-    const cons = await consolidate(chunkResults, sheetNames, provider);
-    consolidationResult = cons.result;
-    aiRequests++;
-    totalInputTokens += cons.usage.inputTokens ?? 0;
-    totalOutputTokens += cons.usage.outputTokens ?? 0;
+    const cachedConsolidation = resume && outputDir
+      ? readConsolidationCheckpoint(outputDir, consolidationFingerprint, provider.name, model, promptVersion)
+      : null;
+    if (cachedConsolidation) {
+      consolidationResult = cachedConsolidation;
+    } else {
+    const cons = await consolidateHierarchically(chunkResults, sheetNames, provider, budget, contextSheetMap, aiRequests);
+      consolidationResult = cons.result;
+      consolidationRequests = cons.metrics.batchRequests + cons.metrics.globalRequests;
+      aiRequests += consolidationRequests;
+      totalInputTokens += cons.usage.inputTokens ?? 0;
+      totalOutputTokens += cons.usage.outputTokens ?? 0;
+      estimatedInputTokens += cons.metrics.estimatedInputTokens;
+      maxEstimatedTokensPerRequest = Math.max(maxEstimatedTokensPerRequest, cons.metrics.maxEstimatedInputTokens);
+      if (outputDir) writeConsolidationCheckpoint(outputDir, consolidationFingerprint, consolidationResult, provider.name, model, promptVersion);
+    }
   } catch (err) {
+    consolidationComplete = false;
     allWarnings.push({
       code: SemanticWarningCode.CONSOLIDATION_PARTIAL,
       message: `Global consolidation failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -312,7 +368,7 @@ export async function analyzeSemanticContext(
 
   const analysis = {
     provider: provider.name,
-    model: '', // Will be set from response
+    model,
     promptVersion,
     chunksAnalyzed: chunkResults.length,
     aiRequests,
@@ -323,6 +379,21 @@ export async function analyzeSemanticContext(
     },
     warnings: allWarnings,
     quality,
+    metrics: {
+      contextsTotal: chunksToAnalyze.length,
+      contextsProcessed: chunksToAnalyze.length - contextsReused - contextsFailed,
+      contextsReused,
+      contextsFailed,
+      chunkRequests: aiRequests - consolidationRequests,
+      consolidationRequests,
+      transportRetries: 0,
+      schemaRepairs,
+      estimatedInputTokens,
+      maxEstimatedTokensPerRequest,
+      peakConcurrency,
+      checkpointHits,
+      checkpointMisses,
+    } satisfies SemanticExecutionMetrics,
   };
 
   // ---- Assemble final IR --------------------------------------------------
@@ -339,7 +410,7 @@ export async function analyzeSemanticContext(
   };
 
   // ---- Write output -------------------------------------------------------
-  if (outputDir) {
+  if (outputDir && consolidationComplete) {
     const analysisManifest: AnalysisManifest = {
       schemaVersion: '1.0',
       source: { contextManifest: loaded.contextDir },
@@ -358,6 +429,7 @@ export async function analyzeSemanticContext(
       },
       usage: analysis.usage,
       warnings: allWarnings,
+      metrics: analysis.metrics,
     };
 
     writeOutput(outputDir, semanticIR, analysisManifest, chunkResults.map((r, i) => ({
@@ -366,6 +438,8 @@ export async function analyzeSemanticContext(
       provider: provider.name,
       model: analysis.model,
       usage: {},
+      fingerprint: results[i]!.fingerprint,
+      promptVersion,
     })));
   }
 
