@@ -52,6 +52,7 @@ export function computeDataQualityMetrics(
   let testsCoveredByData = 0;
 
   if (testCases) {
+    const requiresDataMap = new Map<string, boolean>();
     for (const tc of testCases) {
       const hasExplicitDataNeeds = tc.dataNeeds.length > 0;
       const hasPreconditionsRequiringData = tc.preconditions.some((p) => {
@@ -61,11 +62,13 @@ export function computeDataQualityMetrics(
       });
       const hasInputs = tc.inputs.length > 0;
       const requiresData = hasExplicitDataNeeds || hasPreconditionsRequiringData || hasInputs;
+      requiresDataMap.set(tc.id, requiresData);
       if (requiresData) testsRequiringData++;
     }
 
     for (const tcp of testCasePlans) {
-      if (tcp.requiredDataItemIds.length > 0 || tcp.unresolvedIds.length > 0) {
+      const hasItems = tcp.requiredDataItemIds.length > 0 || tcp.unresolvedIds.length > 0;
+      if (requiresDataMap.get(tcp.testCaseId) && hasItems) {
         testsCoveredByData++;
       }
     }
@@ -79,7 +82,7 @@ export function computeDataQualityMetrics(
     }
   }
 
-  const coverageRate = testsRequiringData > 0 ? Math.min(1, testsCoveredByData / testsRequiringData) : 0;
+  const coverageRate = testsRequiringData > 0 ? testsCoveredByData / testsRequiringData : 0;
   const unresolvedDataRequirements = unresolved.length;
 
   return {
