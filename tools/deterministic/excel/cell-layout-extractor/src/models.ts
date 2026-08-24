@@ -75,6 +75,10 @@ export interface SheetPerformanceProfile {
   rssDeltaBytes: number;
   heapDeltaBytes: number;
   estimatedSheetObjectBytes: number;
+  instantiatedCellsBefore: number;
+  instantiatedCellsAfter: number;
+  gridCoordinatesVisited: number;
+  visitToEmissionRatio: number;
 }
 
 export interface FileMetadata {
@@ -397,4 +401,6 @@ export interface ExtractOptions {
   includeEmptyAll?: boolean;
   /** Enable opt-in timing and memory diagnostics. Never included in normal output. */
   profilePerformance?: boolean;
+  /** Diagnostic only: request global.gc() at profile checkpoints. */
+  profileForceGc?: boolean;
 }

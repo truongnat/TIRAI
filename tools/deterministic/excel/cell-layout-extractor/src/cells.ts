@@ -12,6 +12,10 @@ import type {
 import { type StyleRegistry, extractStyleFromCell, isDefaultStyle } from './styles.js';
 import { WarningCode, createWarning } from './warnings.js';
 
+export interface CellTraversalStats {
+  gridCoordinatesVisited: number;
+}
+
 /**
  * Extract all meaningful cells from a worksheet.
  *
@@ -24,6 +28,7 @@ export function extractCells(
   styleRegistry: StyleRegistry,
   warnings: Warning[],
   _includeEmptyAll: boolean,
+  traversalStats?: CellTraversalStats,
 ): CellRaw[] {
   const cells: CellRaw[] = [];
 
@@ -33,6 +38,7 @@ export function extractCells(
     const maxCol = ws.columnCount ?? row.cellCount ?? 0;
 
     row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      if (traversalStats) traversalStats.gridCoordinatesVisited++;
       // Guard against iterating beyond actual column range.
       if (colNumber > maxCol && maxCol > 0) return;
 

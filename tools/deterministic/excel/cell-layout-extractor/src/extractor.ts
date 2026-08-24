@@ -18,7 +18,7 @@ import type {
   SheetPerformanceProfile,
 } from './models.js';
 import { StyleRegistry } from './styles.js';
-import { extractCells } from './cells.js';
+import { extractCells, type CellTraversalStats } from './cells.js';
 import { extractMergedRanges, extractRows, extractColumns } from './layout.js';
 import { extractValidations } from './validations.js';
 import { extractTables } from './tables.js';
@@ -28,7 +28,7 @@ import { extractConditionalFormatting } from './conditional-formatting.js';
 import { extractPageSetup } from './page-setup.js';
 import { columnToLetter } from './utils.js';
 import { WarningCode, createWarning } from './warnings.js';
-import { classifyCells, createProfile, memorySnapshot, now, rssBytes } from './performance.js';
+import { classifyCells, collectGarbage, createProfile, memorySnapshot, now, rssBytes } from './performance.js';
 import { WorkbookOOXMLContext } from './ooxml-context.js';
 
 // ---- Public API -----------------------------------------------------------
@@ -91,9 +91,10 @@ export async function extractWorkbook(
   try {
     const loadStart = profile ? now() : 0;
     await workbook.xlsx.readFile(resolvedPath);
+    if (profile) captureProfileMemory(profile, 'after-exceljs-load', options.profileForceGc);
     ooxmlContext = await WorkbookOOXMLContext.fromFile(resolvedPath);
     if (profile) {
-      profile.memory.push(memorySnapshot('after-ooxml-context'));
+      captureProfileMemory(profile, 'after-ooxml-context', options.profileForceGc);
       profile.workbookLoadMs = now() - loadStart;
       profile.rssAfterLoadBytes = rssBytes();
     }
@@ -131,10 +132,10 @@ export async function extractWorkbook(
       if (!matchByName && !matchByIndex) continue;
     }
 
-    if (profile) profile.memory.push(memorySnapshot(`before-sheet:${idx}:${ws.name}`));
+    if (profile) captureProfileMemory(profile, `before-sheet:${idx}:${ws.name}`, options.profileForceGc);
     const sheet = await extractSheet(ws, idx, resolvedPath, options, profile, ooxmlContext);
     sheets.push(sheet);
-    if (profile) profile.memory.push(memorySnapshot(`after-sheet:${idx}:${ws.name}`));
+    if (profile) captureProfileMemory(profile, `after-sheet:${idx}:${ws.name}`, options.profileForceGc);
   }
 
   const result: WorkbookLayoutMetadata = {
@@ -146,7 +147,7 @@ export async function extractWorkbook(
   if (profile) {
     if (ooxmlContext) profile.ooxml = ooxmlContext.profile();
     profile.rssBeforeSerializationBytes = rssBytes();
-    profile.memory.push(memorySnapshot('before-serialization'));
+    captureProfileMemory(profile, 'before-serialization', options.profileForceGc);
     profile.rssAfterSerializationBytes = rssBytes();
     profile.totalMs = now() - extractionStart;
     result.performanceProfile = profile;
@@ -166,9 +167,14 @@ async function extractSheet(
 ): Promise<SheetLayoutData> {
   const sheetStart = profile ? now() : 0;
   const rssBeforeBytes = profile ? rssBytes() : 0;
+  const profileMemoryStart = profile?.memory.length ?? 0;
   const sheetName = ws.name;
   const sheetWarnings: Warning[] = [];
   const styleRegistry = new StyleRegistry();
+  const traversalStats: CellTraversalStats | undefined = profile
+    ? { gridCoordinatesVisited: 0 }
+    : undefined;
+  const instantiatedCellsBefore = profile ? countInstantiatedCells(ws) : 0;
 
   // Dimension
   const dim = ws.dimensions;
@@ -196,6 +202,7 @@ async function extractSheet(
     styleRegistry,
     sheetWarnings,
     options.includeEmptyAll ?? false,
+    traversalStats,
   );
   const cellsMs = profile ? now() - cellsStart : 0;
   if (profile) profile.memory.push(memorySnapshot(`after-cells:${index}:${sheetName}`));
@@ -266,11 +273,10 @@ async function extractSheet(
   if (profile) {
     const classification = classifyCells(cells, (address) => ws.getCell(address).isMerged);
     const sheetForSize = JSON.stringify(result);
-    const rows = (ws as unknown as { _rows?: unknown[] })._rows;
-    const instantiatedCells = (rows ?? []).reduce<number>((count, row) => {
-      const cells = (row as { _cells?: unknown[] })._cells;
-      return count + (cells?.length ?? 0);
-    }, 0);
+    const instantiatedCellsAfter = countInstantiatedCells(ws);
+    const instantiatedCells = instantiatedCellsAfter;
+    captureProfileMemory(profile, `after-sheet-result:${index}:${sheetName}`, options.profileForceGc);
+    const sheetMemory = profile.memory.slice(profileMemoryStart);
     const sheetProfile: SheetPerformanceProfile = {
       index,
       name: sheetName,
@@ -299,12 +305,14 @@ async function extractSheet(
       outputBytes: Buffer.byteLength(sheetForSize),
       rssBeforeBytes,
       rssAfterBytes: rssBytes(),
-      memory: profile.memory.filter((snapshot) =>
-        snapshot.label.endsWith(`:${index}:${sheetName}`),
-      ),
+      memory: sheetMemory,
       rssDeltaBytes: rssBytes() - rssBeforeBytes,
       heapDeltaBytes: process.memoryUsage().heapUsed,
       estimatedSheetObjectBytes: Buffer.byteLength(sheetForSize),
+      instantiatedCellsBefore,
+      instantiatedCellsAfter,
+      gridCoordinatesVisited: traversalStats?.gridCoordinatesVisited ?? 0,
+      visitToEmissionRatio: cells.length === 0 ? 0 : (traversalStats?.gridCoordinatesVisited ?? 0) / cells.length,
     };
     const before = sheetProfile.memory.find((snapshot) => snapshot.label === `before-sheet:${index}:${sheetName}`);
     if (before) sheetProfile.heapDeltaBytes -= before.heapUsedBytes;
@@ -312,6 +320,23 @@ async function extractSheet(
     profile.memory.push(memorySnapshot(`after-sheet-result:${index}:${sheetName}`));
   }
   return result;
+}
+
+function countInstantiatedCells(ws: ExcelJS.Worksheet): number {
+  const rows = (ws as unknown as { _rows?: unknown[] })._rows ?? [];
+  return rows.reduce<number>((count, row) => {
+    const cells = (row as { _cells?: unknown[] })._cells;
+    return count + (cells?.length ?? 0);
+  }, 0);
+}
+
+function captureProfileMemory(
+  profile: PerformanceProfile,
+  label: string,
+  forceGc = false,
+): void {
+  profile.memory.push(memorySnapshot(label));
+  if (forceGc && collectGarbage()) profile.memory.push(memorySnapshot(`${label}:after-gc`));
 }
 
 // ---- Array Formulas (Phase 5) -------------------------------------------
