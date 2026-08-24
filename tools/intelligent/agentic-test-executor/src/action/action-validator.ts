@@ -41,6 +41,24 @@ export function validateAction(
     return { valid: false, reason: `Element ${action.elementId} not found in current observation (stale)` };
   }
 
+  if (element.visible === false) {
+    return { valid: false, reason: `Element ${action.elementId} is not visible` };
+  }
+  if (!element.enabled) {
+    return { valid: false, reason: `Element ${action.elementId} is disabled` };
+  }
+
+  const role = element.role.toLowerCase();
+  if ((action.type === 'fill' || action.type === 'select') && !['textbox', 'combobox'].includes(role)) {
+    return { valid: false, reason: `Action "${action.type}" is incompatible with role ${element.role}` };
+  }
+  if (action.type === 'click' && !['button', 'link', 'checkbox', 'radio', 'tab', 'menuitem'].includes(role)) {
+    return { valid: false, reason: `Action "click" is incompatible with role ${element.role}` };
+  }
+  if ((action.type === 'check' || action.type === 'uncheck') && role !== 'checkbox') {
+    return { valid: false, reason: `Action "${action.type}" is incompatible with role ${element.role}` };
+  }
+
   if (action.type === 'fill' || action.type === 'select') {
     if (!action.value && action.value !== '') {
       return { valid: false, reason: `Action "${action.type}" requires value` };

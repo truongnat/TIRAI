@@ -17,7 +17,7 @@ const GROUNDING_SYSTEM_PROMPT = `You are a test execution agent. Your job is to 
 RULES:
 1. You MUST select an element by its observation ID (e.g., "el-001"). NEVER invent CSS selectors, XPath, or other locators.
 2. Choose the action type from: navigate, click, fill, select, check, uncheck, press, wait-for, observe.
-3. For "fill" actions, use the value provided in the step or a secret reference (secret://path). NEVER use real passwords or secrets.
+3. For "fill" actions, use a non-sensitive literal only for public test data. For secret-backed input, set valueSource to the exact secret:// reference and do not put the secret in value.
 4. For "navigate" actions, use a relative URL path.
 5. If no element matches the step intent, set action to undefined and provide unresolvedReason.
 6. If multiple elements could match, pick the best one and explain why in reasoning.
@@ -32,16 +32,19 @@ const GROUNDING_RESPONSE_SCHEMA = {
         type: { type: 'string', enum: ['navigate', 'click', 'fill', 'select', 'check', 'uncheck', 'press', 'wait-for', 'observe'] },
         elementId: { type: 'string' },
         value: { type: 'string' },
+        valueSource: { type: 'string', pattern: '^(secret|testdata)://' },
         url: { type: 'string' },
         key: { type: 'string' },
       },
       required: ['type'],
+      additionalProperties: false,
     },
     confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
     reasoning: { type: 'string' },
     unresolvedReason: { type: 'string' },
   },
   required: ['confidence', 'reasoning'],
+  additionalProperties: false,
 } as const;
 
 interface GroundingAIResponse {
@@ -75,6 +78,7 @@ export async function groundStep(
     responseSchema: GROUNDING_RESPONSE_SCHEMA,
     temperature: 0,
     maxOutputTokens: 1024,
+    providerOptions: { deepseek: { thinking: 'disabled' } },
   });
 
   const data = response.data;

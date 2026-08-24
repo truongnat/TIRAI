@@ -115,6 +115,7 @@ export async function observeBrowser(page: BrowserPage): Promise<BrowserObservat
     return {
       id,
       role: el.role ?? 'generic',
+      visible: true,
       accessibleName: el.accessibleName,
       label: el.label,
       placeholder: el.placeholder,
