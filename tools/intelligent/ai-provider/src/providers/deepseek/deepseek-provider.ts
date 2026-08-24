@@ -59,21 +59,21 @@ export class DeepSeekProvider implements AIProvider {
     const body = this.buildRequestBody(model, request);
 
     // Execute with retry for transient errors
-    const raw = await withRetry(
-      () => this.executeRequest(body, timeoutMs),
+    const response = await withRetry(
+      async () => {
+        const raw = await this.executeRequest(body, timeoutMs);
+        return { raw, rawText: this.extractContent(raw, Boolean(request.responseSchema)) };
+      },
       {
         maxRetries: this.config.maxRetries,
         providerName: this.name,
       },
     );
 
-    // Extract the raw text content
-    const rawText = this.extractContent(raw);
-
     // Parse and validate
-    const data = parseAndValidate<T>(rawText, request.responseSchema, this.name);
+    const data = parseAndValidate<T>(response.rawText, request.responseSchema, this.name);
 
-    return mapDeepSeekResponse(raw, data, rawText);
+    return mapDeepSeekResponse(response.raw, data, response.rawText);
   }
 
   /**
@@ -107,6 +107,11 @@ export class DeepSeekProvider implements AIProvider {
       messages,
       temperature: request.temperature ?? 0,
     };
+
+    const deepseekOptions = request.providerOptions?.deepseek;
+    if (isDeepSeekOptions(deepseekOptions) && deepseekOptions.thinking) {
+      body.thinking = { type: deepseekOptions.thinking };
+    }
 
     if (request.maxOutputTokens) {
       body.max_tokens = request.maxOutputTokens;
@@ -187,16 +192,42 @@ export class DeepSeekProvider implements AIProvider {
     }
   }
 
-  private extractContent(raw: DeepSeekRawResponse): string {
-    const content = raw.choices?.[0]?.message?.content;
-    if (!content || content.trim().length === 0) {
+  private extractContent(raw: DeepSeekRawResponse, jsonMode: boolean): string {
+    if (!Array.isArray(raw.choices) || raw.choices.length === 0) {
+      throw new AIProviderError({
+        code: AIProviderErrorCode.MALFORMED_PROVIDER_RESPONSE,
+        provider: this.name,
+        message: 'DeepSeek returned a response without choices.',
+        requestId: raw.id,
+      });
+    }
+
+    const choice = raw.choices[0];
+    if (choice?.finish_reason === 'length') {
+      throw new AIProviderError({
+        code: AIProviderErrorCode.OUTPUT_LIMIT_EXCEEDED,
+        provider: this.name,
+        message: 'DeepSeek reached the configured output token limit.',
+        requestId: raw.id,
+      });
+    }
+
+    const content = choice?.message?.content;
+    if (typeof content !== 'string' || content.trim().length === 0) {
       throw new AIProviderError({
         code: AIProviderErrorCode.RESPONSE_EMPTY,
         provider: this.name,
-        message: 'DeepSeek returned an empty response.',
+        message: 'DeepSeek returned empty content.',
         requestId: raw.id,
+        retryable: jsonMode,
       });
     }
     return content.trim();
   }
+}
+
+function isDeepSeekOptions(value: unknown): value is { thinking?: 'enabled' | 'disabled' } {
+  if (!value || typeof value !== 'object') return false;
+  const thinking = (value as { thinking?: unknown }).thinking;
+  return thinking === undefined || thinking === 'enabled' || thinking === 'disabled';
 }

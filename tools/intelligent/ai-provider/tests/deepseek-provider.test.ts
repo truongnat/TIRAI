@@ -175,6 +175,34 @@ describe('DeepSeekProvider – Request mapping', () => {
     expect(callBody.max_tokens).toBe(1000);
   });
 
+  it('sends explicit DeepSeek V4 thinking mode when configured', async () => {
+    const provider = new DeepSeekProvider({ model: 'deepseek-v4-flash' });
+    mockOkResponse();
+
+    await provider.generate({
+      model: 'deepseek-v4-flash',
+      messages: [{ role: 'user', content: 'Return JSON only.' }],
+      providerOptions: { deepseek: { thinking: 'disabled' } },
+      responseSchema: { type: 'object' },
+      maxOutputTokens: 256,
+    });
+
+    const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(callBody.thinking).toEqual({ type: 'disabled' });
+    expect(callBody.response_format).toEqual({ type: 'json_object' });
+    expect(callBody.max_tokens).toBe(256);
+  });
+
+  it('does not send thinking when it is deliberately unspecified', async () => {
+    const provider = new DeepSeekProvider({ model: 'deepseek-v4-flash' });
+    mockOkResponse();
+
+    await provider.generate({ messages: [{ role: 'user', content: 'Return JSON only.' }] });
+
+    const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(callBody.thinking).toBeUndefined();
+  });
+
   it('injects schema instruction and json_object format when responseSchema is set', async () => {
     const provider = new DeepSeekProvider();
     mockOkResponse();
@@ -264,26 +292,72 @@ describe('DeepSeekProvider – Response handling', () => {
     });
   });
 
-  it('throws RESPONSE_EMPTY on empty content', async () => {
-    const provider = new DeepSeekProvider();
+  it('retries a JSON-mode empty response and succeeds', async () => {
+    const provider = new DeepSeekProvider({ maxRetries: 2 });
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => makeResponse({ choices: [{ message: { content: '' }, finish_reason: 'stop' }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => makeResponse() });
+
+    const result = await provider.generate({
+      messages: [{ role: 'user', content: 'Return JSON only.' }],
+      responseSchema: { type: 'object' },
+    });
+
+    expect(result.data).toEqual({ status: 'ok' });
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('classifies an exhausted empty response as RESPONSE_EMPTY', async () => {
+    const provider = new DeepSeekProvider({ maxRetries: 1 });
     mockOkResponse(makeResponse({
       choices: [{ message: { content: '' }, finish_reason: 'stop' }],
     }));
 
     await expect(provider.generate({
       messages: [{ role: 'user', content: 'test' }],
-    })).rejects.toThrow(/empty response/);
+      responseSchema: { type: 'object' },
+    })).rejects.toMatchObject({ code: AIProviderErrorCode.RESPONSE_EMPTY, retryable: true });
   });
 
   it('throws RESPONSE_EMPTY on null content', async () => {
-    const provider = new DeepSeekProvider();
+    const provider = new DeepSeekProvider({ maxRetries: 1 });
     mockOkResponse(makeResponse({
       choices: [{ message: { content: null }, finish_reason: 'stop' }],
     }));
 
     await expect(provider.generate({
       messages: [{ role: 'user', content: 'test' }],
-    })).rejects.toThrow(/empty response/);
+    })).rejects.toMatchObject({ code: AIProviderErrorCode.RESPONSE_EMPTY });
+  });
+
+  it('classifies finish_reason length as OUTPUT_LIMIT_EXCEEDED', async () => {
+    const provider = new DeepSeekProvider({ maxRetries: 1 });
+    mockOkResponse(makeResponse({ choices: [{ message: { content: '' }, finish_reason: 'length' }] }));
+
+    await expect(provider.generate({ messages: [{ role: 'user', content: 'test' }] }))
+      .rejects.toMatchObject({ code: AIProviderErrorCode.OUTPUT_LIMIT_EXCEEDED, retryable: false });
+  });
+
+  it('classifies a missing choices array as MALFORMED_PROVIDER_RESPONSE', async () => {
+    const provider = new DeepSeekProvider({ maxRetries: 1 });
+    mockOkResponse({ id: 'bad-response', choices: [] });
+
+    await expect(provider.generate({ messages: [{ role: 'user', content: 'test' }] }))
+      .rejects.toMatchObject({ code: AIProviderErrorCode.MALFORMED_PROVIDER_RESPONSE });
+  });
+
+  it('does not persist reasoning_content in the generic response', async () => {
+    const provider = new DeepSeekProvider();
+    mockOkResponse(makeResponse({
+      choices: [{ message: { content: '{"status":"ok"}', reasoning_content: 'private reasoning' }, finish_reason: 'stop' }],
+    }));
+
+    const result = await provider.generate({
+      messages: [{ role: 'user', content: 'Return JSON only.' }],
+      responseSchema: { type: 'object' },
+    });
+
+    expect(JSON.stringify(result)).not.toContain('private reasoning');
   });
 
   it('throws RESPONSE_PARSE_ERROR on invalid JSON', async () => {

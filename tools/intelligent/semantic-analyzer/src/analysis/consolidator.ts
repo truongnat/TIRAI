@@ -26,6 +26,7 @@ export interface ConsolidationCheckpointOptions {
   provider: string;
   model: string;
   promptVersion: string;
+  providerOptions?: Record<string, unknown>;
 }
 
 /** Lenient schema to force json_object mode at the provider level. */
@@ -47,6 +48,7 @@ export async function consolidate(
   provider: AIProvider,
   budget: SemanticAnalyzerBudget = DEFAULT_SEMANTIC_BUDGET,
   phase = 'consolidation',
+  providerOptions?: Record<string, unknown>,
 ): Promise<{ result: ConsolidationResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> {
   const userPrompt = buildConsolidationPrompt(chunkResults, sheetNames);
 
@@ -57,6 +59,7 @@ export async function consolidate(
     ],
     responseSchema: lenientObjectSchema,
     temperature: 0,
+    providerOptions,
   }, { ...budget, maxInputTokensPerRequest: Math.min(budget.maxInputTokensPerRequest, budget.maxConsolidationInputTokens) }, { phase, contextIds: chunkResults.map((r) => r.contextId) });
 
   // Normalize: ensure required arrays exist
@@ -88,6 +91,7 @@ export async function consolidateHierarchically(
   contextSheetMap?: Map<string, string>,
   requestOffset = 0,
   checkpoint?: ConsolidationCheckpointOptions,
+  providerOptions?: Record<string, unknown>,
 ): Promise<{
   result: ConsolidationResult;
   usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
@@ -108,7 +112,7 @@ export async function consolidateHierarchically(
   // contract stable while the large-workbook path below becomes hierarchical.
   if (chunkResults.length <= budget.maxConsolidationItemsPerBatch && estimateConsolidationTokens(chunkResults, sheetNames) <= budget.maxConsolidationInputTokens) {
     consumeRequest();
-    const cons = await consolidate(chunkResults, sheetNames, provider, budget, 'global-consolidation');
+    const cons = await consolidate(chunkResults, sheetNames, provider, budget, 'global-consolidation', checkpoint?.providerOptions ?? providerOptions);
     metrics.globalRequests = 1;
     metrics.maxEstimatedInputTokens = estimateConsolidationTokens(chunkResults, sheetNames);
     metrics.estimatedInputTokens = metrics.maxEstimatedInputTokens;
@@ -131,7 +135,7 @@ export async function consolidateHierarchically(
   for (const [{ sheet, batch }, batchIndex] of plannedBatches.map((planned, index) => [planned, index] as const)) {
     const checkpointId = `sheet-${batchIndex}`;
     const fingerprint = checkpoint
-      ? computeConsolidationFingerprint(batch, checkpoint.promptVersion, checkpoint.model, { phase: 'sheet', sheet, budget })
+      ? computeConsolidationFingerprint(batch, checkpoint.promptVersion, checkpoint.model, { phase: 'sheet', sheet, budget }, checkpoint.providerOptions)
       : '';
     const cached = checkpoint?.resume
       ? readConsolidationCheckpoint(checkpoint.outputDir, fingerprint, checkpoint.provider, checkpoint.model, checkpoint.promptVersion, checkpointId)
@@ -141,7 +145,7 @@ export async function consolidateHierarchically(
       continue;
     }
     consumeRequest();
-    const cons = await consolidate(batch, [sheet], provider, budget, 'sheet-consolidation');
+    const cons = await consolidate(batch, [sheet], provider, budget, 'sheet-consolidation', checkpoint?.providerOptions ?? providerOptions);
     batchResults.push(cons.result);
     addUsage(usage, cons.usage);
     metrics.batchRequests++;
@@ -162,7 +166,7 @@ export async function consolidateHierarchically(
       }
       const checkpointId = `global-${level.length}-${groupIndex}`;
       const fingerprint = checkpoint
-        ? computeConsolidationFingerprint(group, checkpoint.promptVersion, checkpoint.model, { phase: 'global', sheetNames, budget, level: level.length, groupIndex })
+        ? computeConsolidationFingerprint(group, checkpoint.promptVersion, checkpoint.model, { phase: 'global', sheetNames, budget, level: level.length, groupIndex }, checkpoint.providerOptions)
         : '';
       const cached = checkpoint?.resume
         ? readConsolidationCheckpoint(checkpoint.outputDir, fingerprint, checkpoint.provider, checkpoint.model, checkpoint.promptVersion, checkpointId)
@@ -172,7 +176,7 @@ export async function consolidateHierarchically(
         continue;
       }
       consumeRequest();
-      const cons = await consolidateSummaryBatch(group, sheetNames, provider, budget);
+      const cons = await consolidateSummaryBatch(group, sheetNames, provider, budget, checkpoint?.providerOptions ?? providerOptions);
       next.push(cons.result);
       addUsage(usage, cons.usage);
       metrics.globalRequests++;
@@ -279,6 +283,7 @@ async function consolidateSummaryBatch(
   sheetNames: string[],
   provider: AIProvider,
   budget: SemanticAnalyzerBudget,
+  providerOptions?: Record<string, unknown>,
 ): Promise<{ result: ConsolidationResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> {
   const response = await generateBudgeted(provider, {
     messages: [
@@ -287,6 +292,7 @@ async function consolidateSummaryBatch(
     ],
     responseSchema: lenientObjectSchema,
     temperature: 0,
+    providerOptions,
   }, { ...budget, maxInputTokensPerRequest: Math.min(budget.maxInputTokensPerRequest, budget.maxConsolidationInputTokens) }, { phase: 'global-consolidation', contextIds: [] });
   const raw = response.response.data as Record<string, unknown>;
   return {

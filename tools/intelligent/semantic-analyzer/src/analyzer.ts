@@ -95,7 +95,7 @@ export async function analyzeSemanticContext(
     async (chunk) => {
       // Check resume cache
       if (resume && outputDir) {
-        const fp = computeFingerprint(chunk.content, promptVersion, model);
+        const fp = computeFingerprint(chunk.content, promptVersion, model, undefined, undefined, options?.providerOptions);
         const cached = readIntermediateResult(outputDir, chunk.id, fp, provider.name, model, promptVersion);
         if (cached) {
           checkpointHits++;
@@ -112,8 +112,8 @@ export async function analyzeSemanticContext(
       activeConcurrency++;
       peakConcurrency = Math.max(peakConcurrency, activeConcurrency);
       try {
-        const analysis = await analyzeChunk(chunk, provider, budget);
-        const fingerprint = computeFingerprint(chunk.content, promptVersion, model);
+        const analysis = await analyzeChunk(chunk, provider, budget, options?.providerOptions);
+        const fingerprint = computeFingerprint(chunk.content, promptVersion, model, undefined, undefined, options?.providerOptions);
         if (outputDir) {
           writeIntermediateResult(outputDir, chunk.id, analysis.result, provider.name, model, analysis.usage as Record<string, unknown>, fingerprint, promptVersion);
         }
@@ -163,6 +163,7 @@ export async function analyzeSemanticContext(
     promptVersion,
     model,
     { maxContextsPerBatch: budget.maxContextsPerBatch, maxConsolidationItemsPerBatch: budget.maxConsolidationItemsPerBatch, maxConsolidationInputTokens: budget.maxConsolidationInputTokens },
+    options?.providerOptions,
   );
 
   try {
@@ -178,7 +179,8 @@ export async function analyzeSemanticContext(
       provider: provider.name,
       model,
       promptVersion,
-    } : undefined);
+      providerOptions: options?.providerOptions,
+      } : undefined, options?.providerOptions);
       consolidationResult = cons.result;
       consolidationRequests = cons.metrics.batchRequests + cons.metrics.globalRequests;
       aiRequests += consolidationRequests;

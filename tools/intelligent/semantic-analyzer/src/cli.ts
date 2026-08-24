@@ -36,9 +36,14 @@ async function main(): Promise<void> {
   }
 
   const providerName = (args.provider as string) ?? 'groq';
+  const model = (args.model as string | undefined) ?? (providerName === 'deepseek' ? 'deepseek-v4-flash' : undefined);
+  const thinking = (args.thinking as string | undefined) ?? (providerName === 'deepseek' ? 'disabled' : undefined);
+  const providerOptions = thinking
+    ? { deepseek: { thinking } }
+    : undefined;
   const provider = createAIProvider({
     provider: providerName,
-    config: args.model ? { model: args.model as string } : undefined,
+    config: model ? { model } : undefined,
   });
 
   console.log(`Semantic Analyzer v1`);
@@ -54,7 +59,8 @@ async function main(): Promise<void> {
     concurrency: (args.concurrency as number) ?? 2,
     resume: args.resume as boolean | undefined,
     sheets: args.sheet ? [args.sheet as string] : undefined,
-    model: args.model as string | undefined,
+    model,
+    providerOptions,
   });
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -116,6 +122,7 @@ Options:
   --output <dir>      Path to output directory (required)
   --provider <name>   AI provider name (default: groq)
   --model <model>     Model override
+  --thinking <mode>   Provider thinking mode (DeepSeek: enabled|disabled)
   --concurrency <n>   Concurrent chunk analysis (default: 2)
   --resume            Resume from cached intermediate results
   --plan              Print offline capacity preflight without provider calls

@@ -14,7 +14,7 @@ export interface DeepSeekRawResponse {
   id?: string;
   model?: string;
   choices?: Array<{
-    message?: { content?: string | null };
+    message?: { content?: string | null; reasoning_content?: string | null };
     finish_reason?: string;
   }>;
   usage?: {
