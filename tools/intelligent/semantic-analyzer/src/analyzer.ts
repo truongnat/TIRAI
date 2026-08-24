@@ -172,7 +172,13 @@ export async function analyzeSemanticContext(
     if (cachedConsolidation) {
       consolidationResult = cachedConsolidation;
     } else {
-    const cons = await consolidateHierarchically(chunkResults, sheetNames, provider, budget, contextSheetMap, aiRequests);
+    const cons = await consolidateHierarchically(chunkResults, sheetNames, provider, budget, contextSheetMap, aiRequests, outputDir ? {
+      outputDir,
+      resume,
+      provider: provider.name,
+      model,
+      promptVersion,
+    } : undefined);
       consolidationResult = cons.result;
       consolidationRequests = cons.metrics.batchRequests + cons.metrics.globalRequests;
       aiRequests += consolidationRequests;

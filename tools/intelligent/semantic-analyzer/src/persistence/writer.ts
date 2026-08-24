@@ -113,10 +113,11 @@ export function writeConsolidationCheckpoint(
   provider: string,
   model: string,
   promptVersion: string,
+  checkpointId = 'consolidation',
 ): void {
   const absDir = path.resolve(outputDir);
   fs.mkdirSync(absDir, { recursive: true });
-  atomicWrite(path.join(absDir, 'consolidation-checkpoint.json'), JSON.stringify({
+  atomicWrite(path.join(absDir, `consolidation-checkpoint-${safeCheckpointId(checkpointId)}.json`), JSON.stringify({
     fingerprint,
     provider,
     model,
@@ -132,8 +133,9 @@ export function readConsolidationCheckpoint(
   provider: string,
   model: string,
   promptVersion: string,
+  checkpointId = 'consolidation',
 ): ConsolidationResult | null {
-  const filePath = path.join(path.resolve(outputDir), 'consolidation-checkpoint.json');
+  const filePath = path.join(path.resolve(outputDir), `consolidation-checkpoint-${safeCheckpointId(checkpointId)}.json`);
   if (!fs.existsSync(filePath)) return null;
   try {
     const data = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as Record<string, unknown>;
@@ -149,4 +151,8 @@ function atomicWrite(filePath: string, content: string): void {
   const temporaryPath = `${filePath}.tmp-${process.pid}`;
   fs.writeFileSync(temporaryPath, content, 'utf-8');
   fs.renameSync(temporaryPath, filePath);
+}
+
+function safeCheckpointId(checkpointId: string): string {
+  return checkpointId.replace(/[^a-zA-Z0-9._-]/g, '_');
 }

@@ -9,6 +9,8 @@ import type { ChunkSemanticResult, ConsolidationResult } from '../models.js';
 import { SEMANTIC_SYSTEM_PROMPT } from '../prompts/system.js';
 import { buildConsolidationPrompt } from '../prompts/consolidation.js';
 import { DEFAULT_SEMANTIC_BUDGET, estimateRequestTokens, generateBudgeted, type SemanticAnalyzerBudget } from '../budget.js';
+import { computeConsolidationFingerprint } from '../fingerprint.js';
+import { readConsolidationCheckpoint, writeConsolidationCheckpoint } from '../persistence/writer.js';
 
 export interface ConsolidationMetrics {
   batchRequests: number;
@@ -16,6 +18,14 @@ export interface ConsolidationMetrics {
   maxEstimatedInputTokens: number;
   batches: number;
   estimatedInputTokens: number;
+}
+
+export interface ConsolidationCheckpointOptions {
+  outputDir: string;
+  resume: boolean;
+  provider: string;
+  model: string;
+  promptVersion: string;
 }
 
 /** Lenient schema to force json_object mode at the provider level. */
@@ -77,6 +87,7 @@ export async function consolidateHierarchically(
   budget: SemanticAnalyzerBudget = DEFAULT_SEMANTIC_BUDGET,
   contextSheetMap?: Map<string, string>,
   requestOffset = 0,
+  checkpoint?: ConsolidationCheckpointOptions,
 ): Promise<{
   result: ConsolidationResult;
   usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
@@ -117,24 +128,47 @@ export async function consolidateHierarchically(
   const plannedBatches = [...bySheet.entries()].flatMap(([sheet, results]) =>
     splitChunkResults(results, [sheet], budget).map((batch) => ({ sheet, batch })),
   );
-  for (const { sheet, batch } of plannedBatches) {
+  for (const [{ sheet, batch }, batchIndex] of plannedBatches.map((planned, index) => [planned, index] as const)) {
+    const checkpointId = `sheet-${batchIndex}`;
+    const fingerprint = checkpoint
+      ? computeConsolidationFingerprint(batch, checkpoint.promptVersion, checkpoint.model, { phase: 'sheet', sheet, budget })
+      : '';
+    const cached = checkpoint?.resume
+      ? readConsolidationCheckpoint(checkpoint.outputDir, fingerprint, checkpoint.provider, checkpoint.model, checkpoint.promptVersion, checkpointId)
+      : null;
+    if (cached) {
+      batchResults.push(cached);
+      continue;
+    }
     consumeRequest();
     const cons = await consolidate(batch, [sheet], provider, budget, 'sheet-consolidation');
     batchResults.push(cons.result);
     addUsage(usage, cons.usage);
     metrics.batchRequests++;
     metrics.batches++;
-      metrics.maxEstimatedInputTokens = Math.max(metrics.maxEstimatedInputTokens, estimateConsolidationTokens(batch, [sheet]));
-      metrics.estimatedInputTokens += estimateConsolidationTokens(batch, [sheet]);
+    metrics.maxEstimatedInputTokens = Math.max(metrics.maxEstimatedInputTokens, estimateConsolidationTokens(batch, [sheet]));
+    metrics.estimatedInputTokens += estimateConsolidationTokens(batch, [sheet]);
+    if (checkpoint) writeConsolidationCheckpoint(checkpoint.outputDir, fingerprint, cons.result, checkpoint.provider, checkpoint.model, checkpoint.promptVersion, checkpointId);
   }
 
   let level = batchResults;
   while (level.length > 0) {
     const groups = splitConsolidationResults(level, sheetNames, budget);
     const next: ConsolidationResult[] = [];
-    for (const group of groups) {
+    for (const [groupIndex, group] of groups.entries()) {
       if (groups.length === 1 && level.length === 1) {
         next.push(group[0]!);
+        continue;
+      }
+      const checkpointId = `global-${level.length}-${groupIndex}`;
+      const fingerprint = checkpoint
+        ? computeConsolidationFingerprint(group, checkpoint.promptVersion, checkpoint.model, { phase: 'global', sheetNames, budget, level: level.length, groupIndex })
+        : '';
+      const cached = checkpoint?.resume
+        ? readConsolidationCheckpoint(checkpoint.outputDir, fingerprint, checkpoint.provider, checkpoint.model, checkpoint.promptVersion, checkpointId)
+        : null;
+      if (cached) {
+        next.push(cached);
         continue;
       }
       consumeRequest();
@@ -144,6 +178,7 @@ export async function consolidateHierarchically(
       metrics.globalRequests++;
       metrics.maxEstimatedInputTokens = Math.max(metrics.maxEstimatedInputTokens, estimateSummaryTokens(group, sheetNames));
       metrics.estimatedInputTokens += estimateSummaryTokens(group, sheetNames);
+      if (checkpoint) writeConsolidationCheckpoint(checkpoint.outputDir, fingerprint, cons.result, checkpoint.provider, checkpoint.model, checkpoint.promptVersion, checkpointId);
     }
     if (next.length === 1) {
       return { result: combineConsolidationResults(batchResults, next[0]!), usage, metrics };
