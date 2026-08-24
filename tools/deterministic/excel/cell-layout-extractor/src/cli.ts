@@ -5,6 +5,7 @@
 
 import { extractWorkbook, ExtractorError } from './extractor.js';
 import type { ExtractOptions } from './models.js';
+import { memorySnapshot } from './performance.js';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -52,10 +53,13 @@ async function main(): Promise<void> {
     if (profilePerformance && profileOutput && metadata.performanceProfile) {
       const { performanceProfile, ...output } = metadata;
       performanceProfile.rssBeforeSerializationBytes = process.memoryUsage().rss;
+      performanceProfile.memory.push(memorySnapshot('before-serialization-cli'));
       const json = pretty ? JSON.stringify(output, null, 2) : JSON.stringify(output);
       process.stdout.write(`${json}\n`);
       performanceProfile.rssAfterSerializationBytes = process.memoryUsage().rss;
+      performanceProfile.memory.push(memorySnapshot('after-serialization-cli'));
       await import('node:fs/promises').then((fs) => fs.writeFile(profileOutput, JSON.stringify(performanceProfile, null, 2)));
+      performanceProfile.memory.push(memorySnapshot('after-profile-write'));
       return;
     }
     if (metadata.performanceProfile) delete metadata.performanceProfile;

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import JSZip from 'jszip';
+import type { OOXMLProfile } from './models.js';
 
 /**
  * Workbook-scoped read-only OOXML access. The archive is decompressed once per
@@ -26,5 +27,20 @@ export class WorkbookOOXMLContext {
     const text = await entry.async('string');
     this.textCache.set(entryPath, text);
     return text;
+  }
+
+  release(entryPath: string): void {
+    this.textCache.delete(entryPath);
+  }
+
+  profile(): OOXMLProfile {
+    const entries = [...this.textCache.entries()]
+      .map(([path, text]) => ({ path, characters: text.length }))
+      .sort((a, b) => b.characters - a.characters || a.path.localeCompare(b.path));
+    return {
+      cachedEntries: entries.length,
+      cachedCharacters: entries.reduce((total, entry) => total + entry.characters, 0),
+      largestEntries: entries.slice(0, 10),
+    };
   }
 }
