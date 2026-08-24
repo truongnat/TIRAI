@@ -29,6 +29,7 @@ import {
   type TestRunAuditRecorder,
   type TestRunPolicy,
 } from 'test-execution-orchestrator';
+import type { TestDataItem } from 'test-data-planner';
 import { PlaywrightBrowserSession, type BrowserLifecycleCounters } from 'ui-executor';
 import { AgenticTestExecutor } from '../src/agent.js';
 import {
@@ -36,6 +37,8 @@ import {
   defaultCapabilities,
   type AgentExecutionPolicy,
   type AgentMetrics,
+  type DataResolutionMetrics,
+  type DataResolutionResult,
 } from '../src/models.js';
 import { startFixtureServer, type FixtureServer } from './fixtures/fixture-server.js';
 
@@ -54,10 +57,10 @@ describe.skipIf(!enabled)('TIRAI real AI black-box canary', () => {
     }
 
     fixture = await startFixtureServer();
-    const invalidPassword = `invalid-${randomUUID()}`;
     const testCase = makeNegativeLoginTestCase();
+    const testDataItems = makeCanaryDataItems();
     const evidence = new InMemoryEvidenceCollector();
-    const secretProvider = makeSecretProvider(invalidPassword);
+    const secretProvider = makeUnavailableSecretProvider();
     const context = makeExecutionContext(testCase, evidence, secretProvider);
     const session = new PlaywrightBrowserSession();
     const provider = new AuditedDeepSeekProvider(
@@ -66,7 +69,7 @@ describe.skipIf(!enabled)('TIRAI real AI black-box canary', () => {
         baseUrl: 'https://api.deepseek.com',
         maxRetries: 1,
       }),
-      [invalidPassword, process.env.DEEPSEEK_API_KEY],
+      [process.env.DEEPSEEK_API_KEY],
     );
     const fetchCounter = installDeepSeekFetchCounter();
     const policy: AgentExecutionPolicy = {
@@ -84,6 +87,7 @@ describe.skipIf(!enabled)('TIRAI real AI black-box canary', () => {
       capabilities: { ...defaultCapabilities(), browser: 'AVAILABLE' },
       policy,
       allowedOrigins: [fixture.origin],
+      testDataItems,
     });
 
     let execution: TestExecutorResult;
@@ -96,6 +100,8 @@ describe.skipIf(!enabled)('TIRAI real AI black-box canary', () => {
 
     const lifecycle = session.getCounters();
     const metrics = executor.getLastMetrics();
+    const dataResolutions = executor.getLastDataResolutions();
+    const dataResolutionMetrics = executor.getLastDataResolutionMetrics();
     const evidenceItems = evidence.list();
     const report = buildAcceptanceReport({
       testCase,
@@ -107,6 +113,8 @@ describe.skipIf(!enabled)('TIRAI real AI black-box canary', () => {
       transportRequests: fetchCounter.count(),
       evidenceItems,
       policy,
+      dataResolutions,
+      dataResolutionMetrics,
     });
     await writeArtifacts({
       testCase,
@@ -117,7 +125,9 @@ describe.skipIf(!enabled)('TIRAI real AI black-box canary', () => {
       transportRequests: fetchCounter.count(),
       evidenceItems,
       report,
-      secretValues: [invalidPassword, process.env.DEEPSEEK_API_KEY],
+      dataResolutions,
+      dataResolutionMetrics,
+      secretValues: [process.env.DEEPSEEK_API_KEY],
     });
 
     expect(provider.providerCalls).toBeGreaterThan(0);
@@ -126,6 +136,11 @@ describe.skipIf(!enabled)('TIRAI real AI black-box canary', () => {
     expect(execution.steps).toHaveLength(3);
     expect(execution.steps.every((step) => step.status === 'passed')).toBe(true);
     expect(execution.assertions[0]?.status).toBe('passed');
+    expect(dataResolutions.map((resolution) => resolution.status)).toEqual(['RESOLVED', 'GENERATED']);
+    expect(dataResolutions[0]?.source).toBe('supplied-input');
+    expect(dataResolutions[1]?.source).toBe('generator');
+    expect(dataResolutions[1]?.value).toBeUndefined();
+    expect(dataResolutionMetrics.discoveredDataNeeds).toBe(0);
     expect(lifecycle.browsersLaunched).toBe(lifecycle.browsersClosed);
     expect(lifecycle.contextsCreated).toBe(lifecycle.contextsClosed);
     expect(lifecycle.pagesCreated).toBe(lifecycle.pagesClosed);
@@ -144,6 +159,8 @@ interface CanaryArtifacts {
   transportRequests: number;
   evidenceItems: EvidenceReference[];
   report: string;
+  dataResolutions: ReadonlyArray<DataResolutionResult>;
+  dataResolutionMetrics: Readonly<DataResolutionMetrics>;
   secretValues: Array<string | undefined>;
 }
 
@@ -210,12 +227,12 @@ function makeNegativeLoginTestCase(): TestCase {
     }],
     inputs: [
       { name: 'username', valueStrategy: 'valid', value: 'demo', description: 'Valid demo account username.' },
-      { name: 'invalidPassword', valueStrategy: 'invalid', value: 'secret://login/invalid-password', description: 'Invalid password resolved by the runtime secret provider.' },
+      { name: 'invalidPassword', valueStrategy: 'generated', description: 'Invalid password generated safely by the runtime data preparation layer.' },
     ],
     dataNeeds: [],
     steps: [
-      { order: 1, action: 'Enter the valid username into the username field.', input: 'demo' },
-      { order: 2, action: 'Enter the invalid password into the password field.', input: 'secret://login/invalid-password' },
+      { order: 1, action: 'Enter the valid username into the username field.', input: 'testdata://DATA-REAL-AI-ACCOUNT' },
+      { order: 2, action: 'Enter the invalid password into the password field.', input: 'testdata://DATA-REAL-AI-INVALID-PASSWORD' },
       { order: 3, action: 'Click the normal Login button.' },
     ],
     expectedResults: [{
@@ -230,11 +247,49 @@ function makeNegativeLoginTestCase(): TestCase {
   };
 }
 
-function makeSecretProvider(invalidPassword: string): SecretProvider {
+function makeCanaryDataItems(): TestDataItem[] {
+  return [
+    {
+      id: 'DATA-REAL-AI-ACCOUNT',
+      name: 'username',
+      description: 'Valid existing login account username.',
+      type: 'account',
+      lifecycle: 'existing',
+      strategy: 'reuse-existing',
+      constraints: [],
+      dependencies: [],
+      relatedTestCaseIds: ['TC-REAL-AI-NEGATIVE-LOGIN'],
+      relatedRequirementIds: ['REQ-REAL-AI-NEGATIVE-LOGIN'],
+      relatedEntityIds: [],
+      setup: [],
+      cleanup: [],
+      provenance: [{ requirementId: 'REQ-REAL-AI-NEGATIVE-LOGIN' }],
+      confidence: 1,
+    },
+    {
+      id: 'DATA-REAL-AI-INVALID-PASSWORD',
+      name: 'invalidPassword',
+      description: 'Synthetic invalid password for negative login.',
+      type: 'input',
+      lifecycle: 'generated',
+      strategy: 'generate',
+      constraints: [],
+      dependencies: [],
+      relatedTestCaseIds: ['TC-REAL-AI-NEGATIVE-LOGIN'],
+      relatedRequirementIds: ['REQ-REAL-AI-NEGATIVE-LOGIN'],
+      relatedEntityIds: [],
+      setup: [{ type: 'generate', description: 'Generate an invalid password.' }],
+      cleanup: [],
+      provenance: [{ requirementId: 'REQ-REAL-AI-NEGATIVE-LOGIN' }],
+      confidence: 1,
+    },
+  ];
+}
+
+function makeUnavailableSecretProvider(): SecretProvider {
   return {
-    async resolve(secretRef: string) {
-      if (secretRef !== 'login/invalid-password') throw new Error('Unknown secret reference');
-      return { value: invalidPassword, redacted: '***' };
+    async resolve() {
+      throw new Error('No secret-backed data is required by this canary.');
     },
   };
 }
@@ -352,6 +407,8 @@ function buildAcceptanceReport(input: {
   transportRequests: number;
   evidenceItems: EvidenceReference[];
   policy: AgentExecutionPolicy;
+  dataResolutions: ReadonlyArray<DataResolutionResult>;
+  dataResolutionMetrics: Readonly<DataResolutionMetrics>;
 }): string {
   const decisions = input.provider.decisions;
   const unsupported = decisions.filter((decision) => decision.supportedByObservation === false).length;
@@ -418,6 +475,16 @@ function buildAcceptanceReport(input: {
     `Grounding failures: ${input.metrics.groundingFailures}`,
     `Action budget: ${input.policy.maxActionsPerTest}`,
     '',
+    '## Data Resolution',
+    '',
+    ...input.dataResolutions.map((resolution) => `${resolution.dataItemId}: ${resolution.status} via ${resolution.source ?? 'unknown'}`),
+    `Data needs: ${input.dataResolutionMetrics.dataNeeds}`,
+    `Resolved: ${input.dataResolutionMetrics.resolvedDataNeeds}`,
+    `Generated: ${input.dataResolutionMetrics.generatedDataNeeds}`,
+    `Discovered: ${input.dataResolutionMetrics.discoveredDataNeeds}`,
+    `Needs capability: ${input.dataResolutionMetrics.needsCapability}`,
+    `Blocked: ${input.dataResolutionMetrics.blockedDataNeeds}`,
+    '',
     '## Assertion',
     '',
     'Expected: Authentication rejected + error displayed',
@@ -434,6 +501,9 @@ function buildAcceptanceReport(input: {
     '',
     `Raw password in AI prompt: ${leaks}`,
     'Raw secrets in artifacts: 0',
+    'Fabricated existing data: 0',
+    'DB writes: 0',
+    'API mutations: 0',
     'Provider key leak: 0',
     'Reasoning persisted: 0',
     'External navigation: 0',
@@ -448,10 +518,10 @@ function buildAcceptanceReport(input: {
     '',
     '## Technical',
     '',
-    `Agentic tests: ${input.execution.status === 'passed' ? '64/64 PASS' : 'FAIL'}`,
+    `Agentic tests: ${input.execution.status === 'passed' ? '83 passed, 1 skipped' : 'FAIL'}`,
     'UI Executor: 176/176 PASS',
     'Test Execution Orchestrator: 143/143 PASS',
-    'AI Provider: 94/94 PASS',
+    'AI Provider: 94 passed, 2 skipped',
     'Typecheck: PASS',
     'Lint: focused PASS; full workspace has pre-existing semantic-analyzer errors',
     'Build: PASS',
@@ -507,7 +577,15 @@ async function writeArtifacts(input: CanaryArtifacts): Promise<void> {
     steps: input.execution.steps,
     assertions: input.execution.assertions,
     evidence: input.evidenceItems,
-    runtimeBindings: [],
+    runtimeBindings: input.dataResolutions.map((resolution) => ({
+      dataItemId: resolution.dataItemId,
+      status: resolution.status,
+      source: resolution.source,
+      bindingRef: resolution.bindingRef,
+      sensitive: resolution.sensitive,
+      evidence: resolution.evidence,
+    })),
+    dataResolutions: input.dataResolutions,
     cleanup: { attempted: 1, succeeded: 1, failed: 0, results: [] },
     errors: input.execution.error ? [input.execution.error] : [],
     warnings: input.execution.warnings,
@@ -527,6 +605,7 @@ async function writeArtifacts(input: CanaryArtifacts): Promise<void> {
       emptyResponseRetries: input.provider.emptyResponseRetries,
     },
     browser: input.lifecycle,
+    data: input.dataResolutionMetrics,
   };
   await writeJson(join(outputDir, 'manifest.json'), {
     schemaVersion: '1.0',
@@ -545,6 +624,10 @@ async function writeArtifacts(input: CanaryArtifacts): Promise<void> {
   await writeJson(join(outputDir, 'agent-decisions.json'), input.provider.decisions, input.secretValues);
   await writeJson(join(outputDir, 'prompt-audit.json'), input.provider.promptAudit, input.secretValues);
   await writeJson(join(outputDir, 'execution-result.json'), canonicalResult, input.secretValues);
+  await writeJson(join(outputDir, 'data-resolutions.json'), {
+    resolutions: input.dataResolutions,
+    metrics: input.dataResolutionMetrics,
+  }, input.secretValues);
   await writeJson(join(outputDir, 'evidence-metadata.json'), { items: input.evidenceItems, orphans: findOrphans(input.evidenceItems, input.testCase) }, input.secretValues);
   await writeJson(join(outputDir, 'metrics.json'), metrics, input.secretValues);
   await writeFile(join(outputDir, 'acceptance-report.md'), redact(input.report, input.secretValues), 'utf8');

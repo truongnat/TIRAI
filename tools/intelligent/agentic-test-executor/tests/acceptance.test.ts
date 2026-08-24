@@ -6,10 +6,11 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { type BrowserSession, PlaywrightBrowserSession } from 'ui-executor';
 import type { AIProvider, AIGenerationRequest, AIGenerationResponse } from 'ai-provider';
 import { AgenticTestExecutor } from '../src/agent.js';
-import { defaultCapabilities, defaultAgentPolicy } from '../src/models.js';
+import { defaultCapabilities, defaultAgentPolicy, type DataResolutionResult } from '../src/models.js';
 import { startFixtureServer, type FixtureServer } from './fixtures/fixture-server.js';
 import { makeTestCase, makeContext } from './fixtures/helpers.js';
 import type { TestCase } from 'test-execution-orchestrator';
+import type { TestDataItem } from 'test-data-planner';
 
 let server: FixtureServer;
 
@@ -58,6 +59,17 @@ function routeStep(scenario: string, msg: string): unknown {
   const stepLine = msg.split('\n').find((l) => l.startsWith('Test step:')) ?? '';
   const inputLine = msg.split('\n').find((l) => l.startsWith('Input:')) ?? '';
   const stepDesc = `${stepLine} ${inputLine}`.toLowerCase();
+
+  if (inputLine.includes('testdata://')) {
+    const id = stepDesc.includes('username')
+      ? findElementId(msg, 'textbox', 'username') ?? 'el-001'
+      : findElementId(msg, 'textbox', 'password') ?? 'el-002';
+    return {
+      action: { type: 'fill', elementId: id, valueSource: inputLine.slice('Input:'.length).trim() },
+      confidence: 'high',
+      reasoning: 'use runtime data binding',
+    };
+  }
 
   if (stepDesc.includes('username') || stepDesc.includes('email')) {
     const id = findElementId(msg, 'textbox', 'username') ?? findElementId(msg, 'textbox', 'email') ?? 'el-001';
@@ -117,7 +129,11 @@ function routeAssertion(scenario: string, msg: string): unknown {
   return { assertionType: 'text-visible', expectedValue: 'Login', confidence: 'medium', reasoning: 'default' };
 }
 
-async function runScenario(scenario: string, tc: TestCase): Promise<{ status: string; error?: string }> {
+async function runScenario(
+  scenario: string,
+  tc: TestCase,
+  testDataItems: TestDataItem[] = [],
+): Promise<{ status: string; error?: string; resolutions: ReadonlyArray<DataResolutionResult> }> {
   const session = new PlaywrightBrowserSession();
   const ai = createSmartAI(scenario);
 
@@ -128,17 +144,82 @@ async function runScenario(scenario: string, tc: TestCase): Promise<{ status: st
     capabilities: { ...defaultCapabilities(), browser: 'AVAILABLE' },
     policy: defaultAgentPolicy(),
     allowedOrigins: [server.origin],
+    testDataItems,
   });
 
   const ctx = makeContext();
 
   try {
     const result = await executor.execute(tc, ctx);
-    return { status: result.status, error: result.error?.message };
+    return {
+      status: result.status,
+      error: result.error?.message,
+      resolutions: executor.getLastDataResolutions(),
+    };
   } finally {
     await executor.cleanup(tc, ctx);
   }
 }
+
+describe('Scenario A2: Phase 2B runtime data bindings', () => {
+  it('resolves supplied account, generates invalid password, and executes using bindings', async () => {
+    const tc = makeTestCase({
+      id: 'TC-A2',
+      title: 'Negative login with Phase 2B data',
+      inputs: [
+        { name: 'valid-username', valueStrategy: 'valid', value: 'demo' },
+        { name: 'invalid-password', valueStrategy: 'generated' },
+      ],
+      steps: [
+        { order: 1, action: 'Enter username', input: 'testdata://DATA-ACCOUNT' },
+        { order: 2, action: 'Enter invalid password', input: 'testdata://DATA-INVALID-PASSWORD' },
+        { order: 3, action: 'Click login button' },
+      ],
+      expectedResults: [
+        { description: 'Error message "Invalid credentials" is displayed', verificationType: 'ui' },
+      ],
+    });
+    const result = await runScenario('negative-login', tc, [
+      {
+        id: 'DATA-ACCOUNT',
+        name: 'valid-username',
+        description: 'Valid existing login account username',
+        type: 'account',
+        lifecycle: 'existing',
+        strategy: 'reuse-existing',
+        constraints: [],
+        dependencies: [],
+        relatedTestCaseIds: ['TC-A2'],
+        relatedRequirementIds: [],
+        relatedEntityIds: [],
+        setup: [],
+        cleanup: [],
+        provenance: [],
+        confidence: 1,
+      },
+      {
+        id: 'DATA-INVALID-PASSWORD',
+        name: 'invalid-password',
+        description: 'Invalid password for negative login',
+        type: 'input',
+        lifecycle: 'generated',
+        strategy: 'generate',
+        constraints: [],
+        dependencies: [],
+        relatedTestCaseIds: ['TC-A2'],
+        relatedRequirementIds: [],
+        relatedEntityIds: [],
+        setup: [{ type: 'generate', description: 'Generate invalid password' }],
+        cleanup: [],
+        provenance: [],
+        confidence: 1,
+      },
+    ]);
+
+    expect(result.status).toBe('passed');
+    expect(result.resolutions.map((resolution) => resolution.status)).toEqual(['RESOLVED', 'GENERATED']);
+  });
+});
 
 // ---- Scenario A: Negative login (invalid password) -------------------------
 

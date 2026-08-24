@@ -30,6 +30,7 @@
     "ui-executor": "file:../ui-executor",
     "test-planner": "file:../test-planner",
     "test-data-planner": "file:../test-data-planner",
+    "data-resolver": "file:../data-resolver",
     "execution-engine": "file:../execution-engine"
   },
   "devDependencies": {

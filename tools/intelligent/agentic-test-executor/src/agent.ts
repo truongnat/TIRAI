@@ -24,6 +24,7 @@ import type {
 import {
   type AgentCapabilities,
   type AgentExecutionPolicy,
+  type DataResolutionMetrics,
   type AgentMetrics,
   type DataResolutionResult,
   type AgenticStepResult,
@@ -41,7 +42,15 @@ import { groundStep } from './grounding/step-grounding.js';
 import { groundAssertion } from './assertion/assertion-grounding.js';
 import { validateAction } from './action/action-validator.js';
 import { executeAction } from './action/action-executor.js';
-import { resolveDataItems } from './data/data-resolver.js';
+import {
+  DataNeedCoordinator,
+  DataNeedCoordinatorError,
+} from './data/data-need-coordinator.js';
+import {
+  buildRuntimeCapabilityInventory,
+  type RuntimeCapabilityInventory,
+} from './data/runtime-capability-inventory.js';
+import type { RuntimeDataStore } from './data/runtime-data-store.js';
 
 export interface AgenticTestExecutorOptions {
   browserSession: BrowserSession;
@@ -52,6 +61,9 @@ export interface AgenticTestExecutorOptions {
   allowedOrigins?: string[];
   /** Phase 1 data items to resolve before any browser side effect. */
   testDataItems?: TestDataItem[];
+  /** Explicit Phase 2B operation-level capabilities; defaults fail-closed. */
+  capabilityInventory?: Partial<RuntimeCapabilityInventory>;
+  generationSeed?: string;
 }
 
 export class AgenticTestExecutor implements TestExecutor {
@@ -64,7 +76,9 @@ export class AgenticTestExecutor implements TestExecutor {
   private readonly policy: AgentExecutionPolicy;
   private readonly allowedOrigins: string[];
   private readonly testDataItems: TestDataItem[];
+  private readonly dataNeedCoordinator: DataNeedCoordinator;
   private lastDataResolutions: DataResolutionResult[] = [];
+  private lastDataResolutionMetrics: DataResolutionMetrics = emptyDataResolutionMetrics();
   private lastMetrics: AgentMetrics = {
     agentCalls: 0,
     observations: 0,
@@ -84,6 +98,10 @@ export class AgenticTestExecutor implements TestExecutor {
     this.policy = options.policy ?? defaultAgentPolicy();
     this.allowedOrigins = options.allowedOrigins ?? ['http://127.0.0.1', 'http://localhost'];
     this.testDataItems = options.testDataItems ?? [];
+    this.dataNeedCoordinator = new DataNeedCoordinator({
+      inventory: buildRuntimeCapabilityInventory(this.capabilities, options.capabilityInventory),
+      generationSeed: options.generationSeed,
+    });
   }
 
   canExecute(_testCase: TestCase, _context: TestExecutionContext): TestExecutorMatch {
@@ -111,19 +129,42 @@ export class AgenticTestExecutor implements TestExecutor {
     const errors: TestExecutionError[] = [];
     const warnings: TestExecutionWarning[] = [];
 
-    const dataResolutions = await resolveDataItems(this.testDataItems, {
-      inputs: testCase.inputs.map((input) => ({
-        name: input.name,
-        value: typeof input.value === 'string' ? input.value : undefined,
-        valueStrategy: input.valueStrategy,
-      })),
-      bindings: readRuntimeBindings(context, this.testDataItems),
-      secretResolver: async (secretRef) => {
-        const resolved = await context.secrets.resolve(secretRef);
-        return resolved?.value;
-      },
-    });
+    let coordination;
+    try {
+      coordination = await this.dataNeedCoordinator.resolve(this.testDataItems, {
+        inputs: testCase.inputs.map((input) => ({
+          name: input.name,
+          value: input.value,
+          valueStrategy: input.valueStrategy,
+        })),
+        bindings: context.bindings,
+        secretProvider: context.secrets,
+      });
+    } catch (err) {
+      const message = err instanceof DataNeedCoordinatorError
+        ? err.message
+        : `Data preparation failed: ${err instanceof Error ? err.message : String(err)}`;
+      return {
+        status: 'error',
+        steps: [],
+        assertions: [],
+        evidence: [],
+        error: {
+          code: 'AGENT_DATA_PREPARATION_ERROR',
+          message,
+          retryable: false,
+        },
+        warnings: [],
+      };
+    }
+    const dataResolutions = coordination.resolutions;
     this.lastDataResolutions = dataResolutions;
+    this.lastDataResolutionMetrics = coordination.metrics;
+    if (typeof context.bindings.produce === 'function') {
+      for (const binding of coordination.runtimeData.toBindingResults()) {
+        context.bindings.produce(binding);
+      }
+    }
 
     const unresolvedData = dataResolutions.filter(
       (resolution) => resolution.status === 'NEEDS_CAPABILITY' || resolution.status === 'BLOCKED',
@@ -186,7 +227,15 @@ export class AgenticTestExecutor implements TestExecutor {
           break;
         }
 
-        const stepResult = await this.executeStep(testCase, step, page, context, metrics, evidenceRefs);
+        const stepResult = await this.executeStep(
+          testCase,
+          step,
+          page,
+          context,
+          coordination.runtimeData,
+          metrics,
+          evidenceRefs,
+        );
         stepResults.push(stepResult);
 
         if (stepResult.status === 'blocked') {
@@ -259,6 +308,7 @@ export class AgenticTestExecutor implements TestExecutor {
     step: { order: number; action: string; target?: string; input?: string },
     page: BrowserPage,
     context: TestExecutionContext,
+    runtimeData: RuntimeDataStore,
     metrics: AgentMetrics,
     evidenceRefs: EvidenceReference[],
   ): Promise<AgenticStepResult> {
@@ -365,7 +415,7 @@ export class AgenticTestExecutor implements TestExecutor {
       }
 
       const idMap = ElementIdMap.fromObservation(observation);
-      const resolution = await resolveActionValue(grounding.action, step.input, context);
+      const resolution = await resolveActionValue(grounding.action, step.input, context, runtimeData);
       if (!resolution.action) {
         return {
           stepOrder: step.order,
@@ -690,6 +740,10 @@ export class AgenticTestExecutor implements TestExecutor {
     });
   }
 
+  getLastDataResolutionMetrics(): Readonly<DataResolutionMetrics> {
+    return { ...this.lastDataResolutionMetrics };
+  }
+
   private blockedStep(
     testCase: TestCase,
     step: { order: number; action: string; input?: string },
@@ -725,11 +779,13 @@ async function resolveActionValue(
   action: AgenticAction,
   stepInput: string | undefined,
   context: TestExecutionContext,
+  runtimeData?: RuntimeDataStore,
 ): Promise<RuntimeActionResolution> {
   if (action.type !== 'fill' && action.type !== 'select') return { action };
 
   const secretInput = stepInput?.startsWith('secret://') ? stepInput : undefined;
-  const source = secretInput ?? action.valueSource ?? (action.value?.startsWith('secret://') ? action.value : undefined);
+  const dataInput = stepInput?.startsWith('testdata://') ? stepInput : undefined;
+  const source = secretInput ?? dataInput ?? action.valueSource ?? (action.value?.startsWith('secret://') ? action.value : undefined);
 
   if (source?.startsWith('secret://')) {
     if (action.value && action.value !== source) {
@@ -745,6 +801,15 @@ async function resolveActionValue(
     }
   }
 
+  if (source?.startsWith('testdata://')) {
+    if (action.value && action.value !== source) {
+      return { error: 'Runtime data fill must use valueSource; literal AI values are rejected.' };
+    }
+    const value = runtimeData?.resolve(source);
+    if (typeof value !== 'string') return { error: 'Runtime data binding resolution failed.' };
+    return { action: { ...action, value, valueSource: source } };
+  }
+
   if (stepInput !== undefined) return { action: { ...action, value: stepInput } };
   return { action };
 }
@@ -753,7 +818,7 @@ function sanitizeGrounding(
   grounding: AgenticStepResult['grounding'],
   stepInput: string | undefined,
 ): AgenticStepResult['grounding'] {
-  if (!grounding.action || !stepInput?.startsWith('secret://')) return grounding;
+  if (!grounding.action || (!stepInput?.startsWith('secret://') && !stepInput?.startsWith('testdata://'))) return grounding;
   return {
     ...grounding,
     action: {
@@ -832,27 +897,6 @@ function addTextEvidence(
   return typeof collector.add === 'function' ? collector.add(input) : undefined;
 }
 
-function readRuntimeBindings(
-  context: TestExecutionContext,
-  items: TestDataItem[],
-): Map<string, string> {
-  const bindings = new Map<string, string>();
-  const store = context.bindings as TestExecutionContext['bindings'] & {
-    resolve?: (name: string) => { status?: string; value?: unknown } | undefined;
-  };
-  if (typeof store.resolve !== 'function') return bindings;
-
-  for (const item of items) {
-    for (const name of [item.id, item.name]) {
-      const binding = store.resolve(name);
-      if (binding?.status === 'resolved' && typeof binding.value === 'string') {
-        bindings.set(name, binding.value);
-      }
-    }
-  }
-  return bindings;
-}
-
 // ---- Result mapping -------------------------------------------------------
 
 function toStepExecutionResult(step: AgenticStepResult): TestStepExecutionResult {
@@ -874,5 +918,19 @@ function toAssertionResult(assertion: AgenticAssertionResult): AssertionResult {
     status: assertion.status,
     actual: assertion.grounding.expectedValue,
     evidenceIds: assertion.evidenceIds,
+  };
+}
+
+function emptyDataResolutionMetrics(): DataResolutionMetrics {
+  return {
+    dataNeeds: 0,
+    resolvedDataNeeds: 0,
+    generatedDataNeeds: 0,
+    discoveredDataNeeds: 0,
+    needsCapability: 0,
+    blockedDataNeeds: 0,
+    databaseDiscoveryCalls: 0,
+    apiDiscoveryCalls: 0,
+    browserDiscoveryRounds: 0,
   };
 }

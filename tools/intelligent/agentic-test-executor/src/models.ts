@@ -54,12 +54,32 @@ export interface DataResolutionResult {
   bindingRef?: string;
   sensitive: boolean;
   evidence: string[];
+  evidenceDetails?: DataResolutionEvidence[];
   value?: string;
   secretRef?: string;
   resolved: boolean;
   reason?: string;
   /** @deprecated Use `reason`; retained for compatibility with the v1 API. */
   unresolvedReason?: string;
+}
+
+export interface DataResolutionEvidence {
+  kind: 'supplied' | 'secret' | 'generator' | 'browser' | 'database' | 'api' | 'binding';
+  description: string;
+  reference?: string;
+  sensitive?: boolean;
+}
+
+export interface DataResolutionMetrics {
+  dataNeeds: number;
+  resolvedDataNeeds: number;
+  generatedDataNeeds: number;
+  discoveredDataNeeds: number;
+  needsCapability: number;
+  blockedDataNeeds: number;
+  databaseDiscoveryCalls: number;
+  apiDiscoveryCalls: number;
+  browserDiscoveryRounds: number;
 }
 
 // ---- Capability Model (§7) ------------------------------------------------

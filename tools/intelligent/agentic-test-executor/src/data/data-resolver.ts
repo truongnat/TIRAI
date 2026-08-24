@@ -208,7 +208,7 @@ function unresolvedResult(
   };
 }
 
-function isSensitiveDataItem(item: TestDataItem): boolean {
+export function isSensitiveDataItem(item: TestDataItem): boolean {
   return /\b(password|passcode|secret|token|credential|api key)\b/i.test(
     `${item.name} ${item.description}`,
   );
