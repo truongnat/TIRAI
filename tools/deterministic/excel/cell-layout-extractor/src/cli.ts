@@ -18,6 +18,8 @@ async function main(): Promise<void> {
   const sheetArgs = extractFlagValues(args, '--sheet');
   const includeEmptyAll = args.includes('--include-empty-all');
   const assets = args.includes('--assets');
+  const profilePerformance = args.includes('--profile-performance');
+  const profileOutput = extractFlagValues(args, '--profile-output')[0];
 
   const inputFile = args.filter(
     (a) => !a.startsWith('--') && !sheetArgs.includes(a),
@@ -41,9 +43,22 @@ async function main(): Promise<void> {
   if (assets) {
     options.assets = true;
   }
+  if (profilePerformance) {
+    options.profilePerformance = true;
+  }
 
   try {
     const metadata = await extractWorkbook(inputFile, options);
+    if (profilePerformance && profileOutput && metadata.performanceProfile) {
+      const { performanceProfile, ...output } = metadata;
+      performanceProfile.rssBeforeSerializationBytes = process.memoryUsage().rss;
+      const json = pretty ? JSON.stringify(output, null, 2) : JSON.stringify(output);
+      process.stdout.write(`${json}\n`);
+      performanceProfile.rssAfterSerializationBytes = process.memoryUsage().rss;
+      await import('node:fs/promises').then((fs) => fs.writeFile(profileOutput, JSON.stringify(performanceProfile, null, 2)));
+      return;
+    }
+    if (metadata.performanceProfile) delete metadata.performanceProfile;
     const json = pretty
       ? JSON.stringify(metadata, null, 2)
       : JSON.stringify(metadata);
@@ -82,6 +97,8 @@ Options:
   --sheet <name|index>   Extract only specific sheet(s). Repeatable.
   --include-empty-all    Include all empty cells in used range.
   --assets               Extract binary assets (images) metadata.
+  --profile-performance  Collect opt-in phase, sheet, and memory diagnostics.
+  --profile-output <file> Write diagnostics separately from extraction JSON.
   --help, -h             Show this help message.
 
 Output:

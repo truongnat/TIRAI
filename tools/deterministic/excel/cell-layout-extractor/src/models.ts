@@ -9,6 +9,51 @@ export interface WorkbookLayoutMetadata {
   file: FileMetadata;
   sheets: SheetLayoutData[];
   warnings: Warning[];
+  performanceProfile?: PerformanceProfile;
+}
+
+export interface PerformanceProfile {
+  enabled: true;
+  totalMs: number;
+  workbookLoadMs: number;
+  rssBeforeLoadBytes: number;
+  rssAfterLoadBytes: number;
+  rssBeforeSerializationBytes: number;
+  rssAfterSerializationBytes: number;
+  sheets: SheetPerformanceProfile[];
+}
+
+export interface SheetPerformanceProfile {
+  index: number;
+  name: string;
+  runtimeMs: number;
+  cellsMs: number;
+  layoutMs: number;
+  validationsMs: number;
+  tablesMs: number;
+  annotationsMs: number;
+  objectsMs: number;
+  conditionalFormattingMs: number;
+  pageSetupMs: number;
+  arrayFormulasMs: number;
+  cellsEmitted: number;
+  nonEmptyCells: number;
+  styledEmptyCells: number;
+  mergedEmptyCells: number;
+  formulaCells: number;
+  declaredRows: number;
+  declaredColumns: number;
+  instantiatedCells: number;
+  mergedRanges: number;
+  styles: number;
+  validations: number;
+  tables: number;
+  annotations: number;
+  objects: number;
+  conditionalFormatting: number;
+  outputBytes: number;
+  rssBeforeBytes: number;
+  rssAfterBytes: number;
 }
 
 export interface FileMetadata {
@@ -329,4 +374,6 @@ export interface ExtractOptions {
   assets?: boolean;
   /** Include all empty cells in used range. Default: false (only styled). */
   includeEmptyAll?: boolean;
+  /** Enable opt-in timing and memory diagnostics. Never included in normal output. */
+  profilePerformance?: boolean;
 }

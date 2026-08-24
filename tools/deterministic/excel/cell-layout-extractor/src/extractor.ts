@@ -14,6 +14,8 @@ import type {
   ExtractOptions,
   ArrayFormulaRaw,
   SourceReference,
+  PerformanceProfile,
+  SheetPerformanceProfile,
 } from './models.js';
 import { StyleRegistry } from './styles.js';
 import { extractCells } from './cells.js';
@@ -26,6 +28,7 @@ import { extractConditionalFormatting } from './conditional-formatting.js';
 import { extractPageSetup } from './page-setup.js';
 import { columnToLetter } from './utils.js';
 import { WarningCode, createWarning } from './warnings.js';
+import { classifyCells, createProfile, now, rssBytes } from './performance.js';
 
 // ---- Public API -----------------------------------------------------------
 
@@ -44,6 +47,8 @@ export async function extractWorkbook(
 ): Promise<WorkbookLayoutMetadata> {
   const resolvedPath = path.resolve(filePath);
   const warnings: Warning[] = [];
+  const profile = options.profilePerformance ? createProfile() : undefined;
+  const extractionStart = profile ? now() : 0;
 
   // -- 1. Validate ---------------------------------------------------------
   if (!fs.existsSync(resolvedPath)) {
@@ -82,7 +87,12 @@ export async function extractWorkbook(
   // -- 3. Open workbook ----------------------------------------------------
   const workbook = new ExcelJS.Workbook();
   try {
+    const loadStart = profile ? now() : 0;
     await workbook.xlsx.readFile(resolvedPath);
+    if (profile) {
+      profile.workbookLoadMs = now() - loadStart;
+      profile.rssAfterLoadBytes = rssBytes();
+    }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (/encrypt|password|protected/i.test(msg)) {
@@ -117,15 +127,22 @@ export async function extractWorkbook(
       if (!matchByName && !matchByIndex) continue;
     }
 
-    sheets.push(await extractSheet(ws, idx, resolvedPath, options));
+    sheets.push(await extractSheet(ws, idx, resolvedPath, options, profile));
   }
 
-  return {
+  const result: WorkbookLayoutMetadata = {
     schemaVersion: '1.0',
     file: fileMeta,
     sheets,
     warnings,
   };
+  if (profile) {
+    profile.rssBeforeSerializationBytes = rssBytes();
+    profile.rssAfterSerializationBytes = rssBytes();
+    profile.totalMs = now() - extractionStart;
+    result.performanceProfile = profile;
+  }
+  return result;
 }
 
 // ---- Sheet extraction ----------------------------------------------------
@@ -135,7 +152,10 @@ async function extractSheet(
   index: number,
   filePath: string,
   options: ExtractOptions,
+  profile?: PerformanceProfile,
 ): Promise<SheetLayoutData> {
+  const sheetStart = profile ? now() : 0;
+  const rssBeforeBytes = profile ? rssBytes() : 0;
   const sheetName = ws.name;
   const sheetWarnings: Warning[] = [];
   const styleRegistry = new StyleRegistry();
@@ -159,6 +179,7 @@ async function extractSheet(
   }
 
   // Cells
+  const cellsStart = profile ? now() : 0;
   const cells = extractCells(
     ws,
     sheetName,
@@ -166,34 +187,51 @@ async function extractSheet(
     sheetWarnings,
     options.includeEmptyAll ?? false,
   );
+  const cellsMs = profile ? now() - cellsStart : 0;
 
   // Layout
+  const layoutStart = profile ? now() : 0;
   const mergedRanges = extractMergedRanges(ws);
   const rows = extractRows(ws);
   const columns = extractColumns(ws);
+  const layoutMs = profile ? now() - layoutStart : 0;
 
   // Phase 3: Validations, Tables, Annotations
+  const validationsStart = profile ? now() : 0;
   const validations = extractValidations(ws, sheetName, sheetWarnings);
+  const validationsMs = profile ? now() - validationsStart : 0;
+  const tablesStart = profile ? now() : 0;
   const tables = extractTables(ws, sheetName, sheetWarnings);
+  const tablesMs = profile ? now() - tablesStart : 0;
+  const annotationsStart = profile ? now() : 0;
   const annotations = extractAnnotations(ws, sheetName, sheetWarnings);
+  const annotationsMs = profile ? now() - annotationsStart : 0;
 
   // Phase 4: Drawing Objects (images, shapes, charts)
+  const objectsStart = profile ? now() : 0;
   const objects = await extractObjects(filePath, index, sheetName, sheetWarnings, options);
+  const objectsMs = profile ? now() - objectsStart : 0;
 
   // Phase 5: Conditional Formatting, Page Setup, Array Formulas
+  const conditionalFormattingStart = profile ? now() : 0;
   const conditionalFormatting = await extractConditionalFormatting(
     filePath, index, sheetName, sheetWarnings,
   );
+  const conditionalFormattingMs = profile ? now() - conditionalFormattingStart : 0;
+  const pageSetupStart = profile ? now() : 0;
   const pageSetup = await extractPageSetup(filePath, index, sheetName, sheetWarnings);
+  const pageSetupMs = profile ? now() - pageSetupStart : 0;
+  const arrayFormulasStart = profile ? now() : 0;
   const arrayFormulasFromModel = extractArrayFormulas(ws, sheetName, sheetWarnings);
   const arrayFormulasFromXml = await extractArrayFormulasFromXml(filePath, index, sheetName, sheetWarnings);
   // Merge: prefer XML results, add any from model that aren't in XML
   const arrayFormulas = mergeArrayFormulas(arrayFormulasFromXml, arrayFormulasFromModel);
+  const arrayFormulasMs = profile ? now() - arrayFormulasStart : 0;
 
   // Styles
   const styles = styleRegistry.toMap();
 
-  return {
+  const result: SheetLayoutData = {
     index,
     name: sheetName,
     dimension,
@@ -213,6 +251,46 @@ async function extractSheet(
     arrayFormulas,
     warnings: sheetWarnings,
   }
+  if (profile) {
+    const classification = classifyCells(cells, (address) => ws.getCell(address).isMerged);
+    const sheetForSize = JSON.stringify(result);
+    const rows = (ws as unknown as { _rows?: unknown[] })._rows;
+    const instantiatedCells = (rows ?? []).reduce<number>((count, row) => {
+      const cells = (row as { _cells?: unknown[] })._cells;
+      return count + (cells?.length ?? 0);
+    }, 0);
+    const sheetProfile: SheetPerformanceProfile = {
+      index,
+      name: sheetName,
+      runtimeMs: now() - sheetStart,
+      cellsMs,
+      layoutMs,
+      validationsMs,
+      tablesMs,
+      annotationsMs,
+      objectsMs,
+      conditionalFormattingMs,
+      pageSetupMs,
+      arrayFormulasMs,
+      cellsEmitted: cells.length,
+      ...classification,
+      declaredRows: rowCount ?? 0,
+      declaredColumns: columnCount ?? 0,
+      instantiatedCells,
+      mergedRanges: mergedRanges.length,
+      styles: Object.keys(styles).length,
+      validations: validations.length,
+      tables: tables.length,
+      annotations: annotations.length,
+      objects: objects.length,
+      conditionalFormatting: conditionalFormatting.length,
+      outputBytes: Buffer.byteLength(sheetForSize),
+      rssBeforeBytes,
+      rssAfterBytes: rssBytes(),
+    };
+    profile.sheets.push(sheetProfile);
+  }
+  return result;
 }
 
 // ---- Array Formulas (Phase 5) -------------------------------------------
