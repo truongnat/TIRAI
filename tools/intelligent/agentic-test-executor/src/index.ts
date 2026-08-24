@@ -24,6 +24,10 @@ export type {
   AgenticStepResult,
   AgenticAssertionResult,
   AgentMetrics,
+  DataNeedStatus,
+  DataNeedSemantics,
+  DataResolutionSource,
+  DataResolutionResult,
   AgenticFailureCode,
   AgentCheckpoint,
   ConfidenceClass,
@@ -45,4 +49,12 @@ export { groundAssertion } from './assertion/assertion-grounding.js';
 export { validateAction } from './action/action-validator.js';
 export { executeAction } from './action/action-executor.js';
 
-export { resolveDataItem } from './data/data-resolver.js';
+export {
+  classifyDataNeed,
+  resolveDataItem,
+  resolveDataItems,
+} from './data/data-resolver.js';
+export type {
+  DataResolutionContext,
+  DataResolutionExecutionContext,
+} from './data/data-resolver.js';

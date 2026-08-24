@@ -4,6 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { BrowserSession } from 'ui-executor';
+import type { TestDataItem } from 'test-data-planner';
 import { AgenticTestExecutor } from '../src/agent.js';
 import { defaultCapabilities, type BrowserObservation } from '../src/models.js';
 import {
@@ -180,6 +181,65 @@ describe('AgenticTestExecutor', () => {
       const result = await executor.execute(makeTestCase(), makeContext());
       expect(result.status).toBe('error');
       expect(result.error?.code).toBe('AGENT_BROWSER_ERROR');
+    });
+
+    it('blocks unresolved existing data before starting the browser', async () => {
+      const pageState: FakePageState = {
+        url: 'http://127.0.0.1:3000/login',
+        title: 'Login',
+        observation: loginPageObservation(),
+        clickedElements: [],
+        filledElements: [],
+        gotoCalls: [],
+      };
+      const page = createFakePage(pageState);
+      const baseSession = createFakeBrowserSession(page);
+      let browserStarts = 0;
+      const session = {
+        ...baseSession,
+        start: async (config: Parameters<BrowserSession['start']>[0]) => {
+          browserStarts++;
+          await baseSession.start(config);
+        },
+      } as BrowserSession;
+      let aiCalls = 0;
+      const executor = new AgenticTestExecutor({
+        browserSession: session,
+        aiProvider: createFakeAI(() => {
+          aiCalls++;
+          return {};
+        }),
+        baseUrl: 'http://127.0.0.1:3000',
+        capabilities: { ...defaultCapabilities(), browser: 'AVAILABLE' },
+        testDataItems: [{
+          id: 'DATA-ACCOUNT-001',
+          name: 'valid-username',
+          description: 'Valid existing username for the login account',
+          type: 'account',
+          lifecycle: 'existing',
+          strategy: 'reuse-existing',
+          constraints: [],
+          dependencies: [],
+          relatedTestCaseIds: ['TC-001'],
+          relatedRequirementIds: [],
+          relatedEntityIds: [],
+          setup: [],
+          cleanup: [],
+          provenance: [],
+          confidence: 1,
+        } as TestDataItem],
+      });
+
+      const result = await executor.execute(makeTestCase(), makeContext());
+
+      expect(result.status).toBe('blocked');
+      expect(result.error?.code).toBe('AGENT_DATA_UNRESOLVED');
+      expect(browserStarts).toBe(0);
+      expect(pageState.gotoCalls).toHaveLength(0);
+      expect(aiCalls).toBe(0);
+      expect(executor.getLastMetrics().actions).toBe(0);
+      expect(executor.getLastDataResolutions()[0].status).toBe('NEEDS_CAPABILITY');
+      expect(executor.getLastDataResolutions()[0].value).toBeUndefined();
     });
 
     it('returns blocked when grounding fails repeatedly', async () => {
