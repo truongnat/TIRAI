@@ -789,6 +789,44 @@ describe('Quality metrics', () => {
     expect(result.quality.provenanceCoverage).toBe(1);
     fs.rmSync(tmpDir, { recursive: true });
   });
+
+  it('coverage never exceeds 100% when non-requiring TCs get items', async () => {
+    const ir = minimalTestCaseIR({
+      testCases: [
+        {
+          id: 'TC-A', scenarioId: 'SCN-A', requirementIds: ['REQ-0001'],
+          title: 'TC with data', objective: 'obj', type: 'api', priority: 'high',
+          preconditions: [{ description: 'User has account', sourceRequirementIds: [] }],
+          inputs: [], dataNeeds: [], steps: [{ order: 1, action: 'Do something' }],
+          expectedResults: [{ description: 'ok', verificationType: 'api' }],
+          cleanup: [], automation: { status: 'ready', reasons: [] },
+          provenance: [], confidence: 0.9,
+        },
+        {
+          id: 'TC-B', scenarioId: 'SCN-B', requirementIds: ['REQ-0002'],
+          title: 'TC without data need', objective: 'obj', type: 'ui', priority: 'low',
+          preconditions: [], inputs: [], dataNeeds: [],
+          steps: [{ order: 1, action: 'Check display' }],
+          expectedResults: [{ description: 'ok', verificationType: 'ui' }],
+          cleanup: [], automation: { status: 'ready', reasons: [] },
+          provenance: [], confidence: 0.9,
+        },
+      ],
+    });
+    const tmpDir = createTempTestCaseIR(ir);
+    const provider = buildDataPlannerFakeProvider(
+      dataReqResult({
+        dataCandidates: [
+          dataCandidate('TMP-1', 'TC-A', 'account data', { type: 'account' }),
+          dataCandidate('TMP-2', 'TC-B', 'extra data', { type: 'other' }),
+        ],
+      }),
+    );
+    const result = await buildTestDataPlan(tmpDir, provider);
+    expect(result.quality.testsCoveredByData).toBeLessThanOrEqual(result.quality.testsRequiringData);
+    expect(result.quality.coverageRate).toBeLessThanOrEqual(1);
+    fs.rmSync(tmpDir, { recursive: true });
+  });
 });
 
 // ===========================================================================

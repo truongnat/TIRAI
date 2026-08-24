@@ -214,6 +214,11 @@ function extractFromContext(
     // Scan preconditions for data indicators
     for (const p of tc.preconditions) {
       const text = p.description.toLowerCase();
+      const isUIState = text.includes('is displayed') || text.includes('is shown') ||
+        text.includes('is visible') || text.includes('is rendered') ||
+        text.includes('screen is') || text.includes('page is') ||
+        text.includes('form is') || text.includes('button is');
+      if (isUIState) continue;
       if (ACCOUNT_KEYWORDS.some((k) => text.includes(k)) ||
           DB_STATE_KEYWORDS.some((k) => text.includes(k)) ||
           STATE_KEYWORDS.some((k) => text.includes(k)) ||
@@ -235,6 +240,11 @@ function extractFromContext(
     // Scan steps for data indicators
     for (const step of tc.steps) {
       const text = `${step.action} ${step.input ?? ''}`.toLowerCase();
+      const actionText = step.action.toLowerCase();
+      const isVerification = actionText.startsWith('observe') || actionText.startsWith('verify') ||
+        actionText.startsWith('check') || actionText.startsWith('confirm') ||
+        actionText.startsWith('ensure') || actionText.startsWith('assert');
+      if (isVerification) continue;
       if (DATE_KEYWORDS.some((k) => text.includes(k)) ||
           FILE_KEYWORDS.some((k) => text.includes(k)) ||
           text.includes('enter') || text.includes('select') || text.includes('provide') ||
