@@ -8,6 +8,15 @@ import type { AIProvider, JSONSchema } from 'ai-provider';
 import type { ChunkSemanticResult, ConsolidationResult } from '../models.js';
 import { SEMANTIC_SYSTEM_PROMPT } from '../prompts/system.js';
 import { buildConsolidationPrompt } from '../prompts/consolidation.js';
+import { DEFAULT_SEMANTIC_BUDGET, estimateRequestTokens, generateBudgeted, type SemanticAnalyzerBudget } from '../budget.js';
+
+export interface ConsolidationMetrics {
+  batchRequests: number;
+  globalRequests: number;
+  maxEstimatedInputTokens: number;
+  batches: number;
+  estimatedInputTokens: number;
+}
 
 /** Lenient schema to force json_object mode at the provider level. */
 const lenientObjectSchema: JSONSchema = {
@@ -26,20 +35,22 @@ export async function consolidate(
   chunkResults: ChunkSemanticResult[],
   sheetNames: string[],
   provider: AIProvider,
+  budget: SemanticAnalyzerBudget = DEFAULT_SEMANTIC_BUDGET,
+  phase = 'consolidation',
 ): Promise<{ result: ConsolidationResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> {
   const userPrompt = buildConsolidationPrompt(chunkResults, sheetNames);
 
-  const response = await provider.generate<Record<string, unknown>>({
+  const response = await generateBudgeted(provider, {
     messages: [
       { role: 'system', content: SEMANTIC_SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },
     ],
     responseSchema: lenientObjectSchema,
     temperature: 0,
-  });
+  }, { ...budget, maxInputTokensPerRequest: Math.min(budget.maxInputTokensPerRequest, budget.maxConsolidationInputTokens) }, { phase, contextIds: chunkResults.map((r) => r.contextId) });
 
   // Normalize: ensure required arrays exist
-  const raw = response.data;
+  const raw = response.response.data as Record<string, unknown>;
   const result: ConsolidationResult = {
     mergeCandidates: Array.isArray(raw.mergeCandidates) ? raw.mergeCandidates as ConsolidationResult['mergeCandidates'] : [],
     crossChunkRelationships: Array.isArray(raw.crossChunkRelationships) ? raw.crossChunkRelationships as ConsolidationResult['crossChunkRelationships'] : [],
@@ -51,6 +62,226 @@ export async function consolidate(
 
   return {
     result,
-    usage: response.usage ?? {},
+    usage: response.response.usage ?? {},
   };
+}
+
+/**
+ * Consolidate in deterministic, bounded levels. Sheet-local batches are
+ * reduced first; only their small consolidation records enter later levels.
+ */
+export async function consolidateHierarchically(
+  chunkResults: ChunkSemanticResult[],
+  sheetNames: string[],
+  provider: AIProvider,
+  budget: SemanticAnalyzerBudget = DEFAULT_SEMANTIC_BUDGET,
+  contextSheetMap?: Map<string, string>,
+  requestOffset = 0,
+): Promise<{
+  result: ConsolidationResult;
+  usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+  metrics: ConsolidationMetrics;
+}> {
+  const metrics: ConsolidationMetrics = { batchRequests: 0, globalRequests: 0, maxEstimatedInputTokens: 0, batches: 0, estimatedInputTokens: 0 };
+  const usage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+  const batchResults: ConsolidationResult[] = [];
+  let plannedRequests = 0;
+  const consumeRequest = (): void => {
+    plannedRequests++;
+    if (budget.maxTotalRequests && requestOffset + plannedRequests > budget.maxTotalRequests) {
+      throw new Error(`SEMANTIC_REQUEST_LIMIT_EXCEEDED: ${budget.maxTotalRequests}`);
+    }
+  };
+
+  // Small inputs retain the original single global pass. This keeps the v1
+  // contract stable while the large-workbook path below becomes hierarchical.
+  if (chunkResults.length <= budget.maxConsolidationItemsPerBatch && estimateConsolidationTokens(chunkResults, sheetNames) <= budget.maxConsolidationInputTokens) {
+    consumeRequest();
+    const cons = await consolidate(chunkResults, sheetNames, provider, budget, 'global-consolidation');
+    metrics.globalRequests = 1;
+    metrics.maxEstimatedInputTokens = estimateConsolidationTokens(chunkResults, sheetNames);
+    metrics.estimatedInputTokens = metrics.maxEstimatedInputTokens;
+    addUsage(usage, cons.usage);
+    return { result: cons.result, usage, metrics };
+  }
+
+  // Preserve loader order, while keeping each sheet local at the first level.
+  const bySheet = new Map<string, ChunkSemanticResult[]>();
+  for (const result of chunkResults) {
+    const sheet = contextSheetMap?.get(result.contextId) ?? result.contextId;
+    const list = bySheet.get(sheet) ?? [];
+    list.push(result);
+    bySheet.set(sheet, list);
+  }
+
+  const plannedBatches = [...bySheet.entries()].flatMap(([sheet, results]) =>
+    splitChunkResults(results, [sheet], budget).map((batch) => ({ sheet, batch })),
+  );
+  for (const { sheet, batch } of plannedBatches) {
+    consumeRequest();
+    const cons = await consolidate(batch, [sheet], provider, budget, 'sheet-consolidation');
+    batchResults.push(cons.result);
+    addUsage(usage, cons.usage);
+    metrics.batchRequests++;
+    metrics.batches++;
+      metrics.maxEstimatedInputTokens = Math.max(metrics.maxEstimatedInputTokens, estimateConsolidationTokens(batch, [sheet]));
+      metrics.estimatedInputTokens += estimateConsolidationTokens(batch, [sheet]);
+  }
+
+  let level = batchResults;
+  while (level.length > 0) {
+    const groups = splitConsolidationResults(level, sheetNames, budget);
+    const next: ConsolidationResult[] = [];
+    for (const group of groups) {
+      if (groups.length === 1 && level.length === 1) {
+        next.push(group[0]!);
+        continue;
+      }
+      consumeRequest();
+      const cons = await consolidateSummaryBatch(group, sheetNames, provider, budget);
+      next.push(cons.result);
+      addUsage(usage, cons.usage);
+      metrics.globalRequests++;
+      metrics.maxEstimatedInputTokens = Math.max(metrics.maxEstimatedInputTokens, estimateSummaryTokens(group, sheetNames));
+      metrics.estimatedInputTokens += estimateSummaryTokens(group, sheetNames);
+    }
+    if (next.length === 1) {
+      return { result: combineConsolidationResults(batchResults, next[0]!), usage, metrics };
+    }
+    level = next;
+  }
+
+  return { result: { mergeCandidates: [], crossChunkRelationships: [] }, usage, metrics };
+}
+
+function splitChunkResults(
+  results: ChunkSemanticResult[],
+  sheetNames: string[],
+  budget: SemanticAnalyzerBudget,
+): ChunkSemanticResult[][] {
+  const batches: ChunkSemanticResult[][] = [];
+  let current: ChunkSemanticResult[] = [];
+  for (const result of results) {
+    const candidate = [...current, result];
+    const withinCount = candidate.length <= budget.maxConsolidationItemsPerBatch && candidate.length <= budget.maxContextsPerBatch;
+    const withinTokens = estimateConsolidationTokens(candidate, sheetNames) <= budget.maxConsolidationInputTokens;
+    if (current.length > 0 && (!withinCount || !withinTokens)) {
+      batches.push(current);
+      current = [result];
+    } else {
+      current = candidate;
+    }
+    if (current.length === 1 && estimateConsolidationTokens(current, sheetNames) > budget.maxConsolidationInputTokens) {
+      throw new Error(`SEMANTIC_INPUT_BUDGET_EXCEEDED: consolidation batch contains ${result.contextId}`);
+    }
+  }
+  if (current.length > 0) batches.push(current);
+  return batches;
+}
+
+function estimateConsolidationTokens(results: ChunkSemanticResult[], sheetNames: string[]): number {
+  return estimateProviderPromptTokens(buildConsolidationPrompt(results, sheetNames));
+}
+
+function splitConsolidationResults(
+  results: ConsolidationResult[],
+  sheetNames: string[],
+  budget: SemanticAnalyzerBudget,
+): ConsolidationResult[][] {
+  const groups: ConsolidationResult[][] = [];
+  let current: ConsolidationResult[] = [];
+  for (const result of results) {
+    const candidate = [...current, result];
+    const withinCount = candidate.length <= budget.maxConsolidationItemsPerBatch;
+    const withinTokens = estimateSummaryTokens(candidate, sheetNames) <= budget.maxConsolidationInputTokens;
+    if (current.length > 0 && (!withinCount || !withinTokens)) {
+      groups.push(current);
+      current = [result];
+    } else {
+      current = candidate;
+    }
+    if (current.length === 1 && estimateSummaryTokens(current, sheetNames) > budget.maxConsolidationInputTokens) {
+      throw new Error('SEMANTIC_INPUT_BUDGET_EXCEEDED: consolidation summary batch');
+    }
+  }
+  if (current.length > 0) groups.push(current);
+  return groups;
+}
+
+function buildSummaryPrompt(results: ConsolidationResult[], sheetNames: string[]): string {
+  const parts = [
+    'Consolidate bounded semantic batch results. Preserve only explicitly supported merges and relationships.',
+    `Document sheets: ${sheetNames.join(', ')}`,
+    `Batch results: ${results.length}`,
+  ];
+  results.forEach((result, index) => {
+    parts.push(`--- Batch ${index + 1} ---`);
+    parts.push(`Merge candidates: ${JSON.stringify(result.mergeCandidates)}`);
+    parts.push(`Cross-chunk relationships: ${JSON.stringify(result.crossChunkRelationships)}`);
+    if (result.documentSummary) parts.push(`Document summary: ${JSON.stringify(result.documentSummary)}`);
+  });
+  parts.push('Return JSON with mergeCandidates, crossChunkRelationships, and optional documentSummary.');
+  return parts.join('\n');
+}
+
+function estimateSummaryTokens(results: ConsolidationResult[], sheetNames: string[]): number {
+  return estimateProviderPromptTokens(buildSummaryPrompt(results, sheetNames));
+}
+
+function estimateProviderPromptTokens(userPrompt: string): number {
+  return estimateRequestTokens({
+    messages: [
+      { role: 'system', content: SEMANTIC_SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ],
+    responseSchema: lenientObjectSchema,
+    maxOutputTokens: DEFAULT_SEMANTIC_BUDGET.maxOutputTokensPerRequest,
+  });
+}
+
+async function consolidateSummaryBatch(
+  results: ConsolidationResult[],
+  sheetNames: string[],
+  provider: AIProvider,
+  budget: SemanticAnalyzerBudget,
+): Promise<{ result: ConsolidationResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> {
+  const response = await generateBudgeted(provider, {
+    messages: [
+      { role: 'system', content: SEMANTIC_SYSTEM_PROMPT },
+      { role: 'user', content: buildSummaryPrompt(results, sheetNames) },
+    ],
+    responseSchema: lenientObjectSchema,
+    temperature: 0,
+  }, { ...budget, maxInputTokensPerRequest: Math.min(budget.maxInputTokensPerRequest, budget.maxConsolidationInputTokens) }, { phase: 'global-consolidation', contextIds: [] });
+  const raw = response.response.data as Record<string, unknown>;
+  return {
+    result: {
+      mergeCandidates: Array.isArray(raw.mergeCandidates) ? raw.mergeCandidates as ConsolidationResult['mergeCandidates'] : [],
+      crossChunkRelationships: Array.isArray(raw.crossChunkRelationships) ? raw.crossChunkRelationships as ConsolidationResult['crossChunkRelationships'] : [],
+      documentSummary: raw.documentSummary && typeof raw.documentSummary === 'object' ? raw.documentSummary as ConsolidationResult['documentSummary'] : undefined,
+    },
+    usage: response.response.usage ?? {},
+  };
+}
+
+function combineConsolidationResults(batchResults: ConsolidationResult[], finalResult: ConsolidationResult): ConsolidationResult {
+  const all = [...batchResults, finalResult];
+  const mergeCandidates = all.flatMap((r) => r.mergeCandidates);
+  const relationshipMap = new Map<string, ChunkSemanticResult['relationships'][number]>();
+  for (const result of all) {
+    for (const rel of result.crossChunkRelationships) {
+      relationshipMap.set(JSON.stringify(rel), rel);
+    }
+  }
+  return {
+    mergeCandidates,
+    crossChunkRelationships: [...relationshipMap.values()],
+    documentSummary: finalResult.documentSummary ?? batchResults.find((r) => r.documentSummary)?.documentSummary,
+  };
+}
+
+function addUsage(target: { inputTokens: number; outputTokens: number; totalTokens: number }, source: { inputTokens?: number; outputTokens?: number; totalTokens?: number }): void {
+  target.inputTokens += source.inputTokens ?? 0;
+  target.outputTokens += source.outputTokens ?? 0;
+  target.totalTokens += source.totalTokens ?? 0;
 }

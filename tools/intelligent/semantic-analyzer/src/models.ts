@@ -4,6 +4,8 @@
 // Source-independent, provider-independent, domain-flexible.
 // Excel terminology appears only in provenance references.
 
+import type { SemanticAnalyzerBudget } from './budget.js';
+
 // ---- Top-level IR --------------------------------------------------------
 
 export interface SemanticIR {
@@ -164,6 +166,23 @@ export interface SemanticAnalysisMetadata {
   };
   warnings: SemanticWarning[];
   quality?: SemanticQualityMetrics;
+  metrics?: SemanticExecutionMetrics;
+}
+
+export interface SemanticExecutionMetrics {
+  contextsTotal: number;
+  contextsProcessed: number;
+  contextsReused: number;
+  contextsFailed: number;
+  chunkRequests: number;
+  consolidationRequests: number;
+  transportRetries: number;
+  schemaRepairs: number;
+  estimatedInputTokens: number;
+  maxEstimatedTokensPerRequest: number;
+  peakConcurrency: number;
+  checkpointHits: number;
+  checkpointMisses: number;
 }
 
 // ---- Quality metrics (v1.1) ----------------------------------------------
@@ -295,6 +314,10 @@ export interface SemanticAnalyzerOptions {
   promptVersion?: string;
   /** Specific sheets to analyze. */
   sheets?: string[];
+  /** Explicit model identity used for request/checkpoint compatibility. */
+  model?: string;
+  /** Request and consolidation safety limits. */
+  budget?: Partial<SemanticAnalyzerBudget>;
 }
 
 // ---- Analysis manifest ---------------------------------------------------
@@ -326,4 +349,5 @@ export interface AnalysisManifest {
     totalTokens: number;
   };
   warnings: SemanticWarning[];
+  metrics?: SemanticExecutionMetrics;
 }
