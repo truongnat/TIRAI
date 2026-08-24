@@ -20,6 +20,48 @@ export type {
   TestDataItem,
 };
 
+// ---- Runtime data resolution contract (§2B.1) ----------------------------
+
+export type DataNeedStatus =
+  | 'RESOLVED'
+  | 'GENERATED'
+  | 'DISCOVERED'
+  | 'NEEDS_CAPABILITY'
+  | 'BLOCKED';
+
+export type DataNeedSemantics = 'EXISTENCE_REQUIRED' | 'SYNTHETIC_ALLOWED';
+
+export type DataResolutionSource =
+  | 'supplied-input'
+  | 'secret'
+  | 'runtime-binding'
+  | 'environment'
+  | 'browser'
+  | 'database'
+  | 'api'
+  | 'source'
+  | 'generator';
+
+/**
+ * Runtime proof for one Phase 1 data item. `value` is for in-process
+ * execution only; callers persisting this result must omit it when sensitive.
+ */
+export interface DataResolutionResult {
+  dataItemId: string;
+  status: DataNeedStatus;
+  semantics: DataNeedSemantics;
+  source?: DataResolutionSource;
+  bindingRef?: string;
+  sensitive: boolean;
+  evidence: string[];
+  value?: string;
+  secretRef?: string;
+  resolved: boolean;
+  reason?: string;
+  /** @deprecated Use `reason`; retained for compatibility with the v1 API. */
+  unresolvedReason?: string;
+}
+
 // ---- Capability Model (§7) ------------------------------------------------
 
 export type CapabilityStatus = 'AVAILABLE' | 'UNAVAILABLE';

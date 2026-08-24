@@ -25,10 +25,12 @@ import {
   type AgentCapabilities,
   type AgentExecutionPolicy,
   type AgentMetrics,
+  type DataResolutionResult,
   type AgenticStepResult,
   type AgenticAssertionResult,
   type AgenticAction,
   type BrowserObservation,
+  type TestDataItem,
   defaultAgentPolicy,
   defaultCapabilities,
 } from './models.js';
@@ -39,6 +41,7 @@ import { groundStep } from './grounding/step-grounding.js';
 import { groundAssertion } from './assertion/assertion-grounding.js';
 import { validateAction } from './action/action-validator.js';
 import { executeAction } from './action/action-executor.js';
+import { resolveDataItems } from './data/data-resolver.js';
 
 export interface AgenticTestExecutorOptions {
   browserSession: BrowserSession;
@@ -47,6 +50,8 @@ export interface AgenticTestExecutorOptions {
   capabilities?: AgentCapabilities;
   policy?: AgentExecutionPolicy;
   allowedOrigins?: string[];
+  /** Phase 1 data items to resolve before any browser side effect. */
+  testDataItems?: TestDataItem[];
 }
 
 export class AgenticTestExecutor implements TestExecutor {
@@ -58,6 +63,8 @@ export class AgenticTestExecutor implements TestExecutor {
   private readonly capabilities: AgentCapabilities;
   private readonly policy: AgentExecutionPolicy;
   private readonly allowedOrigins: string[];
+  private readonly testDataItems: TestDataItem[];
+  private lastDataResolutions: DataResolutionResult[] = [];
   private lastMetrics: AgentMetrics = {
     agentCalls: 0,
     observations: 0,
@@ -76,6 +83,7 @@ export class AgenticTestExecutor implements TestExecutor {
     this.capabilities = options.capabilities ?? defaultCapabilities();
     this.policy = options.policy ?? defaultAgentPolicy();
     this.allowedOrigins = options.allowedOrigins ?? ['http://127.0.0.1', 'http://localhost'];
+    this.testDataItems = options.testDataItems ?? [];
   }
 
   canExecute(_testCase: TestCase, _context: TestExecutionContext): TestExecutorMatch {
@@ -102,6 +110,45 @@ export class AgenticTestExecutor implements TestExecutor {
     const evidenceRefs: EvidenceReference[] = [];
     const errors: TestExecutionError[] = [];
     const warnings: TestExecutionWarning[] = [];
+
+    const dataResolutions = await resolveDataItems(this.testDataItems, {
+      inputs: testCase.inputs.map((input) => ({
+        name: input.name,
+        value: typeof input.value === 'string' ? input.value : undefined,
+        valueStrategy: input.valueStrategy,
+      })),
+      bindings: readRuntimeBindings(context, this.testDataItems),
+      secretResolver: async (secretRef) => {
+        const resolved = await context.secrets.resolve(secretRef);
+        return resolved?.value;
+      },
+    });
+    this.lastDataResolutions = dataResolutions;
+
+    const unresolvedData = dataResolutions.filter(
+      (resolution) => resolution.status === 'NEEDS_CAPABILITY' || resolution.status === 'BLOCKED',
+    );
+    if (unresolvedData.length > 0) {
+      const summary = unresolvedData
+        .map((resolution) => `${resolution.dataItemId}: ${resolution.reason ?? 'unresolved'}`)
+        .join('; ');
+      warnings.push({
+        code: 'AGENT_DATA_UNRESOLVED',
+        message: summary,
+      });
+      return {
+        status: 'blocked',
+        steps: [],
+        assertions: [],
+        evidence: [],
+        error: {
+          code: 'AGENT_DATA_UNRESOLVED',
+          message: summary,
+          retryable: false,
+        },
+        warnings,
+      };
+    }
 
     let page: BrowserPage;
     try {
@@ -630,6 +677,19 @@ export class AgenticTestExecutor implements TestExecutor {
     return { ...this.lastMetrics };
   }
 
+  /**
+   * Returns the resolution proof without exposing in-process sensitive values.
+   * Runtime executors may still use the private resolution values while the
+   * result/evidence layer receives only references and provenance.
+   */
+  getLastDataResolutions(): ReadonlyArray<DataResolutionResult> {
+    return this.lastDataResolutions.map((resolution) => {
+      if (!resolution.sensitive) return { ...resolution };
+      const { value: _value, ...safeResolution } = resolution;
+      return safeResolution;
+    });
+  }
+
   private blockedStep(
     testCase: TestCase,
     step: { order: number; action: string; input?: string },
@@ -770,6 +830,27 @@ function addTextEvidence(
 ): EvidenceReference | undefined {
   const collector = context.evidence as unknown as { add?: (value: typeof input) => EvidenceReference };
   return typeof collector.add === 'function' ? collector.add(input) : undefined;
+}
+
+function readRuntimeBindings(
+  context: TestExecutionContext,
+  items: TestDataItem[],
+): Map<string, string> {
+  const bindings = new Map<string, string>();
+  const store = context.bindings as TestExecutionContext['bindings'] & {
+    resolve?: (name: string) => { status?: string; value?: unknown } | undefined;
+  };
+  if (typeof store.resolve !== 'function') return bindings;
+
+  for (const item of items) {
+    for (const name of [item.id, item.name]) {
+      const binding = store.resolve(name);
+      if (binding?.status === 'resolved' && typeof binding.value === 'string') {
+        bindings.set(name, binding.value);
+      }
+    }
+  }
+  return bindings;
 }
 
 // ---- Result mapping -------------------------------------------------------
