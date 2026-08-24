@@ -30,6 +30,11 @@ import {
 } from './runtime-capability-inventory.js';
 import { RuntimePreparationError, RuntimePreparationExecutor } from './preparation-executor.js';
 import { RuntimeDataStore } from './runtime-data-store.js';
+import {
+  RuntimePreparationCoordinator,
+  type PreparationCoordinationResult,
+  type PreparationMutationPolicy,
+} from './preparation-lifecycle.js';
 import type {
   DataNeedStatus,
   DataResolutionEvidence,
@@ -41,20 +46,23 @@ export interface DataNeedCoordinatorContext {
   inputs?: Array<{ name: string; value?: unknown; valueStrategy?: string }>;
   bindings?: RuntimeBindingStore;
   secretProvider?: SecretProvider;
+  runId?: string;
 }
 
 export interface DataNeedCoordinatorOptions {
   inventory: RuntimeCapabilityInventory;
   generationSeed?: string;
+  preparationPolicy?: Partial<PreparationMutationPolicy>;
 }
 
 export interface DataNeedCoordinationResult {
-  status: 'ready' | 'blocked';
+  status: 'ready' | 'blocked' | 'error';
   resolutions: DataResolutionResult[];
   runtimeData: RuntimeDataStore;
   plan: ExecutableDataPreparationIR;
   planWarnings: Array<{ code: string; message: string; dataItemId?: string; operationId?: string }>;
   metrics: DataResolutionMetrics;
+  preparation?: PreparationCoordinationResult;
 }
 
 export class DataNeedCoordinatorError extends Error {
@@ -70,11 +78,61 @@ export class DataNeedCoordinatorError extends Error {
 export class DataNeedCoordinator {
   private readonly inventory: RuntimeCapabilityInventory;
   private readonly generationSeed: string;
+  private readonly preparationPolicy: Partial<PreparationMutationPolicy>;
   private readonly preparationExecutor = new RuntimePreparationExecutor();
+  private preparationCoordinator?: RuntimePreparationCoordinator;
 
   constructor(options: DataNeedCoordinatorOptions) {
     this.inventory = options.inventory;
     this.generationSeed = options.generationSeed ?? 'tirai-phase2b';
+    this.preparationPolicy = options.preparationPolicy ?? {};
+  }
+
+  async prepare(
+    items: TestDataItem[],
+    context: DataNeedCoordinatorContext = {},
+  ): Promise<DataNeedCoordinationResult> {
+    const resolved = await this.resolve(items, context);
+    const coordinator = new RuntimePreparationCoordinator({
+      inventory: this.inventory,
+      policy: this.preparationPolicy,
+    });
+    const preparation = await coordinator.prepare({
+      items,
+      plan: resolved.plan,
+      resolutions: resolved.resolutions,
+      runtimeData: resolved.runtimeData,
+      runId: context.runId ?? 'phase2b-run',
+    });
+    const metrics = emptyDataResolutionMetrics(items.length);
+    metrics.databaseDiscoveryCalls = resolved.metrics.databaseDiscoveryCalls;
+    metrics.apiDiscoveryCalls = resolved.metrics.apiDiscoveryCalls;
+    metrics.browserDiscoveryRounds = resolved.metrics.browserDiscoveryRounds;
+    for (const resolution of preparation.resolutions) this.recordResolution(metrics, resolution);
+    this.preparationCoordinator = coordinator;
+    return {
+      ...resolved,
+      status: preparation.status,
+      resolutions: preparation.resolutions,
+      runtimeData: preparation.runtimeData,
+      metrics,
+      planWarnings: [
+        ...resolved.planWarnings,
+        ...preparation.warnings.map((message) => ({ code: 'PREPARATION_BLOCKED', message })),
+      ],
+      preparation,
+    };
+  }
+
+  async cleanup(): Promise<PreparationCoordinationResult['cleanup']> {
+    return this.preparationCoordinator?.cleanup() ?? {
+      registered: 0,
+      attempted: 0,
+      succeeded: 0,
+      failed: 0,
+      orphaned: 0,
+      results: [],
+    };
   }
 
   async resolve(
@@ -331,11 +389,20 @@ export class DataNeedCoordinator {
     const evidence = discovered.evidence.length > 0
       ? discovered.evidence
       : [{ kind: source, description: `Existing value discovered through the ${source} capability.` } satisfies DataResolutionEvidence];
-    return this.bindResolved(item, discovered.value, source, runtimeData, evidence, {
+    const resolution = this.bindResolved(item, discovered.value, source, runtimeData, evidence, {
       status: 'DISCOVERED',
       bindingRef: discovered.bindingRef,
       sensitive: discovered.sensitive,
     });
+    if (source === 'database' || source === 'api') {
+      resolution.preparation = {
+        kind: 'REUSED',
+        ownership: 'EXTERNAL_EXISTING',
+        executor: source,
+        cleanupRequired: false,
+      };
+    }
+    return resolution;
   }
 
   private bindResolved(

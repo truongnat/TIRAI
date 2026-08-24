@@ -28,6 +28,7 @@ export type {
   DataNeedSemantics,
   DataResolutionSource,
   DataResolutionResult,
+  DataResolutionPreparation,
   DataResolutionEvidence,
   DataResolutionMetrics,
   AgenticFailureCode,
@@ -87,8 +88,35 @@ export type {
   RuntimeDiscoveryAdapter,
   RuntimeDiscoveryRequest,
   RuntimeDiscoveryResult,
+  RuntimePreparationRequest,
+  RuntimePreparationResult,
+  RuntimePreparationAdapter,
+  RuntimeSnapshotResult,
+  RuntimeCleanupRequest,
 } from './data/runtime-capability-inventory.js';
 
 export { RuntimeDataStore } from './data/runtime-data-store.js';
 export type { RuntimeDataBinding, SafeRuntimeDataBinding } from './data/runtime-data-store.js';
 export { RuntimePreparationExecutor, RuntimePreparationError } from './data/preparation-executor.js';
+export {
+  PreparationJournal,
+  RuntimePreparationCoordinator,
+  defaultPreparationMutationPolicy,
+  evaluatePreparationPolicy,
+  resolveEnvironmentKind,
+} from './data/preparation-lifecycle.js';
+export type {
+  PreparationEnvironment,
+  PreparationExecutorKind,
+  PreparationMutationPolicy,
+  PreparationMutationAction,
+  PreparationStrategy,
+  PreparedResourceOwnership,
+  PreparationPolicyDecision,
+  PreparationJournalEntry,
+  SafePreparationJournalEntry,
+  PreparationProof,
+  PreparationCleanupSummary,
+  PreparationCoordinationInput,
+  PreparationCoordinationResult,
+} from './data/preparation-lifecycle.js';

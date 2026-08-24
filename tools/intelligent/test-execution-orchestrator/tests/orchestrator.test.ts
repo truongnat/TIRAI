@@ -1219,7 +1219,22 @@ describe('Quality Metrics', () => {
     expect(result.summary.cleanupFailures).toBe(1);
   });
 
-  it('105. provenance coverage', async () => {
+  it('105. cleanup failure prevents a clean pass', async () => {
+    const registry = new TestExecutorRegistry();
+    registry.register(new FakeTestExecutor({ cleanupStatus: 'failed' }));
+    const orch = new TestExecutionOrchestrator({
+      registry,
+      policy: { mode: 'simulate', cleanupAfterTest: true },
+      clock: new FixedClock('2025-01-01T00:00:00.000Z'),
+      runIdProvider: new DeterministicRunIdProvider(),
+    });
+    const result = await orch.run([minimalTestCase()]);
+    expect(result.testResults[0]?.status).toBe('error');
+    expect(result.summary.errors).toBe(1);
+    expect(result.testResults[0]?.errors[0]?.code).toBe('TEST_CLEANUP_FAILED');
+  });
+
+  it('106. provenance coverage', async () => {
     const registry = new TestExecutorRegistry();
     registry.register(new FakeTestExecutor({ resultStatus: 'passed' }));
     const orch = new TestExecutionOrchestrator({

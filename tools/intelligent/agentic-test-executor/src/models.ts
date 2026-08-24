@@ -42,6 +42,14 @@ export type DataResolutionSource =
   | 'source'
   | 'generator';
 
+export interface DataResolutionPreparation {
+  kind: 'REUSED' | 'CREATED' | 'TEMPORARILY_MODIFIED' | 'NONE';
+  ownership: 'EXTERNAL_EXISTING' | 'TEST_OWNED' | 'TEMPORARILY_MODIFIED';
+  executor?: 'api' | 'database';
+  operationId?: string;
+  cleanupRequired: boolean;
+}
+
 /**
  * Runtime proof for one Phase 1 data item. `value` is for in-process
  * execution only; callers persisting this result must omit it when sensitive.
@@ -59,6 +67,8 @@ export interface DataResolutionResult {
   secretRef?: string;
   resolved: boolean;
   reason?: string;
+  /** Side-effect metadata is separate from RESOLVED/DISCOVERED semantics. */
+  preparation?: DataResolutionPreparation;
   /** @deprecated Use `reason`; retained for compatibility with the v1 API. */
   unresolvedReason?: string;
 }
