@@ -12,6 +12,7 @@ import { computeResolutionQuality } from '../src/quality/metrics.js';
 import { validateDataPlan, validateEnvironmentProfile, validateMappings } from '../src/validation/input-validator.js';
 import { DataResolverError } from '../src/errors.js';
 import { clearRegistry } from '../src/registry.js';
+import { acceptedDataPlan } from './fixtures/accepted-data-plan.js';
 import {
   minimalDataItem,
   minimalDataPlan,
@@ -19,7 +20,7 @@ import {
   dbResource,
   dependency,
 } from './helpers.js';
-import type { PreparationOperation, PreparationDependency, TestDataPlanIR, EnvironmentProfile } from '../src/models.js';
+import type { PreparationOperation, PreparationDependency, EnvironmentProfile } from '../src/models.js';
 
 const FIXTURES = path.resolve(import.meta.dirname, 'fixtures');
 
@@ -234,11 +235,10 @@ describe('Acceptance: real Test Data Plan + synthetic environment', () => {
 
   beforeEach(() => {
     clearRegistry();
-    const planPath = path.join(FIXTURES, '..', '..', '..', '..', '..', 'output', 'test-data', 'test-data-plan-ir.json');
     const envPath = path.join(FIXTURES, 'local-test-environment.json');
     const mappingsPath = path.join(FIXTURES, 'resource-mappings.json');
 
-    const plan = JSON.parse(fs.readFileSync(planPath, 'utf-8')) as TestDataPlanIR;
+    const plan = acceptedDataPlan;
     const environment = JSON.parse(fs.readFileSync(envPath, 'utf-8')) as EnvironmentProfile;
     const mappings = JSON.parse(fs.readFileSync(mappingsPath, 'utf-8'));
 
