@@ -6,6 +6,7 @@
 import { extractWorkbook, ExtractorError } from './extractor.js';
 import type { ExtractOptions } from './models.js';
 import { memorySnapshot } from './performance.js';
+import { writeWorkbookJson } from './serialization.js';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -54,8 +55,14 @@ async function main(): Promise<void> {
       const { performanceProfile, ...output } = metadata;
       performanceProfile.rssBeforeSerializationBytes = process.memoryUsage().rss;
       performanceProfile.memory.push(memorySnapshot('before-serialization-cli'));
-      const json = pretty ? JSON.stringify(output, null, 2) : JSON.stringify(output);
-      process.stdout.write(`${json}\n`);
+      if (pretty) {
+        process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+      } else {
+        await writeWorkbookJson(output, (chunk) => writeStdout(chunk), (sheet, index) => {
+          performanceProfile.memory.push(memorySnapshot(`after-serialization-sheet:${index}:${sheet.name}`));
+        });
+        process.stdout.write('\n');
+      }
       performanceProfile.rssAfterSerializationBytes = process.memoryUsage().rss;
       performanceProfile.memory.push(memorySnapshot('after-serialization-cli'));
       await import('node:fs/promises').then((fs) => fs.writeFile(profileOutput, JSON.stringify(performanceProfile, null, 2)));
@@ -63,10 +70,12 @@ async function main(): Promise<void> {
       return;
     }
     if (metadata.performanceProfile) delete metadata.performanceProfile;
-    const json = pretty
-      ? JSON.stringify(metadata, null, 2)
-      : JSON.stringify(metadata);
-    process.stdout.write(`${json}\n`);
+    if (pretty) {
+      process.stdout.write(`${JSON.stringify(metadata, null, 2)}\n`);
+    } else {
+      await writeWorkbookJson(metadata, (chunk) => writeStdout(chunk));
+      process.stdout.write('\n');
+    }
   } catch (err: unknown) {
     if (err instanceof ExtractorError) {
       process.stderr.write(`ERROR [${err.code}]: ${err.message}\n`);
@@ -76,6 +85,11 @@ async function main(): Promise<void> {
     }
     process.exit(1);
   }
+}
+
+function writeStdout(chunk: string): Promise<void> {
+  if (process.stdout.write(chunk)) return Promise.resolve();
+  return new Promise((resolve) => process.stdout.once('drain', resolve));
 }
 
 function extractFlagValues(args: string[], flag: string): string[] {

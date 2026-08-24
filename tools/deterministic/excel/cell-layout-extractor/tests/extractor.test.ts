@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { extractWorkbook, ExtractorError } from '../src/extractor.js';
 import { fixturePath } from './fixtures.js';
 import { WorkbookOOXMLContext } from '../src/ooxml-context.js';
+import { writeWorkbookJson } from '../src/serialization.js';
 
 // ---- 1. Cell types -------------------------------------------------------
 
@@ -84,6 +85,16 @@ describe('memory profiling', () => {
     expect(context.profile().cachedEntries).toBe(2);
     context.release('xl/worksheets/sheet1.xml');
     expect(context.profile().cachedEntries).toBe(1);
+  });
+});
+
+describe('incremental serialization', () => {
+  it('preserves the canonical workbook structure', async () => {
+    const metadata = await extractWorkbook(fixturePath('multi-sheet.xlsx'));
+    const chunks: string[] = [];
+    await writeWorkbookJson(metadata, (chunk) => chunks.push(chunk));
+    const parsed = JSON.parse(chunks.join(''));
+    expect(parsed).toEqual(metadata);
   });
 });
 
