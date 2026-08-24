@@ -33,6 +33,7 @@ import type {
 import { TestDataPlannerWarningCode } from './warnings.js';
 import { loadTestCaseIR, loadTestCaseIRContent, loadTestPlanIRContent } from './persistence/loader.js';
 import { extractDataRequirements } from './analysis/data-requirement-extractor.js';
+import { extractDeterministic, mergeExtractionResults } from './analysis/deterministic-extractor.js';
 import { analyzeDependencies } from './analysis/dependency-analyzer.js';
 import { deduplicateDataCandidates } from './merge/deduplicator.js';
 import { buildDependencyGraph } from './graph/dependency-graph.js';
@@ -86,17 +87,23 @@ export async function buildTestDataPlan(
   if (checkpoint.dataRequirements) {
     dataReqResult = checkpoint.dataRequirements;
   } else {
-    const { result, usage, warnings } = await extractDataRequirements(
+    // Deterministic pre-layer: extract from explicit dataNeeds first
+    const deterministicResult = extractDeterministic(testCases);
+
+    // AI enrichment layer
+    const { result: aiResult, usage, warnings } = await extractDataRequirements(
       testCases, provider, maxRepairAttempts, testCaseIR.dataNeeds,
     );
     aiRequests++;
     totalInputTokens += usage.inputTokens ?? 0;
     totalOutputTokens += usage.outputTokens ?? 0;
     if (warnings) allWarnings.push(...warnings);
-    dataReqResult = result;
+
+    // Merge: deterministic candidates take precedence
+    dataReqResult = mergeExtractionResults(deterministicResult, aiResult);
 
     if (outputDir) {
-      writeDataStageCheckpoint(outputDir, 'dataRequirements', result);
+      writeDataStageCheckpoint(outputDir, 'dataRequirements', dataReqResult);
     }
   }
 
@@ -312,7 +319,17 @@ export async function buildTestDataPlan(
   // ---- Quality metrics ----------------------------------------------------
   const quality = computeDataQualityMetrics(
     testCasePlans, dataItems, dependencies, reusableSets, finalUnresolved, cycles.length,
+    testCases,
   );
+
+  // ---- Zero-coverage quality gate -----------------------------------------
+  // If tests require data but 0 items were produced, emit explicit warning.
+  if (quality.testsRequiringData > 0 && quality.dataItems === 0) {
+    allWarnings.push({
+      code: TestDataPlannerWarningCode.COVERAGE_ZERO,
+      message: `TEST_DATA_COVERAGE_ZERO: ${quality.testsRequiringData} test(s) require data but 0 data items produced.`,
+    });
+  }
 
   // ---- Assemble final IR --------------------------------------------------
   const dataPlanIR: TestDataPlanIR = {
@@ -340,6 +357,9 @@ export async function buildTestDataPlan(
         unresolved: finalUnresolved.length,
         completePlans: quality.testCasesWithCompleteDataPlan,
         partialPlans: quality.testCasesPartiallyPlanned,
+        testsRequiringData: quality.testsRequiringData,
+        testsCoveredByData: quality.testsCoveredByData,
+        coverageRate: quality.coverageRate,
       },
       usage: {
         requests: aiRequests,

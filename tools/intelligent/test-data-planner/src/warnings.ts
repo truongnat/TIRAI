@@ -12,6 +12,7 @@ export const TestDataPlannerWarningCode = {
   MISSING_PROVENANCE: 'DATA_MISSING_PROVENANCE',
   REPAIR_APPLIED: 'DATA_REPAIR_APPLIED',
   PARTIAL_PLAN: 'DATA_PARTIAL_PLAN',
+  COVERAGE_ZERO: 'TEST_DATA_COVERAGE_ZERO',
 } as const;
 
 export type TestDataPlannerWarningCodeKey =

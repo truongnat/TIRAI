@@ -196,6 +196,10 @@ export interface TestDataQualityMetrics {
   cyclicDependencies: number;
   provenanceCoverage: number;
   strategyCoverage: number;
+  testsRequiringData: number;
+  testsCoveredByData: number;
+  coverageRate: number;
+  unresolvedDataRequirements: number;
 }
 
 // ---- AI candidate models (intermediate) -----------------------------------
@@ -279,6 +283,9 @@ export interface TestDataPlannerManifest {
     unresolved: number;
     completePlans: number;
     partialPlans: number;
+    testsRequiringData?: number;
+    testsCoveredByData?: number;
+    coverageRate?: number;
   };
   usage: {
     requests: number;
