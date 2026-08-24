@@ -164,7 +164,7 @@ function checkStaleMapping(
     if (policy.mode === 'execute' || policy.mode === 'simulate') {
       blockers.push({ code: 'RUNNER_MAPPING_STALE', message: `Execution mapping is stale: ${message}` });
     } else {
-      warnings.push(createWarning('RUNNER_LEGACY_ARTIFACT', `Compatibility warning: ${message}`));
+      warnings.push(createWarning('RUNNER_COMPATIBILITY_FINGERPRINT_MISSING', `Compatibility warning: ${message}`));
     }
   } else {
     checks.push({ id: 'mapping-source-fresh', name: 'Mapping source compatibility', status: 'passed', message: 'Mapping was built from current Test Cases and Project Profile' });
@@ -224,7 +224,7 @@ function checkStaleDataPlan(
       : 'Test data plan source Test Case fingerprint does not match current Test Cases';
     checks.push({ id: 'data-plan-source-fresh', name: 'Data plan source compatibility', status: 'failed', message });
     if (policy.mode === 'execute' || policy.mode === 'simulate') blockers.push({ code: 'RUNNER_DATA_PLAN_STALE', message: `Test data plan is stale: ${message}` });
-    else warnings.push(createWarning('RUNNER_LEGACY_ARTIFACT', `Compatibility warning: ${message}`));
+    else warnings.push(createWarning('RUNNER_COMPATIBILITY_FINGERPRINT_MISSING', `Compatibility warning: ${message}`));
   } else {
     checks.push({ id: 'data-plan-source-fresh', name: 'Data plan source compatibility', status: 'passed', message: 'Data plan was built from current Test Cases' });
   }
@@ -276,7 +276,7 @@ function checkStalePreparedData(
       : 'Prepared data source data-plan fingerprint does not match current data plan';
     checks.push({ id: 'prepared-data-source-fresh', name: 'Prepared data source compatibility', status: 'failed', message });
     if (policy.mode === 'execute' || policy.mode === 'simulate') blockers.push({ code: 'RUNNER_PREPARED_DATA_STALE', message: `Prepared data plan is stale: ${message}` });
-    else warnings.push(createWarning('RUNNER_LEGACY_ARTIFACT', `Compatibility warning: ${message}`));
+    else warnings.push(createWarning('RUNNER_COMPATIBILITY_FINGERPRINT_MISSING', `Compatibility warning: ${message}`));
   } else {
     checks.push({ id: 'prepared-data-source-fresh', name: 'Prepared data source compatibility', status: 'passed', message: 'Prepared data was produced from the current data plan' });
   }

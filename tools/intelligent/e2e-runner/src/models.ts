@@ -207,7 +207,7 @@ export type RunnerWarningCode =
   | 'RUNNER_COMMAND_UNSAFE'
   | 'RUNNER_SHARED_NONPROD_MUTATION'
   | 'RUNNER_LOW_CONFIDENCE_MAPPING'
-  | 'RUNNER_LEGACY_ARTIFACT';
+  | 'RUNNER_COMPATIBILITY_FINGERPRINT_MISSING';
 
 export interface RunnerError {
   code: RunnerErrorCode;
