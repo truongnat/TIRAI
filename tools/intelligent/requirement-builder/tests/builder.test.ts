@@ -213,6 +213,7 @@ describe('Empty IR handling', () => {
     // Write a minimal valid but empty Semantic IR
     fs.writeFileSync(path.join(tmpDir, 'semantic-ir.json'), JSON.stringify({
       schemaVersion: '1.0',
+      status: 'complete',
       document: { provenance: [{ contextId: 'ctx-000' }] },
       sections: [],
       entities: [],
@@ -220,7 +221,7 @@ describe('Empty IR handling', () => {
       rules: [],
       relationships: [],
       unresolved: [],
-      analysis: { provider: 'fake', model: 'fake', promptVersion: '1.0', chunksAnalyzed: 0, aiRequests: 0, usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 }, warnings: [] },
+      analysis: { provider: 'fake', model: 'fake', promptVersion: '1.0', chunksAnalyzed: 0, aiRequests: 0, usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 }, warnings: [], consolidationComplete: true, contextsExpected: 0, contextsCompleted: 0 },
     }), 'utf-8');
 
     const provider = buildFakeProvider([

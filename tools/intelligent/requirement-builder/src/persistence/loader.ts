@@ -82,6 +82,14 @@ function validateSemanticIR(ir: SemanticIRInput): void {
     );
   }
 
+  // Reject non-complete Semantic IR — downstream must not consume partial/failed results
+  if (ir.status && ir.status !== 'complete') {
+    throw new RequirementBuilderError(
+      RequirementErrorCode.INVALID_SEMANTIC_IR,
+      `Semantic IR has status "${ir.status}" — only "complete" IR may be consumed by downstream stages`,
+    );
+  }
+
   if (!ir.document || typeof ir.document !== 'object') {
     throw new RequirementBuilderError(
       RequirementErrorCode.INVALID_SEMANTIC_IR,

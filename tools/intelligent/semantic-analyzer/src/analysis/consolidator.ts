@@ -52,6 +52,17 @@ export async function consolidate(
 ): Promise<{ result: ConsolidationResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> {
   const userPrompt = buildConsolidationPrompt(chunkResults, sheetNames);
 
+  // Consolidation uses its own bounded output budget, separate from chunk generation.
+  const consolidationRequestEstimate = estimateRequestTokens({
+    messages: [
+      { role: 'system', content: SEMANTIC_SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ],
+    responseSchema: lenientObjectSchema,
+    maxOutputTokens: budget.maxConsolidationOutputTokens,
+  });
+  const consolidationOutput = Math.min(budget.maxConsolidationOutputTokens, budget.outputBudgetPolicy?.maxOutputBudgetCeiling ?? budget.maxConsolidationOutputTokens);
+
   const response = await generateBudgeted(provider, {
     messages: [
       { role: 'system', content: SEMANTIC_SYSTEM_PROMPT },
@@ -60,7 +71,7 @@ export async function consolidate(
     responseSchema: lenientObjectSchema,
     temperature: 0,
     providerOptions,
-  }, { ...budget, maxInputTokensPerRequest: Math.min(budget.maxInputTokensPerRequest, budget.maxConsolidationInputTokens) }, { phase, contextIds: chunkResults.map((r) => r.contextId) });
+  }, { ...budget, maxInputTokensPerRequest: Math.min(budget.maxInputTokensPerRequest, budget.maxConsolidationInputTokens) }, { phase, contextIds: chunkResults.map((r) => r.contextId) }, consolidationOutput);
 
   // Normalize: ensure required arrays exist
   const raw = response.response.data as Record<string, unknown>;
@@ -285,15 +296,27 @@ async function consolidateSummaryBatch(
   budget: SemanticAnalyzerBudget,
   providerOptions?: Record<string, unknown>,
 ): Promise<{ result: ConsolidationResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> {
+  const userPrompt = buildSummaryPrompt(results, sheetNames);
+  // Consolidation summary uses its own bounded output budget.
+  const summaryRequestEstimate = estimateRequestTokens({
+    messages: [
+      { role: 'system', content: SEMANTIC_SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ],
+    responseSchema: lenientObjectSchema,
+    maxOutputTokens: budget.maxConsolidationOutputTokens,
+  });
+  const consolidationOutput = Math.min(budget.maxConsolidationOutputTokens, budget.outputBudgetPolicy?.maxOutputBudgetCeiling ?? budget.maxConsolidationOutputTokens);
+
   const response = await generateBudgeted(provider, {
     messages: [
       { role: 'system', content: SEMANTIC_SYSTEM_PROMPT },
-      { role: 'user', content: buildSummaryPrompt(results, sheetNames) },
+      { role: 'user', content: userPrompt },
     ],
     responseSchema: lenientObjectSchema,
     temperature: 0,
     providerOptions,
-  }, { ...budget, maxInputTokensPerRequest: Math.min(budget.maxInputTokensPerRequest, budget.maxConsolidationInputTokens) }, { phase: 'global-consolidation', contextIds: [] });
+  }, { ...budget, maxInputTokensPerRequest: Math.min(budget.maxInputTokensPerRequest, budget.maxConsolidationInputTokens) }, { phase: 'global-consolidation', contextIds: [] }, consolidationOutput);
   const raw = response.response.data as Record<string, unknown>;
   return {
     result: {

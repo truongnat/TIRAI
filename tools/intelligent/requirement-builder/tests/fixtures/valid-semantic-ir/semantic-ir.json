@@ -1,5 +1,6 @@
 {
   "schemaVersion": "1.0",
+  "status": "complete",
   "document": {
     "title": "Test Specification",
     "summary": "A test specification for unit tests",

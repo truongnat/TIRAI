@@ -1,5 +1,6 @@
 {
   "schemaVersion": "1.0",
+  "status": "complete",
   "document": {
     "title": "User Authentication Feature",
     "summary": "Login, registration, password reset, and session management for the TIRAI platform",

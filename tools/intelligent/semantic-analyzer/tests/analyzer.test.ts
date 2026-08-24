@@ -415,7 +415,7 @@ describe('analyzeSemanticContext', () => {
       const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
       expect(manifest.schemaVersion).toBe('1.0');
       expect(manifest.provider.name).toBe('fake');
-      expect(manifest.promptVersion).toBe('1.1');
+      expect(manifest.promptVersion).toBe('1.2');
       expect(manifest.stats.chunks).toBe(2);
       expect(manifest.stats.entities).toBeGreaterThanOrEqual(1);
       expect(manifest.usage).toBeDefined();
@@ -622,6 +622,74 @@ describe('analyzeSemanticContext', () => {
       expect(ir.document.summary).toBe('A test document');
       expect(ir.document.language).toEqual(['en']);
       expect(ir.document.domainHints).toEqual(['web application']);
+    });
+  });
+
+  // §4 / §28 regression: consolidation failure must not publish IR as complete
+  describe('completion status safety', () => {
+    it('sets status=partial when consolidation fails', async () => {
+      const chunk0Resp = chunkResult({
+        contextId: 'ctx-test-000',
+        entities: [chunkEntity({ localId: 'e1', name: 'User', type: 'table' })],
+      });
+      const chunk1Resp = chunkResult({ contextId: 'ctx-test-001' });
+      // Provide exactly 2 chunk responses, no consolidation — provider throws when consolidation runs
+      const provider = new FakeAIProvider({
+        name: 'fake',
+        model: 'fake-model',
+        responses: [chunk0Resp, chunk1Resp],
+        usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
+      });
+
+      const ir = await analyzeSemanticContext(VALID_CONTEXT_DIR, provider, { outputDir });
+
+      expect(ir.status).toBe('partial');
+      expect(ir.analysis.consolidationComplete).toBe(false);
+      expect(ir.analysis.contextsExpected).toBe(2);
+      expect(ir.analysis.contextsCompleted).toBe(2);
+      // Intermediate checkpoints preserved
+      expect(fs.existsSync(path.join(outputDir, 'analysis', 'ctx-test-000.json'))).toBe(true);
+    });
+
+    it('sets status=complete when all chunks and consolidation succeed', async () => {
+      const chunkResp = chunkResult({
+        contextId: 'ctx-test-000',
+        entities: [chunkEntity({ localId: 'e1', name: 'User', type: 'table' })],
+      });
+      const chunk1Resp = chunkResult({ contextId: 'ctx-test-001' });
+
+      const provider = buildFakeProvider([chunkResp, chunk1Resp]);
+      const ir = await analyzeSemanticContext(VALID_CONTEXT_DIR, provider, { outputDir });
+
+      expect(ir.status).toBe('complete');
+      expect(ir.analysis.consolidationComplete).toBe(true);
+    });
+
+    it('writes semantic-ir.json with status field on disk', async () => {
+      const chunkResp = chunkResult({ contextId: 'ctx-test-000' });
+      const chunk1Resp = chunkResult({ contextId: 'ctx-test-001' });
+
+      const provider = buildFakeProvider([chunkResp, chunk1Resp]);
+      await analyzeSemanticContext(VALID_CONTEXT_DIR, provider, { outputDir });
+
+      const irPath = path.join(outputDir, 'semantic-ir.json');
+      const written = JSON.parse(fs.readFileSync(irPath, 'utf-8'));
+      expect(written.status).toBe('complete');
+    });
+
+    it('writes manifest.json with status and completion metadata', async () => {
+      const chunkResp = chunkResult({ contextId: 'ctx-test-000' });
+      const chunk1Resp = chunkResult({ contextId: 'ctx-test-001' });
+
+      const provider = buildFakeProvider([chunkResp, chunk1Resp]);
+      await analyzeSemanticContext(VALID_CONTEXT_DIR, provider, { outputDir });
+
+      const manifestPath = path.join(outputDir, 'manifest.json');
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+      expect(manifest.status).toBe('complete');
+      expect(manifest.consolidationComplete).toBe(true);
+      expect(manifest.contextsExpected).toBe(2);
+      expect(manifest.contextsCompleted).toBe(2);
     });
   });
 });

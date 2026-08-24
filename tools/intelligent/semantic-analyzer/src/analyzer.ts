@@ -17,6 +17,7 @@ import type {
   SemanticUnresolved,
   SemanticWarning,
   SemanticQualityMetrics,
+  SemanticCompletionStatus,
   ChunkSemanticResult,
   AnalysisManifest,
   SemanticAnalyzerOptions,
@@ -84,6 +85,9 @@ export async function analyzeSemanticContext(
   let schemaRepairs = 0;
   let estimatedInputTokens = 0;
   let maxEstimatedTokensPerRequest = 0;
+  let totalOutputBudgetEscalations = 0;
+  let minInitialOutputBudget = Infinity;
+  let maxFinalOutputBudget = 0;
 
   const validContextIds = buildValidContextIds(chunks);
   const contextSheetMap = buildContextSheetMap(chunks);
@@ -95,12 +99,12 @@ export async function analyzeSemanticContext(
     async (chunk) => {
       // Check resume cache
       if (resume && outputDir) {
-        const fp = computeFingerprint(chunk.content, promptVersion, model, undefined, undefined, options?.providerOptions);
+        const fp = computeFingerprint(chunk.content, promptVersion, model, undefined, undefined, options?.providerOptions, budget.outputBudgetPolicy);
         const cached = readIntermediateResult(outputDir, chunk.id, fp, provider.name, model, promptVersion);
         if (cached) {
           checkpointHits++;
           contextsReused++;
-          return { result: cached.result, usage: cached.usage as { inputTokens?: number; outputTokens?: number; totalTokens?: number }, reused: true, fingerprint: fp, repairs: 0, metrics: { requests: 0, schemaRepairs: 0, estimatedInputTokens: 0, maxEstimatedInputTokens: 0 } };
+          return { result: cached.result, usage: cached.usage as { inputTokens?: number; outputTokens?: number; totalTokens?: number }, reused: true, fingerprint: fp, repairs: 0, warnings: undefined, metrics: { requests: 0, schemaRepairs: 0, estimatedInputTokens: 0, maxEstimatedInputTokens: 0, initialOutputBudget: budget.maxOutputTokensPerRequest, finalOutputBudget: budget.maxOutputTokensPerRequest, outputBudgetEscalations: 0, finishReason: 'cached' } };
         }
         checkpointMisses++;
       }
@@ -113,7 +117,7 @@ export async function analyzeSemanticContext(
       peakConcurrency = Math.max(peakConcurrency, activeConcurrency);
       try {
         const analysis = await analyzeChunk(chunk, provider, budget, options?.providerOptions);
-        const fingerprint = computeFingerprint(chunk.content, promptVersion, model, undefined, undefined, options?.providerOptions);
+        const fingerprint = computeFingerprint(chunk.content, promptVersion, model, undefined, undefined, options?.providerOptions, budget.outputBudgetPolicy);
         if (outputDir) {
           writeIntermediateResult(outputDir, chunk.id, analysis.result, provider.name, model, analysis.usage as Record<string, unknown>, fingerprint, promptVersion);
         }
@@ -138,6 +142,9 @@ export async function analyzeSemanticContext(
     if (!results[i]!.reused) {
       estimatedInputTokens += results[i]!.metrics.estimatedInputTokens;
       maxEstimatedTokensPerRequest = Math.max(maxEstimatedTokensPerRequest, results[i]!.metrics.maxEstimatedInputTokens);
+      totalOutputBudgetEscalations += results[i]!.metrics.outputBudgetEscalations;
+      minInitialOutputBudget = Math.min(minInitialOutputBudget, results[i]!.metrics.initialOutputBudget);
+      maxFinalOutputBudget = Math.max(maxFinalOutputBudget, results[i]!.metrics.finalOutputBudget);
     }
 
     // Collect repair warnings from schema repair attempts
@@ -401,12 +408,31 @@ export async function analyzeSemanticContext(
       peakConcurrency,
       checkpointHits,
       checkpointMisses,
+      initialOutputBudget: minInitialOutputBudget === Infinity ? budget.maxOutputTokensPerRequest : minInitialOutputBudget,
+      finalOutputBudget: maxFinalOutputBudget,
+      outputBudgetEscalations: totalOutputBudgetEscalations,
+      outputBudgetCeiling: budget.outputBudgetPolicy?.maxOutputBudgetCeiling ?? budget.maxOutputTokensPerRequest,
     } satisfies SemanticExecutionMetrics,
   };
+
+  // ---- Determine completion status ----------------------------------------
+  const contextsExpected = chunksToAnalyze.length;
+  const contextsCompleted = chunkResults.length;
+  const allChunksSucceeded = contextsCompleted === contextsExpected && contextsFailed === 0;
+
+  // Canonical IR is only published as 'complete' when ALL mandatory stages succeeded.
+  // Partial output is written with explicit status for diagnostic/resume purposes.
+  let status: SemanticCompletionStatus = 'failed';
+  if (allChunksSucceeded && consolidationComplete) {
+    status = 'complete';
+  } else if (allChunksSucceeded || contextsCompleted > 0) {
+    status = 'partial';
+  }
 
   // ---- Assemble final IR --------------------------------------------------
   const semanticIR: SemanticIR = {
     schemaVersion: '1.0',
+    status,
     document,
     sections: finalSections,
     entities: finalEntities,
@@ -414,13 +440,19 @@ export async function analyzeSemanticContext(
     rules: finalRules,
     relationships: finalRelationships,
     unresolved: finalUnresolved,
-    analysis,
+    analysis: {
+      ...analysis,
+      consolidationComplete,
+      contextsExpected,
+      contextsCompleted,
+    },
   };
 
   // ---- Write output -------------------------------------------------------
-  if (outputDir && consolidationComplete) {
+  if (outputDir) {
     const analysisManifest: AnalysisManifest = {
       schemaVersion: '1.0',
+      status,
       source: { contextManifest: loaded.contextDir },
       provider: { name: provider.name, model: analysis.model },
       promptVersion,
@@ -438,6 +470,9 @@ export async function analyzeSemanticContext(
       usage: analysis.usage,
       warnings: allWarnings,
       metrics: analysis.metrics,
+      consolidationComplete,
+      contextsExpected,
+      contextsCompleted,
     };
 
     writeOutput(outputDir, semanticIR, analysisManifest, chunkResults.map((r, i) => ({

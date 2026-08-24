@@ -29,6 +29,7 @@ export function prov(contextId: string, sheet?: string, cells?: string[]): Prove
 export function semanticIR(overrides?: Partial<SemanticIRInput>): SemanticIRInput {
   return {
     schemaVersion: '1.0',
+    status: 'complete',
     document: {
       title: 'Test Document',
       summary: 'A test specification',

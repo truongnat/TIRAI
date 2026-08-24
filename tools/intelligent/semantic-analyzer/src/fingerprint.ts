@@ -9,6 +9,8 @@ import * as crypto from 'node:crypto';
  *
  * Used to determine if a cached intermediate result is still valid.
  * Does NOT include API keys or sensitive data.
+ * Includes output budget config so different budget policies produce
+ * distinct fingerprints.
  */
 export function computeFingerprint(
   chunkContent: string,
@@ -17,8 +19,9 @@ export function computeFingerprint(
   analyzerVersion = 'semantic-analyzer@1.2',
   schemaVersion = '1.0',
   providerOptions?: unknown,
+  outputBudgetConfig?: unknown,
 ): string {
-  const data = `${chunkContent}|||${promptVersion}|||${model}|||${analyzerVersion}|||${schemaVersion}|||${JSON.stringify(providerOptions ?? null)}`;
+  const data = `${chunkContent}|||${promptVersion}|||${model}|||${analyzerVersion}|||${schemaVersion}|||${JSON.stringify(providerOptions ?? null)}|||${JSON.stringify(outputBudgetConfig ?? null)}`;
   return crypto.createHash('sha256').update(data).digest('hex').slice(0, 16);
 }
 

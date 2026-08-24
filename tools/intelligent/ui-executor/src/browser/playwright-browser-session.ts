@@ -285,6 +285,10 @@ class PlaywrightBrowserPage implements BrowserPage {
     return this.page.url();
   }
 
+  async evaluate<T>(expression: string): Promise<T> {
+    return this.page.evaluate(expression) as Promise<T>;
+  }
+
   // ---- Locator adapter: map ResolvedLocator → Playwright Locator ----------
 
   private toPlaywrightLocator(target: ResolvedLocator): Locator {
@@ -326,7 +330,7 @@ export function mapLocator(
     case 'test-id':
       return page.getByTestId(value);
     case 'role':
-      return page.getByRole(value as PWRole, { exact: target.exact });
+      return page.getByRole(value as PWRole, { exact: target.exact, ...(target.name ? { name: target.name } : {}) });
     case 'label':
       return page.getByLabel(value, { exact: target.exact });
     case 'placeholder':

@@ -79,4 +79,44 @@ describe('Loader – input validation', () => {
     expect(() => loadSemanticIR(tmpDir)).toThrowError('Flow missing required fields');
     fs.rmSync(tmpDir, { recursive: true });
   });
+
+  // §4 / §28 regression: downstream rejects non-complete Semantic IR
+  it('9. throws on status=partial', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rb-test-'));
+    fs.writeFileSync(path.join(tmpDir, 'semantic-ir.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      status: 'partial',
+      document: { provenance: [] },
+      sections: [], entities: [], flows: [], rules: [], relationships: [], unresolved: [],
+      analysis: { consolidationComplete: false, contextsExpected: 2, contextsCompleted: 2 },
+    }), 'utf-8');
+    expect(() => loadSemanticIR(tmpDir)).toThrowError(/status.*partial/);
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it('10. throws on status=failed', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rb-test-'));
+    fs.writeFileSync(path.join(tmpDir, 'semantic-ir.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      status: 'failed',
+      document: { provenance: [] },
+      sections: [], entities: [], flows: [], rules: [], relationships: [], unresolved: [],
+      analysis: { consolidationComplete: false, contextsExpected: 2, contextsCompleted: 0 },
+    }), 'utf-8');
+    expect(() => loadSemanticIR(tmpDir)).toThrowError(/status.*failed/);
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it('11. accepts status=complete', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rb-test-'));
+    fs.writeFileSync(path.join(tmpDir, 'semantic-ir.json'), JSON.stringify({
+      schemaVersion: '1.0',
+      status: 'complete',
+      document: { provenance: [] },
+      sections: [], entities: [], flows: [], rules: [], relationships: [], unresolved: [],
+    }), 'utf-8');
+    const ir = loadSemanticIR(tmpDir);
+    expect(ir.status).toBe('complete');
+    fs.rmSync(tmpDir, { recursive: true });
+  });
 });

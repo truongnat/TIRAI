@@ -204,10 +204,18 @@ export class DeepSeekProvider implements AIProvider {
 
     const choice = raw.choices[0];
     if (choice?.finish_reason === 'length') {
+      const msgContent = choice.message?.content;
+      const msgReasoning = choice.message?.reasoning_content;
+      const contentPresent = typeof msgContent === 'string' && msgContent.length > 0;
+      const contentLength = contentPresent ? (msgContent as string).length : 0;
+      const reasoningPresent = typeof msgReasoning === 'string' && msgReasoning.length > 0;
+      const usageInfo = raw.usage
+        ? `prompt=${raw.usage.prompt_tokens ?? '?'}, completion=${raw.usage.completion_tokens ?? '?'}, total=${raw.usage.total_tokens ?? '?'}`
+        : '<no usage>';
       throw new AIProviderError({
         code: AIProviderErrorCode.OUTPUT_LIMIT_EXCEEDED,
         provider: this.name,
-        message: 'DeepSeek reached the configured output token limit.',
+        message: `DeepSeek reached the configured output token limit. Usage: ${usageInfo}. contentPresent=${contentPresent}, contentLength=${contentLength}, reasoningPresent=${reasoningPresent}, finishReason=length`,
         requestId: raw.id,
       });
     }
