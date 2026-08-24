@@ -338,6 +338,36 @@ describe('DeepSeekProvider – Response handling', () => {
       .rejects.toMatchObject({ code: AIProviderErrorCode.OUTPUT_LIMIT_EXCEEDED, retryable: false });
   });
 
+  // §13 / §28 regression: OUTPUT_LIMIT diagnostics must not contain raw content
+  it('OUTPUT_LIMIT_EXCEEDED does not contain provider content or reasoning', async () => {
+    const provider = new DeepSeekProvider({ maxRetries: 1 });
+    const sensitiveContent = 'SENSITIVE_WORKBOOK_DATA_user_password_12345';
+    const sensitiveReasoning = 'INTERNAL_REASONING_THINKING_PROCESS';
+    mockOkResponse(makeResponse({
+      choices: [{
+        message: { content: sensitiveContent, reasoning_content: sensitiveReasoning },
+        finish_reason: 'length',
+      }],
+      usage: { prompt_tokens: 500, completion_tokens: 1024, total_tokens: 1524 },
+    }));
+
+    try {
+      await provider.generate({ messages: [{ role: 'user', content: 'test' }] });
+      expect.fail('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(AIProviderError);
+      const message = (err as AIProviderError).message;
+      // Must NOT contain raw content or reasoning
+      expect(message).not.toContain(sensitiveContent);
+      expect(message).not.toContain(sensitiveReasoning);
+      // Must contain structural metadata only
+      expect(message).toContain('contentPresent=true');
+      expect(message).toContain('contentLength=');
+      expect(message).toContain('reasoningPresent=true');
+      expect(message).toContain('finishReason=length');
+    }
+  });
+
   it('classifies a missing choices array as MALFORMED_PROVIDER_RESPONSE', async () => {
     const provider = new DeepSeekProvider({ maxRetries: 1 });
     mockOkResponse({ id: 'bad-response', choices: [] });

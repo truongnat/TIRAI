@@ -133,5 +133,8 @@ Options:
 
 main().catch((err) => {
   console.error('Fatal error:', err instanceof Error ? err.message : err);
+  if (err instanceof Error && err.cause instanceof Error && err.cause.message) {
+    console.error('Cause:', err.cause.message);
+  }
   process.exit(1);
 });

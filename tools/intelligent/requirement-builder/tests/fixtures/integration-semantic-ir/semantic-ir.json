@@ -1,5 +1,6 @@
 {
   "schemaVersion": "1.0",
+  "status": "complete",
   "document": {
     "title": "File Upload Feature",
     "summary": "A simple file upload feature specification",

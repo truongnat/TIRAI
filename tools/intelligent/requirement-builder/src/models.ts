@@ -296,6 +296,8 @@ export interface RequirementWarning {
 
 export interface SemanticIRInput {
   schemaVersion: string;
+  /** Pipeline completion status. Only 'complete' is accepted by downstream. */
+  status?: 'complete' | 'partial' | 'failed';
   document: {
     title?: string;
     summary?: string;

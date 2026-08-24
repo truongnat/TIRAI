@@ -25,6 +25,7 @@ export interface FakeBrowserConfig {
   currentUrl?: string;
   shouldFail?: boolean;
   failMessage?: string;
+  evaluateResult?: unknown;
 }
 
 export class FakeBrowserPage implements BrowserPage {
@@ -140,6 +141,10 @@ export class FakeBrowserPage implements BrowserPage {
 
   url(): string {
     return this._url;
+  }
+
+  async evaluate<T>(_expression: string): Promise<T> {
+    return (this.config.evaluateResult ?? { url: this._url, title: this._title, headings: [], elements: [] }) as T;
   }
 
   getActions(): Array<{ type: string; target?: string; value?: string }> {

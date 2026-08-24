@@ -8,8 +8,13 @@ import type { SemanticAnalyzerBudget } from './budget.js';
 
 // ---- Top-level IR --------------------------------------------------------
 
+/** Completion status of the Semantic IR pipeline. */
+export type SemanticCompletionStatus = 'complete' | 'partial' | 'failed';
+
 export interface SemanticIR {
   schemaVersion: '1.0';
+  /** Pipeline completion status. Downstream consumers MUST reject non-complete IR. */
+  status: SemanticCompletionStatus;
   document: SemanticDocument;
   sections: SemanticSection[];
   entities: SemanticEntity[];
@@ -167,6 +172,12 @@ export interface SemanticAnalysisMetadata {
   warnings: SemanticWarning[];
   quality?: SemanticQualityMetrics;
   metrics?: SemanticExecutionMetrics;
+  /** Whether global consolidation completed successfully. */
+  consolidationComplete: boolean;
+  /** Number of contexts expected to be processed. */
+  contextsExpected: number;
+  /** Number of contexts that completed successfully. */
+  contextsCompleted: number;
 }
 
 export interface SemanticExecutionMetrics {
@@ -183,6 +194,10 @@ export interface SemanticExecutionMetrics {
   peakConcurrency: number;
   checkpointHits: number;
   checkpointMisses: number;
+  initialOutputBudget: number;
+  finalOutputBudget: number;
+  outputBudgetEscalations: number;
+  outputBudgetCeiling: number;
 }
 
 // ---- Quality metrics (v1.1) ----------------------------------------------
@@ -326,6 +341,8 @@ export interface SemanticAnalyzerOptions {
 
 export interface AnalysisManifest {
   schemaVersion: '1.0';
+  /** Pipeline completion status. Downstream consumers MUST reject non-complete IR. */
+  status: SemanticCompletionStatus;
   source: {
     contextManifest: string;
   };
@@ -352,4 +369,10 @@ export interface AnalysisManifest {
   };
   warnings: SemanticWarning[];
   metrics?: SemanticExecutionMetrics;
+  /** Whether global consolidation completed successfully. */
+  consolidationComplete: boolean;
+  /** Number of contexts expected to be processed. */
+  contextsExpected: number;
+  /** Number of contexts that completed successfully. */
+  contextsCompleted: number;
 }

@@ -1,0 +1,39 @@
+{
+  "name": "agentic-test-executor",
+  "version": "1.0.0",
+  "description": "Autonomous test execution agent for TIRAI Phase 2",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "format": "prettier --write src tests",
+    "format:check": "prettier --check src tests",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+  },
+  "keywords": [
+    "test-execution",
+    "agentic",
+    "autonomous",
+    "playwright"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ai-provider": "file:../ai-provider",
+    "test-execution-orchestrator": "file:../test-execution-orchestrator",
+    "ui-executor": "file:../ui-executor",
+    "test-planner": "file:../test-planner",
+    "test-data-planner": "file:../test-data-planner",
+    "execution-engine": "file:../execution-engine"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}

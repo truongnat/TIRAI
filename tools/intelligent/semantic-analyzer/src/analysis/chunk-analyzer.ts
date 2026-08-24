@@ -16,7 +16,16 @@ import { SemanticAnalyzerError, SemanticErrorCode } from '../errors.js';
 import { SemanticWarningCode } from '../warnings.js';
 import { SEMANTIC_SYSTEM_PROMPT } from '../prompts/system.js';
 import { buildChunkAnalysisPrompt } from '../prompts/chunk.js';
-import { DEFAULT_SEMANTIC_BUDGET, generateBudgeted, type SemanticAnalyzerBudget } from '../budget.js';
+import {
+  DEFAULT_SEMANTIC_BUDGET,
+  generateBudgeted,
+  computeAdaptiveOutputBudget,
+  escalateOutputBudget,
+  isOutputLimitError,
+  estimateRequestTokens,
+  SEMANTIC_OUTPUT_LIMIT_EXCEEDED,
+  type SemanticAnalyzerBudget,
+} from '../budget.js';
 
 /**
  * Lenient schema used to force json_object mode at the provider level.
@@ -125,18 +134,45 @@ function normalizeChunkResponse(raw: Record<string, unknown>, contextId: string)
  * the response, then validates against the schema. Retries once with a
  * repair prompt if validation fails.
  */
+export interface ChunkAnalysisMetrics {
+  requests: number;
+  schemaRepairs: number;
+  estimatedInputTokens: number;
+  maxEstimatedInputTokens: number;
+  initialOutputBudget: number;
+  finalOutputBudget: number;
+  outputBudgetEscalations: number;
+  finishReason: string;
+}
+
 export async function analyzeChunk(
   chunk: ContextChunk,
   provider: AIProvider,
   budget: SemanticAnalyzerBudget = DEFAULT_SEMANTIC_BUDGET,
   providerOptions?: Record<string, unknown>,
-): Promise<{ result: ChunkSemanticResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number }; warnings?: SemanticWarning[]; metrics: { requests: number; schemaRepairs: number; estimatedInputTokens: number; maxEstimatedInputTokens: number } }> {
+): Promise<{ result: ChunkSemanticResult; usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number }; warnings?: SemanticWarning[]; metrics: ChunkAnalysisMetrics }> {
   const systemPrompt = SEMANTIC_SYSTEM_PROMPT;
   const userPrompt = buildChunkAnalysisPrompt(chunk);
   const warnings: SemanticWarning[] = [];
   let requests = 0;
   let estimatedInputTokens = 0;
   let maxEstimatedInputTokens = 0;
+  let finishReason = 'unknown';
+
+  // Compute adaptive output budget based on estimated input size
+  const requestEstimate = estimateRequestTokens({
+    messages: [
+      { role: 'system' as const, content: systemPrompt },
+      { role: 'user' as const, content: userPrompt },
+    ],
+    responseSchema: lenientObjectSchema,
+    maxOutputTokens: budget.maxOutputTokensPerRequest,
+  });
+  const policy = budget.outputBudgetPolicy ?? budget.outputBudgetPolicy;
+  const adaptiveOutput = computeAdaptiveOutputBudget(requestEstimate, policy);
+  const initialOutputBudget = adaptiveOutput;
+  let currentOutputBudget = adaptiveOutput;
+  let outputBudgetEscalations = 0;
 
   let lastError: unknown;
   for (let attempt = 0; attempt <= Math.min(MAX_REPAIR_ATTEMPTS, budget.maxRepairAttempts); attempt++) {
@@ -161,9 +197,10 @@ export async function analyzeChunk(
         responseSchema: lenientObjectSchema,
         temperature: 0,
         providerOptions,
-      }, budget, { phase: attempt === 0 ? 'chunk-analysis' : 'chunk-schema-repair', contextIds: [chunk.id] });
+      }, budget, { phase: attempt === 0 ? 'chunk-analysis' : 'chunk-schema-repair', contextIds: [chunk.id] }, currentOutputBudget);
       estimatedInputTokens += response.request.estimatedInputTokens;
       maxEstimatedInputTokens = Math.max(maxEstimatedInputTokens, response.request.estimatedInputTokens);
+      finishReason = response.response.finishReason ?? 'stop';
 
       // Normalize the raw response to fill missing defaults
       const result = normalizeChunkResponse(response.response.data as Record<string, unknown>, chunk.id);
@@ -185,9 +222,37 @@ export async function analyzeChunk(
         result,
         usage: response.response.usage ?? {},
         warnings: warnings.length > 0 ? warnings : undefined,
-        metrics: { requests, schemaRepairs: warnings.length, estimatedInputTokens, maxEstimatedInputTokens },
+        metrics: {
+          requests, schemaRepairs: warnings.length, estimatedInputTokens, maxEstimatedInputTokens,
+          initialOutputBudget, finalOutputBudget: currentOutputBudget,
+          outputBudgetEscalations, finishReason,
+        },
       };
     } catch (err) {
+      // OUTPUT_LIMIT_EXCEEDED is handled separately from schema repair.
+      if (isOutputLimitError(err)) {
+        if (outputBudgetEscalations < (policy?.maxOutputEscalations ?? 1)) {
+          const escalated = escalateOutputBudget(currentOutputBudget, policy);
+          if (escalated !== null) {
+            currentOutputBudget = escalated;
+            outputBudgetEscalations++;
+            warnings.push({
+              code: SemanticWarningCode.OUTPUT_BUDGET_ESCALATION,
+              message: `Output budget escalated from ${initialOutputBudget} to ${escalated} for chunk "${chunk.id}"`,
+              contextId: chunk.id,
+            });
+            // Reset attempt counter for the escalated retry
+            attempt = -1; // will be incremented to 0 by the loop
+            continue;
+          }
+        }
+        // Escalation exhausted — throw immediately, do not fall through to schema repair
+        throw new SemanticAnalyzerError(
+          SemanticErrorCode.SCHEMA_FAILURE,
+          `${SEMANTIC_OUTPUT_LIMIT_EXCEEDED}: Chunk "${chunk.id}" exceeded output budget ceiling (${currentOutputBudget} tokens) after ${outputBudgetEscalations} escalation(s)`,
+          err,
+        );
+      }
       lastError = err;
     }
   }

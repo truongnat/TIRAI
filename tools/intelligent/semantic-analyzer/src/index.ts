@@ -34,9 +34,14 @@ export {
   DEFAULT_SEMANTIC_BUDGET,
   SEMANTIC_INPUT_BUDGET_EXCEEDED,
   SEMANTIC_REQUEST_LIMIT_EXCEEDED,
+  SEMANTIC_OUTPUT_LIMIT_EXCEEDED,
   estimateRequestTokens,
   estimateTokens,
+  computeAdaptiveOutputBudget,
+  escalateOutputBudget,
+  isOutputLimitError,
+  DEFAULT_OUTPUT_BUDGET_POLICY,
 } from './budget.js';
-export type { SemanticAnalyzerBudget } from './budget.js';
+export type { SemanticAnalyzerBudget, OutputBudgetPolicy } from './budget.js';
 export { preflightSemanticContext, preflightLoadedContext } from './preflight.js';
 export type { SemanticPreflightReport } from './preflight.js';

@@ -26,7 +26,7 @@ import type { ChunkSemanticResult, ConsolidationResult } from '../src/models.js'
 
 describe('Prompt version', () => {
   it('should be 1.1', () => {
-    expect(PROMPT_VERSION).toBe('1.1');
+    expect(PROMPT_VERSION).toBe('1.2');
   });
 });
 

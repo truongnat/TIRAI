@@ -33,6 +33,7 @@
     "tools/intelligent/ui-executor",
     "tools/intelligent/execution-mapping-builder",
     "tools/intelligent/project-adapter",
+    "tools/intelligent/agentic-test-executor",
     "tools/intelligent/e2e-runner"
   ],
   "devDependencies": {

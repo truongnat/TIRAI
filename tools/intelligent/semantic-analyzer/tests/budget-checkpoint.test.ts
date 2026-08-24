@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { FakeAIProvider } from 'ai-provider';
-import { assertRequestWithinBudget, DEFAULT_SEMANTIC_BUDGET, estimateRequestTokens } from '../src/budget.js';
+import { assertRequestWithinBudget, DEFAULT_SEMANTIC_BUDGET, DEFAULT_OUTPUT_BUDGET_POLICY, escalateOutputBudget, estimateRequestTokens } from '../src/budget.js';
 import { consolidateHierarchically } from '../src/analysis/consolidator.js';
 import { analyzeSemanticContext } from '../src/analyzer.js';
 import { computeFingerprint, hashSemanticResult } from '../src/fingerprint.js';
@@ -26,6 +26,27 @@ describe('large-workbook request safety', () => {
     expect(() => assertRequestWithinBudget(request, { ...DEFAULT_SEMANTIC_BUDGET, maxInputTokensPerRequest: 50 }, { phase: 'test' })).toThrow('SEMANTIC_INPUT_BUDGET_EXCEEDED');
   });
 
+  // §11 / §28 regression: budget escalation is bounded
+  it('escalation returns null when already at ceiling', () => {
+    const policy = DEFAULT_OUTPUT_BUDGET_POLICY;
+    // Ceiling is 4096, max escalation is 1
+    expect(policy.maxOutputBudgetCeiling).toBe(4096);
+    expect(policy.maxOutputEscalations).toBe(1);
+    // At the ceiling, escalation must return null (no further escalation)
+    const atCeiling = escalateOutputBudget(4096, policy);
+    expect(atCeiling).toBeNull();
+  });
+
+  it('escalation from base returns at most one tier then stops', () => {
+    const policy = DEFAULT_OUTPUT_BUDGET_POLICY;
+    const first = escalateOutputBudget(2048, policy);
+    // First escalation goes to next tier (4096)
+    expect(first).toBe(4096);
+    // Second escalation from 4096 returns null (ceiling reached)
+    const second = escalateOutputBudget(4096, policy);
+    expect(second).toBeNull();
+  });
+
   it('rejects an output request without a bounded completion', () => {
     expect(() => assertRequestWithinBudget({ messages: [{ role: 'user', content: 'small' }] }, DEFAULT_SEMANTIC_BUDGET, { phase: 'test' })).toThrow('SEMANTIC_OUTPUT_BUDGET_EXCEEDED');
   });
@@ -38,7 +59,11 @@ describe('large-workbook request safety', () => {
     const sheetMap = new Map(results.map((result, i) => [result.contextId, i < 10 ? 'Sheet A' : 'Sheet B']));
     const output = await consolidateHierarchically(results, ['Sheet A', 'Sheet B'], provider, budget, sheetMap);
     expect(output.metrics.batchRequests).toBeGreaterThan(1);
-    expect(provider.requestLog.every((request) => (request.maxOutputTokens ?? 0) === budget.maxOutputTokensPerRequest)).toBe(true);
+    expect(provider.requestLog.every((request) => {
+      const out = request.maxOutputTokens ?? 0;
+      // Chunk requests use maxOutputTokensPerRequest; consolidation requests use maxConsolidationOutputTokens.
+      return out === budget.maxOutputTokensPerRequest || out === budget.maxConsolidationOutputTokens;
+    })).toBe(true);
     expect(Math.max(...provider.requestLog.map(estimateRequestTokens))).toBeLessThanOrEqual(budget.maxInputTokensPerRequest);
   });
 });

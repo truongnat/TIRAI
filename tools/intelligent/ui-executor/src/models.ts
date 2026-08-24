@@ -270,6 +270,7 @@ export interface BrowserPage {
   count(target: ResolvedLocator): Promise<number>;
   title(): Promise<string>;
   url(): string;
+  evaluate<T>(expression: string): Promise<T>;
 }
 
 // ---- Resolved Locator (spec §12) ------------------------------------------
@@ -278,6 +279,7 @@ export interface ResolvedLocator {
   strategy: UILocatorStrategy;
   value: string;
   role?: string;
+  name?: string;
   exact?: boolean;
   description: string;
 }

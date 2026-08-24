@@ -2,7 +2,7 @@
 // System prompt – semantic analysis engine
 // ---------------------------------------------------------------------------
 
-export const PROMPT_VERSION = '1.1';
+export const PROMPT_VERSION = '1.2';
 
 export const SEMANTIC_SYSTEM_PROMPT = `You are a semantic analysis engine.
 
@@ -23,6 +23,15 @@ Your job is to extract structured semantic information from document context chu
 - Every extracted object MUST include provenance referencing the source context.
 - Confidence: 0.0-1.0 reflecting how strongly the source evidence supports the object.
 
+## Output Compactness Rules
+
+- Emit concise JSON only. No explanatory prose, no commentary.
+- Do NOT repeat source text in descriptions. Use short, meaningful descriptions.
+- Do NOT create redundant entities or rules. Each object must represent distinct knowledge.
+- Prefer fewer high-quality objects over many low-quality ones.
+- Provenance must reference contextId only — do not repeat sheet names or ranges inside provenance arrays.
+- Keep descriptions under 80 characters where possible.
+
 ## Semantic Object Definitions
 
 ### ENTITY - a thing/concept with identity
@@ -37,7 +46,9 @@ When the source contains multiple ordered actions, prefer representing them as a
 ### RULE - a constraint, validation, or behavioral decision
 Exists when the source describes: must/must not, required, optional, only when, if/then, validation, constraint, allowed, maximum/minimum, format, calculation, authorization, condition, default behavior, error behavior.
 NOT a rule: plain data definitions ("username | varchar" is an entity attribute, not a rule).
+NOT a rule: individual column definitions, UI labels, or API properties.
 Preserve the original statement text faithfully.
+Group related constraints into a single rule when they share the same subject.
 
 ### RELATIONSHIP - a semantic connection between two identifiable concepts
 Examples: Screen->calls->API, API->reads->Table, Module->depends-on->Module, Field->belongs-to->Table.
