@@ -16,6 +16,7 @@
   "workspaces": [
     "tools/deterministic/excel/workbook-inspector",
     "tools/deterministic/excel/cell-layout-extractor",
+    "tools/deterministic/performance-benchmark",
     "tools/intelligent/ai-provider",
     "tools/intelligent/excel/context-builder",
     "tools/intelligent/excel/analyzer",
