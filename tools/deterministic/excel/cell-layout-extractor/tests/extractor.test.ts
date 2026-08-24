@@ -76,6 +76,9 @@ describe('memory profiling', () => {
     expect(profiled.performanceProfile?.sheets).toHaveLength(profiled.sheets.length);
     expect(profiled.performanceProfile?.sheets[0].memory.length).toBeGreaterThan(0);
     expect(profiled.performanceProfile?.sheets[0].estimatedSheetObjectBytes).toBeGreaterThan(0);
+    expect(profiled.performanceProfile?.sheets[0].gridCoordinatesVisited).toBeGreaterThanOrEqual(
+      profiled.performanceProfile?.sheets[0].cellsEmitted ?? 0,
+    );
   });
 
   it('keeps OOXML text cache workbook-scoped and releasable', async () => {

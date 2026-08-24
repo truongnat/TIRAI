@@ -20,6 +20,13 @@ export function memorySnapshot(label: string): MemorySnapshot {
   };
 }
 
+export function collectGarbage(): boolean {
+  const gc = (globalThis as typeof globalThis & { gc?: () => void }).gc;
+  if (!gc) return false;
+  gc();
+  return true;
+}
+
 export function createProfile(): PerformanceProfile {
   return {
     enabled: true,

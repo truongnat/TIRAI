@@ -21,6 +21,7 @@ async function main(): Promise<void> {
   const includeEmptyAll = args.includes('--include-empty-all');
   const assets = args.includes('--assets');
   const profilePerformance = args.includes('--profile-performance');
+  const profileForceGc = args.includes('--profile-force-gc');
   const profileOutput = extractFlagValues(args, '--profile-output')[0];
 
   const inputFile = args.filter(
@@ -47,6 +48,7 @@ async function main(): Promise<void> {
   }
   if (profilePerformance) {
     options.profilePerformance = true;
+    options.profileForceGc = profileForceGc;
   }
 
   try {
@@ -116,6 +118,7 @@ Options:
   --include-empty-all    Include all empty cells in used range.
   --assets               Extract binary assets (images) metadata.
   --profile-performance  Collect opt-in phase, sheet, and memory diagnostics.
+  --profile-force-gc     With profiling, force GC at diagnostic checkpoints.
   --profile-output <file> Write diagnostics separately from extraction JSON.
   --help, -h             Show this help message.
 
