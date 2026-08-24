@@ -7,6 +7,7 @@ import type { BrowserSession } from 'ui-executor';
 import type { TestDataItem } from 'test-data-planner';
 import { AgenticTestExecutor } from '../src/agent.js';
 import { defaultCapabilities, type BrowserObservation } from '../src/models.js';
+import type { RuntimeCapabilityInventory } from '../src/data/runtime-capability-inventory.js';
 import {
   createFakeAI,
   createFakePage,
@@ -23,6 +24,8 @@ function buildExecutor(opts: {
   ai: ReturnType<typeof createFakeAI>;
   observationSequence?: BrowserObservation[];
   capabilities?: ReturnType<typeof defaultCapabilities>;
+  capabilityInventory?: Partial<RuntimeCapabilityInventory>;
+  testDataItems?: TestDataItem[];
 }) {
   const obsSequence = opts.observationSequence ?? [loginPageObservation(), dashboardObservation()];
   let obsIndex = 0;
@@ -70,6 +73,8 @@ function buildExecutor(opts: {
     baseUrl: 'http://127.0.0.1:3000',
     capabilities: opts.capabilities ?? { ...defaultCapabilities(), browser: 'AVAILABLE' },
     allowedOrigins: ['http://127.0.0.1'],
+    capabilityInventory: opts.capabilityInventory,
+    testDataItems: opts.testDataItems,
   });
 
   return { executor, state, session };
@@ -240,6 +245,49 @@ describe('AgenticTestExecutor', () => {
       expect(executor.getLastMetrics().actions).toBe(0);
       expect(executor.getLastDataResolutions()[0].status).toBe('NEEDS_CAPABILITY');
       expect(executor.getLastDataResolutions()[0].value).toBeUndefined();
+    });
+
+    it('returns ERROR when an explicit discovery capability crashes', async () => {
+      const { executor, state } = buildExecutor({
+        ai: createFakeAI(() => ({})),
+        testDataItems: [{
+          id: 'DATA-DB-ERROR',
+          name: 'existing-user',
+          description: 'Existing User',
+          type: 'database-record',
+          lifecycle: 'existing',
+          strategy: 'select-existing',
+          constraints: [],
+          dependencies: [],
+          relatedTestCaseIds: ['TC-001'],
+          relatedRequirementIds: [],
+          relatedEntityIds: ['User'],
+          setup: [{ type: 'select', description: 'Select User', executorHint: 'database' }],
+          cleanup: [],
+          provenance: [],
+          confidence: 1,
+        }],
+        capabilityInventory: {
+          environment: {
+            id: 'ENV-DB',
+            resources: [{ id: 'db-test', type: 'database', name: 'DB', capabilities: ['select'], metadata: {} }],
+            capabilities: [],
+          },
+          resourceMappings: [{ logicalEntity: 'User', resourceId: 'db-test' }],
+          database: {
+            available: true,
+            readable: true,
+            writable: false,
+            discovery: async () => { throw new Error('DB crashed'); },
+          },
+        },
+      });
+
+      const result = await executor.execute(makeTestCase(), makeContext());
+
+      expect(result.status).toBe('error');
+      expect(result.error?.code).toBe('AGENT_DATA_PREPARATION_ERROR');
+      expect(state.gotoCalls).toHaveLength(0);
     });
 
     it('returns blocked when grounding fails repeatedly', async () => {

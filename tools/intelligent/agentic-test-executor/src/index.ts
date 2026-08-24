@@ -28,6 +28,8 @@ export type {
   DataNeedSemantics,
   DataResolutionSource,
   DataResolutionResult,
+  DataResolutionEvidence,
+  DataResolutionMetrics,
   AgenticFailureCode,
   AgentCheckpoint,
   ConfidenceClass,
@@ -58,3 +60,35 @@ export type {
   DataResolutionContext,
   DataResolutionExecutionContext,
 } from './data/data-resolver.js';
+
+export {
+  DataNeedCoordinator,
+  DataNeedCoordinatorError,
+} from './data/data-need-coordinator.js';
+export type {
+  DataNeedCoordinatorContext,
+  DataNeedCoordinatorOptions,
+  DataNeedCoordinationResult,
+} from './data/data-need-coordinator.js';
+
+export {
+  buildPlanningEnvironment,
+  buildRuntimeCapabilityInventory,
+} from './data/runtime-capability-inventory.js';
+export type {
+  RuntimeCapabilityInventory,
+  RuntimeCapabilityInventoryOverrides,
+  RuntimeBrowserCapability,
+  RuntimeDatabaseCapability,
+  RuntimeApiCapability,
+  RuntimeSecretCapability,
+  RuntimeSourceCapability,
+  RuntimeFileCapability,
+  RuntimeDiscoveryAdapter,
+  RuntimeDiscoveryRequest,
+  RuntimeDiscoveryResult,
+} from './data/runtime-capability-inventory.js';
+
+export { RuntimeDataStore } from './data/runtime-data-store.js';
+export type { RuntimeDataBinding, SafeRuntimeDataBinding } from './data/runtime-data-store.js';
+export { RuntimePreparationExecutor, RuntimePreparationError } from './data/preparation-executor.js';
