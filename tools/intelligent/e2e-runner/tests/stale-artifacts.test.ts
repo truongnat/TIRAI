@@ -317,6 +317,51 @@ describe('preflight side-effect zero on stale artifact', () => {
     expect(result.blockers.some((b) => b.code === 'RUNNER_MAPPING_STALE')).toBe(true);
   });
 
+  it('warns explicitly for legacy compatibility metadata outside execute', () => {
+    const tc = makeTestCase({ id: 'TC-LEGACY-WARN' });
+    const input = makeInput({ testCases: [tc], mappings: {
+      schemaVersion: '1.0', testMappings: [makeMapping({ testCaseId: tc.id })], unresolved: [], catalogs: {}, quality: {} as never,
+    } });
+    delete (input.mappings as { sourceTestCasesHash?: string; sourceProjectFingerprint?: string }).sourceTestCasesHash;
+    delete (input.mappings as { sourceTestCasesHash?: string; sourceProjectFingerprint?: string }).sourceProjectFingerprint;
+    const result = runPreflight(input, makePolicy({ mode: 'dry-run' }), {
+      profileFingerprint: input.profile.fingerprint,
+      testCasesSemanticHash: 'unused', testCasesHash: 'unused',
+      mappingArtifactHash: 'unused', mappingHash: 'unused',
+    });
+    expect(result.status).toBe('warning');
+    expect(result.warnings.some((w) => w.code === 'RUNNER_COMPATIBILITY_FINGERPRINT_MISSING')).toBe(true);
+  });
+
+  it('fails closed for an execute data plan missing its source fingerprint', () => {
+    const tc = makeTestCase({ id: 'TC-LEGACY-DP' });
+    const input = makeInput({ testCases: [tc], dataPlan: makeDataPlan({
+      testCases: [{ testCaseId: tc.id, requiredDataItemIds: [], setupItemIds: [], cleanupItemIds: [], reusableDataSetIds: [], unresolvedIds: [] }],
+    }) });
+    delete (input.dataPlan as { sourceTestCasesHash?: string }).sourceTestCasesHash;
+    const result = runPreflight(input, makeExecutePolicy(), {
+      profileFingerprint: input.profile.fingerprint,
+      testCasesSemanticHash: 'unused', testCasesHash: 'unused',
+      mappingArtifactHash: 'unused', mappingHash: 'unused', dataPlanArtifactHash: 'unused', dataPlanHash: 'unused',
+    });
+    expect(result.status).toBe('blocked');
+    expect(result.blockers.some((b) => b.code === 'RUNNER_DATA_PLAN_STALE')).toBe(true);
+  });
+
+  it('fails closed for an execute prepared plan missing its source data-plan hash', () => {
+    const tc = makeTestCase({ id: 'TC-LEGACY-PREP' });
+    const input = makeInput({ testCases: [tc], dataPlan: makeDataPlan(), preparedData: makePreparedData({ environmentProfileId: 'local' }) });
+    delete (input.preparedData as { sourceDataPlanHash?: string }).sourceDataPlanHash;
+    const result = runPreflight(input, makeExecutePolicy(), {
+      profileFingerprint: input.profile.fingerprint,
+      testCasesSemanticHash: 'unused', testCasesHash: 'unused',
+      mappingArtifactHash: 'unused', mappingHash: 'unused', dataPlanArtifactHash: 'unused', dataPlanHash: 'unused',
+      preparedDataArtifactHash: 'unused', preparedDataHash: 'unused',
+    });
+    expect(result.status).toBe('blocked');
+    expect(result.blockers.some((b) => b.code === 'RUNNER_PREPARED_DATA_STALE')).toBe(true);
+  });
+
   it('blocks same-ID Test Case semantic changes for a reused data plan', () => {
     const original = makeTestCase({ id: 'TC-DP', expectedResults: [{ description: 'A', verificationType: 'visual' }] });
     const originalInput = makeInput({ testCases: [original], dataPlan: makeDataPlan() });
