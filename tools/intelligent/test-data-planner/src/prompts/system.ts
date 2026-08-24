@@ -2,7 +2,7 @@
 // Test Data Planner – system prompt
 // ---------------------------------------------------------------------------
 
-export const TEST_DATA_PLANNER_PROMPT_VERSION = '1.0';
+export const TEST_DATA_PLANNER_PROMPT_VERSION = '1.1';
 
 export const TEST_DATA_PLANNER_SYSTEM_PROMPT = `You are a test data planning engine.
 

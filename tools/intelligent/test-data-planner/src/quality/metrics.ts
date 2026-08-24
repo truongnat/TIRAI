@@ -9,6 +9,7 @@ import type {
   DataDependency,
   ReusableDataSet,
   TestDataUnresolved,
+  TestCaseIRInput,
 } from '../models.js';
 
 /**
@@ -21,6 +22,7 @@ export function computeDataQualityMetrics(
   reusableSets: ReusableDataSet[],
   unresolved: TestDataUnresolved[],
   cyclicDependencies: number,
+  testCases?: TestCaseIRInput['testCases'],
 ): TestDataQualityMetrics {
   const testCasesTotal = testCasePlans.length;
 
@@ -45,6 +47,41 @@ export function computeDataQualityMetrics(
   const itemsWithStrategy = dataItems.filter((d) => d.strategy !== 'unknown').length;
   const strategyCoverage = dataItems.length > 0 ? itemsWithStrategy / dataItems.length : 0;
 
+  // Data coverage metrics: how many tests requiring data are covered
+  let testsRequiringData = 0;
+  let testsCoveredByData = 0;
+
+  if (testCases) {
+    for (const tc of testCases) {
+      const hasExplicitDataNeeds = tc.dataNeeds.length > 0;
+      const hasPreconditionsRequiringData = tc.preconditions.some((p) => {
+        const text = p.description.toLowerCase();
+        return text.includes('user') || text.includes('account') || text.includes('exist') ||
+               text.includes('logged') || text.includes('authenticated') || text.includes('has');
+      });
+      const hasInputs = tc.inputs.length > 0;
+      const requiresData = hasExplicitDataNeeds || hasPreconditionsRequiringData || hasInputs;
+      if (requiresData) testsRequiringData++;
+    }
+
+    for (const tcp of testCasePlans) {
+      if (tcp.requiredDataItemIds.length > 0 || tcp.unresolvedIds.length > 0) {
+        testsCoveredByData++;
+      }
+    }
+  } else {
+    // Fallback: count test cases with data plans
+    for (const tcp of testCasePlans) {
+      if (tcp.requiredDataItemIds.length > 0) {
+        testsRequiringData++;
+        testsCoveredByData++;
+      }
+    }
+  }
+
+  const coverageRate = testsRequiringData > 0 ? Math.min(1, testsCoveredByData / testsRequiringData) : 0;
+  const unresolvedDataRequirements = unresolved.length;
+
   return {
     testCasesTotal,
     testCasesWithCompleteDataPlan,
@@ -56,5 +93,9 @@ export function computeDataQualityMetrics(
     cyclicDependencies,
     provenanceCoverage: Math.round(provenanceCoverage * 100) / 100,
     strategyCoverage: Math.round(strategyCoverage * 100) / 100,
+    testsRequiringData,
+    testsCoveredByData,
+    coverageRate: Math.round(coverageRate * 100) / 100,
+    unresolvedDataRequirements,
   };
 }
