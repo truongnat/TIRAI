@@ -12,9 +12,13 @@ import type {
   EndToEndRunnerInput,
   EnvironmentSafety,
   InputArtifactHashes,
+  MappingSourceCompatibility,
+  DataPlanSourceCompatibility,
+  PreparedDataSourceCompatibility,
 } from './models.js';
 import { createWarning } from './warnings.js';
 import { checkExecutionGate } from './policy.js';
+import { computeObjectHash, computeTestCasesSemanticHash } from './fingerprints.js';
 
 export function runPreflight(
   input: EndToEndRunnerInput,
@@ -34,11 +38,11 @@ export function runPreflight(
   // 4. Mappings complete.
   checkMappings(input, checks, blockers, warnings);
   // 5. Stale mapping protection.
-  checkStaleMapping(hashes, checks, blockers, input);
+  checkStaleMapping(hashes, checks, blockers, warnings, input, policy);
   // 6. Stale data plan protection.
-  checkStaleDataPlan(input, hashes, checks, blockers);
+  checkStaleDataPlan(input, hashes, checks, blockers, warnings, policy);
   // 6b. Stale prepared data protection.
-  checkStalePreparedData(input, checks, blockers);
+  checkStalePreparedData(input, hashes, checks, blockers, warnings, policy);
   // 7. Execution gate.
   checkPolicyGates(input, policy, checks, blockers, warnings);
   // 8. Binding/secret checks.
@@ -134,15 +138,37 @@ function checkMappings(
 }
 
 function checkStaleMapping(
-  _hashes: InputArtifactHashes,
+  hashes: InputArtifactHashes,
   checks: PreflightCheck[],
   blockers: RunnerBlocker[],
+  warnings: RunnerWarning[],
   input: EndToEndRunnerInput,
+  policy: EndToEndRunnerPolicy,
 ): void {
   // Verify every mapping.testCaseId exists in current test cases.
   const tcIds = new Set(input.testCases.map((tc) => tc.id));
   const mappings = input.mappings;
   if (!mappings?.testMappings) return;
+
+  const compatibility = mappings as ExecutionMappingIRWithCompatibility;
+  const currentTestCasesHash = computeTestCasesSemanticHash(input.testCases);
+  const currentProjectFingerprint = input.profile.fingerprint;
+  const missingSource = !compatibility.sourceTestCasesHash || !compatibility.sourceProjectFingerprint;
+  const sourceMismatch = compatibility.sourceTestCasesHash !== currentTestCasesHash ||
+    compatibility.sourceProjectFingerprint !== currentProjectFingerprint;
+  if (missingSource || sourceMismatch) {
+    const message = missingSource
+      ? 'Execution mapping has no source Test Case and Project Profile fingerprints'
+      : 'Execution mapping source fingerprints do not match current Test Cases or Project Profile';
+    checks.push({ id: 'mapping-source-fresh', name: 'Mapping source compatibility', status: 'failed', message });
+    if (policy.mode === 'execute' || policy.mode === 'simulate') {
+      blockers.push({ code: 'RUNNER_MAPPING_STALE', message: `Execution mapping is stale: ${message}` });
+    } else {
+      warnings.push(createWarning('RUNNER_LEGACY_ARTIFACT', `Compatibility warning: ${message}`));
+    }
+  } else {
+    checks.push({ id: 'mapping-source-fresh', name: 'Mapping source compatibility', status: 'passed', message: 'Mapping was built from current Test Cases and Project Profile' });
+  }
 
   const orphans: string[] = [];
   for (const m of mappings.testMappings) {
@@ -172,9 +198,11 @@ function checkStaleMapping(
 
 function checkStaleDataPlan(
   input: EndToEndRunnerInput,
-  _hashes: InputArtifactHashes,
+  hashes: InputArtifactHashes,
   checks: PreflightCheck[],
   blockers: RunnerBlocker[],
+  warnings: RunnerWarning[],
+  policy: EndToEndRunnerPolicy,
 ): void {
   if (!input.dataPlan) {
     checks.push({
@@ -184,6 +212,21 @@ function checkStaleDataPlan(
       message: 'No data plan provided',
     });
     return;
+  }
+
+  const compatibility = input.dataPlan as TestDataPlanWithCompatibility;
+  const currentTestCasesHash = computeTestCasesSemanticHash(input.testCases);
+  const missingSource = !compatibility.sourceTestCasesHash;
+  const sourceMismatch = compatibility.sourceTestCasesHash !== currentTestCasesHash;
+  if (missingSource || sourceMismatch) {
+    const message = missingSource
+      ? 'Test data plan has no source Test Case fingerprint'
+      : 'Test data plan source Test Case fingerprint does not match current Test Cases';
+    checks.push({ id: 'data-plan-source-fresh', name: 'Data plan source compatibility', status: 'failed', message });
+    if (policy.mode === 'execute' || policy.mode === 'simulate') blockers.push({ code: 'RUNNER_DATA_PLAN_STALE', message: `Test data plan is stale: ${message}` });
+    else warnings.push(createWarning('RUNNER_LEGACY_ARTIFACT', `Compatibility warning: ${message}`));
+  } else {
+    checks.push({ id: 'data-plan-source-fresh', name: 'Data plan source compatibility', status: 'passed', message: 'Data plan was built from current Test Cases' });
   }
 
   // Verify every data plan testCaseId exists in current test cases.
@@ -215,10 +258,28 @@ function checkStaleDataPlan(
 
 function checkStalePreparedData(
   input: EndToEndRunnerInput,
+  hashes: InputArtifactHashes,
   checks: PreflightCheck[],
   blockers: RunnerBlocker[],
+  warnings: RunnerWarning[],
+  policy: EndToEndRunnerPolicy,
 ): void {
   if (!input.preparedData) return;
+
+  const compatibility = input.preparedData as PreparedDataWithCompatibility;
+  const currentDataPlanHash = input.dataPlan ? computeObjectHash(input.dataPlan) : undefined;
+  const missingSource = !compatibility.sourceDataPlanHash;
+  const sourceMismatch = compatibility.sourceDataPlanHash !== currentDataPlanHash;
+  if (missingSource || sourceMismatch) {
+    const message = missingSource
+      ? 'Prepared data has no source data-plan fingerprint'
+      : 'Prepared data source data-plan fingerprint does not match current data plan';
+    checks.push({ id: 'prepared-data-source-fresh', name: 'Prepared data source compatibility', status: 'failed', message });
+    if (policy.mode === 'execute' || policy.mode === 'simulate') blockers.push({ code: 'RUNNER_PREPARED_DATA_STALE', message: `Prepared data plan is stale: ${message}` });
+    else warnings.push(createWarning('RUNNER_LEGACY_ARTIFACT', `Compatibility warning: ${message}`));
+  } else {
+    checks.push({ id: 'prepared-data-source-fresh', name: 'Prepared data source compatibility', status: 'passed', message: 'Prepared data was produced from the current data plan' });
+  }
 
   // Prepared data must be traceable to the data plan.
   // Verify environmentProfileId matches the current profile environment.
@@ -243,6 +304,10 @@ function checkStalePreparedData(
     });
   }
 }
+
+type ExecutionMappingIRWithCompatibility = EndToEndRunnerInput['mappings'] & MappingSourceCompatibility;
+type TestDataPlanWithCompatibility = NonNullable<EndToEndRunnerInput['dataPlan']> & DataPlanSourceCompatibility;
+type PreparedDataWithCompatibility = NonNullable<EndToEndRunnerInput['preparedData']> & PreparedDataSourceCompatibility;
 
 function checkPolicyGates(
   input: EndToEndRunnerInput,

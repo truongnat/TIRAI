@@ -211,6 +211,7 @@ describe('runner — managed runtime', () => {
     const result = await runner.run(makeInput());
     expect(result.runtime.startError).toBeDefined();
     expect(result.runtime.ready).toBe(false);
+    expect(result.status).toBe('error');
   });
 
   it('external mode does not start runtime', async () => {
@@ -268,7 +269,7 @@ describe('runner — result structure', () => {
     expect(result.quality).toBeDefined();
     expect(result.timings).toBeDefined();
     expect(result.inputHashes).toBeDefined();
-    expect(result.runnerVersion).toBe('1.0.1');
+    expect(result.runnerVersion).toBe('1.0.2');
   });
 
   it('records input hashes (§19)', async () => {

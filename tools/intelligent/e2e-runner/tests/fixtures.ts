@@ -26,6 +26,7 @@ import type {
   PreflightResult,
 } from '../src/models.js';
 import { defaultPolicy } from '../src/policy.js';
+import { computeObjectHash, computeTestCasesSemanticHash } from '../src/fingerprints.js';
 
 // ---- Profile fixture (spec §36-39) ----------------------------------------
 
@@ -165,6 +166,7 @@ export function makeMappingsForCases(testCases: TestCase[], status: MappingStatu
       readyMappings: status === 'ready' ? testCases.length : 0,
       averageConfidence: 0.9,
     },
+    sourceTestCasesHash: computeTestCasesSemanticHash(testCases),
   } as ExecutionMappingIR;
 }
 
@@ -215,12 +217,24 @@ export function makeInput(overrides?: {
   preparedData?: ExecutableDataPreparationIR;
 }): EndToEndRunnerInput {
   const testCases = overrides?.testCases ?? [makeTestCase()];
+  const profile = overrides?.profile ?? makeProfile();
+  const mappings = {
+    ...(overrides?.mappings ?? makeMappingsForCases(testCases)),
+    sourceTestCasesHash: (overrides?.mappings as ExecutionMappingIR & { sourceTestCasesHash?: string } | undefined)?.sourceTestCasesHash ?? computeTestCasesSemanticHash(testCases),
+    sourceProjectFingerprint: (overrides?.mappings as ExecutionMappingIR & { sourceProjectFingerprint?: string } | undefined)?.sourceProjectFingerprint ?? profile.fingerprint,
+  };
+  const dataPlan = overrides?.dataPlan
+    ? { ...overrides.dataPlan, sourceTestCasesHash: overrides.dataPlan.sourceTestCasesHash ?? computeTestCasesSemanticHash(testCases) }
+    : undefined;
+  const preparedData = overrides?.preparedData && dataPlan
+    ? { ...overrides.preparedData, sourceDataPlanHash: overrides.preparedData.sourceDataPlanHash ?? computeObjectHash(dataPlan) }
+    : overrides?.preparedData;
   return {
-    profile: overrides?.profile ?? makeProfile(),
+    profile,
     testCases,
-    mappings: overrides?.mappings ?? makeMappingsForCases(testCases),
-    dataPlan: overrides?.dataPlan,
-    preparedData: overrides?.preparedData,
+    mappings,
+    dataPlan,
+    preparedData,
   };
 }
 

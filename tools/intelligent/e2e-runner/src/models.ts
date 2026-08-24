@@ -206,7 +206,8 @@ export type RunnerWarningCode =
   | 'RUNNER_UNUSED_SECRET'
   | 'RUNNER_COMMAND_UNSAFE'
   | 'RUNNER_SHARED_NONPROD_MUTATION'
-  | 'RUNNER_LOW_CONFIDENCE_MAPPING';
+  | 'RUNNER_LOW_CONFIDENCE_MAPPING'
+  | 'RUNNER_LEGACY_ARTIFACT';
 
 export interface RunnerError {
   code: RunnerErrorCode;
@@ -398,10 +399,27 @@ export type EndToEndRunStatus =
 
 export interface InputArtifactHashes {
   profileFingerprint: string;
+  testCasesSemanticHash?: string;
   testCasesHash: string;
+  mappingArtifactHash?: string;
   mappingHash: string;
+  dataPlanArtifactHash?: string;
   dataPlanHash?: string;
+  preparedDataArtifactHash?: string;
   preparedDataHash?: string;
+}
+
+export interface MappingSourceCompatibility {
+  sourceTestCasesHash?: string;
+  sourceProjectFingerprint?: string;
+}
+
+export interface DataPlanSourceCompatibility {
+  sourceTestCasesHash?: string;
+}
+
+export interface PreparedDataSourceCompatibility {
+  sourceDataPlanHash?: string;
 }
 
 // ---- End-to-end run result IR (spec §55) ----------------------------------
@@ -438,6 +456,15 @@ export interface EndToEndRunManifest {
   mode: EndToEndRunMode;
   profileFingerprint: string;
   inputHashes: InputArtifactHashes;
+  projectProfileFingerprint?: string;
+  testCasesSemanticHash?: string;
+  executionMappingArtifactHash?: string;
+  mappingSourceTestCasesHash?: string;
+  mappingSourceProjectFingerprint?: string;
+  testDataPlanArtifactHash?: string;
+  testDataPlanSourceTestCasesHash?: string;
+  preparedDataPlanArtifactHash?: string;
+  preparedDataPlanSourceDataPlanHash?: string;
   selection: TestSelection;
   startedAt: string;
   finishedAt: string;
@@ -478,9 +505,9 @@ export interface EndToEndRunnerOptions {
 export interface EndToEndRunnerInput {
   profile: ProjectExecutionProfile;
   testCases: TestCase[];
-  mappings: ExecutionMappingIR;
-  dataPlan?: TestDataPlanIR;
-  preparedData?: ExecutableDataPreparationIR;
+  mappings: ExecutionMappingIR & MappingSourceCompatibility;
+  dataPlan?: TestDataPlanIR & DataPlanSourceCompatibility;
+  preparedData?: ExecutableDataPreparationIR & PreparedDataSourceCompatibility;
 }
 
 // ---- Signal handling (spec §76-77) ----------------------------------------

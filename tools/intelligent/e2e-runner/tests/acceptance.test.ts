@@ -29,7 +29,7 @@ import type {
   TestCaseExecutionMapping,
 } from '../src/models.js';
 import { defaultPolicy } from '../src/policy.js';
-import { computeObjectHash } from '../src/fingerprints.js';
+import { computeObjectHash, computeTestCasesSemanticHash } from '../src/fingerprints.js';
 import { mkdirSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -292,7 +292,7 @@ function buildProfile(catalog: UIElementCatalog): ProjectExecutionProfile {
   } as ProjectExecutionProfile;
 }
 
-function buildMappings(testCases: TestCase[], uiMappings: TestExecutionMapping[]): ExecutionMappingIR {
+function buildMappings(testCases: TestCase[], uiMappings: TestExecutionMapping[], profileFingerprint: string): ExecutionMappingIR {
   const testMappings: TestCaseExecutionMapping[] = testCases.map((tc) => {
     const uiMapping = uiMappings.find((m) => m.testCaseId === tc.id);
     return {
@@ -318,6 +318,8 @@ function buildMappings(testCases: TestCase[], uiMappings: TestExecutionMapping[]
       assertionsMapped: 0, bindingsRequired: 0, bindingsResolved: 0,
       catalogReferenceValidity: 1, provenanceCoverage: 1,
     },
+    sourceTestCasesHash: computeTestCasesSemanticHash(testCases),
+    sourceProjectFingerprint: profileFingerprint,
   } as ExecutionMappingIR;
 }
 
@@ -332,7 +334,7 @@ describe('real local E2E acceptance — execute mode', () => {
     const testCases = buildTestCases();
     const uiMappings = buildUIMappings();
     const profile = buildProfile(catalog);
-    const mappings = buildMappings(testCases, uiMappings);
+    const mappings = buildMappings(testCases, uiMappings, profile.fingerprint);
 
     // Build UIExecutor with PlaywrightBrowserSession (single session for all tests)
     const browserSession = new PlaywrightBrowserSession({ headless: true });
@@ -404,9 +406,9 @@ describe('real local E2E acceptance — execute mode', () => {
     expect(failResult).toBeDefined();
     expect(failResult!.status).toBe('failed');
 
-    // Run status should be 'partial' (mix of passed and failed)
-    // §22: assertion failure → test failed, but other tests passed → partial
-    expect(['failed', 'partial']).toContain(result.status);
+    // Any assertion failure makes the aggregate run failed, even when other
+    // test cases pass.
+    expect(result.status).toBe('failed');
 
     // §36: Real counters — Chromium launched
     const lifecycle = uiExecutor.getLifecycleCounters();
@@ -447,6 +449,7 @@ describe('real local E2E acceptance — execute mode', () => {
       expect(junit).toContain('TC-FAIL-ASSERTION');
       // Valid/invalid login should be passing testcases
       expect(junit).not.toContain(VALID_PASS);
+      expect(junit).toContain('failures="1"');
     }
 
     // §34: Report files parseable
@@ -468,6 +471,11 @@ describe('real local E2E acceptance — execute mode', () => {
       expect(manifest.inputHashes.testCasesHash).toBeTruthy();
       expect(manifest.inputHashes.mappingHash).toBeTruthy();
       expect(manifest.inputHashes.testCasesHash).not.toBe('placeholder');
+      expect(manifest.projectProfileFingerprint).toBe(profile.fingerprint);
+      expect(manifest.testCasesSemanticHash).toBe(manifest.inputHashes.testCasesSemanticHash);
+      expect(manifest.executionMappingArtifactHash).toBe(manifest.inputHashes.mappingArtifactHash);
+      expect(manifest.mappingSourceTestCasesHash).toBe(manifest.testCasesSemanticHash);
+      expect(manifest.mappingSourceProjectFingerprint).toBe(profile.fingerprint);
     }
   }, 120_000);
 });
@@ -479,7 +487,7 @@ describe('runner mode verification', () => {
   const testCases = buildTestCases();
   const uiMappings = buildUIMappings();
   const profile = buildProfile(catalog);
-  const mappings = buildMappings(testCases, uiMappings);
+  const mappings = buildMappings(testCases, uiMappings, profile.fingerprint);
 
   it('§28: validate mode — 0 browser launches', async () => {
     const input: EndToEndRunnerInput = { profile, testCases, mappings };
@@ -547,7 +555,7 @@ describe('execute mode security', () => {
     });
 
     const profile = buildProfile(catalog);
-    const mappingsIR = buildMappings(testCases, uiMappings);
+    const mappingsIR = buildMappings(testCases, uiMappings, profile.fingerprint);
     const input: EndToEndRunnerInput = { profile, testCases, mappings: mappingsIR };
     const policy = defaultPolicy({
       mode: 'execute',

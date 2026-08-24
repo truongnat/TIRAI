@@ -26,7 +26,7 @@ import { computeRunQuality } from './quality/index.js';
 import { writeRunOutput } from './persistence/index.js';
 import { InMemoryRunAuditRecorder } from './audit/index.js';
 
-const RUNNER_VERSION = '1.0.1';
+const RUNNER_VERSION = '1.0.2';
 
 export class EndToEndRunner {
   private options: EndToEndRunnerOptions;
@@ -111,7 +111,7 @@ export class EndToEndRunner {
     let testResults: TestRunResultIR;
     if (this.options.orchestrator && this.policy.mode === 'execute') {
       // Delegate to real orchestrator for execute mode.
-      testResults = await this.options.orchestrator.run(selectedTests as TestCase[]);
+      testResults = normalizeTestRunStatus(await this.options.orchestrator.run(selectedTests as TestCase[]));
     } else {
       testResults = this.executeTests(runId, selectedTests, input);
     }
@@ -126,7 +126,7 @@ export class EndToEndRunner {
     this.audit.record('cleanup-end', `Cleanup failures: ${cleanup.failures}`);
 
     // Build result.
-    const status = this.deriveStatus(preflight.status, testResults.status);
+    const status = this.deriveStatus(preflight.status, testResults.status, runtimeSummary, preparation, cleanup.failures);
     const result = this.buildResult(runId, startedAt, input, hashes, preflight, runtimeSummary, preparation, testResults, cleanup, status);
 
     // Write output.
@@ -227,9 +227,16 @@ export class EndToEndRunner {
     };
   }
 
-  private deriveStatus(preflightStatus: string, testStatus: string): EndToEndRunStatus {
+  private deriveStatus(
+    preflightStatus: string,
+    testStatus: string,
+    runtime: ProjectRuntimeSummary,
+    preparation: Awaited<ReturnType<typeof runPreparation>>,
+    cleanupFailures: number,
+  ): EndToEndRunStatus {
     if (preflightStatus === 'blocked') return 'blocked';
     if (this.policy.mode === 'validate' || this.policy.mode === 'dry-run') return 'validated';
+    if (runtime.startError || preparation.status === 'failed' || cleanupFailures > 0) return 'error';
     if (testStatus === 'passed') return 'passed';
     if (testStatus === 'failed') return 'failed';
     if (testStatus === 'partial') return 'partial';
@@ -298,6 +305,15 @@ export class EndToEndRunner {
       mode: this.policy.mode,
       profileFingerprint: input.profile.fingerprint,
       inputHashes: hashes,
+      projectProfileFingerprint: hashes.profileFingerprint,
+      testCasesSemanticHash: hashes.testCasesSemanticHash,
+      executionMappingArtifactHash: hashes.mappingArtifactHash,
+      mappingSourceTestCasesHash: input.mappings.sourceTestCasesHash,
+      mappingSourceProjectFingerprint: input.mappings.sourceProjectFingerprint,
+      testDataPlanArtifactHash: hashes.dataPlanArtifactHash,
+      testDataPlanSourceTestCasesHash: input.dataPlan?.sourceTestCasesHash,
+      preparedDataPlanArtifactHash: hashes.preparedDataArtifactHash,
+      preparedDataPlanSourceDataPlanHash: input.preparedData?.sourceDataPlanHash,
       selection: this.options.selection ?? {},
       startedAt,
       finishedAt: new Date().toISOString(),
@@ -305,6 +321,16 @@ export class EndToEndRunner {
       seed: this.options.seed,
     };
   }
+}
+
+function normalizeTestRunStatus(result: TestRunResultIR): TestRunResultIR {
+  const failed = result.summary.failed > 0 || result.summary.assertionsFailed > 0 ||
+    result.testResults.some((test) => test.status === 'failed' || test.assertions.some((a) => a.status === 'failed'));
+  const errors = result.summary.errors > 0 || result.testResults.some((test) => test.status === 'error');
+  const blockedOrManual = result.summary.blocked > 0 || result.summary.manual > 0 || result.summary.skipped > 0 ||
+    result.testResults.some((test) => test.status === 'blocked' || test.status === 'manual' || test.status === 'skipped');
+  const status = failed ? 'failed' : errors ? 'error' : blockedOrManual ? 'partial' : 'passed';
+  return result.status === status ? result : { ...result, status };
 }
 
 // ---- Helpers ---------------------------------------------------------------
