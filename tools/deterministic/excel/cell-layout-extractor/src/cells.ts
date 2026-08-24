@@ -167,9 +167,11 @@ function extractCellValue(
   const val = cell.value;
 
   if (val === null || val === undefined) {
+    // ExcelJS may represent an empty merged cell with a null value while its
+    // text getter delegates to MergeValue.toString(), which throws on null.
     return {
       rawValue: null,
-      displayValue: cell.text || null,
+      displayValue: null,
       type: null,
       formula: null,
       cachedResult: null,
