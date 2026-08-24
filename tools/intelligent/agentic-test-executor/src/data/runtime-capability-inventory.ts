@@ -16,6 +16,10 @@ import type {
   AgentCapabilities,
   DataResolutionEvidence,
 } from '../models.js';
+import type {
+  PreparationEnvironment,
+  PreparationJournalEntry,
+} from './preparation-lifecycle.js';
 
 export interface RuntimeDiscoveryRequest {
   item: TestDataItem;
@@ -33,6 +37,55 @@ export interface RuntimeDiscoveryResult {
 export type RuntimeDiscoveryAdapter =
   (request: RuntimeDiscoveryRequest) => Promise<RuntimeDiscoveryResult | undefined>;
 
+export interface RuntimePreparationRequest {
+  runId: string;
+  item: TestDataItem;
+  operation: PreparationOperation;
+  environment: EnvironmentProfile;
+  runtimeBindings: ReadonlyArray<{
+    dataItemId: string;
+    bindingRef: string;
+    source: string;
+    sensitive: boolean;
+    evidence: DataResolutionEvidence[];
+  }>;
+  snapshotRef?: string;
+}
+
+export interface RuntimeSnapshotResult {
+  /** Adapter-owned opaque reference; it must not contain a secret value. */
+  snapshotRef: string;
+  evidence?: DataResolutionEvidence[];
+}
+
+export interface RuntimePreparationResult {
+  value: unknown;
+  bindingRef?: string;
+  ownership: 'TEST_OWNED' | 'TEMPORARILY_MODIFIED';
+  cleanupRef?: string;
+  sensitive?: boolean;
+  evidence: DataResolutionEvidence[];
+}
+
+export interface RuntimeCleanupRequest {
+  runId: string;
+  item: TestDataItem;
+  operation: PreparationOperation;
+  environment: EnvironmentProfile;
+  journalEntry: PreparationJournalEntry;
+}
+
+export interface RuntimePreparationAdapter {
+  /** Execute one already-grounded operation. No SQL/URL may be inferred here. */
+  prepare(request: RuntimePreparationRequest): Promise<RuntimePreparationResult>;
+  /** Capture state before a temporary update is attempted. */
+  snapshot?(request: RuntimePreparationRequest): Promise<RuntimeSnapshotResult | undefined>;
+  /** Remove only a TEST_OWNED resource identified by cleanupRef. */
+  cleanup?(request: RuntimeCleanupRequest): Promise<void>;
+  /** Restore only a TEMPORARILY_MODIFIED resource identified by snapshotRef. */
+  restore?(request: RuntimeCleanupRequest): Promise<void>;
+}
+
 export interface RuntimeBrowserCapability {
   available: boolean;
   discoverRuntimeState: boolean;
@@ -47,6 +100,7 @@ export interface RuntimeDatabaseCapability {
   mappings?: ResourceMapping[];
   resourceIds?: string[];
   discovery?: RuntimeDiscoveryAdapter;
+  preparation?: RuntimePreparationAdapter;
 }
 
 export interface RuntimeApiCapability {
@@ -55,7 +109,10 @@ export interface RuntimeApiCapability {
   mutable: boolean;
   /** Explicit preparation operation IDs prevent invented endpoints. */
   allowedOperationIds?: string[];
+  /** Allows a domain API adapter to be preferred over a mapped DB path. */
+  preferredOperationIds?: string[];
   discovery?: RuntimeDiscoveryAdapter;
+  preparation?: RuntimePreparationAdapter;
 }
 
 export interface RuntimeSecretCapability {
@@ -81,6 +138,8 @@ export interface RuntimeCapabilityInventory {
   source: RuntimeSourceCapability;
   files: RuntimeFileCapability;
   environment?: EnvironmentProfile;
+  /** Must be explicit; unknown denies mutation. */
+  environmentKind?: PreparationEnvironment;
   resourceMappings: ResourceMapping[];
 }
 

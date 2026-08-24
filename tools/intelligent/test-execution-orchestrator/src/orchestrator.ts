@@ -334,6 +334,17 @@ export class TestExecutionOrchestrator {
             message: `Cleanup failed for test case '${tc.id}'.`,
             testCaseId: tc.id,
           });
+          // A test that passed but leaked or failed to restore prepared state
+          // is not a clean pass. Keep the cleanup summary for observability,
+          // but surface the run as an execution error as well.
+          errors.push({
+            code: 'TEST_CLEANUP_FAILED',
+            message: cleanupResult.error?.message ?? `Cleanup failed for test case '${tc.id}'.`,
+            retryable: false,
+            executorType: executor.type,
+          });
+          status = 'error';
+          phase = 'failed';
         }
       }
 

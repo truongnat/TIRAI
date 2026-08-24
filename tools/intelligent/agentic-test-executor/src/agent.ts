@@ -35,6 +35,7 @@ import {
   defaultAgentPolicy,
   defaultCapabilities,
 } from './models.js';
+import type { PreparationMutationPolicy } from './data/preparation-lifecycle.js';
 import { validateCapabilities } from './capability/capability-model.js';
 import { observeBrowser } from './observation/browser-observer.js';
 import { ElementIdMap } from './observation/element-id-map.js';
@@ -63,6 +64,8 @@ export interface AgenticTestExecutorOptions {
   testDataItems?: TestDataItem[];
   /** Explicit Phase 2B operation-level capabilities; defaults fail-closed. */
   capabilityInventory?: Partial<RuntimeCapabilityInventory>;
+  /** Explicit policy for mutable test-state preparation; defaults fail-closed. */
+  preparationPolicy?: Partial<PreparationMutationPolicy>;
   generationSeed?: string;
 }
 
@@ -100,6 +103,7 @@ export class AgenticTestExecutor implements TestExecutor {
     this.testDataItems = options.testDataItems ?? [];
     this.dataNeedCoordinator = new DataNeedCoordinator({
       inventory: buildRuntimeCapabilityInventory(this.capabilities, options.capabilityInventory),
+      preparationPolicy: options.preparationPolicy,
       generationSeed: options.generationSeed,
     });
   }
@@ -131,7 +135,7 @@ export class AgenticTestExecutor implements TestExecutor {
 
     let coordination;
     try {
-      coordination = await this.dataNeedCoordinator.resolve(this.testDataItems, {
+      coordination = await this.dataNeedCoordinator.prepare(this.testDataItems, {
         inputs: testCase.inputs.map((input) => ({
           name: input.name,
           value: input.value,
@@ -139,6 +143,7 @@ export class AgenticTestExecutor implements TestExecutor {
         })),
         bindings: context.bindings,
         secretProvider: context.secrets,
+        runId: context.runId,
       });
     } catch (err) {
       const message = err instanceof DataNeedCoordinatorError
@@ -160,10 +165,42 @@ export class AgenticTestExecutor implements TestExecutor {
     const dataResolutions = coordination.resolutions;
     this.lastDataResolutions = dataResolutions;
     this.lastDataResolutionMetrics = coordination.metrics;
+    if (coordination.status === 'error') {
+      return {
+        status: 'error',
+        steps: [],
+        assertions: [],
+        evidence: [],
+        error: {
+          code: 'AGENT_DATA_PREPARATION_ERROR',
+          message: coordination.preparation?.warnings.join('; ') || 'Runtime test-state preparation failed.',
+          retryable: false,
+        },
+        warnings,
+      };
+    }
     if (typeof context.bindings.produce === 'function') {
       for (const binding of coordination.runtimeData.toBindingResults()) {
         context.bindings.produce(binding);
       }
+    }
+    for (const proof of coordination.preparation?.proofs ?? []) {
+      const evidence = addTextEvidence(context, {
+        type: 'trace',
+        sourceExecutor: proof.executor,
+        testCaseId: testCase.id,
+        metadata: {
+          kind: 'data-preparation',
+          dataItemId: proof.dataItemId,
+          operationId: proof.operationId,
+          action: proof.action,
+          strategy: proof.strategy,
+          ownership: proof.ownership,
+          cleanupRequired: proof.cleanupRequired,
+        },
+        sensitive: false,
+      });
+      if (evidence) evidenceRefs.push(evidence);
     }
 
     const unresolvedData = dataResolutions.filter(
@@ -298,7 +335,8 @@ export class AgenticTestExecutor implements TestExecutor {
     } catch {
       // Best effort cleanup
     }
-    return { status: 'succeeded' };
+    const preparationCleanup = await this.dataNeedCoordinator.cleanup();
+    return { status: preparationCleanup.failed > 0 ? 'failed' : 'succeeded' };
   }
 
   // ---- Step execution with replan loop ------------------------------------

@@ -7,7 +7,11 @@ import type { BrowserSession } from 'ui-executor';
 import type { TestDataItem } from 'test-data-planner';
 import { AgenticTestExecutor } from '../src/agent.js';
 import { defaultCapabilities, type BrowserObservation } from '../src/models.js';
-import type { RuntimeCapabilityInventory } from '../src/data/runtime-capability-inventory.js';
+import type {
+  RuntimeCapabilityInventory,
+  RuntimePreparationAdapter,
+} from '../src/data/runtime-capability-inventory.js';
+import type { PreparationMutationPolicy } from '../src/data/preparation-lifecycle.js';
 import {
   createFakeAI,
   createFakePage,
@@ -25,6 +29,7 @@ function buildExecutor(opts: {
   observationSequence?: BrowserObservation[];
   capabilities?: ReturnType<typeof defaultCapabilities>;
   capabilityInventory?: Partial<RuntimeCapabilityInventory>;
+  preparationPolicy?: Partial<PreparationMutationPolicy>;
   testDataItems?: TestDataItem[];
 }) {
   const obsSequence = opts.observationSequence ?? [loginPageObservation(), dashboardObservation()];
@@ -74,6 +79,7 @@ function buildExecutor(opts: {
     capabilities: opts.capabilities ?? { ...defaultCapabilities(), browser: 'AVAILABLE' },
     allowedOrigins: ['http://127.0.0.1'],
     capabilityInventory: opts.capabilityInventory,
+    preparationPolicy: opts.preparationPolicy,
     testDataItems: opts.testDataItems,
   });
 
@@ -164,6 +170,107 @@ describe('AgenticTestExecutor', () => {
       expect(result.steps).toHaveLength(3);
       expect(result.assertions).toHaveLength(1);
       expect(result.assertions[0].status).toBe('passed');
+    });
+
+    it('prepares an API-owned fixture before browser execution and cleans it afterward', async () => {
+      const prepared: string[] = [];
+      const cleaned: string[] = [];
+      const adapter: RuntimePreparationAdapter = {
+        async prepare(request) {
+          prepared.push(request.item.id);
+          return {
+            value: 'ORDER-123',
+            ownership: 'TEST_OWNED',
+            cleanupRef: 'ORDER-123',
+            evidence: [{ kind: 'api', description: 'Explicit fixture API created an order binding.' }],
+          };
+        },
+        async cleanup(request) {
+          cleaned.push(request.item.id);
+        },
+      };
+      let aiCalls = 0;
+      const ai = createFakeAI(() => {
+        aiCalls++;
+        if (aiCalls === 1) {
+          return {
+            action: { type: 'fill', elementId: 'el-001', valueSource: 'testdata://DATA-ORDER' },
+            confidence: 'high',
+            reasoning: 'fill the prepared order identifier',
+          };
+        }
+        return {
+          assertionType: 'text-visible',
+          expectedValue: 'Order ready',
+          confidence: 'high',
+          reasoning: 'verify prepared order state',
+        };
+      });
+      const preparedItem: TestDataItem = {
+        id: 'DATA-ORDER',
+        name: 'approved-order',
+        description: 'Temporary order created for this test',
+        type: 'external-response',
+        lifecycle: 'temporary',
+        strategy: 'create-new',
+        constraints: [],
+        dependencies: [],
+        relatedTestCaseIds: ['TC-001'],
+        relatedRequirementIds: [],
+        relatedEntityIds: ['Order'],
+        setup: [{ type: 'create', description: 'Create through explicit API fixture operation', executorHint: 'api' }],
+        cleanup: [{ type: 'delete', description: 'Delete test-owned order' }],
+        provenance: [],
+        confidence: 1,
+      };
+      const { executor, state } = buildExecutor({
+        ai,
+        observationSequence: [
+          {
+            url: 'http://127.0.0.1:3000/orders',
+            title: 'Orders',
+            headings: ['Orders'],
+            pageText: 'Orders Order ID Order ready',
+            elements: [{ id: 'el-001', role: 'textbox', accessibleName: 'Order ID', enabled: true }],
+            truncated: false,
+          },
+          {
+            url: 'http://127.0.0.1:3000/orders',
+            title: 'Orders',
+            headings: ['Orders'],
+            pageText: 'Orders Order ready',
+            elements: [{ id: 'el-001', role: 'textbox', accessibleName: 'Order ID', enabled: true }],
+            truncated: false,
+          },
+        ],
+        testDataItems: [preparedItem],
+        capabilityInventory: {
+          environmentKind: 'test',
+          environment: {
+            id: 'ENV-TEST',
+            resources: [{ id: 'api-test', type: 'api', name: 'Fixture API', capabilities: ['mutate'], metadata: {} }],
+            capabilities: [],
+          },
+          api: {
+            available: true,
+            readable: true,
+            mutable: true,
+            allowedOperationIds: ['OP-DATA-ORDER'],
+            preparation: adapter,
+          },
+        },
+        preparationPolicy: { environment: 'test', allowApiCreate: true },
+      });
+      const result = await executor.execute(makeTestCase({
+        steps: [{ order: 1, action: 'Enter prepared order', input: 'testdata://DATA-ORDER' }],
+        expectedResults: [{ description: 'Order ready is shown', verificationType: 'ui' }],
+      }), makeContext());
+
+      expect(result.status).toBe('passed');
+      expect(state.filledElements[0]?.value).toBe('ORDER-123');
+      expect(prepared).toEqual(['DATA-ORDER']);
+      expect((await executor.cleanup(makeTestCase(), makeContext())).status).toBe('succeeded');
+      expect(cleaned).toEqual(['DATA-ORDER']);
     });
 
     it('returns error when browser fails to start', async () => {
