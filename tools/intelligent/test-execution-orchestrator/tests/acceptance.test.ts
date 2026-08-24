@@ -18,11 +18,11 @@ import {
   type TestCase,
   type TestRunResultIR,
 } from '../src/index.js';
+import { acceptedTestCases } from './fixtures/accepted-test-case-ir.js';
 
 // ---- Paths ---------------------------------------------------------------
 
 const ROOT = path.resolve(__dirname, '../../../..');
-const IR_PATH = path.join(ROOT, 'output/test-planner-deepseek-final/test-case-ir.json');
 const OUT_BASE = path.join(ROOT, 'output/test-execution-acceptance');
 
 // ---- Load real IR --------------------------------------------------------
@@ -30,8 +30,7 @@ const OUT_BASE = path.join(ROOT, 'output/test-execution-acceptance');
 let realTestCases: TestCase[] = [];
 
 beforeAll(() => {
-  const raw = JSON.parse(fs.readFileSync(IR_PATH, 'utf8'));
-  realTestCases = raw.testCases as TestCase[];
+  realTestCases = acceptedTestCases;
   expect(realTestCases.length).toBe(21);
 });
 
