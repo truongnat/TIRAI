@@ -170,7 +170,14 @@ export function makeContext(): TestExecutionContext {
     mode: 'dry-run',
     policy: { maxRetries: 0, timeoutMs: 30000, parallelism: 1, stopOnFailure: false },
     bindings: { get: () => undefined, set: () => {}, getAll: () => ({}) } as unknown as TestExecutionContext['bindings'],
-    secrets: {} as unknown as TestExecutionContext['secrets'],
+    secrets: {
+      async resolve(secretRef: string) {
+        return {
+          value: secretRef.includes('password') ? 'test-password' : 'test-secret',
+          redacted: '***',
+        };
+      },
+    },
     evidence: { collect: async () => ({ id: 'EV-001', type: 'screenshot', location: '', hash: '' }) } as unknown as TestExecutionContext['evidence'],
     audit: { record: async () => {} } as unknown as TestExecutionContext['audit'],
     clock: { now: () => new Date('2025-01-01T00:00:00Z').toISOString() },

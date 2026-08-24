@@ -60,7 +60,10 @@ export type AgenticActionType =
 export interface AgenticAction {
   type: AgenticActionType;
   elementId?: string;
+  /** Non-sensitive literal only. Secret-backed values stay in valueSource. */
   value?: string;
+  /** Runtime-resolved source, for example secret://login/invalid-password. */
+  valueSource?: string;
   url?: string;
   key?: string;
 }
@@ -70,6 +73,7 @@ export interface AgenticAction {
 export interface ObservedElement {
   id: string;
   role: string;
+  visible?: boolean;
   accessibleName?: string;
   label?: string;
   placeholder?: string;

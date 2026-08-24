@@ -34,6 +34,7 @@ const ASSERTION_RESPONSE_SCHEMA = {
     unresolvedReason: { type: 'string' },
   },
   required: ['assertionType', 'confidence', 'reasoning'],
+  additionalProperties: false,
 } as const;
 
 interface AssertionAIResponse {
@@ -55,7 +56,15 @@ export async function groundAssertion(
     request.observation.headings.length > 0
       ? `Headings: ${request.observation.headings.join(', ')}`
       : '',
-    `Elements: ${request.observation.elements.length}`,
+    `Visible page text: ${request.observation.pageText.slice(0, 2000)}`,
+    `Interactive elements (${request.observation.elements.length}):`,
+    ...request.observation.elements.map((el) => {
+      const details = [el.id, el.role];
+      if (el.accessibleName) details.push(`name="${el.accessibleName}"`);
+      if (el.visibleText) details.push(`text="${el.visibleText}"`);
+      if (el.inputType) details.push(`type=${el.inputType}`);
+      return `  ${details.join(' ')}`;
+    }),
   ].filter(Boolean).join('\n');
 
   const userMessage = [
@@ -74,6 +83,7 @@ export async function groundAssertion(
     responseSchema: ASSERTION_RESPONSE_SCHEMA,
     temperature: 0,
     maxOutputTokens: 512,
+    providerOptions: { deepseek: { thinking: 'disabled' } },
   });
 
   const data = response.data;

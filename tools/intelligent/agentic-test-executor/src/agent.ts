@@ -27,6 +27,7 @@ import {
   type AgentMetrics,
   type AgenticStepResult,
   type AgenticAssertionResult,
+  type AgenticAction,
   type BrowserObservation,
   defaultAgentPolicy,
   defaultCapabilities,
@@ -57,6 +58,16 @@ export class AgenticTestExecutor implements TestExecutor {
   private readonly capabilities: AgentCapabilities;
   private readonly policy: AgentExecutionPolicy;
   private readonly allowedOrigins: string[];
+  private lastMetrics: AgentMetrics = {
+    agentCalls: 0,
+    observations: 0,
+    actions: 0,
+    replans: 0,
+    groundingFailures: 0,
+    navigationActions: 0,
+    assertions: 0,
+    evidenceCount: 0,
+  };
 
   constructor(options: AgenticTestExecutorOptions) {
     this.browserSession = options.browserSession;
@@ -85,6 +96,7 @@ export class AgenticTestExecutor implements TestExecutor {
 
   async execute(testCase: TestCase, context: TestExecutionContext): Promise<TestExecutorResult> {
     const metrics = this.createEmptyMetrics();
+    this.lastMetrics = metrics;
     const stepResults: AgenticStepResult[] = [];
     const assertionResults: AgenticAssertionResult[] = [];
     const evidenceRefs: EvidenceReference[] = [];
@@ -201,7 +213,7 @@ export class AgenticTestExecutor implements TestExecutor {
     page: BrowserPage,
     context: TestExecutionContext,
     metrics: AgentMetrics,
-    _evidenceRefs: EvidenceReference[],
+    evidenceRefs: EvidenceReference[],
   ): Promise<AgenticStepResult> {
     let replans = 0;
     let previousFailure: string | undefined;
@@ -229,6 +241,9 @@ export class AgenticTestExecutor implements TestExecutor {
 
       let observation: BrowserObservation;
       try {
+        if (metrics.observations >= this.policy.maxObservationRounds) {
+          return this.blockedStep(testCase, step, replans, 'AGENT_OBSERVATION_BUDGET_EXCEEDED');
+        }
         observation = await observeBrowser(page);
         metrics.observations++;
       } catch (err) {
@@ -303,7 +318,21 @@ export class AgenticTestExecutor implements TestExecutor {
       }
 
       const idMap = ElementIdMap.fromObservation(observation);
-      const validation = validateAction(grounding.action, observation, this.policy, {
+      const resolution = await resolveActionValue(grounding.action, step.input, context);
+      if (!resolution.action) {
+        return {
+          stepOrder: step.order,
+          intent: step.action,
+          grounding: sanitizeGrounding(grounding, step.input),
+          status: 'blocked',
+          replans,
+          evidenceIds: [],
+          error: resolution.error ?? 'Runtime value resolution failed',
+        };
+      }
+
+      const recordedGrounding = sanitizeGrounding(grounding, step.input);
+      const validation = await validateRuntimeAction(page, resolution.action, observation, idMap, this.policy, {
         navigationActions: metrics.navigationActions,
         totalActions: metrics.actions,
       });
@@ -318,7 +347,7 @@ export class AgenticTestExecutor implements TestExecutor {
         return {
           stepOrder: step.order,
           intent: step.action,
-          grounding,
+          grounding: recordedGrounding,
           status: 'blocked',
           replans,
           evidenceIds: [],
@@ -326,7 +355,7 @@ export class AgenticTestExecutor implements TestExecutor {
         };
       }
 
-      const result = await executeAction(page, grounding.action, idMap);
+      const result = await executeAction(page, resolution.action, idMap);
       metrics.actions++;
       if (grounding.action.type === 'navigate') metrics.navigationActions++;
 
@@ -344,8 +373,8 @@ export class AgenticTestExecutor implements TestExecutor {
         return {
           stepOrder: step.order,
           intent: step.action,
-          grounding,
-          action: grounding.action,
+          grounding: recordedGrounding,
+          action: recordedGrounding.action,
           status: 'failed',
           replans,
           evidenceIds: [],
@@ -353,14 +382,32 @@ export class AgenticTestExecutor implements TestExecutor {
         };
       }
 
+      const evidence = addTextEvidence(context, {
+        type: 'text',
+        sourceExecutor: 'ui',
+        testCaseId: testCase.id,
+        stepOrder: step.order,
+        metadata: {
+          kind: 'agent-action-observation',
+          action: recordedGrounding.action?.type ?? 'unknown',
+          elementId: recordedGrounding.action?.elementId,
+          url: page.url(),
+        },
+        sensitive: false,
+      });
+      if (evidence) {
+        evidenceRefs.push(evidence);
+        metrics.evidenceCount = evidenceRefs.length;
+      }
+
       return {
         stepOrder: step.order,
         intent: step.action,
-        grounding,
-        action: grounding.action,
+        grounding: recordedGrounding,
+        action: recordedGrounding.action,
         status: 'passed',
         replans,
-        evidenceIds: [],
+        evidenceIds: evidence ? [evidence.id] : [],
       };
     }
 
@@ -392,7 +439,7 @@ export class AgenticTestExecutor implements TestExecutor {
     page: BrowserPage,
     context: TestExecutionContext,
     metrics: AgentMetrics,
-    _evidenceRefs: EvidenceReference[],
+    evidenceRefs: EvidenceReference[],
   ): Promise<AgenticAssertionResult> {
     let observation: BrowserObservation;
     try {
@@ -423,7 +470,7 @@ export class AgenticTestExecutor implements TestExecutor {
         expectedResultIndex: index,
         expectedDescription: expected.description,
         verificationType: expected.verificationType,
-        observation,
+        observation: await redactObservationForAI(observation, testCase, context),
       });
     } catch {
       return {
@@ -454,13 +501,33 @@ export class AgenticTestExecutor implements TestExecutor {
 
     metrics.assertions++;
     const assertionStatus = this.verifyAssertion(page, observation, grounding);
+    const assertionId = `ASSERT-${String(index + 1).padStart(4, '0')}`;
+    const evidence = addTextEvidence(context, {
+      type: 'text',
+      sourceExecutor: 'ui',
+      testCaseId: testCase.id,
+      assertionId,
+      metadata: {
+        kind: 'assertion-observation',
+        status: assertionStatus,
+        assertionType: grounding.assertionType,
+        url: observation.url,
+        title: observation.title,
+        interactiveElementCount: observation.elements.length,
+      },
+      sensitive: false,
+    });
+    if (evidence) {
+      evidenceRefs.push(evidence);
+      metrics.evidenceCount = evidenceRefs.length;
+    }
 
     return {
       expectedResultIndex: index,
       description: expected.description,
       grounding,
       status: assertionStatus,
-      evidenceIds: [],
+      evidenceIds: evidence ? [evidence.id] : [],
     };
   }
 
@@ -558,6 +625,151 @@ export class AgenticTestExecutor implements TestExecutor {
       evidenceCount: 0,
     };
   }
+
+  getLastMetrics(): Readonly<AgentMetrics> {
+    return { ...this.lastMetrics };
+  }
+
+  private blockedStep(
+    testCase: TestCase,
+    step: { order: number; action: string; input?: string },
+    replans: number,
+    error: string,
+  ): AgenticStepResult {
+    return {
+      stepOrder: step.order,
+      intent: step.action,
+      grounding: {
+        testCaseId: testCase.id,
+        stepIndex: step.order,
+        stepIntent: step.action,
+        candidateActions: [],
+        confidence: 'low',
+        reasoning: error,
+        unresolvedReason: error,
+      },
+      status: 'blocked',
+      replans,
+      evidenceIds: [],
+      error,
+    };
+  }
+}
+
+interface RuntimeActionResolution {
+  action?: AgenticAction;
+  error?: string;
+}
+
+async function resolveActionValue(
+  action: AgenticAction,
+  stepInput: string | undefined,
+  context: TestExecutionContext,
+): Promise<RuntimeActionResolution> {
+  if (action.type !== 'fill' && action.type !== 'select') return { action };
+
+  const secretInput = stepInput?.startsWith('secret://') ? stepInput : undefined;
+  const source = secretInput ?? action.valueSource ?? (action.value?.startsWith('secret://') ? action.value : undefined);
+
+  if (source?.startsWith('secret://')) {
+    if (action.value && action.value !== source) {
+      return { error: 'Secret-backed fill must use valueSource; literal AI values are rejected.' };
+    }
+    const secretRef = source.slice('secret://'.length);
+    try {
+      const resolved = await context.secrets.resolve(secretRef);
+      if (!resolved?.value) return { error: 'Secret resolution failed.' };
+      return { action: { ...action, value: resolved.value, valueSource: source } };
+    } catch {
+      return { error: 'Secret resolution failed.' };
+    }
+  }
+
+  if (stepInput !== undefined) return { action: { ...action, value: stepInput } };
+  return { action };
+}
+
+function sanitizeGrounding(
+  grounding: AgenticStepResult['grounding'],
+  stepInput: string | undefined,
+): AgenticStepResult['grounding'] {
+  if (!grounding.action || !stepInput?.startsWith('secret://')) return grounding;
+  return {
+    ...grounding,
+    action: {
+      ...grounding.action,
+      value: undefined,
+      valueSource: stepInput,
+    },
+  };
+}
+
+async function validateRuntimeAction(
+  page: BrowserPage,
+  action: AgenticAction,
+  observation: BrowserObservation,
+  idMap: ElementIdMap,
+  policy: AgentExecutionPolicy,
+  metrics: { navigationActions: number; totalActions: number },
+): Promise<{ valid: boolean; reason?: string }> {
+  const staticValidation = validateAction(action, observation, policy, metrics);
+  if (!staticValidation.valid) return staticValidation;
+  if (action.type === 'navigate' || action.type === 'observe') return staticValidation;
+
+  const mapping = action.elementId ? idMap.get(action.elementId) : undefined;
+  if (!mapping) return { valid: false, reason: `Element ${action.elementId ?? '(missing)'} is not mapped.` };
+
+  try {
+    const count = await page.count(mapping.locator);
+    if (count !== 1) return { valid: false, reason: `Element ${action.elementId} is not unique in the current DOM.` };
+    if (!(await page.isVisible(mapping.locator))) return { valid: false, reason: `Element ${action.elementId} is not visible.` };
+    if (!(await page.isEnabled(mapping.locator))) return { valid: false, reason: `Element ${action.elementId} is disabled.` };
+  } catch {
+    return { valid: false, reason: `Element ${action.elementId} could not be deterministically validated.` };
+  }
+  return { valid: true };
+}
+
+async function redactObservationForAI(
+  observation: BrowserObservation,
+  testCase: TestCase,
+  context: TestExecutionContext,
+): Promise<BrowserObservation> {
+  const secretValues: string[] = [];
+  for (const step of testCase.steps) {
+    if (!step.input?.startsWith('secret://')) continue;
+    try {
+      const secret = await context.secrets.resolve(step.input.slice('secret://'.length));
+      if (secret?.value) secretValues.push(secret.value);
+    } catch {
+      // The execution path will report secret resolution failure if needed.
+    }
+  }
+  if (secretValues.length === 0) return observation;
+  const redact = (value: string | undefined): string | undefined => {
+    if (value === undefined) return undefined;
+    return secretValues.reduce((result, secret) => result.split(secret).join('[REDACTED]'), value);
+  };
+  return {
+    ...observation,
+    headings: observation.headings.map((heading) => redact(heading) ?? ''),
+    pageText: redact(observation.pageText) ?? '',
+    elements: observation.elements.map((element) => ({
+      ...element,
+      accessibleName: redact(element.accessibleName),
+      label: redact(element.label),
+      placeholder: redact(element.placeholder),
+      visibleText: redact(element.visibleText),
+    })),
+  };
+}
+
+function addTextEvidence(
+  context: TestExecutionContext,
+  input: Parameters<TestExecutionContext['evidence']['add']>[0],
+): EvidenceReference | undefined {
+  const collector = context.evidence as unknown as { add?: (value: typeof input) => EvidenceReference };
+  return typeof collector.add === 'function' ? collector.add(input) : undefined;
 }
 
 // ---- Result mapping -------------------------------------------------------
