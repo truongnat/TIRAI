@@ -1,4 +1,4 @@
-import type { CellRaw, PerformanceProfile, SheetPerformanceProfile } from './models.js';
+import type { CellRaw, MemorySnapshot, PerformanceProfile, SheetPerformanceProfile } from './models.js';
 
 export function now(): number {
   return performance.now();
@@ -6,6 +6,18 @@ export function now(): number {
 
 export function rssBytes(): number {
   return process.memoryUsage().rss;
+}
+
+export function memorySnapshot(label: string): MemorySnapshot {
+  const usage = process.memoryUsage();
+  return {
+    label,
+    rssBytes: usage.rss,
+    heapUsedBytes: usage.heapUsed,
+    heapTotalBytes: usage.heapTotal,
+    externalBytes: usage.external,
+    arrayBuffersBytes: usage.arrayBuffers,
+  };
 }
 
 export function createProfile(): PerformanceProfile {
@@ -17,6 +29,7 @@ export function createProfile(): PerformanceProfile {
     rssAfterLoadBytes: 0,
     rssBeforeSerializationBytes: 0,
     rssAfterSerializationBytes: 0,
+    memory: [memorySnapshot('before-workbook-load')],
     sheets: [],
   };
 }
@@ -40,4 +53,3 @@ export function classifyCells(
 
   return { nonEmptyCells, styledEmptyCells, mergedEmptyCells, formulaCells };
 }
-

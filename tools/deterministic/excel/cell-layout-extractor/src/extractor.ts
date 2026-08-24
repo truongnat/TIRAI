@@ -28,7 +28,7 @@ import { extractConditionalFormatting } from './conditional-formatting.js';
 import { extractPageSetup } from './page-setup.js';
 import { columnToLetter } from './utils.js';
 import { WarningCode, createWarning } from './warnings.js';
-import { classifyCells, createProfile, now, rssBytes } from './performance.js';
+import { classifyCells, createProfile, memorySnapshot, now, rssBytes } from './performance.js';
 import { WorkbookOOXMLContext } from './ooxml-context.js';
 
 // ---- Public API -----------------------------------------------------------
@@ -93,6 +93,7 @@ export async function extractWorkbook(
     await workbook.xlsx.readFile(resolvedPath);
     ooxmlContext = await WorkbookOOXMLContext.fromFile(resolvedPath);
     if (profile) {
+      profile.memory.push(memorySnapshot('after-ooxml-context'));
       profile.workbookLoadMs = now() - loadStart;
       profile.rssAfterLoadBytes = rssBytes();
     }
@@ -130,7 +131,10 @@ export async function extractWorkbook(
       if (!matchByName && !matchByIndex) continue;
     }
 
-    sheets.push(await extractSheet(ws, idx, resolvedPath, options, profile, ooxmlContext));
+    if (profile) profile.memory.push(memorySnapshot(`before-sheet:${idx}:${ws.name}`));
+    const sheet = await extractSheet(ws, idx, resolvedPath, options, profile, ooxmlContext);
+    sheets.push(sheet);
+    if (profile) profile.memory.push(memorySnapshot(`after-sheet:${idx}:${ws.name}`));
   }
 
   const result: WorkbookLayoutMetadata = {
@@ -140,7 +144,9 @@ export async function extractWorkbook(
     warnings,
   };
   if (profile) {
+    if (ooxmlContext) profile.ooxml = ooxmlContext.profile();
     profile.rssBeforeSerializationBytes = rssBytes();
+    profile.memory.push(memorySnapshot('before-serialization'));
     profile.rssAfterSerializationBytes = rssBytes();
     profile.totalMs = now() - extractionStart;
     result.performanceProfile = profile;
@@ -192,6 +198,7 @@ async function extractSheet(
     options.includeEmptyAll ?? false,
   );
   const cellsMs = profile ? now() - cellsStart : 0;
+  if (profile) profile.memory.push(memorySnapshot(`after-cells:${index}:${sheetName}`));
 
   // Layout
   const layoutStart = profile ? now() : 0;
@@ -231,6 +238,7 @@ async function extractSheet(
   // Merge: prefer XML results, add any from model that aren't in XML
   const arrayFormulas = mergeArrayFormulas(arrayFormulasFromXml, arrayFormulasFromModel);
   const arrayFormulasMs = profile ? now() - arrayFormulasStart : 0;
+  if (profile) profile.memory.push(memorySnapshot(`after-features:${index}:${sheetName}`));
 
   // Styles
   const styles = styleRegistry.toMap();
@@ -291,8 +299,17 @@ async function extractSheet(
       outputBytes: Buffer.byteLength(sheetForSize),
       rssBeforeBytes,
       rssAfterBytes: rssBytes(),
+      memory: profile.memory.filter((snapshot) =>
+        snapshot.label.endsWith(`:${index}:${sheetName}`),
+      ),
+      rssDeltaBytes: rssBytes() - rssBeforeBytes,
+      heapDeltaBytes: process.memoryUsage().heapUsed,
+      estimatedSheetObjectBytes: Buffer.byteLength(sheetForSize),
     };
+    const before = sheetProfile.memory.find((snapshot) => snapshot.label === `before-sheet:${index}:${sheetName}`);
+    if (before) sheetProfile.heapDeltaBytes -= before.heapUsedBytes;
     profile.sheets.push(sheetProfile);
+    profile.memory.push(memorySnapshot(`after-sheet-result:${index}:${sheetName}`));
   }
   return result;
 }

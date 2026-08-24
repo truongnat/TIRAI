@@ -20,7 +20,24 @@ export interface PerformanceProfile {
   rssAfterLoadBytes: number;
   rssBeforeSerializationBytes: number;
   rssAfterSerializationBytes: number;
+  memory: MemorySnapshot[];
+  ooxml?: OOXMLProfile;
   sheets: SheetPerformanceProfile[];
+}
+
+export interface MemorySnapshot {
+  label: string;
+  rssBytes: number;
+  heapUsedBytes: number;
+  heapTotalBytes: number;
+  externalBytes: number;
+  arrayBuffersBytes: number;
+}
+
+export interface OOXMLProfile {
+  cachedEntries: number;
+  cachedCharacters: number;
+  largestEntries: Array<{ path: string; characters: number }>;
 }
 
 export interface SheetPerformanceProfile {
@@ -54,6 +71,10 @@ export interface SheetPerformanceProfile {
   outputBytes: number;
   rssBeforeBytes: number;
   rssAfterBytes: number;
+  memory: MemorySnapshot[];
+  rssDeltaBytes: number;
+  heapDeltaBytes: number;
+  estimatedSheetObjectBytes: number;
 }
 
 export interface FileMetadata {

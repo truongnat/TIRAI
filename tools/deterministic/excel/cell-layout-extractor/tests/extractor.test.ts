@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { extractWorkbook, ExtractorError } from '../src/extractor.js';
 import { fixturePath } from './fixtures.js';
+import { WorkbookOOXMLContext } from '../src/ooxml-context.js';
 
 // ---- 1. Cell types -------------------------------------------------------
 
@@ -57,6 +58,32 @@ describe('cell types', () => {
       expect(cell.source.sheet).toBe('Types');
       expect(cell.source.cell).toBe(cell.address);
     }
+  });
+});
+
+describe('memory profiling', () => {
+  it('is opt-in and records workbook and sheet boundaries', async () => {
+    const normal = await extractWorkbook(fixturePath('cell-types.xlsx'));
+    expect(normal.performanceProfile).toBeUndefined();
+
+    const profiled = await extractWorkbook(fixturePath('multi-sheet.xlsx'), {
+      profilePerformance: true,
+    });
+    expect(profiled.performanceProfile?.memory.map((snapshot) => snapshot.label)).toEqual(
+      expect.arrayContaining(['before-workbook-load', 'after-ooxml-context', 'before-serialization']),
+    );
+    expect(profiled.performanceProfile?.sheets).toHaveLength(profiled.sheets.length);
+    expect(profiled.performanceProfile?.sheets[0].memory.length).toBeGreaterThan(0);
+    expect(profiled.performanceProfile?.sheets[0].estimatedSheetObjectBytes).toBeGreaterThan(0);
+  });
+
+  it('keeps OOXML text cache workbook-scoped and releasable', async () => {
+    const context = await WorkbookOOXMLContext.fromFile(fixturePath('cell-types.xlsx'));
+    await context.text('xl/workbook.xml');
+    await context.text('xl/worksheets/sheet1.xml');
+    expect(context.profile().cachedEntries).toBe(2);
+    context.release('xl/worksheets/sheet1.xml');
+    expect(context.profile().cachedEntries).toBe(1);
   });
 });
 
