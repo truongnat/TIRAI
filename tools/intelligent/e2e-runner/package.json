@@ -28,7 +28,9 @@
     "test-execution-orchestrator": "file:../test-execution-orchestrator",
     "ui-executor": "file:../ui-executor",
     "database-executor": "file:../database-executor",
-    "api-executor": "file:../api-executor"
+    "api-executor": "file:../api-executor",
+    "requirement-builder": "file:../requirement-builder",
+    "ai-provider": "file:../ai-provider"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

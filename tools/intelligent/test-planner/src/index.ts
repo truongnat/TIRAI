@@ -2,7 +2,7 @@
 // Test Planner – public API
 // ---------------------------------------------------------------------------
 
-export { buildTestPlan } from './planner.js';
+export { buildTestPlan, buildTestPlanFromRequirementIR } from './planner.js';
 export { TEST_PLANNER_PROMPT_VERSION } from './prompts/system.js';
 export { TestPlannerError, TestPlannerErrorCode } from './errors.js';
 export { TestPlannerWarningCode, TEST_CONFIDENCE_THRESHOLD } from './warnings.js';

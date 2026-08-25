@@ -5,12 +5,19 @@
 
 // Runner
 export { EndToEndRunner } from './runner.js';
-export { Scenario3Pipeline } from './scenario3.js';
+export { Scenario3Pipeline, runScenario3 } from './scenario3.js';
 export type {
+  Scenario3Input,
+  Scenario3Dependencies,
+  Scenario3Result,
+  Scenario3RequirementResult,
+  Scenario3TraceGraph,
+  Scenario3TraceNode,
+  Scenario3TraceEdge,
+  Scenario3TraceRelation,
   Scenario3Specification,
   Scenario3StageAdapters,
   Scenario3ExecutionAdapter,
-  Scenario3PipelineResult,
 } from './scenario3.js';
 
 // Policy
