@@ -28,7 +28,7 @@ import {
   type SemanticApplicationState,
   type JourneyPageContext,
 } from './models.js';
-import { classifyRuntimeFailure, decideRecovery } from './recovery.js';
+import { classifyRuntimeFailure, decideRecovery, type RecoveryReconciliationAdapter } from './recovery.js';
 
 export interface JourneyAgentOptions {
   browserSession: BrowserSession;
@@ -41,6 +41,7 @@ export interface JourneyAgentOptions {
   capabilityInventory?: Partial<RuntimeCapabilityInventory>;
   preparationPolicy?: Partial<PreparationMutationPolicy>;
   generationSeed?: string;
+  reconciliationAdapter?: RecoveryReconciliationAdapter;
 }
 
 /**
@@ -58,6 +59,8 @@ export class JourneyAgent {
   private readonly dataNeedCoordinator: DataNeedCoordinator;
   private cleaned = false;
   private lastCleanup: { status: 'succeeded' | 'failed'; error?: { code: string; message: string } } | undefined;
+  private readonly reconciliationAdapter?: RecoveryReconciliationAdapter;
+  private readonly reconciledCleanup: Array<() => Promise<void>> = [];
 
   constructor(options: JourneyAgentOptions) {
     this.browserSession = options.browserSession;
@@ -77,6 +80,7 @@ export class JourneyAgent {
       preparationPolicy: options.preparationPolicy,
       generationSeed: options.generationSeed,
     });
+    this.reconciliationAdapter = options.reconciliationAdapter;
   }
 
   async execute(testCase: TestCase, context: TestExecutionContext): Promise<JourneyExecutionResult> {
@@ -121,6 +125,7 @@ export class JourneyAgent {
     let page: BrowserPage;
     let activePageId: string | undefined;
     let knownPageIds = new Set<string>();
+    let reauthenticating = false;
     try {
       await this.browserSession.start({ baseUrl: this.baseUrl, allowedOrigins: this.allowedOrigins, headless: true });
       const isolated = this.browserSession as BrowserSession & { createIsolatedPage?: () => Promise<BrowserPage> };
@@ -145,6 +150,14 @@ export class JourneyAgent {
         if (metrics.statesObserved >= this.policy.maxJourneyStates) return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_STATE_BUDGET_EXCEEDED');
         if (metrics.actions >= this.policy.maxActionsPerTest) return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_ACTION_BUDGET_EXCEEDED');
         metrics.journeyDecisions++;
+        const pageRecovery = await this.recoverLostPage(activePageId, journey, metrics);
+        if (pageRecovery.status === 'error') return this.finish(journey, metrics, evidence, assertions, 'error', 'JOURNEY_CONTEXT_LOST', pageRecovery.reason);
+        if (pageRecovery.status === 'blocked') return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_PAGE_RECOVERY_BLOCKED', pageRecovery.reason);
+        if (pageRecovery.context) {
+          page = pageRecovery.context.page;
+          activePageId = pageRecovery.context.id;
+          knownPageIds = new Set((await this.browserSession.pageContexts?.() ?? []).map((candidate) => candidate.id));
+        }
         const observation = await observeBrowser(page);
         metrics.observations++;
         const state = summarizeObservationState(observation);
@@ -156,6 +169,22 @@ export class JourneyAgent {
         metrics.statesObserved++;
         journey.currentState = state;
         if (activePageId) journey.activePageId = activePageId;
+        const sessionLost = journey.actionHistory.length > 0 && isAuthenticationState(observation);
+        if (sessionLost && !reauthenticating) {
+          metrics.failuresDetected++;
+          const credentialAvailable = context.bindings.sensitiveNames().size > 0;
+          if (!credentialAvailable || metrics.reauthAttempts >= this.policy.maxReauthAttempts) {
+            appendRecovery(journey, { classification: 'SESSION_LOST', operation: 'REAUTHENTICATE', attempt: metrics.reauthAttempts + 1, stateBefore: state.key, outcome: 'BLOCKED', evidenceIds: [] });
+            return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_SESSION_RECOVERY_BLOCKED', 'Protected credential binding is unavailable or reauthentication budget is exhausted.');
+          }
+          metrics.reauthAttempts++;
+          metrics.sessionRecoveries++;
+          metrics.recoveries++;
+          reauthenticating = true;
+          appendRecovery(journey, { classification: 'SESSION_LOST', operation: 'REAUTHENTICATE', attempt: metrics.reauthAttempts, stateBefore: state.key, outcome: 'SUCCESS', evidenceIds: [] });
+        } else if (reauthenticating && !sessionLost) {
+          reauthenticating = false;
+        }
         if (!journey.visitedLocations.some((location) => location.url === state.url && location.stateKey === state.key)) {
           if (journey.visitedLocations.length >= this.policy.maxVisitedPages) return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_PAGE_BUDGET_EXCEEDED');
           journey.visitedLocations.push({ url: state.url, stateKey: state.key, firstSeenObservation: metrics.observations });
@@ -189,7 +218,7 @@ export class JourneyAgent {
             testCaseId: testCase.id,
             stepIndex: decision,
             stepDescription: `Complete the overall journey goal: ${journey.goal}`,
-            stepTarget: `Current semantic state: ${state.key}. Pending milestone: ${milestone.intent}. Runtime binding references: ${journey.runtimeBindings.join(', ') || 'none'}. Recent journey: ${history}`,
+            stepTarget: `Current semantic state: ${state.key}. Pending milestone: ${milestone.intent}. Runtime binding references: ${journey.runtimeBindings.join(', ') || 'none'}. credentialBindingAvailable=${context.bindings.sensitiveNames().size > 0}. Recent journey: ${history}`,
             observation: safeObservation,
           });
         } catch (error) {
@@ -295,6 +324,34 @@ export class JourneyAgent {
           const classification = classifyRuntimeFailure(actionResult.error ?? 'Action failed', resolvedAction.action.type);
           metrics.failuresDetected++;
           metrics.recoveryAttempts++;
+          if (classification === 'AMBIGUOUS_OUTCOME' && this.reconciliationAdapter) {
+            try {
+              const reconciled = await this.reconciliationAdapter({
+                operationId: `${testCase.id}-${decision}`,
+                actionType: resolvedAction.action.type,
+                error: actionResult.error ?? 'Action failed',
+                stateKey: state.key,
+                bindingReferences: journey.runtimeBindings,
+              });
+              if (reconciled.status === 'RECONCILED_SUCCESS' && reconciled.binding && reconciled.ownership === 'TEST_OWNED' && reconciled.journalRef && reconciled.cleanup) {
+                context.bindings.produce(reconciled.binding);
+                this.reconciledCleanup.push(reconciled.cleanup);
+                metrics.outcomeReconciliations++;
+                appendRecovery(journey, { classification, operation: 'RECONCILE_OUTCOME', attempt: metrics.recoveryAttempts, stateBefore: state.key, outcome: 'SUCCESS', evidenceIds: [] });
+                await boundedWait(50);
+                continue;
+              }
+              if (reconciled.status === 'RECONCILED_NOT_EXECUTED') {
+                metrics.outcomeReconciliations++;
+                appendRecovery(journey, { classification, operation: 'RECONCILE_OUTCOME', attempt: metrics.recoveryAttempts, stateBefore: state.key, outcome: 'SUCCESS', evidenceIds: [] });
+                await boundedWait(50);
+                continue;
+              }
+              if (reconciled.status === 'RECONCILIATION_ERROR') return this.finish(journey, metrics, evidence, assertions, 'error', 'JOURNEY_RECONCILIATION_ERROR', reconciled.reason);
+            } catch (error) {
+              return this.finish(journey, metrics, evidence, assertions, 'error', 'JOURNEY_RECONCILIATION_ERROR', error instanceof Error ? error.message : String(error));
+            }
+          }
           const recovery = decideRecovery(classification, metrics.recoveryAttempts, this.policy.maxRecoveryAttempts);
           appendRecovery(journey, { classification, operation: recovery.operation, attempt: metrics.recoveryAttempts, stateBefore: state.key, outcome: recovery.allowed ? 'SUCCESS' : 'BLOCKED', evidenceIds: [] });
           if (!recovery.allowed) {
@@ -320,6 +377,7 @@ export class JourneyAgent {
     this.cleaned = true;
     try {
       await this.browserSession.close();
+      for (const cleanup of this.reconciledCleanup.splice(0)) await cleanup();
       await this.dataNeedCoordinator.cleanup();
       this.lastCleanup = { status: 'succeeded' };
     } catch (error) {
@@ -350,6 +408,28 @@ export class JourneyAgent {
 
   private isAllowedOrigin(url: string): boolean {
     try { return this.allowedOrigins.includes(new URL(url).origin); } catch { return false; }
+  }
+
+  private async recoverLostPage(activePageId: string | undefined, journey: JourneyState, metrics: ReturnType<typeof createJourneyMetrics>): Promise<{ status: 'ok' | 'blocked' | 'error'; context?: BrowserPageContext; reason?: string }> {
+    if (!activePageId || !this.browserSession.pageContexts) return { status: 'ok' };
+    const contexts = await this.browserSession.pageContexts();
+    if (contexts.some((candidate) => candidate.id === activePageId)) return { status: 'ok' };
+    const lost = journey.pageContexts.find((candidate) => candidate.id === activePageId);
+    const allowed = contexts.filter((candidate) => this.isAllowedOrigin(candidate.url));
+    const opener = lost?.openerPageId ? allowed.filter((candidate) => candidate.id === lost.openerPageId) : [];
+    const selected = opener.length === 1 ? opener : allowed.length === 1 ? allowed : [];
+    metrics.failuresDetected++;
+    metrics.recoveryAttempts++;
+    if (selected.length !== 1 || metrics.pageRecoveries >= this.policy.maxPageRecoveryAttempts) {
+      metrics.failedRecoveries++;
+      appendRecovery(journey, { classification: allowed.length === 0 ? 'CONTEXT_LOST' : 'PAGE_LOST', operation: 'REOPEN_CONTEXT', attempt: metrics.recoveryAttempts, stateBefore: journey.currentState.key, outcome: 'BLOCKED', evidenceIds: [] });
+      return { status: allowed.length === 0 ? 'error' : 'blocked', reason: allowed.length === 0 ? 'No trusted browser page remains.' : 'Page recovery candidates are ambiguous.' };
+    }
+    const context = this.browserSession.activatePage ? await this.browserSession.activatePage(selected[0].id) : selected[0];
+    metrics.pageRecoveries++;
+    metrics.successfulRecoveries++;
+    appendRecovery(journey, { classification: 'PAGE_LOST', operation: 'REOPEN_CONTEXT', attempt: metrics.recoveryAttempts, stateBefore: journey.currentState.key, stateAfter: context.url, outcome: 'SUCCESS', evidenceIds: [] });
+    return { status: 'ok', context };
   }
 
   private async tryAssertion(
@@ -410,6 +490,12 @@ function isLoadingObservation(observation: BrowserObservation): boolean {
   );
 }
 
+function isAuthenticationState(observation: BrowserObservation): boolean {
+  return /\b(login|log in|sign in|authentication|session expired|unauthorized)\b/i.test(
+    `${observation.title} ${observation.headings.join(' ')} ${observation.pageText}`,
+  );
+}
+
 async function boundedWait(milliseconds: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, Math.min(milliseconds, 250)));
 }
@@ -447,7 +533,8 @@ function createJourneyMetrics(): JourneyExecutionResult['metrics'] {
     journeyReplans: 0, recoveries: 0, loopDetections: 0, noProgressIterations: 0,
     pageTransitions: 0, dialogTransitions: 0, popupTransitions: 0, maxSimultaneousPages: 1,
     failuresDetected: 0, successfulRecoveries: 0, failedRecoveries: 0, recoveryLoopsDetected: 0,
-    recoveryAttempts: 0, invalidDecisionRecoveries: 0,
+    recoveryAttempts: 0, invalidDecisionRecoveries: 0, sessionRecoveries: 0, reauthAttempts: 0,
+    pageRecoveries: 0, outcomeReconciliations: 0,
   };
 }
 

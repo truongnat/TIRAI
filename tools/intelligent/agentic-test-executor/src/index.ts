@@ -25,7 +25,7 @@ export type {
 } from './journey/models.js';
 export { defaultJourneyPolicy, summarizeObservationState, compactJourneyHistory } from './journey/models.js';
 export { classifyRuntimeFailure, decideRecovery } from './journey/recovery.js';
-export type { FailureClassification, RecoveryOperation, RecoveryDecision, RecoveryEvent } from './journey/recovery.js';
+export type { FailureClassification, RecoveryOperation, RecoveryDecision, RecoveryEvent, ReconciliationStatus, ReconciliationResult, ReconciliationRequest, RecoveryReconciliationAdapter } from './journey/recovery.js';
 
 export type {
   AgentCapabilities,
