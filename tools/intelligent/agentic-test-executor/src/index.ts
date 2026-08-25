@@ -2,8 +2,25 @@
 // Agentic Test Executor — public API
 // ---------------------------------------------------------------------------
 
-export { AgenticTestExecutor } from './agent.js';
+export { AgenticTestExecutor, addTextEvidence, redactObservationForAI, resolveActionValue } from './agent.js';
 export type { AgenticTestExecutorOptions } from './agent.js';
+export { JourneyAgent } from './journey/journey-agent.js';
+export type {
+  JourneyAgentOptions,
+} from './journey/journey-agent.js';
+
+export type {
+  SemanticApplicationState,
+  JourneyMilestone,
+  JourneyActionRecord,
+  JourneyObservationSummary,
+  JourneyLocation,
+  JourneyState,
+  JourneyExecutionPolicy,
+  JourneyExecutionResult,
+  JourneyDecision,
+} from './journey/models.js';
+export { defaultJourneyPolicy, summarizeObservationState, compactJourneyHistory } from './journey/models.js';
 
 export type {
   AgentCapabilities,

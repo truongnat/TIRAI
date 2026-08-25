@@ -815,7 +815,7 @@ interface RuntimeActionResolution {
   error?: string;
 }
 
-async function resolveActionValue(
+export async function resolveActionValue(
   action: AgenticAction,
   stepInput: string | undefined,
   context: TestExecutionContext,
@@ -895,7 +895,7 @@ async function validateRuntimeAction(
   return { valid: true };
 }
 
-async function redactObservationForAI(
+export async function redactObservationForAI(
   observation: BrowserObservation,
   testCase: TestCase,
   context: TestExecutionContext,
@@ -929,7 +929,7 @@ async function redactObservationForAI(
   };
 }
 
-function addTextEvidence(
+export function addTextEvidence(
   context: TestExecutionContext,
   input: Parameters<TestExecutionContext['evidence']['add']>[0],
 ): EvidenceReference | undefined {
