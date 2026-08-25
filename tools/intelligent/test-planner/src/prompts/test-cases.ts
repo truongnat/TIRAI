@@ -50,14 +50,21 @@ Each test case should:
 - Have logical steps (not UI selectors)
 - Use input strategies (valid/invalid/boundary) without concrete values
 - Have expected results derived ONLY from requirement evidence
+- Include at least one non-empty expected result for every test case; never return an empty expectedResults array
 - Identify data needs without generating concrete data
+- Represent each semantic prerequisite once; do not duplicate equivalent data needs across expected results
+- Do not model an expected result property (for example a persisted status field) as a separate prerequisite data need
 - Describe automation readiness (what could be automated, what is manual)
+- Use only these verificationType values: "ui", "state", "api", "database", "performance", or "other"
+- For a persisted business outcome, use verificationType "state" and include verificationIntent.kind "persisted-business-state"
+- For a visible UI outcome, use verificationType "ui" and include verificationIntent.kind "visible-ui-state"
 
 Do NOT:
 - Invent expected results not supported by requirements
 - Generate CSS selectors or framework-specific commands
 - Create concrete test data values (that belongs to Test Data Planner)
 - Add error handling expectations when error behavior is unspecified
+- Use unsupported verificationType values such as "assertion", "business", or "persistence"
 
 Scenario batch:
 ${scenarioDescriptions}

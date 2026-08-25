@@ -884,7 +884,7 @@ describe('Output', () => {
     );
     await buildTestDataPlan(tmpDir, provider, { outputDir: outDir });
     const manifest = JSON.parse(fs.readFileSync(path.join(outDir, 'manifest.json'), 'utf-8'));
-    expect(manifest.usage.requests).toBe(2); // data req + dependency
+    expect(manifest.usage.requests).toBe(1); // deterministic data req; one item has no possible dependency edge
     expect(manifest.usage.inputTokens).toBeGreaterThan(0);
     expect(manifest.fingerprint).toBeDefined();
     fs.rmSync(tmpDir, { recursive: true });

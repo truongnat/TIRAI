@@ -192,6 +192,7 @@ export class PlaywrightBrowserSession implements BrowserSession {
       this.browser = null;
     } finally {
       this._closed = true;
+      this._started = false;
     }
   }
 

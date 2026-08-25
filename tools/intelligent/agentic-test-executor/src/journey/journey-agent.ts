@@ -93,6 +93,13 @@ export class JourneyAgent {
   }
 
   async execute(testCase: TestCase, context: TestExecutionContext): Promise<JourneyExecutionResult> {
+    // A single executor instance may serve multiple TestCases in one
+    // orchestrated run. Cleanup is per journey, so the next journey must be
+    // allowed to start a fresh browser/session lifecycle.
+    this.cleaned = false;
+    this.lastCleanup = undefined;
+    this.reconciledCleanup.length = 0;
+    this.verificationReport = undefined;
     const metrics = createJourneyMetrics();
     const evidence: EvidenceReference[] = [];
     const assertions: AgenticAssertionResult[] = [];
