@@ -6,6 +6,7 @@ export type FailureClassification =
   | 'NAVIGATION_DRIFT'
   | 'SESSION_LOST'
   | 'CONTEXT_LOST'
+  | 'PAGE_LOST'
   | 'AMBIGUOUS_OUTCOME'
   | 'CAPABILITY_LOST'
   | 'PERMANENT'
@@ -38,6 +39,36 @@ export interface RecoveryEvent {
   evidenceIds: string[];
 }
 
+export type ReconciliationStatus = 'RECONCILED_SUCCESS' | 'RECONCILED_NOT_EXECUTED' | 'STILL_AMBIGUOUS' | 'RECONCILIATION_ERROR';
+
+export interface RecoveryBinding {
+  id: string;
+  name: string;
+  producerOperationId: string;
+  value: unknown;
+  sensitive: boolean;
+  status: 'resolved';
+}
+
+export interface ReconciliationResult {
+  status: ReconciliationStatus;
+  binding?: RecoveryBinding;
+  ownership?: 'TEST_OWNED' | 'EXTERNAL_EXISTING';
+  journalRef?: string;
+  cleanup?: () => Promise<void>;
+  reason?: string;
+}
+
+export interface ReconciliationRequest {
+  operationId: string;
+  actionType: AgenticActionType;
+  error: string;
+  stateKey: string;
+  bindingReferences: string[];
+}
+
+export type RecoveryReconciliationAdapter = (request: ReconciliationRequest) => Promise<ReconciliationResult>;
+
 const SAFE_REGROUND_ERRORS = /stale|detached|not found|cannot resolve|not visible|element.*closed/i;
 const SESSION_ERRORS = /unauthenticated|authentication required|login|session expired|401/i;
 
@@ -68,6 +99,8 @@ export function decideRecovery(classification: FailureClassification, attempt: n
       return { classification, operation: 'RECONCILE_OUTCOME', allowed: false, reason: 'Side-effect outcome is unknown; blind replay is forbidden.' };
     case 'CONTEXT_LOST':
       return { classification, operation: 'REOPEN_CONTEXT', allowed: false, reason: 'Context restoration is not available without trusted navigation state.' };
+    case 'PAGE_LOST':
+      return { classification, operation: 'REOPEN_CONTEXT', allowed: true, reason: 'A trusted remaining page may be reactivated.' };
     case 'CAPABILITY_LOST':
       return { classification, operation: 'ABORT_BLOCKED', allowed: false, reason: 'Capability loss cannot escalate privileges.' };
     case 'UNSAFE_TO_RETRY':

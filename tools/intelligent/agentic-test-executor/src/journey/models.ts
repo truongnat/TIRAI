@@ -88,6 +88,8 @@ export interface JourneyExecutionPolicy extends AgentExecutionPolicy {
   maxNoProgressIterations: number;
   observationHistoryLimit: number;
   maxRecoveryAttempts: number;
+  maxReauthAttempts: number;
+  maxPageRecoveryAttempts: number;
 }
 
 export function defaultJourneyPolicy(base: AgentExecutionPolicy): JourneyExecutionPolicy {
@@ -101,6 +103,8 @@ export function defaultJourneyPolicy(base: AgentExecutionPolicy): JourneyExecuti
     maxNoProgressIterations: 3,
     observationHistoryLimit: 5,
     maxRecoveryAttempts: 2,
+    maxReauthAttempts: 1,
+    maxPageRecoveryAttempts: 1,
   };
 }
 
@@ -130,6 +134,10 @@ export interface JourneyExecutionResult {
     recoveryLoopsDetected: number;
     recoveryAttempts: number;
     invalidDecisionRecoveries: number;
+    sessionRecoveries: number;
+    reauthAttempts: number;
+    pageRecoveries: number;
+    outcomeReconciliations: number;
   };
   error?: { code: string; message: string };
 }

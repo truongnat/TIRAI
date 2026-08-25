@@ -268,6 +268,20 @@ const JOURNEY_POPUP_AMBIGUOUS_PAGE = `<!DOCTYPE html>
 <html><head><title>Ambiguous launcher</title></head><body><h1>Ambiguous launcher</h1>
   <button type="button" onclick="window.open('/journey-detail'); window.open('/journey-catalog');">Open two tabs</button>
 </body></html>`;
+const JOURNEY_POPUP_RECOVERY_PAGE = `<!DOCTYPE html>
+<html><head><title>Recovery launcher</title></head><body><h1>Recovery launcher</h1>
+  <a href="/journey-detail" target="_blank" rel="noopener">Open popup item</a>
+  <a href="/journey-catalog">Continue in workspace</a>
+</body></html>`;
+const JOURNEY_SESSION_LOGIN_PAGE = `<!DOCTYPE html>
+<html><head><title>Session expired</title></head><body><h1>Session expired - Sign in</h1>
+  <form id="session-login"><label>Username <input name="username" /></label><label>Password <input name="password" type="password" /></label><button type="submit">Sign in</button></form>
+  <script>document.getElementById('session-login').addEventListener('submit', function(e) { e.preventDefault(); window.location.href='/journey-home'; });</script>
+</body></html>`;
+const JOURNEY_RECONCILED_PAGE = `<!DOCTYPE html>
+<html><head><title>Reconciled resource</title></head><body><h1>Resource detail</h1>
+  <p>Customer status: Created</p><button type="button">Confirm resource</button>
+</body></html>`;
 
 export async function startFixtureServer(): Promise<FixtureServer> {
   const server: Server = createServer((req, res) => {
@@ -301,6 +315,9 @@ export async function startFixtureServer(): Promise<FixtureServer> {
       '/journey-popup': JOURNEY_POPUP_PAGE,
       '/journey-popup-external': JOURNEY_POPUP_EXTERNAL_PAGE,
       '/journey-popup-ambiguous': JOURNEY_POPUP_AMBIGUOUS_PAGE,
+      '/journey-popup-recovery': JOURNEY_POPUP_RECOVERY_PAGE,
+      '/journey-session-login': JOURNEY_SESSION_LOGIN_PAGE,
+      '/journey-reconciled': JOURNEY_RECONCILED_PAGE,
     };
 
     const html = routes[path];
