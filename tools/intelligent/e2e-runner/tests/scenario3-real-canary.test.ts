@@ -505,7 +505,7 @@ async function writeCanaryArtifacts(
     ...[...profile.aiByStage.entries()].map(([stage, stats]) => `${stage}: calls=${stats.calls}, transport=${stats.transportRequests}, failures=${stats.failures}, promptChars=${stats.promptChars}, responseChars=${stats.responseChars}, tokens=${stats.totalTokens}`),
     `Call details: ${callDetails}`,
     'Test Planner call breakdown: 3 calls = coverage, scenario generation, executable TestCase generation; no repair call.',
-    'Test Data Planner call breakdown: 2 calls = data-requirement extraction and dependency analysis; no repair call.',
+    `Test Data Planner call breakdown: ${profile.aiByStage.get('DATA_PLANNING')?.calls ?? 0} provider call(s); deterministic extraction/dependency analysis used where applicable; no repair call.`,
     'Retries: provider=0, Requirement Builder=0, Test Planner=0, Test Data Planner=0, Journey replans=0, Recovery=0; structured repairs=0.',
     '',
     '## Planning output and exact canary contract',
