@@ -330,13 +330,14 @@ export class AgenticTestExecutor implements TestExecutor {
     }
   }
 
-  async cleanup(_testCase: TestCase, _context: TestExecutionContext): Promise<TestCleanupResult> {
+  async cleanup(_testCase: TestCase, context: TestExecutionContext): Promise<TestCleanupResult> {
     try {
       await this.browserSession.close();
     } catch {
       // Best effort cleanup
     }
     const preparationCleanup = await this.dataNeedCoordinator.cleanup();
+    context.bindings.clearSensitive?.();
     return { status: preparationCleanup.failed > 0 ? 'failed' : 'succeeded' };
   }
 

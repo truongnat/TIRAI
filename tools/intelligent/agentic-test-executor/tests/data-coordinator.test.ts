@@ -318,6 +318,8 @@ describe('DataNeedCoordinator', () => {
     expect(JSON.stringify(result.resolutions)).not.toContain(secret);
     expect(JSON.stringify(result.runtimeData.safeSnapshot())).not.toContain(secret);
     expect(result.runtimeData.resolve('DATA-SECRET-001')).toBe(secret);
+    result.runtimeData.clear();
+    expect(result.runtimeData.resolve('DATA-SECRET-001')).toBeUndefined();
   });
 
   it('does not fall back to generation when an explicit secret reference is unavailable', async () => {

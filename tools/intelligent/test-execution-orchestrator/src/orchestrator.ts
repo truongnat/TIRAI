@@ -97,6 +97,12 @@ class InMemoryBindingStore implements RuntimeBindingStore {
     for (const [name, b] of this.bindings) { if (b.sensitive) s.add(name); }
     return s;
   }
+
+  clearSensitive(): void {
+    for (const [name, binding] of this.bindings) {
+      if (binding.sensitive) this.bindings.set(name, { ...binding, value: '***REDACTED***' });
+    }
+  }
 }
 
 // ---- Orchestrator ---------------------------------------------------------

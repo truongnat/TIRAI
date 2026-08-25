@@ -350,6 +350,31 @@ describe('Phase 2B.3 preparation lifecycle', () => {
     expect(fixture.cleaned).toEqual(['DATA-ORDER-1']);
   });
 
+  it('cleans earlier owned resources when a later preparation is blocked', async () => {
+    const fixture = fixtureAdapter();
+    const first = item({ id: 'DATA-ORDER-1', dependencies: [] });
+    const second = item({ id: 'DATA-ORDER-2', dependencies: ['DATA-ORDER-1'] });
+    const firstOp = operation({ id: 'OP-DATA-ORDER-1', dataItemId: 'DATA-ORDER-1' });
+    const blockedOp = operation({
+      id: 'OP-DATA-ORDER-2',
+      dataItemId: 'DATA-ORDER-2',
+      resolver: 'unknown',
+      action: 'unknown',
+    });
+    const result = await prepareDirect(
+      [first, second],
+      [firstOp, blockedOp],
+      apiInventory(fixture.adapter, ['OP-DATA-ORDER-1']),
+      { environment: 'test', allowApiCreate: true },
+      [{ id: 'DEP-1', sourceOperationId: firstOp.id, targetOperationId: blockedOp.id, type: 'requires' }],
+    );
+
+    expect(result.result.status).toBe('blocked');
+    expect(result.result.cleanup.succeeded).toBe(1);
+    expect(result.result.cleanup.orphaned).toBe(0);
+    expect(fixture.cleaned).toEqual(['DATA-ORDER-1']);
+  });
+
   it('cleans successful resources in reverse dependency order', async () => {
     const fixture = fixtureAdapter();
     const customer = item({ id: 'DATA-CUSTOMER', dependencies: [] });

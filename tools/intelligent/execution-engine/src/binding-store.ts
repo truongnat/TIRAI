@@ -42,6 +42,12 @@ export class InMemoryBindingStore implements RuntimeBindingStore {
     return result;
   }
 
+  clearSensitive(): void {
+    for (const [name, binding] of this.store) {
+      if (binding.sensitive) this.store.set(name, { ...binding, value: REDACTED });
+    }
+  }
+
   /** Return a safe-for-serialization copy with sensitive values redacted. */
   safeSnapshot(): RuntimeBindingResult[] {
     return this.all().map((b) =>
