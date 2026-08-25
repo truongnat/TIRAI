@@ -159,7 +159,9 @@ export class Scenario3Pipeline {
     const runStage = async <T>(stage: Scenario3StageName, action: () => Promise<T>): Promise<T> => {
       const stageStartedAt = new Date().toISOString();
       const stageStartedTick = performance.now();
+      const progressStage: Scenario3Stage = stage === 'SCENARIO2_EXECUTION' ? 'EXECUTING' : stage;
       observer?.onStageStart?.(stage, stageStartedAt);
+      canonicalInput.onProgress?.({ stage: progressStage, phase: 'started' });
       try {
         const result = await action();
         const metric: Scenario3StageMetric = {
@@ -171,6 +173,7 @@ export class Scenario3Pipeline {
         };
         stageMetrics.push(metric);
         observer?.onStageEnd?.(metric);
+        canonicalInput.onProgress?.({ stage: progressStage, phase: 'completed', elapsedMs: metric.elapsedMs });
         return result;
       } catch (error) {
         const metric: Scenario3StageMetric = {
@@ -183,6 +186,7 @@ export class Scenario3Pipeline {
         };
         stageMetrics.push(metric);
         observer?.onStageEnd?.(metric);
+        canonicalInput.onProgress?.({ stage: progressStage, phase: 'failed', elapsedMs: metric.elapsedMs, error: metric.error });
         throw error;
       }
     };

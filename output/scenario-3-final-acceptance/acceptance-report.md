@@ -16,8 +16,8 @@ Stale build artifacts were rebuilt during preflight because the source export wa
 Secondary canary-only finding: PLANNER_CALL_EXPLOSION occurred when the acceptance fixture allowed stochastic alternate scenarios/cases; the fixture now states minimal-sufficient coverage explicitly. Production planner semantics were not globally capped.
 
 ## Preflight and bounded policies
-Fixture/server/browser preflight: PASS (226ms)
-Fixture HTTP/API readiness: PASS; browser startup: 206ms
+Fixture/server/browser preflight: PASS (209ms)
+Fixture HTTP/API readiness: PASS; browser startup: 187ms
 Acceptance safety ceiling: 240000ms; DeepSeek request timeout: 30000ms; provider attempts per request: 1
 Stage budgets: REQUIREMENT_BUILDING=60000ms; TEST_PLANNING=120000ms; DATA_PLANNING=90000ms; SCENARIO2_EXECUTION=90000ms.
 Product result is materialized before acceptance artifact generation: YES.
@@ -43,25 +43,25 @@ Journey: replan budget=3; actual replans=0. Recovery budget=2; actual recoveries
 Verification: max attempts=1; verification AI calls=0.
 
 ## Stage timings
-REQUIREMENT_BUILDING: completed start=2026-08-25T12:56:07.240Z end=2026-08-25T12:56:10.033Z elapsed=2793ms
-TEST_PLANNING: completed start=2026-08-25T12:56:10.033Z end=2026-08-25T12:56:17.231Z elapsed=7197ms
-DATA_PLANNING: completed start=2026-08-25T12:56:17.231Z end=2026-08-25T12:56:20.621Z elapsed=3391ms
-SCENARIO2_EXECUTION: completed start=2026-08-25T12:56:20.621Z end=2026-08-25T12:56:26.960Z elapsed=6339ms
-Pipeline total: 19721ms
-Scenario 2 preparation/execution: 6339ms
-Journey: 6306ms; Cleanup: 31ms
+REQUIREMENT_BUILDING: completed start=2026-08-25T13:01:00.051Z end=2026-08-25T13:01:02.645Z elapsed=2593ms
+TEST_PLANNING: completed start=2026-08-25T13:01:02.645Z end=2026-08-25T13:01:10.300Z elapsed=7655ms
+DATA_PLANNING: completed start=2026-08-25T13:01:10.300Z end=2026-08-25T13:01:11.584Z elapsed=1285ms
+SCENARIO2_EXECUTION: completed start=2026-08-25T13:01:11.584Z end=2026-08-25T13:01:17.806Z elapsed=6221ms
+Pipeline total: 17755ms
+Scenario 2 preparation/execution: 6221ms
+Journey: 6190ms; Cleanup: 30ms
 
 ## Real planning and execution AI profile
 Model: deepseek-v4-flash; structured JSON; DeepSeek thinking=disabled.
-Logical provider calls: 9
-Transport requests: 9
+Logical provider calls: 8
+Transport requests: 8
 Provider failures: 0
-Tokens: 8000 input / 2095 output / 10095 total
-REQUIREMENT_BUILDING: calls=1, transport=1, failures=0, promptChars=6422, responseChars=1488, tokens=1736
-TEST_PLANNING: calls=3, transport=3, failures=0, promptChars=14046, responseChars=4546, tokens=4191
-DATA_PLANNING: calls=2, transport=2, failures=0, promptChars=8405, responseChars=869, tokens=2209
-EXECUTING: calls=3, transport=3, failures=0, promptChars=3213, responseChars=1995, tokens=1959
-Call details: #1 REQUIREMENT_BUILDING succeeded 2791ms prompt=6422 response=1488 tokens=1736 | #2 TEST_PLANNING succeeded 1296ms prompt=3779 response=460 tokens=921 | #3 TEST_PLANNING succeeded 2031ms prompt=4440 response=1201 tokens=1259 | #4 TEST_PLANNING succeeded 3864ms prompt=5827 response=2885 tokens=2011 | #5 DATA_PLANNING succeeded 1941ms prompt=4335 response=534 tokens=1166 | #6 DATA_PLANNING succeeded 1431ms prompt=4070 response=335 tokens=1043 | #7 EXECUTING succeeded 1498ms prompt=1058 response=493 tokens=612 | #8 EXECUTING succeeded 1545ms prompt=1066 response=567 tokens=633 | #9 EXECUTING succeeded 2234ms prompt=1089 response=935 tokens=714
+Tokens: 7154 input / 1821 output / 8975 total
+REQUIREMENT_BUILDING: calls=1, transport=1, failures=0, promptChars=6422, responseChars=1441, tokens=1726
+TEST_PLANNING: calls=3, transport=3, failures=0, promptChars=14969, responseChars=4653, tokens=4390
+DATA_PLANNING: calls=1, transport=1, failures=0, promptChars=3980, responseChars=273, tokens=1014
+EXECUTING: calls=3, transport=3, failures=0, promptChars=3240, responseChars=1430, tokens=1845
+Call details: #1 REQUIREMENT_BUILDING succeeded 2591ms prompt=6422 response=1441 tokens=1726 | #2 TEST_PLANNING succeeded 1403ms prompt=3755 response=617 tokens=947 | #3 TEST_PLANNING succeeded 2388ms prompt=4571 response=1182 tokens=1273 | #4 TEST_PLANNING succeeded 3858ms prompt=6643 response=2854 tokens=2170 | #5 DATA_PLANNING succeeded 1267ms prompt=3980 response=273 tokens=1014 | #6 EXECUTING succeeded 1920ms prompt=1067 response=580 tokens=636 | #7 EXECUTING succeeded 1788ms prompt=1075 response=540 tokens=626 | #8 EXECUTING succeeded 1483ms prompt=1098 response=310 tokens=583
 Test Planner call breakdown: 3 calls = coverage, scenario generation, executable TestCase generation; no repair call.
 Test Data Planner call breakdown: 2 calls = data-requirement extraction and dependency analysis; no repair call.
 Retries: provider=0, Requirement Builder=0, Test Planner=0, Test Data Planner=0, Journey replans=0, Recovery=0; structured repairs=0.
@@ -82,7 +82,7 @@ Cardinality policy: one requirement, one scenario, one executable TestCase, two 
 
 ## Scenario 2 / journey / Chromium / verification
 Scenario 2 status: passed
-Scenario 2 preparation: 6339ms
+Scenario 2 preparation: 6221ms
 Journey status: passed
 Journey states: 3
 Journey actions: 3
@@ -96,15 +96,15 @@ Runtime bindings: runtime.DATA-0001, runtime.DATA-0002
 Cleanup result: TC-0001=PASS; cleanup overall=PASS
 
 ## Source-to-proof trace
-Trace nodes: 17
-Trace edges: 19
+Trace nodes: 18
+Trace edges: 21
 Lost/orphan evidence: 0
 Source → Requirement: 1
 Requirement → Scenario: 1
 Scenario → TestCase: 1
 ExpectedResult → VerificationNeed: 2
-VerificationNeed → Evidence: 4
-Evidence → execution result: 4
+VerificationNeed → Evidence: 5
+Evidence → execution result: 5
 Requirement results: REQ-0001=passed
 Trace edges:
 source:ctx-scenario3-catalog -[SOURCE_SUPPORTS_REQUIREMENT]-> requirement:REQ-0001
@@ -123,9 +123,11 @@ verification:TC-0001:0 -[VERIFICATION_NEED_SUPPORTED_BY_EVIDENCE]-> evidence:EVD
 evidence:EVD-0002 -[EVIDENCE_CONTRIBUTES_TO_EXECUTION_RESULT]-> execution:TC-0001
 verification:TC-0001:0 -[VERIFICATION_NEED_SUPPORTED_BY_EVIDENCE]-> evidence:EVD-0002
 evidence:EVD-0003 -[EVIDENCE_CONTRIBUTES_TO_EXECUTION_RESULT]-> execution:TC-0001
-verification:TC-0001:1 -[VERIFICATION_NEED_SUPPORTED_BY_EVIDENCE]-> evidence:EVD-0003
+verification:TC-0001:0 -[VERIFICATION_NEED_SUPPORTED_BY_EVIDENCE]-> evidence:EVD-0003
 evidence:EVD-0004 -[EVIDENCE_CONTRIBUTES_TO_EXECUTION_RESULT]-> execution:TC-0001
 verification:TC-0001:1 -[VERIFICATION_NEED_SUPPORTED_BY_EVIDENCE]-> evidence:EVD-0004
+evidence:EVD-0005 -[EVIDENCE_CONTRIBUTES_TO_EXECUTION_RESULT]-> execution:TC-0001
+verification:TC-0001:1 -[VERIFICATION_NEED_SUPPORTED_BY_EVIDENCE]-> evidence:EVD-0005
 Data binding trace:
 data-need:DATA-0001 → data-item:DATA-0001 → runtime.DATA-0001
 data-need:DATA-0002 → data-item:DATA-0002 → runtime.DATA-0002
@@ -159,6 +161,6 @@ Orphans: 0
 
 ## Final decision
 Cleanup: PASS
-Total: 19721ms
+Total: 17755ms
 FINAL: SCENARIO 3 = ACCEPTED
 Acceptance artifact generation: 1ms
