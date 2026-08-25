@@ -5,6 +5,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { SemanticAnalyzerError, SemanticErrorCode } from '../errors.js';
+import type { CanonicalContextProvenance, SanitizedMetadataValue, SourceLocation } from 'source-ingestion';
 
 // ---- Input types (mirror context-builder output) -------------------------
 
@@ -36,6 +37,20 @@ export interface ContextChunk {
   stats: { cells: number; characters: number; estimatedTokens: number };
   warnings: Array<{ code: string; message: string }>;
 }
+
+/** Source-agnostic in-memory context accepted by the canonical analyzer path. */
+export interface CanonicalAnalyzerChunk {
+  schemaVersion: '1.0';
+  id: string;
+  type: string;
+  content: string;
+  provenance: CanonicalContextProvenance;
+  relations: Array<{ type: string; targetContextId: string }>;
+  metadata: Record<string, SanitizedMetadataValue>;
+  location: SourceLocation;
+}
+
+export type AnalyzerContextChunk = ContextChunk | CanonicalAnalyzerChunk;
 
 export interface LoadedContext {
   manifest: ContextManifest;

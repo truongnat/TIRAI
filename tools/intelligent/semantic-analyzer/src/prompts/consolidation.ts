@@ -25,7 +25,7 @@ export function buildConsolidationPrompt(
   parts.push('You have analyzed multiple document chunks independently.');
   parts.push('Now consolidate the results into a unified semantic model.');
   parts.push('');
-  parts.push(`Document sheets: ${sheetNames.join(', ')}`);
+  parts.push(`Document context groups: ${sheetNames.join(', ')}`);
   parts.push(`Chunks analyzed: ${chunkResults.length}`);
   parts.push('');
 
@@ -63,7 +63,9 @@ export function buildConsolidationPrompt(
     if (result.relationships.length > 0) {
       parts.push(`Relationships (${result.relationships.length}):`);
       for (const rel of result.relationships) {
-        parts.push(`  - ${rel.localId}: ${rel.sourceLocalId} --[${rel.type}]--> ${rel.targetLocalId}`);
+        parts.push(
+          `  - ${rel.localId}: ${rel.sourceLocalId} --[${rel.type}]--> ${rel.targetLocalId}`,
+        );
       }
     }
 
@@ -87,24 +89,39 @@ export function buildConsolidationPrompt(
   // ---- Consolidation tasks ------------------------------------------------
   parts.push('## YOUR CONSOLIDATION TASKS');
   parts.push('');
-  parts.push('1. MERGE CANDIDATES: Identify entities from different chunks representing the SAME concept.');
+  parts.push(
+    '1. MERGE CANDIDATES: Identify entities from different chunks representing the SAME concept.',
+  );
   parts.push('   - Only merge when names/aliases/types clearly match.');
   parts.push('   - Do NOT merge entities that merely share a common word.');
-  parts.push('   - Reference entities by "contextId:localId" (e.g. "ctx-s000-c000:local-entity-001").');
+  parts.push(
+    '   - Reference entities by "contextId:localId" (e.g. "ctx-s000-c000:local-entity-001").',
+  );
   parts.push('');
-  parts.push('2. CROSS-CHUNK FLOWS: Check if flow fragments from different chunks form a complete flow.');
-  parts.push('   - If one chunk has ordered steps and another chunk references the same process, compose them.');
+  parts.push(
+    '2. CROSS-CHUNK FLOWS: Check if flow fragments from different chunks form a complete flow.',
+  );
+  parts.push(
+    '   - If one chunk has ordered steps and another chunk references the same process, compose them.',
+  );
   parts.push('   - Only compose when there is clear evidence they belong to the same process.');
   parts.push('');
-  parts.push('3. CROSS-CHUNK RELATIONSHIPS: Identify semantic connections between concepts in different chunks.');
-  parts.push('   - Look for: same API referenced in business flow and API design sheets.');
-  parts.push('   - Look for: same entity/concept appearing in multiple sheets with different perspectives.');
-  parts.push('   - Look for: module dependencies across FE design and other sheets.');
+  parts.push(
+    '3. CROSS-CHUNK RELATIONSHIPS: Identify semantic connections between concepts in different chunks.',
+  );
+  parts.push('   - Look for: the same API or entity referenced in multiple source context groups.');
+  parts.push(
+    '   - Use explicit evidence across document sections, blocks, or other source locations.',
+  );
   parts.push('   - Reference entities by "contextId:localId" format.');
-  parts.push('   - Only create relationships with EXPLICIT evidence — not architectural assumptions.');
+  parts.push(
+    '   - Only create relationships with EXPLICIT evidence — not architectural assumptions.',
+  );
   parts.push('   - If a connection is plausible but not clearly evidenced, do NOT create it.');
   parts.push('');
-  parts.push('4. DOCUMENT SUMMARY: Provide title, summary, language, and domain hints if possible.');
+  parts.push(
+    '4. DOCUMENT SUMMARY: Provide title, summary, language, and domain hints if possible.',
+  );
   parts.push('');
   parts.push('5. Do not invent relationships or merges without evidence.');
 

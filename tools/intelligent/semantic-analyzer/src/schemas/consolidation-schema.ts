@@ -8,6 +8,10 @@ const provenanceRef = {
   type: 'object',
   properties: {
     contextId: { type: 'string' },
+    sourceId: { type: 'string' },
+    revisionId: { type: 'string' },
+    artifactId: { type: 'string' },
+    location: { type: 'object', properties: { segments: { type: 'array' } } },
     sheet: { type: 'string' },
     ranges: { type: 'array', items: { type: 'string' } },
     cells: { type: 'array', items: { type: 'string' } },

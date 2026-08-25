@@ -71,22 +71,38 @@ export async function consolidate(
 /**
  * Normalize raw AI response to RequirementConsolidationResult.
  */
-function normalizeConsolidationResult(raw: Record<string, unknown>): RequirementConsolidationResult {
-  const rawGroups = (Array.isArray(raw.duplicateGroups) ? raw.duplicateGroups : []) as Array<Record<string, unknown>>;
-  const rawConflicts = (Array.isArray(raw.additionalConflicts) ? raw.additionalConflicts : []) as Array<Record<string, unknown>>;
+function normalizeConsolidationResult(
+  raw: Record<string, unknown>,
+): RequirementConsolidationResult {
+  const rawGroups = (Array.isArray(raw.duplicateGroups) ? raw.duplicateGroups : []) as Array<
+    Record<string, unknown>
+  >;
+  const rawConflicts = (
+    Array.isArray(raw.additionalConflicts) ? raw.additionalConflicts : []
+  ) as Array<Record<string, unknown>>;
 
   const duplicateGroups = rawGroups
-    .filter((g) => Array.isArray(g.sourceTemporaryIds) && (g.sourceTemporaryIds as unknown[]).length >= 2)
+    .filter(
+      (g) => Array.isArray(g.sourceTemporaryIds) && (g.sourceTemporaryIds as unknown[]).length >= 2,
+    )
     .map((g) => ({
-      sourceTemporaryIds: (g.sourceTemporaryIds as unknown[]).filter((x): x is string => typeof x === 'string'),
+      sourceTemporaryIds: (g.sourceTemporaryIds as unknown[]).filter(
+        (x): x is string => typeof x === 'string',
+      ),
       reason: typeof g.reason === 'string' ? g.reason : 'Duplicate candidates',
       confidence: typeof g.confidence === 'number' ? g.confidence : 0.7,
     }));
 
   const additionalConflicts = rawConflicts
-    .filter((c) => Array.isArray(c.requirementTemporaryIds) && (c.requirementTemporaryIds as unknown[]).length >= 2)
+    .filter(
+      (c) =>
+        Array.isArray(c.requirementTemporaryIds) &&
+        (c.requirementTemporaryIds as unknown[]).length >= 2,
+    )
     .map((c) => ({
-      requirementTemporaryIds: (c.requirementTemporaryIds as unknown[]).filter((x): x is string => typeof x === 'string'),
+      requirementTemporaryIds: (c.requirementTemporaryIds as unknown[]).filter(
+        (x): x is string => typeof x === 'string',
+      ),
       description: typeof c.description === 'string' ? c.description : 'Potential conflict',
       type: typeof c.type === 'string' ? c.type : 'ambiguous',
       provenance: normalizeProvenance(c.provenance),
@@ -99,11 +115,30 @@ function normalizeConsolidationResult(raw: Record<string, unknown>): Requirement
 function normalizeProvenance(raw: unknown): ProvenanceReference[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .filter((p): p is Record<string, unknown> => typeof p === 'object' && p !== null && typeof p.contextId === 'string')
+    .filter(
+      (p): p is Record<string, unknown> =>
+        typeof p === 'object' && p !== null && typeof p.contextId === 'string',
+    )
     .map((p) => ({
       contextId: p.contextId as string,
+      sourceId: typeof p.sourceId === 'string' ? p.sourceId : undefined,
+      revisionId: typeof p.revisionId === 'string' ? p.revisionId : undefined,
+      artifactId: typeof p.artifactId === 'string' ? p.artifactId : undefined,
+      location: isSourceLocation(p.location) ? p.location : undefined,
       sheet: typeof p.sheet === 'string' ? p.sheet : undefined,
-      ranges: Array.isArray(p.ranges) ? p.ranges.filter((x): x is string => typeof x === 'string') : undefined,
-      cells: Array.isArray(p.cells) ? p.cells.filter((x): x is string => typeof x === 'string') : undefined,
+      ranges: Array.isArray(p.ranges)
+        ? p.ranges.filter((x): x is string => typeof x === 'string')
+        : undefined,
+      cells: Array.isArray(p.cells)
+        ? p.cells.filter((x): x is string => typeof x === 'string')
+        : undefined,
     }));
+}
+
+function isSourceLocation(value: unknown): value is ProvenanceReference['location'] {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Array.isArray((value as { segments?: unknown }).segments)
+  );
 }

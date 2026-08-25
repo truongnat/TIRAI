@@ -233,6 +233,10 @@ function normalizeProvenance(raw: unknown): ProvenanceReference[] {
     )
     .map((p) => ({
       contextId: p.contextId as string,
+      sourceId: typeof p.sourceId === 'string' ? p.sourceId : undefined,
+      revisionId: typeof p.revisionId === 'string' ? p.revisionId : undefined,
+      artifactId: typeof p.artifactId === 'string' ? p.artifactId : undefined,
+      location: isSourceLocation(p.location) ? p.location : undefined,
       sheet: typeof p.sheet === 'string' ? p.sheet : undefined,
       ranges: Array.isArray(p.ranges)
         ? p.ranges.filter((x): x is string => typeof x === 'string')
@@ -241,6 +245,14 @@ function normalizeProvenance(raw: unknown): ProvenanceReference[] {
         ? p.cells.filter((x): x is string => typeof x === 'string')
         : undefined,
     }));
+}
+
+function isSourceLocation(value: unknown): value is ProvenanceReference['location'] {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Array.isArray((value as { segments?: unknown }).segments)
+  );
 }
 
 /** Normalize an array of objects with a required key field + provenance. */

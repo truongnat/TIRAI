@@ -2,11 +2,12 @@
 // Semantic Analyzer – public API
 // ---------------------------------------------------------------------------
 
-export { analyzeSemanticContext } from './analyzer.js';
+export { analyzeSemanticContext, analyzeCanonicalContext } from './analyzer.js';
 
 export type {
   SemanticIR,
   SemanticDocument,
+  SemanticSourceIdentity,
   SemanticSection,
   SemanticEntity,
   SemanticAttribute,

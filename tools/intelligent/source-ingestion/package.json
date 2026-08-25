@@ -1,23 +1,21 @@
 {
-  "name": "semantic-analyzer",
+  "name": "source-ingestion",
   "version": "1.0.0",
-  "description": "Semantic Analyzer v1 – Context Package → Canonical Semantic IR",
+  "description": "Canonical, read-only source ingestion boundary",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
-    "format": "prettier --write \"src/**/*.{ts,json}\" \"tests/**/*.{ts,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,json}\" \"tests/**/*.{ts,json}\"",
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
-    "ai-provider": "file:../ai-provider",
-    "source-ingestion": "file:../source-ingestion"
+    "workbook-inspector": "file:../../deterministic/excel/workbook-inspector",
+    "cell-layout-extractor": "file:../../deterministic/excel/cell-layout-extractor",
+    "excel-context-builder": "file:../excel/context-builder"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

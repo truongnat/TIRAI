@@ -4,7 +4,7 @@
 // Structured into explicit sections per v1.1 spec to guide the AI model
 // through each semantic object category with definitions and heuristics.
 
-import type { ContextChunk } from '../persistence/loader.js';
+import type { AnalyzerContextChunk } from '../persistence/loader.js';
 
 /**
  * Build the user message for chunk-level semantic analysis.
@@ -12,7 +12,7 @@ import type { ContextChunk } from '../persistence/loader.js';
  * The message includes the chunk content and explicit instructions
  * about provenance, local IDs, and semantic classification.
  */
-export function buildChunkAnalysisPrompt(chunk: ContextChunk): string {
+export function buildChunkAnalysisPrompt(chunk: AnalyzerContextChunk): string {
   const parts: string[] = [];
 
   // ---- ROLE ---------------------------------------------------------------
@@ -29,11 +29,17 @@ export function buildChunkAnalysisPrompt(chunk: ContextChunk): string {
   parts.push('  sections, entities, flows, rules, relationships, unresolved items.');
   parts.push('');
   parts.push(`Context ID: ${chunk.id}`);
-  parts.push(`Sheet: ${chunk.sheet.name} (index: ${chunk.sheet.index})`);
-  parts.push(`Range: ${chunk.range ?? 'N/A'}`);
+  if ('sheet' in chunk) {
+    parts.push(`Legacy Excel location: sheet ${chunk.sheet.name} (index: ${chunk.sheet.index}), range ${chunk.range ?? 'N/A'}`);
+  } else {
+    parts.push(`Source ID: ${chunk.provenance.sourceId}`);
+    parts.push(`Revision ID: ${chunk.provenance.revisionId}`);
+    parts.push(`Artifact ID: ${chunk.provenance.artifactId}`);
+    parts.push(`Location: ${formatLocation(chunk.location)}`);
+  }
   parts.push(`Type: ${chunk.type}`);
 
-  if (chunk.layoutHints?.headerRows && chunk.layoutHints.headerRows.length > 0) {
+  if ('layoutHints' in chunk && chunk.layoutHints?.headerRows && chunk.layoutHints.headerRows.length > 0) {
     parts.push(`Header rows: ${chunk.layoutHints.headerRows.join(', ')}`);
   }
   parts.push('');
@@ -92,7 +98,7 @@ export function buildChunkAnalysisPrompt(chunk: ContextChunk): string {
   // ---- EVIDENCE REQUIREMENTS ----------------------------------------------
   parts.push('## EVIDENCE REQUIREMENTS');
   parts.push('Every semantic object must be backed by source evidence.');
-  parts.push('Include provenance with contextId, sheet name, and ranges/cells where possible.');
+  parts.push('Include provenance with contextId and the supplied source/revision/artifact/location identity.');
   parts.push('If you cannot identify source evidence, do not emit the object.');
   parts.push('');
 
@@ -101,8 +107,13 @@ export function buildChunkAnalysisPrompt(chunk: ContextChunk): string {
   parts.push('Return JSON only. Do not wrap the JSON object in Markdown or add commentary.');
   parts.push(`1. Set contextId to "${chunk.id}" in your response.`);
   parts.push('2. Use local IDs: "local-section-001", "local-entity-001", "local-flow-001", "local-rule-001", etc.');
-  parts.push(`3. For provenance, use contextId="${chunk.id}", sheet="${chunk.sheet.name}".`);
-  parts.push('4. Include ranges or cells from the source that support each extracted object.');
+  if ('sheet' in chunk) {
+    parts.push(`3. For provenance, use contextId="${chunk.id}", sheet="${chunk.sheet.name}".`);
+    parts.push('4. Include ranges or cells from the source that support each extracted object.');
+  } else {
+    parts.push(`3. For provenance, use contextId="${chunk.id}" and preserve the supplied sourceId, revisionId, artifactId, and location.`);
+    parts.push('4. Do not add spreadsheet-only fields to this provenance.');
+  }
   parts.push('5. If something is ambiguous, add it to unresolved instead of guessing.');
   parts.push('6. Relationships within this chunk should reference local IDs of entities/flows found in this same chunk.');
   parts.push('7. Do not invent information not present in the context.');
@@ -111,4 +122,8 @@ export function buildChunkAnalysisPrompt(chunk: ContextChunk): string {
   parts.push('10. IMPORTANT: If the source shows connections between concepts, create RELATIONSHIPS.');
 
   return parts.join('\n');
+}
+
+function formatLocation(chunkLocation: { segments: Array<{ kind: string; value: string | number }> }): string {
+  return chunkLocation.segments.map((segment) => `${segment.kind}=${String(segment.value)}`).join(' / ');
 }

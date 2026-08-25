@@ -91,7 +91,9 @@ export function buildExtractionPrompt(batch: EvidenceBatch): string {
   parts.push('## EVIDENCE REQUIREMENTS');
   parts.push('Every candidate MUST have:');
   parts.push('  - semanticEvidenceIds referencing the semantic objects used');
-  parts.push('  - provenance referencing the source context');
+  parts.push(
+    '  - provenance referencing the source context and preserving source/revision/artifact/location when supplied',
+  );
   parts.push('  - confidence between 0.0 and 1.0');
   parts.push('');
 

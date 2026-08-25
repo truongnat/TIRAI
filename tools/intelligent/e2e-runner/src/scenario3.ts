@@ -81,12 +81,13 @@ export interface Scenario3ExecutionAdapter<TResult = unknown> {
 
 export interface Scenario3TraceNode {
   id: string;
-  kind: 'source' | 'requirement' | 'scenario' | 'test-case' | 'data-need' | 'data-item' | 'expected-result' | 'verification-need' | 'evidence' | 'execution-result';
+  kind: 'source' | 'source-revision' | 'source-artifact' | 'semantic-context' | 'requirement' | 'scenario' | 'test-case' | 'data-need' | 'data-item' | 'expected-result' | 'verification-need' | 'evidence' | 'execution-result';
   ref: string;
   metadata?: Record<string, unknown>;
 }
 
 export type Scenario3TraceRelation =
+  | 'SOURCE_HAS_REVISION' | 'REVISION_HAS_ARTIFACT' | 'ARTIFACT_CONTAINS_CONTEXT' | 'CONTEXT_SUPPORTS_REQUIREMENT'
   | 'SOURCE_SUPPORTS_REQUIREMENT' | 'REQUIREMENT_COVERED_BY_SCENARIO'
   | 'SCENARIO_IMPLEMENTED_BY_TESTCASE' | 'TESTCASE_REQUIRES_DATA'
   | 'TESTCASE_EXPECTS_RESULT' | 'EXPECTED_RESULT_VERIFIED_BY_NEED'
@@ -298,6 +299,38 @@ function emptyTrace(): Scenario3TraceGraph {
   return { nodes: [], edges: [], orphanEvidenceIds: [] };
 }
 
+function addProvenanceLineage(
+  nodes: Scenario3TraceNode[],
+  edges: Scenario3TraceEdge[],
+  provenance: RequirementIR['requirements'][number]['provenance'][number],
+  requirementId: string,
+): void {
+  const sourceIdentity = provenance.sourceId ?? provenance.contextId;
+  const sourceNodeId = `source:${sourceIdentity}`;
+  if (!nodes.some((node) => node.id === sourceNodeId)) {
+    nodes.push({ id: sourceNodeId, kind: 'source', ref: sourceIdentity, metadata: { ...provenance } });
+  }
+  if (provenance.revisionId && provenance.artifactId && provenance.location) {
+    const revisionNodeId = `source-revision:${sourceIdentity}:${provenance.revisionId}`;
+    const artifactNodeId = `source-artifact:${provenance.artifactId}`;
+    const contextNodeId = `semantic-context:${provenance.contextId}`;
+    if (!nodes.some((node) => node.id === revisionNodeId)) {
+      nodes.push({ id: revisionNodeId, kind: 'source-revision', ref: provenance.revisionId, metadata: { sourceId: sourceIdentity } });
+      edges.push({ from: sourceNodeId, to: revisionNodeId, relation: 'SOURCE_HAS_REVISION' });
+    }
+    if (!nodes.some((node) => node.id === artifactNodeId)) {
+      nodes.push({ id: artifactNodeId, kind: 'source-artifact', ref: provenance.artifactId, metadata: { sourceId: sourceIdentity, revisionId: provenance.revisionId, location: provenance.location } });
+      edges.push({ from: revisionNodeId, to: artifactNodeId, relation: 'REVISION_HAS_ARTIFACT' });
+    }
+    if (!nodes.some((node) => node.id === contextNodeId)) {
+      nodes.push({ id: contextNodeId, kind: 'semantic-context', ref: provenance.contextId, metadata: { artifactId: provenance.artifactId, location: provenance.location } });
+      edges.push({ from: artifactNodeId, to: contextNodeId, relation: 'ARTIFACT_CONTAINS_CONTEXT' });
+    }
+    edges.push({ from: contextNodeId, to: requirementId, relation: 'CONTEXT_SUPPORTS_REQUIREMENT' });
+  }
+  edges.push({ from: sourceNodeId, to: requirementId, relation: 'SOURCE_SUPPORTS_REQUIREMENT' });
+}
+
 function buildRequirementTrace(requirements: RequirementIR): Scenario3TraceGraph {
   const nodes: Scenario3TraceNode[] = [];
   const edges: Scenario3TraceEdge[] = [];
@@ -305,11 +338,7 @@ function buildRequirementTrace(requirements: RequirementIR): Scenario3TraceGraph
     const requirementId = `requirement:${requirement.id}`;
     nodes.push({ id: requirementId, kind: 'requirement', ref: requirement.id, metadata: { title: requirement.title } });
     for (const provenance of requirement.provenance) {
-      const sourceId = `source:${provenance.contextId}`;
-      if (!nodes.some((node) => node.id === sourceId)) {
-        nodes.push({ id: sourceId, kind: 'source', ref: provenance.contextId, metadata: { ...provenance } });
-      }
-      edges.push({ from: sourceId, to: requirementId, relation: 'SOURCE_SUPPORTS_REQUIREMENT' });
+      addProvenanceLineage(nodes, edges, provenance, requirementId);
     }
   }
   return { nodes, edges, orphanEvidenceIds: [] };
@@ -341,7 +370,7 @@ function statusFromExecution(execution: TestRunResultIR): Scenario3Result['statu
   return 'passed';
 }
 
-function buildTrace(requirements: RequirementIR, testPlan: TestPlanIR, dataPlan?: TestDataPlanIR, execution?: TestRunResultIR): Scenario3TraceGraph {
+export function buildTrace(requirements: RequirementIR, testPlan: TestPlanIR, dataPlan?: TestDataPlanIR, execution?: TestRunResultIR): Scenario3TraceGraph {
   const nodes: Scenario3TraceNode[] = [];
   const edges: Scenario3TraceGraph['edges'] = [];
   const add = (node: Scenario3TraceNode) => { if (!nodes.some((n) => n.id === node.id)) nodes.push(node); };
@@ -350,9 +379,7 @@ function buildTrace(requirements: RequirementIR, testPlan: TestPlanIR, dataPlan?
     const reqId = `requirement:${req.id}`;
     add({ id: reqId, kind: 'requirement', ref: req.id, metadata: { title: req.title } });
     for (const provenance of req.provenance) {
-      const sourceId = `source:${provenance.contextId}`;
-      add({ id: sourceId, kind: 'source', ref: provenance.contextId, metadata: { ...provenance } });
-      link(sourceId, reqId, 'SOURCE_SUPPORTS_REQUIREMENT');
+      addProvenanceLineage(nodes, edges, provenance, req.id);
     }
   }
   for (const scenario of testPlan.scenarios) {

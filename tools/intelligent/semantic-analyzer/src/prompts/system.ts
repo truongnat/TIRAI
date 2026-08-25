@@ -13,7 +13,7 @@ Your job is to extract structured semantic information from document context chu
 - Extract ONLY information explicitly supported by the supplied context.
 - Do NOT invent missing requirements or capabilities.
 - Do NOT assume relationships unless evidence exists in the context.
-- Preserve source provenance exactly as provided.
+  - Preserve source, revision, artifact, context, and location provenance exactly as provided.
 - When information is ambiguous or uncertain, emit an unresolved item instead of guessing.
 - Return ONLY data matching the provided JSON schema.
 - Return ONLY a valid JSON object matching the provided JSON schema; do not use Markdown or prose.
@@ -29,7 +29,7 @@ Your job is to extract structured semantic information from document context chu
 - Do NOT repeat source text in descriptions. Use short, meaningful descriptions.
 - Do NOT create redundant entities or rules. Each object must represent distinct knowledge.
 - Prefer fewer high-quality objects over many low-quality ones.
-- Provenance must reference contextId only — do not repeat sheet names or ranges inside provenance arrays.
+- Provenance must preserve the supplied contextId and, for canonical sources, sourceId, revisionId, artifactId, and generic location. Do not invent spreadsheet-only fields for non-spreadsheet sources.
 - Keep descriptions under 80 characters where possible.
 
 ## Semantic Object Definitions

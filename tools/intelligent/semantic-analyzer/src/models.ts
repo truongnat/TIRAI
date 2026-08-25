@@ -5,6 +5,7 @@
 // Excel terminology appears only in provenance references.
 
 import type { SemanticAnalyzerBudget } from './budget.js';
+import type { SourceLocation } from 'source-ingestion';
 
 // ---- Top-level IR --------------------------------------------------------
 
@@ -33,6 +34,17 @@ export interface SemanticDocument {
   language?: string[];
   domainHints?: string[];
   provenance: ProvenanceReference[];
+  source?: SemanticSourceIdentity;
+}
+
+export interface SemanticSourceIdentity {
+  sourceId: string;
+  revisionId: string;
+  kind: string;
+  displayName: string;
+  connectorId: string;
+  connectorVersion: string;
+  contentHash: string;
 }
 
 // ---- Section -------------------------------------------------------------
@@ -151,6 +163,10 @@ export interface SemanticUnresolved {
 
 export interface ProvenanceReference {
   contextId: string;
+  sourceId?: string;
+  revisionId?: string;
+  artifactId?: string;
+  location?: SourceLocation;
   sheet?: string;
   ranges?: string[];
   cells?: string[];

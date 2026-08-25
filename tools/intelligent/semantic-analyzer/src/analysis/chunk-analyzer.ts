@@ -11,7 +11,7 @@
 
 import type { AIProvider, JSONSchema } from 'ai-provider';
 import type { ChunkSemanticResult, SemanticWarning } from '../models.js';
-import type { ContextChunk } from '../persistence/loader.js';
+import type { AnalyzerContextChunk } from '../persistence/loader.js';
 import { SemanticAnalyzerError, SemanticErrorCode } from '../errors.js';
 import { SemanticWarningCode } from '../warnings.js';
 import { SEMANTIC_SYSTEM_PROMPT } from '../prompts/system.js';
@@ -146,7 +146,7 @@ export interface ChunkAnalysisMetrics {
 }
 
 export async function analyzeChunk(
-  chunk: ContextChunk,
+  chunk: AnalyzerContextChunk,
   provider: AIProvider,
   budget: SemanticAnalyzerBudget = DEFAULT_SEMANTIC_BUDGET,
   providerOptions?: Record<string, unknown>,

@@ -67,12 +67,7 @@ export async function buildRequirements(
   provider: AIProvider,
   options?: RequirementBuilderOptions,
 ): Promise<RequirementIR> {
-  return buildRequirementsFromSemanticIR(
-    loadSemanticIR(inputDir),
-    provider,
-    options,
-    inputDir,
-  );
+  return buildRequirementsFromSemanticIR(loadSemanticIR(inputDir), provider, options, inputDir);
 }
 
 /** Build requirements directly from an in-memory Semantic IR. */
@@ -130,6 +125,7 @@ export async function buildRequirementsFromSemanticIR(
 
     // Build provenance lookup from batch context
     const batchProvenance = buildBatchProvenanceLookup(batch);
+    const batchContextProvenance = buildBatchContextProvenanceLookup(batch);
     // Collect all valid semantic IDs from the batch
     const validBatchIds = buildValidBatchIds(batch);
 
@@ -151,6 +147,7 @@ export async function buildRequirementsFromSemanticIR(
         const batchProv = getBatchFallbackProvenance(batch);
         if (batchProv.length > 0) provenance = batchProv;
       }
+      provenance = enrichProvenance(provenance, batchContextProvenance);
 
       allCandidates.push({
         temporaryId: c.temporaryId,
@@ -164,9 +161,12 @@ export async function buildRequirementsFromSemanticIR(
         preconditions: c.preconditions.map((p) => ({
           description: p.description,
           relatedSemanticIds: p.relatedSemanticIds,
-          provenance: p.provenance ?? [],
+          provenance: enrichProvenance(p.provenance ?? [], batchContextProvenance),
         })),
-        dataNeeds: c.dataNeeds ?? [],
+        dataNeeds: (c.dataNeeds ?? []).map((dataNeed) => ({
+          ...dataNeed,
+          provenance: enrichProvenance(dataNeed.provenance ?? [], batchContextProvenance),
+        })),
         inputs: c.inputs.map((i) => ({
           name: i.name,
           description: i.description,
@@ -174,25 +174,25 @@ export async function buildRequirementsFromSemanticIR(
           required: i.required,
           constraints: i.constraints,
           relatedSemanticId: i.relatedSemanticId,
-          provenance: i.provenance ?? [],
+          provenance: enrichProvenance(i.provenance ?? [], batchContextProvenance),
         })),
         expectedBehaviors: c.expectedBehaviors.map((b) => ({
           description: b.description,
           condition: b.condition,
           target: b.target,
-          provenance: b.provenance ?? [],
+          provenance: enrichProvenance(b.provenance ?? [], batchContextProvenance),
         })),
         outcomes: c.outcomes.map((o) => ({
           condition: o.condition,
           description: o.description,
           state: o.state,
-          provenance: o.provenance ?? [],
+          provenance: enrichProvenance(o.provenance ?? [], batchContextProvenance),
         })),
         constraints: c.constraints.map((ct) => ({
           type: ct.type,
           description: ct.description,
           value: ct.value,
-          provenance: ct.provenance ?? [],
+          provenance: enrichProvenance(ct.provenance ?? [], batchContextProvenance),
         })),
         provenance,
         confidence: c.confidence,
@@ -202,10 +202,10 @@ export async function buildRequirementsFromSemanticIR(
 
     // Collect unresolved + conflict candidates
     for (const u of result.unresolvedCandidates) {
-      allUnresolvedRaw.push(u);
+      allUnresolvedRaw.push({ ...u, provenance: enrichProvenance(u.provenance, batchContextProvenance) });
     }
     for (const cf of result.conflictCandidates) {
-      allConflictRaw.push(cf);
+      allConflictRaw.push({ ...cf, provenance: enrichProvenance(cf.provenance, batchContextProvenance) });
     }
   }
 
@@ -374,6 +374,7 @@ export async function buildRequirementsFromSemanticIR(
     summary: semanticIR.document.summary,
     sourceSemanticIR: sourceRef,
     provenance: semanticIR.document.provenance,
+    source: semanticIR.document.source,
   };
 
   // ---- Assemble final IR --------------------------------------------------
@@ -628,6 +629,37 @@ function buildBatchProvenanceLookup(batch: EvidenceBatch): Map<string, Provenanc
   }
 
   return lookup;
+}
+
+function buildBatchContextProvenanceLookup(batch: EvidenceBatch): Map<string, ProvenanceReference> {
+  const lookup = new Map<string, ProvenanceReference>();
+  const all = [
+    ...batch.flows.flatMap((item) => item.provenance),
+    ...batch.rules.flatMap((item) => item.provenance),
+    ...batch.entities.flatMap((item) => item.provenance),
+    ...batch.sections.flatMap((item) => item.provenance),
+  ];
+  for (const provenance of all) {
+    if (
+      !lookup.has(provenance.contextId) &&
+      provenance.sourceId &&
+      provenance.revisionId &&
+      provenance.artifactId
+    ) {
+      lookup.set(provenance.contextId, provenance);
+    }
+  }
+  return lookup;
+}
+
+function enrichProvenance(
+  provenance: ProvenanceReference[],
+  contextLookup: Map<string, ProvenanceReference>,
+): ProvenanceReference[] {
+  return provenance.map((reference) => {
+    const canonical = contextLookup.get(reference.contextId);
+    return canonical ? { ...canonical, ...reference, contextId: reference.contextId } : reference;
+  });
 }
 
 /**

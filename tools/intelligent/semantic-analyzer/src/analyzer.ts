@@ -7,6 +7,7 @@
 //   Then: Deterministic ID assignment, provenance validation, output.
 
 import type { AIProvider } from 'ai-provider';
+import { assertCanonicalSourceDocument, type CanonicalSourceDocument } from 'source-ingestion';
 import type {
   SemanticIR,
   SemanticEntity,
@@ -17,23 +18,44 @@ import type {
   SemanticUnresolved,
   SemanticWarning,
   SemanticQualityMetrics,
-  SemanticCompletionStatus,
   ChunkSemanticResult,
   AnalysisManifest,
   SemanticAnalyzerOptions,
   SemanticExecutionMetrics,
 } from './models.js';
 import { SemanticWarningCode, CONFIDENCE_THRESHOLD } from './warnings.js';
-import { loadContextPackage } from './persistence/loader.js';
+import {
+  loadContextPackage,
+  type AnalyzerContextChunk,
+  type CanonicalAnalyzerChunk,
+} from './persistence/loader.js';
 import { analyzeChunk } from './analysis/chunk-analyzer.js';
 import { consolidateHierarchically } from './analysis/consolidator.js';
-import { buildValidContextIds, buildContextSheetMap, validateProvenanceArray } from './validation/provenance-validator.js';
+import {
+  buildValidContextIds,
+  buildContextSheetMap,
+  buildContextProvenanceMap,
+  validateProvenanceArray,
+} from './validation/provenance-validator.js';
 import { validateRelationships } from './validation/relationship-validator.js';
-import { orderEntities, orderSections, orderFlows, orderRules, orderRelationships, orderUnresolved } from './merge/deterministic-order.js';
+import {
+  orderEntities,
+  orderSections,
+  orderFlows,
+  orderRules,
+  orderRelationships,
+  orderUnresolved,
+} from './merge/deterministic-order.js';
 import { findDuplicateCandidates, applyEntityMerge } from './merge/entity-merger.js';
 import { createIdGenerator, buildLocalToGlobalMap, resolveLocalId } from './merge/id-remapper.js';
 import { computeConsolidationFingerprint, computeFingerprint } from './fingerprint.js';
-import { writeOutput, writeIntermediateResult, readIntermediateResult, readConsolidationCheckpoint, writeConsolidationCheckpoint } from './persistence/writer.js';
+import {
+  writeOutput,
+  writeIntermediateResult,
+  readIntermediateResult,
+  readConsolidationCheckpoint,
+  writeConsolidationCheckpoint,
+} from './persistence/writer.js';
 import { PROMPT_VERSION } from './prompts/system.js';
 import { resolveSemanticBudget, SEMANTIC_REQUEST_LIMIT_EXCEEDED } from './budget.js';
 
@@ -50,6 +72,67 @@ export async function analyzeSemanticContext(
   provider: AIProvider,
   options?: SemanticAnalyzerOptions,
 ): Promise<SemanticIR> {
+  const loaded = loadContextPackage(contextPath);
+  return analyzeContextChunks(
+    loaded.chunks,
+    {
+      contextOrigin: loaded.contextDir,
+      contextGroups: loaded.manifest.sheets.map((sheet) => sheet.name),
+    },
+    provider,
+    options,
+  );
+}
+
+/** Analyze canonical source contexts without converting them into Excel-shaped input. */
+export async function analyzeCanonicalContext(
+  document: CanonicalSourceDocument,
+  provider: AIProvider,
+  options?: SemanticAnalyzerOptions,
+): Promise<SemanticIR> {
+  assertCanonicalSourceDocument(document);
+  const chunks: CanonicalAnalyzerChunk[] = document.contexts.map((context) => ({
+    schemaVersion: '1.0',
+    id: context.id,
+    type: context.type,
+    content: context.content,
+    provenance: context.provenance,
+    relations: context.relations,
+    metadata: context.metadata,
+    location: context.provenance.location,
+  }));
+  return analyzeContextChunks(
+    chunks,
+    {
+      contextOrigin: `canonical:${document.source.id}:${document.revision.id}`,
+      contextGroups: [...new Set(chunks.map((chunk) => contextGroup(chunk)))],
+      source: {
+        sourceId: document.source.id,
+        revisionId: document.revision.id,
+        kind: document.source.kind,
+        displayName: document.source.displayName,
+        connectorId: document.source.connectorId,
+        connectorVersion: document.source.connectorVersion,
+        contentHash: document.revision.contentHash,
+      },
+    },
+    provider,
+    options,
+  );
+}
+
+interface AnalysisSourceInput {
+  contextOrigin: string;
+  contextGroups: string[];
+  source?: SemanticIR['document']['source'];
+}
+
+async function analyzeContextChunks(
+  chunks: AnalyzerContextChunk[],
+  sourceInput: AnalysisSourceInput,
+  provider: AIProvider,
+  options?: SemanticAnalyzerOptions,
+): Promise<SemanticIR> {
   const promptVersion = options?.promptVersion ?? PROMPT_VERSION;
   const budget = resolveSemanticBudget(options?.budget);
   const requestedConcurrency = options?.concurrency ?? budget.maxConcurrentRequests;
@@ -59,14 +142,10 @@ export async function analyzeSemanticContext(
   const resume = options?.resume ?? false;
   const model = options?.model ?? provider.name;
 
-  // ---- Load context package -----------------------------------------------
-  const loaded = loadContextPackage(contextPath);
-  const { manifest, chunks } = loaded;
-
   let chunksToAnalyze = chunks;
   if (options?.sheets && options.sheets.length > 0) {
     const sheetSet = new Set(options.sheets);
-    chunksToAnalyze = chunks.filter((c) => sheetSet.has(c.sheet.name));
+    chunksToAnalyze = chunks.filter((c) => sheetSet.has(contextGroup(c)));
   }
 
   // ---- Pass 1: Chunk-level analysis ---------------------------------------
@@ -91,45 +170,97 @@ export async function analyzeSemanticContext(
 
   const validContextIds = buildValidContextIds(chunks);
   const contextSheetMap = buildContextSheetMap(chunks);
+  const contextProvenanceMap = buildContextProvenanceMap(chunks);
 
   // Process chunks with concurrency limit
-  const results = await processWithConcurrency(
-    chunksToAnalyze,
-    concurrency,
-    async (chunk) => {
-      // Check resume cache
-      if (resume && outputDir) {
-        const fp = computeFingerprint(chunk.content, promptVersion, model, undefined, undefined, options?.providerOptions, budget.outputBudgetPolicy);
-        const cached = readIntermediateResult(outputDir, chunk.id, fp, provider.name, model, promptVersion);
-        if (cached) {
-          checkpointHits++;
-          contextsReused++;
-          return { result: cached.result, usage: cached.usage as { inputTokens?: number; outputTokens?: number; totalTokens?: number }, reused: true, fingerprint: fp, repairs: 0, warnings: undefined, metrics: { requests: 0, schemaRepairs: 0, estimatedInputTokens: 0, maxEstimatedInputTokens: 0, initialOutputBudget: budget.maxOutputTokensPerRequest, finalOutputBudget: budget.maxOutputTokensPerRequest, outputBudgetEscalations: 0, finishReason: 'cached' } };
-        }
-        checkpointMisses++;
+  const results = await processWithConcurrency(chunksToAnalyze, concurrency, async (chunk) => {
+    // Check resume cache
+    if (resume && outputDir) {
+      const fp = computeFingerprint(
+        chunk.content,
+        promptVersion,
+        model,
+        undefined,
+        undefined,
+        options?.providerOptions,
+        budget.outputBudgetPolicy,
+      );
+      const cached = readIntermediateResult(
+        outputDir,
+        chunk.id,
+        fp,
+        provider.name,
+        model,
+        promptVersion,
+      );
+      if (cached) {
+        checkpointHits++;
+        contextsReused++;
+        const result = enrichCanonicalProvenance(cached.result, chunk);
+        return {
+          result,
+          usage: cached.usage as {
+            inputTokens?: number;
+            outputTokens?: number;
+            totalTokens?: number;
+          },
+          reused: true,
+          fingerprint: fp,
+          repairs: 0,
+          warnings: undefined,
+          metrics: {
+            requests: 0,
+            schemaRepairs: 0,
+            estimatedInputTokens: 0,
+            maxEstimatedInputTokens: 0,
+            initialOutputBudget: budget.maxOutputTokensPerRequest,
+            finalOutputBudget: budget.maxOutputTokensPerRequest,
+            outputBudgetEscalations: 0,
+            finishReason: 'cached',
+          },
+        };
       }
+      checkpointMisses++;
+    }
 
-      requestStarts++;
-      if (budget.maxTotalRequests && requestStarts > budget.maxTotalRequests) {
-        throw new Error(`${SEMANTIC_REQUEST_LIMIT_EXCEEDED}: ${budget.maxTotalRequests}`);
+    requestStarts++;
+    if (budget.maxTotalRequests && requestStarts > budget.maxTotalRequests) {
+      throw new Error(`${SEMANTIC_REQUEST_LIMIT_EXCEEDED}: ${budget.maxTotalRequests}`);
+    }
+    activeConcurrency++;
+    peakConcurrency = Math.max(peakConcurrency, activeConcurrency);
+    try {
+      const analysis = await analyzeChunk(chunk, provider, budget, options?.providerOptions);
+      analysis.result = enrichCanonicalProvenance(analysis.result, chunk);
+      const fingerprint = computeFingerprint(
+        chunk.content,
+        promptVersion,
+        model,
+        undefined,
+        undefined,
+        options?.providerOptions,
+        budget.outputBudgetPolicy,
+      );
+      if (outputDir) {
+        writeIntermediateResult(
+          outputDir,
+          chunk.id,
+          analysis.result,
+          provider.name,
+          model,
+          analysis.usage as Record<string, unknown>,
+          fingerprint,
+          promptVersion,
+        );
       }
-      activeConcurrency++;
-      peakConcurrency = Math.max(peakConcurrency, activeConcurrency);
-      try {
-        const analysis = await analyzeChunk(chunk, provider, budget, options?.providerOptions);
-        const fingerprint = computeFingerprint(chunk.content, promptVersion, model, undefined, undefined, options?.providerOptions, budget.outputBudgetPolicy);
-        if (outputDir) {
-          writeIntermediateResult(outputDir, chunk.id, analysis.result, provider.name, model, analysis.usage as Record<string, unknown>, fingerprint, promptVersion);
-        }
-        return { ...analysis, reused: false, fingerprint, repairs: analysis.warnings?.length ?? 0 };
-      } catch (error) {
-        contextsFailed++;
-        throw error;
-      } finally {
-        activeConcurrency--;
-      }
-    },
-  );
+      return { ...analysis, reused: false, fingerprint, repairs: analysis.warnings?.length ?? 0 };
+    } catch (error) {
+      contextsFailed++;
+      throw error;
+    } finally {
+      activeConcurrency--;
+    }
+  });
 
   for (let i = 0; i < chunksToAnalyze.length; i++) {
     const { result, usage, warnings: repairWarnings } = results[i]!;
@@ -141,7 +272,10 @@ export async function analyzeSemanticContext(
     schemaRepairs += results[i]!.repairs;
     if (!results[i]!.reused) {
       estimatedInputTokens += results[i]!.metrics.estimatedInputTokens;
-      maxEstimatedTokensPerRequest = Math.max(maxEstimatedTokensPerRequest, results[i]!.metrics.maxEstimatedInputTokens);
+      maxEstimatedTokensPerRequest = Math.max(
+        maxEstimatedTokensPerRequest,
+        results[i]!.metrics.maxEstimatedInputTokens,
+      );
       totalOutputBudgetEscalations += results[i]!.metrics.outputBudgetEscalations;
       minInitialOutputBudget = Math.min(minInitialOutputBudget, results[i]!.metrics.initialOutputBudget);
       maxFinalOutputBudget = Math.max(maxFinalOutputBudget, results[i]!.metrics.finalOutputBudget);
@@ -153,15 +287,20 @@ export async function analyzeSemanticContext(
     }
 
     // Validate provenance for all extracted objects
-    validateChunkProvenance(result, validContextIds, contextSheetMap, allWarnings);
+    validateChunkProvenance(
+      result,
+      validContextIds,
+      contextSheetMap,
+      allWarnings,
+      contextProvenanceMap,
+    );
 
     // Check confidence levels
     checkConfidence(result, allWarnings);
-
   }
 
   // ---- Pass 2: Global consolidation ---------------------------------------
-  const sheetNames = manifest.sheets.map((s) => s.name);
+  const sheetNames = sourceInput.contextGroups;
   let consolidationResult;
   let consolidationComplete = true;
   let consolidationRequests = 0;
@@ -169,33 +308,66 @@ export async function analyzeSemanticContext(
     chunkResults.map((result, i) => ({ result, sourceFingerprint: results[i]!.fingerprint })),
     promptVersion,
     model,
-    { maxContextsPerBatch: budget.maxContextsPerBatch, maxConsolidationItemsPerBatch: budget.maxConsolidationItemsPerBatch, maxConsolidationInputTokens: budget.maxConsolidationInputTokens },
+    {
+      maxContextsPerBatch: budget.maxContextsPerBatch,
+      maxConsolidationItemsPerBatch: budget.maxConsolidationItemsPerBatch,
+      maxConsolidationInputTokens: budget.maxConsolidationInputTokens,
+    },
     options?.providerOptions,
   );
 
   try {
-    const cachedConsolidation = resume && outputDir
-      ? readConsolidationCheckpoint(outputDir, consolidationFingerprint, provider.name, model, promptVersion)
-      : null;
+    const cachedConsolidation =
+      resume && outputDir
+        ? readConsolidationCheckpoint(
+            outputDir,
+            consolidationFingerprint,
+            provider.name,
+            model,
+            promptVersion,
+          )
+        : null;
     if (cachedConsolidation) {
       consolidationResult = cachedConsolidation;
     } else {
-    const cons = await consolidateHierarchically(chunkResults, sheetNames, provider, budget, contextSheetMap, aiRequests, outputDir ? {
-      outputDir,
-      resume,
-      provider: provider.name,
-      model,
-      promptVersion,
-      providerOptions: options?.providerOptions,
-      } : undefined, options?.providerOptions);
+      const cons = await consolidateHierarchically(
+        chunkResults,
+        sheetNames,
+        provider,
+        budget,
+        contextSheetMap,
+        aiRequests,
+        outputDir
+          ? {
+              outputDir,
+              resume,
+              provider: provider.name,
+              model,
+              promptVersion,
+              providerOptions: options?.providerOptions,
+            }
+          : undefined,
+        options?.providerOptions,
+      );
       consolidationResult = cons.result;
       consolidationRequests = cons.metrics.batchRequests + cons.metrics.globalRequests;
       aiRequests += consolidationRequests;
       totalInputTokens += cons.usage.inputTokens ?? 0;
       totalOutputTokens += cons.usage.outputTokens ?? 0;
       estimatedInputTokens += cons.metrics.estimatedInputTokens;
-      maxEstimatedTokensPerRequest = Math.max(maxEstimatedTokensPerRequest, cons.metrics.maxEstimatedInputTokens);
-      if (outputDir) writeConsolidationCheckpoint(outputDir, consolidationFingerprint, consolidationResult, provider.name, model, promptVersion);
+      maxEstimatedTokensPerRequest = Math.max(
+        maxEstimatedTokensPerRequest,
+        cons.metrics.maxEstimatedInputTokens,
+      );
+      if (outputDir)
+        writeConsolidationCheckpoint(
+          outputDir,
+          consolidationFingerprint,
+          consolidationResult,
+          provider.name,
+          model,
+          promptVersion,
+        );
     }
   } catch (err) {
     consolidationComplete = false;
@@ -218,7 +390,10 @@ export async function analyzeSemanticContext(
 
   // Entity deduplication (deterministic signals)
   const dedupMergeGroups = findDuplicateCandidates(orderedEntities);
-  const { merged: dedupedEntities, warnings: mergeWarnings } = applyEntityMerge(orderedEntities, dedupMergeGroups);
+  const { merged: dedupedEntities, warnings: mergeWarnings } = applyEntityMerge(
+    orderedEntities,
+    dedupMergeGroups,
+  );
   allWarnings.push(...mergeWarnings);
 
   // Assign global IDs
@@ -345,11 +520,8 @@ export async function analyzeSemanticContext(
     summary: consolidationResult.documentSummary?.summary,
     language: consolidationResult.documentSummary?.language,
     domainHints: consolidationResult.documentSummary?.domainHints,
-    provenance: chunks.map((c) => ({
-      contextId: c.id,
-      sheet: c.sheet.name,
-      ranges: c.provenance.ranges,
-    })),
+    provenance: chunks.map((c) => contextProvenance(c)),
+    source: sourceInput.source,
   };
 
   // ---- Build analysis metadata --------------------------------------------
@@ -364,11 +536,14 @@ export async function analyzeSemanticContext(
     ...finalRelationships,
     ...finalSections,
   ];
-  const lowConfCount = allSemanticObjects.filter((o) => o.confidence < CONFIDENCE_THRESHOLD.MEDIUM).length;
+  const lowConfCount = allSemanticObjects.filter(
+    (o) => o.confidence < CONFIDENCE_THRESHOLD.MEDIUM,
+  ).length;
   const withProvenance = allSemanticObjects.filter((o) => o.provenance.length > 0).length;
-  const provCoverage = allSemanticObjects.length > 0
-    ? Math.round((withProvenance / allSemanticObjects.length) * 100) / 100
-    : 1;
+  const provCoverage =
+    allSemanticObjects.length > 0
+      ? Math.round((withProvenance / allSemanticObjects.length) * 100) / 100
+      : 1;
 
   const quality: SemanticQualityMetrics = {
     entities: finalEntities.length,
@@ -415,19 +590,14 @@ export async function analyzeSemanticContext(
     } satisfies SemanticExecutionMetrics,
   };
 
-  // ---- Determine completion status ----------------------------------------
   const contextsExpected = chunksToAnalyze.length;
   const contextsCompleted = chunkResults.length;
   const allChunksSucceeded = contextsCompleted === contextsExpected && contextsFailed === 0;
-
-  // Canonical IR is only published as 'complete' when ALL mandatory stages succeeded.
-  // Partial output is written with explicit status for diagnostic/resume purposes.
-  let status: SemanticCompletionStatus = 'failed';
-  if (allChunksSucceeded && consolidationComplete) {
-    status = 'complete';
-  } else if (allChunksSucceeded || contextsCompleted > 0) {
-    status = 'partial';
-  }
+  const status = allChunksSucceeded && consolidationComplete
+    ? 'complete' as const
+    : allChunksSucceeded || contextsCompleted > 0
+      ? 'partial' as const
+      : 'failed' as const;
 
   // ---- Assemble final IR --------------------------------------------------
   const semanticIR: SemanticIR = {
@@ -440,12 +610,7 @@ export async function analyzeSemanticContext(
     rules: finalRules,
     relationships: finalRelationships,
     unresolved: finalUnresolved,
-    analysis: {
-      ...analysis,
-      consolidationComplete,
-      contextsExpected,
-      contextsCompleted,
-    },
+    analysis: { ...analysis, consolidationComplete, contextsExpected, contextsCompleted },
   };
 
   // ---- Write output -------------------------------------------------------
@@ -453,7 +618,7 @@ export async function analyzeSemanticContext(
     const analysisManifest: AnalysisManifest = {
       schemaVersion: '1.0',
       status,
-      source: { contextManifest: loaded.contextDir },
+      source: { contextManifest: sourceInput.contextOrigin },
       provider: { name: provider.name, model: analysis.model },
       promptVersion,
       stats: {
@@ -475,15 +640,20 @@ export async function analyzeSemanticContext(
       contextsCompleted,
     };
 
-    writeOutput(outputDir, semanticIR, analysisManifest, chunkResults.map((r, i) => ({
-      contextId: chunksToAnalyze[i]!.id,
-      result: r,
-      provider: provider.name,
-      model: analysis.model,
-      usage: {},
-      fingerprint: results[i]!.fingerprint,
-      promptVersion,
-    })));
+    writeOutput(
+      outputDir,
+      semanticIR,
+      analysisManifest,
+      chunkResults.map((r, i) => ({
+        contextId: chunksToAnalyze[i]!.id,
+        result: r,
+        provider: provider.name,
+        model: analysis.model,
+        usage: {},
+        fingerprint: results[i]!.fingerprint,
+        promptVersion,
+      })),
+    );
   }
 
   return semanticIR;
@@ -496,27 +666,76 @@ function validateChunkProvenance(
   validContextIds: Set<string>,
   contextSheetMap: Map<string, string>,
   warnings: SemanticWarning[],
+  contextProvenanceMap: ReturnType<typeof buildContextProvenanceMap>,
 ): void {
   for (const e of result.entities) {
-    warnings.push(...validateProvenanceArray(e.provenance, validContextIds, contextSheetMap, e.localId));
+    warnings.push(
+      ...validateProvenanceArray(
+        e.provenance,
+        validContextIds,
+        contextSheetMap,
+        e.localId,
+        contextProvenanceMap,
+      ),
+    );
   }
   for (const f of result.flows) {
-    warnings.push(...validateProvenanceArray(f.provenance, validContextIds, contextSheetMap, f.localId));
+    warnings.push(
+      ...validateProvenanceArray(
+        f.provenance,
+        validContextIds,
+        contextSheetMap,
+        f.localId,
+        contextProvenanceMap,
+      ),
+    );
     // Also validate individual flow step provenance
     for (const step of f.steps) {
       if (step.provenance && step.provenance.length > 0) {
-        warnings.push(...validateProvenanceArray(step.provenance, validContextIds, contextSheetMap, `${f.localId}:step-${step.order}`));
+        warnings.push(
+          ...validateProvenanceArray(
+            step.provenance,
+            validContextIds,
+            contextSheetMap,
+            `${f.localId}:step-${step.order}`,
+            contextProvenanceMap,
+          ),
+        );
       }
     }
   }
   for (const r of result.rules) {
-    warnings.push(...validateProvenanceArray(r.provenance, validContextIds, contextSheetMap, r.localId));
+    warnings.push(
+      ...validateProvenanceArray(
+        r.provenance,
+        validContextIds,
+        contextSheetMap,
+        r.localId,
+        contextProvenanceMap,
+      ),
+    );
   }
   for (const s of result.sections) {
-    warnings.push(...validateProvenanceArray(s.provenance, validContextIds, contextSheetMap, s.localId));
+    warnings.push(
+      ...validateProvenanceArray(
+        s.provenance,
+        validContextIds,
+        contextSheetMap,
+        s.localId,
+        contextProvenanceMap,
+      ),
+    );
   }
   for (const rel of result.relationships) {
-    warnings.push(...validateProvenanceArray(rel.provenance, validContextIds, contextSheetMap, rel.localId));
+    warnings.push(
+      ...validateProvenanceArray(
+        rel.provenance,
+        validContextIds,
+        contextSheetMap,
+        rel.localId,
+        contextProvenanceMap,
+      ),
+    );
   }
 }
 
@@ -551,6 +770,86 @@ function checkConfidence(result: ChunkSemanticResult, warnings: SemanticWarning[
       });
     }
   }
+}
+
+function contextGroup(chunk: AnalyzerContextChunk): string {
+  if ('sheet' in chunk) return chunk.sheet.name;
+  return (
+    chunk.location.segments.find((segment) => segment.kind === 'heading')?.value.toString() ??
+    chunk.location.segments[0]?.value.toString() ??
+    chunk.id
+  );
+}
+
+function isCanonicalChunk(chunk: AnalyzerContextChunk): chunk is CanonicalAnalyzerChunk {
+  return 'sourceId' in chunk.provenance;
+}
+
+function contextProvenance(chunk: AnalyzerContextChunk) {
+  if (isCanonicalChunk(chunk)) {
+    return {
+      contextId: chunk.id,
+      sourceId: chunk.provenance.sourceId,
+      revisionId: chunk.provenance.revisionId,
+      artifactId: chunk.provenance.artifactId,
+      location: chunk.provenance.location,
+    };
+  }
+  return {
+    contextId: chunk.id,
+    sheet: chunk.sheet.name,
+    ranges: chunk.provenance.ranges,
+  };
+}
+
+function enrichCanonicalProvenance(
+  result: ChunkSemanticResult,
+  chunk: AnalyzerContextChunk,
+): ChunkSemanticResult {
+  if (!isCanonicalChunk(chunk)) return result;
+  const enrich = (provenance: ChunkSemanticResult['entities'][number]['provenance']) =>
+    provenance.map((reference) => ({
+      ...reference,
+      contextId: chunk.id,
+      sourceId: chunk.provenance.sourceId,
+      revisionId: chunk.provenance.revisionId,
+      artifactId: chunk.provenance.artifactId,
+      location: chunk.provenance.location,
+    }));
+  return {
+    ...result,
+    sections: result.sections.map((item) => ({ ...item, provenance: enrich(item.provenance) })),
+    entities: result.entities.map((item) => ({
+      ...item,
+      provenance: enrich(item.provenance),
+      attributes: item.attributes?.map((attribute) => ({
+        ...attribute,
+        provenance: attribute.provenance ? enrich(attribute.provenance) : attribute.provenance,
+      })),
+    })),
+    flows: result.flows.map((item) => ({
+      ...item,
+      provenance: enrich(item.provenance),
+      steps: item.steps.map((step) => ({ ...step, provenance: enrich(step.provenance) })),
+    })),
+    rules: result.rules.map((item) => ({
+      ...item,
+      provenance: enrich(item.provenance),
+      conditions: item.conditions?.map((condition) => ({
+        ...condition,
+        provenance: condition.provenance ? enrich(condition.provenance) : condition.provenance,
+      })),
+      effects: item.effects?.map((effect) => ({
+        ...effect,
+        provenance: effect.provenance ? enrich(effect.provenance) : effect.provenance,
+      })),
+    })),
+    relationships: result.relationships.map((item) => ({
+      ...item,
+      provenance: enrich(item.provenance),
+    })),
+    unresolved: result.unresolved.map((item) => ({ ...item, provenance: enrich(item.provenance) })),
+  };
 }
 
 function resolveCrossChunkRef(idMap: Map<string, string>, ref: string): string {

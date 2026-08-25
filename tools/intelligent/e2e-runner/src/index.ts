@@ -5,7 +5,9 @@
 
 // Runner
 export { EndToEndRunner } from './runner.js';
-export { Scenario3Pipeline, runScenario3 } from './scenario3.js';
+export { runScenario3FromSource } from './source-pipeline.js';
+export type { SourceScenario3Dependencies, SourceScenario3Result } from './source-pipeline.js';
+export { Scenario3Pipeline, runScenario3, buildTrace } from './scenario3.js';
 export type {
   Scenario3Input,
   Scenario3Dependencies,

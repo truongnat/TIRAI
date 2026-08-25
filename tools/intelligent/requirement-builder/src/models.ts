@@ -4,10 +4,16 @@
 // Source-independent, provider-independent, test-planning-ready.
 // Consumes Semantic IR and produces structured, atomic, traceable requirements.
 
+import type { SourceLocation } from 'source-ingestion';
+
 // ---- Reusable provenance (matches Semantic IR model) ----------------------
 
 export interface ProvenanceReference {
   contextId: string;
+  sourceId?: string;
+  revisionId?: string;
+  artifactId?: string;
+  location?: SourceLocation;
   sheet?: string;
   ranges?: string[];
   cells?: string[];
@@ -31,6 +37,15 @@ export interface RequirementDocument {
   summary?: string;
   sourceSemanticIR?: string;
   provenance: ProvenanceReference[];
+  source?: {
+    sourceId: string;
+    revisionId: string;
+    kind: string;
+    displayName: string;
+    connectorId: string;
+    connectorVersion: string;
+    contentHash: string;
+  };
 }
 
 // ---- Requirement ---------------------------------------------------------
@@ -343,6 +358,7 @@ export interface SemanticIRInput {
     language?: string[];
     domainHints?: string[];
     provenance: ProvenanceReference[];
+    source?: RequirementDocument['source'];
   };
   sections: Array<{
     id: string;

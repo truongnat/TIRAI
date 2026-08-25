@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Scenario3Pipeline } from '../src/scenario3.js';
+import { Scenario3Pipeline, buildTrace } from '../src/scenario3.js';
 import { makeTestCase } from './fixtures.js';
 import type { TestPlanIR } from 'test-planner';
 import type { TestDataPlanIR } from 'test-data-planner';
@@ -119,5 +119,17 @@ describe('Scenario 3 programmatic bridge', () => {
     expect(provider.requestLog.every((request) =>
       (request.providerOptions?.deepseek as { thinking?: string } | undefined)?.thinking === 'disabled',
     )).toBe(true);
+  });
+
+  it('builds stable canonical source lineage before requirement trace edges', () => {
+    const trace = buildTrace({ requirements: [{ id: 'REQ-1', title: 'Complete item', provenance: [{ contextId: 'ctx-1', sourceId: 'src-1', revisionId: 'rev-1', artifactId: 'artifact-1', location: { segments: [{ kind: 'document', value: 'spec.md' }, { kind: 'line-range', value: '1-4' }] } }] }] } as never, { scenarios: [], testCases: [] } as never);
+
+    expect(trace.nodes.map((node) => node.kind)).toEqual(expect.arrayContaining(['source', 'source-revision', 'source-artifact', 'semantic-context', 'requirement']));
+    expect(trace.edges).toEqual(expect.arrayContaining([
+      expect.objectContaining({ relation: 'SOURCE_HAS_REVISION' }),
+      expect.objectContaining({ relation: 'REVISION_HAS_ARTIFACT' }),
+      expect.objectContaining({ relation: 'ARTIFACT_CONTAINS_CONTEXT' }),
+      expect.objectContaining({ relation: 'CONTEXT_SUPPORTS_REQUIREMENT' }),
+    ]));
   });
 });
