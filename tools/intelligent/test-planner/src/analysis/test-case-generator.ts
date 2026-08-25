@@ -286,13 +286,14 @@ export function normalizeTestCaseResult(
     const rawExpectedResults = tc.expectedResults ?? tc.expectedResult;
     if (Array.isArray(rawExpectedResults)) {
       for (const expected of rawExpectedResults) {
+        const intent = normalizeVerificationIntent((expected as Record<string, unknown>).verificationIntent);
         if (
           typeof expected === 'object' &&
           expected !== null &&
           typeof (expected as Record<string, unknown>).verificationType === 'string' &&
           !VALID_VERIFICATION_TYPES.has(
             (expected as Record<string, unknown>).verificationType as string,
-          )
+          ) && !intent
         ) {
           normalizationWarnings.push({
             code: TestPlannerWarningCode.EXPECTATION_UNTRACEABLE,
@@ -494,18 +495,32 @@ function normalizeExpectedResults(
         typeof e === 'object' && e !== null && typeof e.description === 'string',
     )
     .map((e) => {
+      const verificationIntent = normalizeVerificationIntent(e.verificationIntent);
       const verificationType =
         typeof e.verificationType === 'string' && VALID_VERIFICATION_TYPES.has(e.verificationType)
           ? (e.verificationType as VerificationType)
-          : 'other';
+          : verificationTypeFromIntent(verificationIntent);
 
       return {
         description: e.description as string,
         verificationType,
         target: typeof e.target === 'string' ? e.target : undefined,
-        verificationIntent: normalizeVerificationIntent(e.verificationIntent),
+        verificationIntent,
       };
     });
+}
+
+function verificationTypeFromIntent(intent: VerificationIntent | undefined): VerificationType {
+  switch (intent?.kind) {
+    case 'visible-ui-state': return 'ui';
+    case 'persisted-business-state': return 'state';
+    case 'api-response': return 'api';
+    case 'entity-exists':
+    case 'entity-absent':
+    case 'value-equals':
+    case 'numeric-delta': return 'state';
+    default: return 'other';
+  }
 }
 
 function normalizeVerificationIntent(raw: unknown) {

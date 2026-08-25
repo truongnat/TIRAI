@@ -135,6 +135,12 @@ function classifyType(description: string, inputDescription?: string): TestDataT
 
   if (ACCOUNT_KEYWORDS.some((k) => text.includes(k))) return 'account';
   if (TOKEN_KEYWORDS.some((k) => text.includes(k))) return 'token';
+  // An identifier attached to an existing business state refers to that
+  // existing entity; it is not permission to generate a replacement ID.
+  if (
+    ID_KEYWORDS.some((k) => text.includes(k)) &&
+    (DB_STATE_KEYWORDS.some((k) => text.includes(k)) || STATE_KEYWORDS.some((k) => text.includes(k)))
+  ) return 'database-record';
   if (DATE_KEYWORDS.some((k) => text.includes(k))) return 'input';
   if (FILE_KEYWORDS.some((k) => text.includes(k))) return 'file';
   if (CONFIG_KEYWORDS.some((k) => text.includes(k))) return 'configuration';
@@ -154,6 +160,13 @@ function classifyLifecycle(description: string, type: TestDataType): TestDataLif
   if (text.includes('new') || text.includes('create') || text.includes('generate')) {
     return 'temporary';
   }
+  // A named business state (for example "approved order") denotes an
+  // existing entity unless the requirement explicitly asks to create one.
+  // Fail-closed reuse is safer than silently generating a record that the
+  // specification did not authorize.
+  if (type === 'state' && STATE_KEYWORDS.some((k) => text.includes(k))) {
+    return 'existing';
+  }
   if (type === 'account' || type === 'database-record') {
     return 'existing';
   }
@@ -170,6 +183,9 @@ function classifyStrategy(description: string, type: TestDataType): TestDataStra
     return 'generate';
   }
   if (text.includes('existing') || text.includes('already')) {
+    return 'reuse-existing';
+  }
+  if (type === 'state' && STATE_KEYWORDS.some((k) => text.includes(k))) {
     return 'reuse-existing';
   }
   if (type === 'account' || type === 'database-record') {
