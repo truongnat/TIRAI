@@ -98,6 +98,7 @@ export class JourneyAgent {
     // release its own runtime data.
     this.cleaned = false;
     this.lastCleanup = undefined;
+    this.reconciledCleanup.length = 0;
     this.verificationReport = undefined;
     const metrics = createJourneyMetrics();
     const evidence: EvidenceReference[] = [];
