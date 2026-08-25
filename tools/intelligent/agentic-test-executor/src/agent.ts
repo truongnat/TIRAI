@@ -37,6 +37,7 @@ import {
 } from './models.js';
 import type { PreparationMutationPolicy } from './data/preparation-lifecycle.js';
 import { validateCapabilities } from './capability/capability-model.js';
+import { normalizeBaseUrl } from './runtime/base-url.js';
 import { observeBrowser } from './observation/browser-observer.js';
 import { ElementIdMap } from './observation/element-id-map.js';
 import { groundStep } from './grounding/step-grounding.js';
@@ -96,7 +97,7 @@ export class AgenticTestExecutor implements TestExecutor {
   constructor(options: AgenticTestExecutorOptions) {
     this.browserSession = options.browserSession;
     this.aiProvider = options.aiProvider;
-    this.baseUrl = options.baseUrl;
+    this.baseUrl = normalizeBaseUrl(options.baseUrl);
     this.capabilities = options.capabilities ?? defaultCapabilities();
     this.policy = options.policy ?? defaultAgentPolicy();
     this.allowedOrigins = options.allowedOrigins ?? ['http://127.0.0.1', 'http://localhost'];
