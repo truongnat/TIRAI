@@ -20,6 +20,7 @@ import { TEST_PLANNER_SYSTEM_PROMPT } from '../prompts/system.js';
 import { buildScenarioPrompt } from '../prompts/scenarios.js';
 import { buildRepairPrompt } from '../prompts/repair.js';
 import { scenarioExtractionSchema } from '../schemas/test-schemas.js';
+import { shouldRepairStructuredOutput } from './provider-retry-policy.js';
 
 const DEFAULT_MAX_REPAIR_ATTEMPTS = 1;
 const DEFAULT_CONFIDENCE = 0.7;
@@ -65,13 +66,14 @@ export async function generateScenarios(
   coverage: CoverageCandidate[],
   provider: AIProvider,
   maxRepairAttempts: number = DEFAULT_MAX_REPAIR_ATTEMPTS,
+  coverageMode: 'comprehensive' | 'minimal-sufficient' = 'comprehensive',
 ): Promise<{
   result: ScenarioExtractionResult;
   usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
   warnings?: TestPlannerWarning[];
 }> {
   const systemPrompt = TEST_PLANNER_SYSTEM_PROMPT;
-  const userPrompt = buildScenarioPrompt(requirements, coverage);
+  const userPrompt = buildScenarioPrompt(requirements, coverage, coverageMode);
   const warnings: TestPlannerWarning[] = [];
 
   const validReqIds = new Set(requirements.map((r) => r.id));
@@ -105,6 +107,7 @@ export async function generateScenarios(
         messages,
         responseSchema: lenientObjectSchema,
         temperature: 0,
+        providerOptions: { deepseek: { thinking: 'disabled' } },
       });
 
       const result = normalizeScenarioResult(response.data, validReqIds);
@@ -122,6 +125,7 @@ export async function generateScenarios(
         warnings: warnings.length > 0 ? warnings : undefined,
       };
     } catch (err) {
+      if (!shouldRepairStructuredOutput(err)) throw err;
       lastError = err;
     }
   }

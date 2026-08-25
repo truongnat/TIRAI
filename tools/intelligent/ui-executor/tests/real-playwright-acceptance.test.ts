@@ -674,6 +674,18 @@ describe('Regression — fake-in-execute rejection', () => {
 // ===========================================================================
 
 describe('Real Playwright — lifecycle counters', () => {
+  it('restarts Chromium after a test-owned cleanup close', async () => {
+    const session = new PlaywrightBrowserSession();
+    await session.start({ baseUrl: fixture.origin, allowedOrigins: [fixture.origin] });
+    await session.close();
+    await session.start({ baseUrl: fixture.origin, allowedOrigins: [fixture.origin] });
+    await session.close();
+
+    const counters = session.getCounters();
+    expect(counters.browsersLaunched).toBe(2);
+    expect(counters.browsersClosed).toBe(2);
+  });
+
   it('tracks browser/context/page lifecycle with zero leaks', async () => {
     const session = new PlaywrightBrowserSession();
     const catalog = makeCatalog(fixture.origin);

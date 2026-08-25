@@ -19,6 +19,8 @@ export type SemanticExpectation =
 
 export interface VerificationNeed {
   id: string;
+  /** Optional source TestCase expected-result index for proof trace correlation. */
+  expectedResultIndex?: number;
   subject: EntityReference;
   property?: string;
   expectation: SemanticExpectation;
@@ -81,6 +83,7 @@ export type VerificationResultStatus = 'VERIFIED' | 'CONTRADICTED' | 'INSUFFICIE
 
 export interface VerificationEvidenceView {
   id: string;
+  expectedResultIndex?: number;
   source: VerificationSource;
   entityKey: string;
   property?: string;
@@ -150,7 +153,7 @@ export async function verifyCrossLayer(
           if (raw.mappingKnown === false || raw.normalizedValue === undefined) continue;
           const fact: NormalizedFact = { source: raw.source, entityKey: raw.entityKey, property: raw.property, value: raw.normalizedValue, phase: raw.phase, provenance: raw.provenance };
           facts.push(fact);
-          evidence.push({ id: `VER-${evidence.length + 1}`, source: fact.source, entityKey: fact.entityKey, property: fact.property, normalizedValue: fact.value, provenance: fact.provenance });
+          evidence.push({ id: `VER-${evidence.length + 1}`, expectedResultIndex: need.expectedResultIndex, source: fact.source, entityKey: fact.entityKey, property: fact.property, normalizedValue: fact.value, provenance: fact.provenance });
           }
           if (attempt + 1 < attempts && need.consistency?.intervalMs) await boundedVerificationWait(need.consistency.intervalMs);
         }

@@ -24,6 +24,7 @@ export function buildDependencyPrompt(
     '- created-after: target must be created after source',
     '- must-exist-before: source must exist before target can be created',
     '- cleanup-after: source cleanup must happen after target cleanup',
+    '- Never create a self-dependency: a data item must not depend on itself',
     '',
     'Reuse policies:',
     '- safe: Data can be freely shared (read-only, reference data)',

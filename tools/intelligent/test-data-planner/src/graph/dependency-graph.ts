@@ -16,9 +16,16 @@ export function buildDependencyGraph(
     description?: string;
   }>,
 ): { dependencies: DataDependency[]; cycles: string[][] } {
+  // A data item can never depend on itself. Providers occasionally emit this
+  // malformed edge when near-duplicate candidates normalize to one final
+  // item; retaining it would make runtime resolution block forever.
+  const validCandidates = candidates.filter(
+    (candidate) => candidate.sourceDataItemId !== candidate.targetDataItemId,
+  );
+
   // Detect cycles using DFS
   const adj = new Map<string, string[]>();
-  for (const c of candidates) {
+  for (const c of validCandidates) {
     const edges = adj.get(c.sourceDataItemId) ?? [];
     edges.push(c.targetDataItemId);
     adj.set(c.sourceDataItemId, edges);
@@ -27,7 +34,7 @@ export function buildDependencyGraph(
   const cycles = detectCycles(adj);
 
   // Assign deterministic IDs
-  const dependencies: DataDependency[] = candidates.map((c, i) => ({
+  const dependencies: DataDependency[] = validCandidates.map((c, i) => ({
     id: `DEP-${String(i + 1).padStart(4, '0')}`,
     sourceDataItemId: c.sourceDataItemId,
     targetDataItemId: c.targetDataItemId,

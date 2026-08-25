@@ -1,6 +1,6 @@
 import type { AIProvider } from 'ai-provider';
 import { buildRequirementsFromSemanticIR, type RequirementIR, type SemanticIRInput } from 'requirement-builder';
-import { buildTestPlanFromRequirementIR, type TestPlanIR, type TestPlannerWarning } from 'test-planner';
+import { buildTestPlanFromRequirementIR, type TestPlanIR, type TestPlannerOptions, type TestPlannerWarning } from 'test-planner';
 import { buildTestDataPlanFromTestCaseIR, type TestCaseIRInput, type TestDataPlanIR } from 'test-data-planner';
 import { TestExecutionOrchestrator, type OrchestratorOptions, type TestRunResultIR } from 'test-execution-orchestrator';
 
@@ -24,6 +24,37 @@ export interface Scenario3Dependencies {
   orchestratorOptions?: OrchestratorOptions;
   /** Test-only replacement for the canonical orchestrator. */
   orchestrator?: TestExecutionOrchestrator;
+  /** Optional structured stage observer for bounded runtime diagnostics. */
+  observer?: Scenario3StageObserver;
+  /** Optional planner policy; production defaults remain comprehensive. */
+  testPlannerOptions?: TestPlannerOptions;
+}
+
+export type Scenario3StageName =
+  | 'REQUIREMENT_BUILDING'
+  | 'TEST_PLANNING'
+  | 'DATA_PLANNING'
+  | 'SCENARIO2_EXECUTION';
+
+export interface Scenario3StageMetric {
+  stage: Scenario3StageName;
+  status: 'completed' | 'failed';
+  startedAt: string;
+  finishedAt: string;
+  elapsedMs: number;
+  error?: string;
+}
+
+export interface Scenario3RunMetrics {
+  startedAt: string;
+  finishedAt: string;
+  totalElapsedMs: number;
+  stages: Scenario3StageMetric[];
+}
+
+export interface Scenario3StageObserver {
+  onStageStart?(stage: Scenario3StageName, startedAt: string): void;
+  onStageEnd?(metric: Scenario3StageMetric): void;
 }
 
 /** @deprecated Test-only compatibility seam. Product callers use Scenario3Dependencies. */
@@ -80,6 +111,7 @@ export interface Scenario3Result {
   requirementResults: Scenario3RequirementResult[];
   trace: Scenario3TraceGraph;
   warnings: TestPlannerWarning[];
+  metrics?: Scenario3RunMetrics;
 }
 
 /** Native specification-to-Scenario-2 owner. */
@@ -99,37 +131,97 @@ export class Scenario3Pipeline {
     if (!('aiProvider' in this.dependencies) || !this.orchestrator) {
       throw new Error('Scenario3Pipeline requires canonical platform dependencies');
     }
+    const canonicalDependencies = this.dependencies as Scenario3Dependencies;
     const canonicalInput = input as Scenario3Input;
-    let requirements: RequirementIR;
-    let testPlan: TestPlanIR;
+    const observer = canonicalDependencies.observer;
+    const startedAt = new Date().toISOString();
+    const startedTick = performance.now();
+    const stageMetrics: Scenario3StageMetric[] = [];
+    const finalize = (result: Scenario3Result): Scenario3Result => ({
+      ...result,
+      metrics: {
+        startedAt,
+        finishedAt: new Date().toISOString(),
+        totalElapsedMs: Math.round(performance.now() - startedTick),
+        stages: [...stageMetrics],
+      },
+    });
+    const runStage = async <T>(stage: Scenario3StageName, action: () => Promise<T>): Promise<T> => {
+      const stageStartedAt = new Date().toISOString();
+      const stageStartedTick = performance.now();
+      observer?.onStageStart?.(stage, stageStartedAt);
+      try {
+        const result = await action();
+        const metric: Scenario3StageMetric = {
+          stage,
+          status: 'completed',
+          startedAt: stageStartedAt,
+          finishedAt: new Date().toISOString(),
+          elapsedMs: Math.round(performance.now() - stageStartedTick),
+        };
+        stageMetrics.push(metric);
+        observer?.onStageEnd?.(metric);
+        return result;
+      } catch (error) {
+        const metric: Scenario3StageMetric = {
+          stage,
+          status: 'failed',
+          startedAt: stageStartedAt,
+          finishedAt: new Date().toISOString(),
+          elapsedMs: Math.round(performance.now() - stageStartedTick),
+          error: error instanceof Error ? error.message : String(error),
+        };
+        stageMetrics.push(metric);
+        observer?.onStageEnd?.(metric);
+        throw error;
+      }
+    };
+    let requirements: RequirementIR | undefined;
+    let testPlan: TestPlanIR | undefined;
     const warnings: TestPlannerWarning[] = [];
     try {
-      requirements = await buildRequirementsFromSemanticIR(canonicalInput.semanticIR, this.dependencies.aiProvider);
-      testPlan = await buildTestPlanFromRequirementIR(requirements, this.dependencies.aiProvider);
+      const builtRequirements = await runStage(
+        'REQUIREMENT_BUILDING',
+        () => buildRequirementsFromSemanticIR(canonicalInput.semanticIR, canonicalDependencies.aiProvider),
+      );
+      requirements = builtRequirements;
+      testPlan = await runStage(
+        'TEST_PLANNING',
+        () => buildTestPlanFromRequirementIR(builtRequirements, canonicalDependencies.aiProvider, canonicalDependencies.testPlannerOptions),
+      );
       warnings.push(...(testPlan.warnings ?? []));
     } catch (error) {
-      return this.errorResult(error, warnings);
+      return finalize(this.errorResult(error, warnings, requirements, testPlan));
+    }
+    if (!requirements || !testPlan) {
+      return finalize(this.errorResult(new Error('SCENARIO3_PLANNING_OUTPUT_MISSING'), warnings, requirements, testPlan));
     }
     if (hasPlanningBlocker(warnings) || testPlan.testCases.length === 0) {
-      return this.withoutExecution(requirements, testPlan, warnings, 'blocked');
+      return finalize(this.withoutExecution(requirements, testPlan, warnings, 'blocked'));
     }
 
     let dataPlan: TestDataPlanIR;
     try {
-      dataPlan = await buildTestDataPlanFromTestCaseIR(toTestCaseIRInput(testPlan), this.dependencies.aiProvider);
+      dataPlan = await runStage(
+        'DATA_PLANNING',
+        () => buildTestDataPlanFromTestCaseIR(toTestCaseIRInput(testPlan), canonicalDependencies.aiProvider),
+      );
     } catch (error) {
-      return this.withoutExecution(requirements, testPlan, [...warnings, { code: 'SCENARIO3_DATA_PLAN_ERROR', message: String(error) }], 'error');
+      return finalize(this.withoutExecution(requirements, testPlan, [...warnings, { code: 'SCENARIO3_DATA_PLAN_ERROR', message: String(error) }], 'error'));
     }
 
     try {
-      const execution = await this.orchestrator.run(testPlan.testCases, dataPlan);
+      const execution = await runStage(
+        'SCENARIO2_EXECUTION',
+        () => this.orchestrator!.run(testPlan.testCases, dataPlan),
+      );
       const trace = buildTrace(requirements, testPlan, dataPlan, execution);
-      return {
+      return finalize({
         status: statusFromExecution(execution), requirements, testPlan, dataPlan, execution,
         requirementResults: aggregateRequirements(testPlan, execution), trace, warnings,
-      };
+      });
     } catch (error) {
-      return this.withoutExecution(requirements, testPlan, [...warnings, { code: 'SCENARIO3_EXECUTION_ERROR', message: String(error) }], 'error', dataPlan);
+      return finalize(this.withoutExecution(requirements, testPlan, [...warnings, { code: 'SCENARIO3_EXECUTION_ERROR', message: String(error) }], 'error', dataPlan));
     }
   }
 
@@ -143,10 +235,29 @@ export class Scenario3Pipeline {
     return { requirements: requirements as RequirementIR, testPlan, dataPlan, execution: undefined, status: resultStatus(result), requirementResults: [], trace: emptyTrace(), warnings };
   }
 
-  private errorResult(error: unknown, warnings: TestPlannerWarning[]): Scenario3Result {
+  private errorResult(
+    error: unknown,
+    warnings: TestPlannerWarning[],
+    requirements?: RequirementIR,
+    testPlan?: TestPlanIR,
+  ): Scenario3Result {
+    const trace = requirements
+      ? testPlan
+        ? buildTrace(requirements, testPlan)
+        : buildRequirementTrace(requirements)
+      : emptyTrace();
     return {
-      status: 'error', requirements: undefined as unknown as RequirementIR, testPlan: undefined as unknown as TestPlanIR,
-      requirementResults: [], trace: { nodes: [], edges: [], orphanEvidenceIds: [] },
+      status: 'error',
+      requirements: requirements as RequirementIR,
+      testPlan: testPlan as TestPlanIR,
+      requirementResults: requirements?.requirements.map((requirement) => ({
+        requirementId: requirement.id,
+        status: 'error' as const,
+        testCaseIds: [],
+        evidenceIds: [],
+        traceNodeId: `requirement:${requirement.id}`,
+      })) ?? [],
+      trace,
       warnings: [...warnings, { code: 'SCENARIO3_PLANNING_ERROR', message: String(error) }],
     };
   }
@@ -171,6 +282,23 @@ function resultStatus(result: unknown): Scenario3Result['status'] {
 
 function emptyTrace(): Scenario3TraceGraph {
   return { nodes: [], edges: [], orphanEvidenceIds: [] };
+}
+
+function buildRequirementTrace(requirements: RequirementIR): Scenario3TraceGraph {
+  const nodes: Scenario3TraceNode[] = [];
+  const edges: Scenario3TraceEdge[] = [];
+  for (const requirement of requirements.requirements) {
+    const requirementId = `requirement:${requirement.id}`;
+    nodes.push({ id: requirementId, kind: 'requirement', ref: requirement.id, metadata: { title: requirement.title } });
+    for (const provenance of requirement.provenance) {
+      const sourceId = `source:${provenance.contextId}`;
+      if (!nodes.some((node) => node.id === sourceId)) {
+        nodes.push({ id: sourceId, kind: 'source', ref: provenance.contextId, metadata: { ...provenance } });
+      }
+      edges.push({ from: sourceId, to: requirementId, relation: 'SOURCE_SUPPORTS_REQUIREMENT' });
+    }
+  }
+  return { nodes, edges, orphanEvidenceIds: [] };
 }
 
 export async function runScenario3(input: Scenario3Input, dependencies: Scenario3Dependencies): Promise<Scenario3Result> {
@@ -251,15 +379,32 @@ function buildTrace(requirements: RequirementIR, testPlan: TestPlanIR, dataPlan?
       evidenceIds.add(evidenceId);
       add({ id: evidenceId, kind: 'evidence', ref: evidence.id, metadata: { type: evidence.type } });
       link(evidenceId, resultId, 'EVIDENCE_CONTRIBUTES_TO_EXECUTION_RESULT');
-      const assertion = evidence.assertionId ? result.assertions.find((a) => a.id === evidence.assertionId) : undefined;
-      if (assertion) {
-        const vnId = `verification:${result.testCaseId}:${assertion.expectedResultIndex}`;
+      const evidenceAssertionId = evidence.assertionId;
+      const explicitExpectedResultIndex = typeof evidence.metadata.expectedResultIndex === 'number'
+        ? evidence.metadata.expectedResultIndex
+        : undefined;
+      const assertion = explicitExpectedResultIndex !== undefined
+        ? result.assertions.find((a) => a.expectedResultIndex === explicitExpectedResultIndex)
+        : evidenceAssertionId
+        ? result.assertions.find((a) => a.id === evidenceAssertionId) ??
+          result.assertions.find((a) => a.expectedResultIndex === assertionIndexFromEvidenceId(evidenceAssertionId))
+        : undefined;
+      const verificationNeedIndex = explicitExpectedResultIndex ?? assertion?.expectedResultIndex;
+      if (verificationNeedIndex !== undefined) {
+        const vnId = `verification:${result.testCaseId}:${verificationNeedIndex}`;
         link(vnId, evidenceId, 'VERIFICATION_NEED_SUPPORTED_BY_EVIDENCE');
         linkedEvidence.add(evidenceId);
       }
     }
   }
   return { nodes, edges, orphanEvidenceIds: [...evidenceIds].filter((id) => !linkedEvidence.has(id)) };
+}
+
+function assertionIndexFromEvidenceId(assertionId: string): number | undefined {
+  const match = /^ASSERT-(\d+)$/.exec(assertionId);
+  if (!match) return undefined;
+  const oneBasedIndex = Number(match[1]);
+  return Number.isInteger(oneBasedIndex) && oneBasedIndex > 0 ? oneBasedIndex - 1 : undefined;
 }
 
 function aggregateRequirements(testPlan: TestPlanIR, execution: TestRunResultIR): Scenario3RequirementResult[] {

@@ -10,6 +10,7 @@ import type { RequirementIRInput, CoverageCandidate } from '../models.js';
 export function buildScenarioPrompt(
   requirements: RequirementIRInput['requirements'],
   coverage: CoverageCandidate[],
+  coverageMode: 'comprehensive' | 'minimal-sufficient' = 'comprehensive',
 ): string {
   const reqMap = new Map(requirements.map((r) => [r.id, r]));
 
@@ -30,7 +31,12 @@ export function buildScenarioPrompt(
     .filter(Boolean)
     .join('\n\n');
 
+  const coveragePolicy = coverageMode === 'minimal-sufficient'
+    ? `\nAcceptance coverage policy: use minimal sufficient coverage. The input contains atomic requirements. Generate one scenario when compatible obligations can be covered together; do not create separate scenarios for individual steps or outcomes, and do not add alternate, negative, boundary, or permutation scenarios unless the requirement explicitly requires them.\n`
+    : '';
+
   return `Based on the coverage analysis, generate test scenario candidates.
+${coveragePolicy}
 
 Each scenario should:
 - Have a clear objective tied to requirement obligations

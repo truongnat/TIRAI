@@ -100,7 +100,7 @@ describe('Scenario 3 programmatic bridge', () => {
         depResult(),
       ],
     });
-    const execution = { status: 'passed', testResults: [{ testCaseId: 'TC-1', scenarioId: 'SCEN-1', requirementIds: ['REQ-0001'], status: 'passed', assertions: [{ id: 'A-1', expectedResultIndex: 0, description: 'Order status', verificationType: 'state', status: 'passed', evidenceIds: ['E-1'] }], evidence: [{ id: 'E-1', type: 'api-response', sourceExecutor: 'api', testCaseId: 'TC-1', assertionId: 'A-1', metadata: {}, sensitive: false }], runtimeBindings: [], steps: [], cleanup: { attempted: 1, succeeded: 1, failed: 0, results: [] }, errors: [], warnings: [], provenance: [{ requirementId: 'REQ-0001', contextId: 'ctx-order' }], phase: 'completed', timings: { startedAt: '', finishedAt: '', durationMs: 0 } }], summary: { failed: 0, errors: 0, blocked: 0, skipped: 0, passed: 1, testsTotal: 1, manual: 0, assertionsTotal: 1, assertionsPassed: 1, assertionsFailed: 0, assertionsBlocked: 0, evidenceItems: 1, cleanupFailures: 0, provenanceCoverage: 1, durationMs: 0 }, evidence: [], auditTrail: [] } as never;
+    const execution = { status: 'passed', testResults: [{ testCaseId: 'TC-1', scenarioId: 'SCEN-1', requirementIds: ['REQ-0001'], status: 'passed', assertions: [{ id: 'JOURNEY-ASSERT-1', expectedResultIndex: 0, description: 'Order status', verificationType: 'state', status: 'passed', evidenceIds: ['E-1'] }], evidence: [{ id: 'E-1', type: 'api-response', sourceExecutor: 'api', testCaseId: 'TC-1', assertionId: 'ASSERT-0001', metadata: {}, sensitive: false }], runtimeBindings: [], steps: [], cleanup: { attempted: 1, succeeded: 1, failed: 0, results: [] }, errors: [], warnings: [], provenance: [{ requirementId: 'REQ-0001', contextId: 'ctx-order' }], phase: 'completed', timings: { startedAt: '', finishedAt: '', durationMs: 0 } }], summary: { failed: 0, errors: 0, blocked: 0, skipped: 0, passed: 1, testsTotal: 1, assertionsTotal: 1, assertionsPassed: 1, assertionsFailed: 0, assertionsBlocked: 0, evidenceItems: 1, cleanupFailures: 0, provenanceCoverage: 1, durationMs: 0 }, evidence: [], auditTrail: [] } as never;
     const orchestrator = { run: async () => execution } as unknown as TestExecutionOrchestrator;
     const result = await new Scenario3Pipeline({ aiProvider: provider, orchestrator }).run({ semanticIR: semanticIR() });
 
@@ -114,5 +114,9 @@ describe('Scenario 3 programmatic bridge', () => {
       expect.objectContaining({ relation: 'VERIFICATION_NEED_SUPPORTED_BY_EVIDENCE' }),
     ]));
     expect(result.trace.orphanEvidenceIds).toEqual([]);
+    expect(provider.requestLog.length).toBeGreaterThan(0);
+    expect(provider.requestLog.every((request) =>
+      (request.providerOptions?.deepseek as { thinking?: string } | undefined)?.thinking === 'disabled',
+    )).toBe(true);
   });
 });

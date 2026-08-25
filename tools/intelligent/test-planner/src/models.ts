@@ -363,6 +363,8 @@ export interface TestPlannerOptions {
   resume?: boolean;
   promptVersion?: string;
   maxRepairAttempts?: number;
+  /** Optional acceptance policy; comprehensive remains the production default. */
+  coverageMode?: 'comprehensive' | 'minimal-sufficient';
 }
 
 // ---- Manifest -------------------------------------------------------------

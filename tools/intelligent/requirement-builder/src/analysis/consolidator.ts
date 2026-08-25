@@ -43,6 +43,7 @@ export async function consolidate(
       ],
       responseSchema: lenientObjectSchema,
       temperature: 0,
+      providerOptions: { deepseek: { thinking: 'disabled' } },
     });
 
     const result = normalizeConsolidationResult(response.data);

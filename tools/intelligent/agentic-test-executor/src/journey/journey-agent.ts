@@ -93,6 +93,12 @@ export class JourneyAgent {
   }
 
   async execute(testCase: TestCase, context: TestExecutionContext): Promise<JourneyExecutionResult> {
+    // A single executor may run multiple Scenario 2 test cases. Cleanup is
+    // per journey, so a later case must be allowed to restart Chromium and
+    // release its own runtime data.
+    this.cleaned = false;
+    this.lastCleanup = undefined;
+    this.verificationReport = undefined;
     const metrics = createJourneyMetrics();
     const evidence: EvidenceReference[] = [];
     const assertions: AgenticAssertionResult[] = [];
@@ -242,7 +248,7 @@ export class JourneyAgent {
                   sourceExecutor: item.source === 'UI' ? 'ui' : item.source === 'API' ? 'api' : 'database',
                   testCaseId: testCase.id,
                   assertionId: 'ASSERT-0001',
-                  metadata: { verificationEvidenceId: item.id, source: item.source, entityKey: item.entityKey, property: item.property, normalizedValue: item.normalizedValue, provenance: item.provenance },
+                  metadata: { verificationEvidenceId: item.id, expectedResultIndex: item.expectedResultIndex, source: item.source, entityKey: item.entityKey, property: item.property, normalizedValue: item.normalizedValue, provenance: item.provenance },
                   sensitive: false,
                 });
                 evidence.push(evidenceRef);

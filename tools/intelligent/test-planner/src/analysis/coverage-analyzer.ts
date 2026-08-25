@@ -20,6 +20,7 @@ import { TEST_PLANNER_SYSTEM_PROMPT } from '../prompts/system.js';
 import { buildCoveragePrompt } from '../prompts/coverage.js';
 import { buildRepairPrompt } from '../prompts/repair.js';
 import { coverageAnalysisSchema } from '../schemas/test-schemas.js';
+import { shouldRepairStructuredOutput } from './provider-retry-policy.js';
 
 /** Maximum number of schema-level repair attempts per batch. */
 const DEFAULT_MAX_REPAIR_ATTEMPTS = 1;
@@ -84,6 +85,7 @@ export async function analyzeCoverage(
         messages,
         responseSchema: lenientObjectSchema,
         temperature: 0,
+        providerOptions: { deepseek: { thinking: 'disabled' } },
       });
 
       const result = normalizeCoverageResult(response.data, validReqIds);
@@ -101,6 +103,7 @@ export async function analyzeCoverage(
         warnings: warnings.length > 0 ? warnings : undefined,
       };
     } catch (err) {
+      if (!shouldRepairStructuredOutput(err)) throw err;
       lastError = err;
     }
   }
