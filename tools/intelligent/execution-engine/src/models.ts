@@ -259,6 +259,8 @@ export interface RuntimeBindingStore {
   isResolved(name: string): boolean;
   all(): RuntimeBindingResult[];
   sensitiveNames(): Set<string>;
+  /** Remove raw sensitive values while retaining safe binding metadata. */
+  clearSensitive?(): void;
 }
 
 /**

@@ -81,6 +81,7 @@ export class DataNeedCoordinator {
   private readonly preparationPolicy: Partial<PreparationMutationPolicy>;
   private readonly preparationExecutor = new RuntimePreparationExecutor();
   private preparationCoordinator?: RuntimePreparationCoordinator;
+  private lastRuntimeData?: RuntimeDataStore;
 
   constructor(options: DataNeedCoordinatorOptions) {
     this.inventory = options.inventory;
@@ -110,6 +111,7 @@ export class DataNeedCoordinator {
     metrics.browserDiscoveryRounds = resolved.metrics.browserDiscoveryRounds;
     for (const resolution of preparation.resolutions) this.recordResolution(metrics, resolution);
     this.preparationCoordinator = coordinator;
+    this.lastRuntimeData = preparation.runtimeData;
     return {
       ...resolved,
       status: preparation.status,
@@ -125,7 +127,7 @@ export class DataNeedCoordinator {
   }
 
   async cleanup(): Promise<PreparationCoordinationResult['cleanup']> {
-    return this.preparationCoordinator?.cleanup() ?? {
+    const cleanup = this.preparationCoordinator?.cleanup() ?? {
       registered: 0,
       attempted: 0,
       succeeded: 0,
@@ -133,6 +135,8 @@ export class DataNeedCoordinator {
       orphaned: 0,
       results: [],
     };
+    this.lastRuntimeData?.clear();
+    return cleanup;
   }
 
   async resolve(
@@ -152,6 +156,7 @@ export class DataNeedCoordinator {
     );
     const resolutions: DataResolutionResult[] = [];
     const runtimeData = new RuntimeDataStore();
+    this.lastRuntimeData = runtimeData;
     const metrics = emptyDataResolutionMetrics(items.length);
 
     for (const item of topologicalItemOrder(items)) {

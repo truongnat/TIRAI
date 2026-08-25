@@ -74,4 +74,10 @@ export class RuntimeDataStore {
       status: 'resolved',
     }));
   }
+
+  /** Clear concrete values after the execution and cleanup lifecycle ends. */
+  clear(): void {
+    for (const entry of this.all()) entry.value = undefined;
+    this.entries.clear();
+  }
 }

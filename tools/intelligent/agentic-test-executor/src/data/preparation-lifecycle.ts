@@ -450,7 +450,13 @@ export class RuntimePreparationCoordinator {
     if (status !== 'error' && [...resolutionsByItem.values()].some((resolution) => !resolution.resolved)) {
       status = 'blocked';
     }
-    const cleanup = status === 'error' ? await this.cleanup() : emptyCleanupSummary(this.journal);
+    // A blocked plan may still contain resources prepared earlier in the
+    // dependency order. Those resources must be cleaned before returning the
+    // blocked result; otherwise a later capability/policy block can orphan
+    // already-owned test state.
+    const cleanup = status === 'error' || status === 'blocked'
+      ? await this.cleanup()
+      : emptyCleanupSummary(this.journal);
     if (cleanup.failed > 0) status = 'error';
     return {
       status,

@@ -263,6 +263,15 @@ describe('Registry', () => {
 describe('InMemoryBindingStore', () => {
   let store: InMemoryBindingStore;
 
+  it('clears raw sensitive values while retaining safe binding metadata', () => {
+    store = new InMemoryBindingStore();
+    store.produce({ id: 'secret', name: 'runtime.password', producerOperationId: 'op', value: 'sentinel', sensitive: true, status: 'resolved' });
+    store.clearSensitive();
+    expect(store.resolve('runtime.password')?.value).toBe('***REDACTED***');
+    expect(store.resolve('runtime.password')?.sensitive).toBe(true);
+    expect(store.sensitiveNames()).toContain('runtime.password');
+  });
+
   beforeEach(() => {
     store = new InMemoryBindingStore();
   });
