@@ -5,7 +5,7 @@ import type {
   TestExecutionContext,
   EvidenceReference,
 } from 'test-execution-orchestrator';
-import { defaultCapabilities, type AgenticAssertionResult, type BrowserObservation, type TestDataItem } from '../models.js';
+import { defaultCapabilities, type AgenticAssertionResult, type BrowserObservation, type TestDataItem, type StepGroundingResult } from '../models.js';
 import { DataNeedCoordinator } from '../data/data-need-coordinator.js';
 import type { PreparationMutationPolicy } from '../data/preparation-lifecycle.js';
 import { buildRuntimeCapabilityInventory, type RuntimeCapabilityInventory } from '../data/runtime-capability-inventory.js';
@@ -30,6 +30,7 @@ import {
 } from './models.js';
 import { classifyRuntimeFailure, decideRecovery, type RecoveryReconciliationAdapter } from './recovery.js';
 import { verifyCrossLayer, type VerificationReport, type VerificationRuntime } from '../verification.js';
+import { confirmSourceHints, groundConfirmedAction, resolveRelevantSourceHints, type SourceHint, type SourceIntelligence, type SourceIntelligenceProvider } from '../source-intelligence.js';
 
 export interface JourneyAgentOptions {
   browserSession: BrowserSession;
@@ -44,6 +45,7 @@ export interface JourneyAgentOptions {
   generationSeed?: string;
   reconciliationAdapter?: RecoveryReconciliationAdapter;
   verification?: VerificationRuntime;
+  sourceIntelligence?: SourceIntelligence | SourceIntelligenceProvider;
 }
 
 /**
@@ -64,6 +66,7 @@ export class JourneyAgent {
   private readonly reconciliationAdapter?: RecoveryReconciliationAdapter;
   private readonly reconciledCleanup: Array<() => Promise<void>> = [];
   private readonly verification?: VerificationRuntime;
+  private readonly sourceIntelligence?: SourceIntelligence | SourceIntelligenceProvider;
   private verificationReport?: VerificationReport;
 
   constructor(options: JourneyAgentOptions) {
@@ -86,6 +89,7 @@ export class JourneyAgent {
     });
     this.reconciliationAdapter = options.reconciliationAdapter;
     this.verification = options.verification;
+    this.sourceIntelligence = options.sourceIntelligence;
   }
 
   async execute(testCase: TestCase, context: TestExecutionContext): Promise<JourneyExecutionResult> {
@@ -126,6 +130,18 @@ export class JourneyAgent {
       return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_DATA_UNRESOLVED');
     }
     for (const binding of coordination.runtimeData.toBindingResults()) context.bindings.produce(binding);
+
+    let sourceSnapshot: SourceIntelligence | undefined;
+    if (this.sourceIntelligence) {
+      try {
+        sourceSnapshot = 'discover' in this.sourceIntelligence
+          ? await this.sourceIntelligence.discover({ testCase })
+          : this.sourceIntelligence;
+        metrics.sourceHintsAvailable = sourceSnapshot.hints.length;
+      } catch {
+        metrics.sourceProviderFailures++;
+      }
+    }
 
     let page: BrowserPage;
     let activePageId: string | undefined;
@@ -174,6 +190,18 @@ export class JourneyAgent {
         metrics.statesObserved++;
         journey.currentState = state;
         if (activePageId) journey.activePageId = activePageId;
+        let sourceHints: SourceHint[] = [];
+        let confirmedSourceHints: SourceHint[] = [];
+        if (sourceSnapshot) {
+          const relevant = resolveRelevantSourceHints(sourceSnapshot, testCase, state.key);
+          const reconciled = confirmSourceHints(relevant.provided, observation);
+          sourceHints = relevant.provided;
+          confirmedSourceHints = reconciled.confirmed;
+          metrics.sourceHintsProvided += sourceHints.length;
+          metrics.sourceHintsConfirmed += reconciled.confirmed.length;
+          metrics.sourceHintsRejected += reconciled.rejected.length;
+          metrics.sourceHintsStale += reconciled.stale.length;
+        }
         const sessionLost = journey.actionHistory.length > 0 && isAuthenticationState(observation);
         if (sessionLost && !reauthenticating) {
           metrics.failuresDetected++;
@@ -239,15 +267,25 @@ export class JourneyAgent {
         const history = compactJourneyHistory(journey, this.policy.observationHistoryLimit);
         const safeObservation = await redactObservationForAI(observation, testCase, context);
         if (metrics.agentCalls >= this.policy.maxAgentCalls) return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_AGENT_CALL_BUDGET_EXCEEDED');
-        let grounding;
+        let grounding: StepGroundingResult;
+        const sourceAction = groundConfirmedAction(confirmedSourceHints, observation);
         try {
-          grounding = await groundStep(this.aiProvider, {
-            testCaseId: testCase.id,
-            stepIndex: decision,
-            stepDescription: `Complete the overall journey goal: ${journey.goal}`,
-            stepTarget: `Current semantic state: ${state.key}. Pending milestone: ${milestone.intent}. Runtime binding references: ${journey.runtimeBindings.join(', ') || 'none'}. credentialBindingAvailable=${context.bindings.sensitiveNames().size > 0}. Recent journey: ${history}`,
-            observation: safeObservation,
-          });
+          if (sourceAction) {
+            metrics.sourceHintsUsed++;
+            grounding = {
+              testCaseId: testCase.id, stepIndex: decision, stepIntent: milestone.intent,
+              action: { type: 'click', elementId: sourceAction.elementId }, candidateActions: [], confidence: 'high',
+              reasoning: `Runtime-confirmed semantic source hint: ${sourceAction.hint.semanticName}`,
+            };
+          } else {
+            grounding = await groundStep(this.aiProvider, {
+              testCaseId: testCase.id,
+              stepIndex: decision,
+              stepDescription: `Complete the overall journey goal: ${journey.goal}`,
+              stepTarget: `Current semantic state: ${state.key}. Pending milestone: ${milestone.intent}. Runtime binding references: ${journey.runtimeBindings.join(', ') || 'none'}. credentialBindingAvailable=${context.bindings.sensitiveNames().size > 0}. Source hints: ${sourceHints.map((hint) => `${hint.kind}:${hint.semanticName}`).join(', ') || 'none'}. Recent journey: ${history}`,
+              observation: safeObservation,
+            });
+          }
         } catch (error) {
           const classification = classifyRuntimeFailure(error instanceof Error ? error.message : String(error));
           metrics.failuresDetected++;
@@ -264,7 +302,7 @@ export class JourneyAgent {
           metrics.failedRecoveries++;
           return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_RECOVERY_BLOCKED', recovery.reason);
         }
-        metrics.agentCalls++;
+        if (!sourceAction) metrics.agentCalls++;
         const journeyDecision: JourneyDecision = grounding.action
           ? { type: 'ACTION', subGoal: milestone.intent, targetIntent: state.key, reasoningSummary: grounding.reasoning }
           : { type: 'BLOCKED', reason: grounding.unresolvedReason ?? 'JOURNEY_NO_GROUNDED_ACTION' };
@@ -562,6 +600,7 @@ function createJourneyMetrics(): JourneyExecutionResult['metrics'] {
     failuresDetected: 0, successfulRecoveries: 0, failedRecoveries: 0, recoveryLoopsDetected: 0,
     recoveryAttempts: 0, invalidDecisionRecoveries: 0, sessionRecoveries: 0, reauthAttempts: 0,
     pageRecoveries: 0, outcomeReconciliations: 0, verificationAcquisitions: 0, verificationAICalls: 0,
+    sourceHintsAvailable: 0, sourceHintsProvided: 0, sourceHintsUsed: 0, sourceHintsConfirmed: 0, sourceHintsRejected: 0, sourceHintsStale: 0, sourceProviderFailures: 0,
   };
 }
 

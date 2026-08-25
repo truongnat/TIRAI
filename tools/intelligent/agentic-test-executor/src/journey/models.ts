@@ -141,6 +141,13 @@ export interface JourneyExecutionResult {
     outcomeReconciliations: number;
     verificationAcquisitions: number;
     verificationAICalls: number;
+    sourceHintsAvailable: number;
+    sourceHintsProvided: number;
+    sourceHintsUsed: number;
+    sourceHintsConfirmed: number;
+    sourceHintsRejected: number;
+    sourceHintsStale: number;
+    sourceProviderFailures: number;
   };
   verification?: VerificationReport;
   error?: { code: string; message: string };

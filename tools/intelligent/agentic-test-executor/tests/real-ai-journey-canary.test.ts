@@ -1,11 +1,13 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { DeepSeekProvider, type AIGenerationRequest, type AIGenerationResponse, type AIProvider } from 'ai-provider';
 import { TestExecutionOrchestrator, TestExecutorRegistry } from 'test-execution-orchestrator';
+import { JsonProjectAdapter } from 'project-adapter';
 import { PlaywrightBrowserSession, type BrowserPage } from 'ui-executor';
 import { JourneyTestExecutor } from '../src/journey/journey-test-executor.js';
 import type { VerificationRuntime } from '../src/verification.js';
+import { sourceIntelligenceFromProjectProfile, StaticSourceIntelligenceProvider, type SourceIntelligence, type SourceProfileLike } from '../src/source-intelligence.js';
 import { startFixtureServer, type FixtureServer } from './fixtures/fixture-server.js';
 
 const enabled = process.env.RUN_REAL_AI_JOURNEY_CANARY === 'true';
@@ -23,6 +25,8 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
     const session = new FailOnceBrowserSession();
     const provider = new AuditedProvider(new DeepSeekProvider({ model: 'deepseek-v4-flash', maxRetries: 1 }));
     const verification = makeVerificationRuntime(fixture.origin);
+    const projectProfile = await new JsonProjectAdapter().load({ projectRoot: resolve(process.cwd(), 'tools/intelligent/project-adapter/tests/fixtures/sample-project') }, { environment: 'local' });
+    const sourceIntelligence = new StaticSourceIntelligenceProvider(makeSourceIntelligence(projectProfile));
     const executor = new JourneyTestExecutor({
       browserSession: session,
       aiProvider: provider,
@@ -30,6 +34,7 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
       allowedOrigins: [fixture.origin],
       policy: { maxJourneyDecisions: 8, maxAgentCalls: 20, maxObservationRounds: 20 },
       verification,
+      sourceIntelligence,
     });
     const registry = new TestExecutorRegistry();
     registry.register(executor);
@@ -60,7 +65,9 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
       `Verification: ${result.verification?.status ?? 'not-run'}`,
       `Verification acquisitions: ${result.metrics.verificationAcquisitions}`,
       `Verification AI calls: ${result.metrics.verificationAICalls}`,
+      `Source hints: ${result.metrics.sourceHintsAvailable} available / ${result.metrics.sourceHintsUsed} used / ${result.metrics.sourceHintsConfirmed} confirmed / ${result.metrics.sourceHintsRejected} rejected`,
       `Orchestrator status: ${run.status}`,
+      `Error: ${result.error?.code ?? 'none'} ${result.error?.message ?? ''}`,
     ].join('\n');
     const outputDir = join(process.cwd(), 'output/agentic-test-executor/real-ai-journey-canary');
     await mkdir(outputDir, { recursive: true });
@@ -70,6 +77,9 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
     expect(result.status).toBe('passed');
     expect(result.verification?.status).toBe('VERIFIED');
     expect(result.verification?.evidence.map((item) => item.source)).toEqual(expect.arrayContaining(['UI', 'API']));
+    expect(result.metrics.sourceHintsAvailable).toBeGreaterThan(0);
+    expect(result.metrics.sourceHintsUsed).toBeGreaterThan(0);
+    expect(result.metrics.sourceHintsConfirmed).toBeGreaterThan(0);
     expect(result.metrics.uniqueSemanticStates).toBeGreaterThanOrEqual(3);
     expect(result.metrics.pageTransitions).toBeGreaterThanOrEqual(2);
     expect(result.metrics.actions).toBeGreaterThanOrEqual(3);
@@ -91,6 +101,21 @@ function makeJourneyTestCase() {
     expectedResults: [{ description: 'Item status: Completed', verificationType: 'ui' }],
     cleanup: [], automation: { status: 'ready' as const, suggestedExecutor: 'ui', reasons: [] }, provenance: [], confidence: 1,
   } as never;
+}
+
+function makeSourceIntelligence(projectProfile: SourceProfileLike): SourceIntelligence {
+  const provenance = { source: 'fixture-project-catalog', reference: 'ui-catalog.semantic-actions', confidence: 'DECLARED' as const };
+  const catalog = sourceIntelligenceFromProjectProfile(projectProfile);
+  return {
+    ...catalog, snapshotId: 'fixture-source-snapshot', sourceSecrets: 0,
+    hints: [
+      ...catalog.hints,
+      { id: 'action-open-catalog', kind: 'ACTION_HINT', semanticName: 'Open catalog', provenance, lifecycle: 'DISCOVERED' },
+      { id: 'action-open-item', kind: 'ACTION_HINT', semanticName: 'Open item', provenance, lifecycle: 'DISCOVERED' },
+      { id: 'action-complete-item', kind: 'ACTION_HINT', semanticName: 'Complete item', provenance, lifecycle: 'DISCOVERED' },
+      { id: 'route-old-orders', kind: 'NAVIGATION_HINT', semanticName: 'stale order route', routePattern: '/orders/:id', provenance, lifecycle: 'STALE' },
+    ],
+  };
 }
 
 function makeVerificationRuntime(origin: string): VerificationRuntime {
