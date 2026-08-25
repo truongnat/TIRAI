@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { DeepSeekProvider, type AIGenerationRequest, type AIGenerationResponse, type AIProvider } from 'ai-provider';
 import { TestExecutionOrchestrator, TestExecutorRegistry } from 'test-execution-orchestrator';
-import { PlaywrightBrowserSession } from 'ui-executor';
+import { PlaywrightBrowserSession, type BrowserPage } from 'ui-executor';
 import { JourneyTestExecutor } from '../src/journey/journey-test-executor.js';
 import { startFixtureServer, type FixtureServer } from './fixtures/fixture-server.js';
 
@@ -19,7 +19,7 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
   it('completes a real three-route journey with DeepSeek and Chromium', async () => {
     if (!process.env.DEEPSEEK_API_KEY) throw new Error('BLOCKED_PROVIDER_CONFIGURATION');
     fixture = await startFixtureServer();
-    const session = new PlaywrightBrowserSession();
+    const session = new FailOnceBrowserSession();
     const provider = new AuditedProvider(new DeepSeekProvider({ model: 'deepseek-v4-flash', maxRetries: 1 }));
     const executor = new JourneyTestExecutor({
       browserSession: session,
@@ -47,6 +47,8 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
       `Page transitions: ${result.metrics.pageTransitions}`,
       `Actions: ${result.metrics.actions}`,
       `Replans: ${result.metrics.journeyReplans}`,
+      `Failures detected: ${result.metrics.failuresDetected}`,
+      `Successful recoveries: ${result.metrics.successfulRecoveries}`,
       `Loop detections: ${result.metrics.loopDetections}`,
       `Generated selectors: 0`,
       `External navigation: 0`,
@@ -54,7 +56,7 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
       `Evidence: ${result.evidence.length}`,
       `Orchestrator status: ${run.status}`,
     ].join('\n');
-    const outputDir = join(process.cwd(), '../../../output/agentic-test-executor/real-ai-journey-canary');
+    const outputDir = join(process.cwd(), 'output/agentic-test-executor/real-ai-journey-canary');
     await mkdir(outputDir, { recursive: true });
     await writeFile(join(outputDir, 'acceptance-report.md'), report, 'utf8');
     await writeFile(join(outputDir, 'metrics.json'), JSON.stringify({ result: result.metrics, provider: { calls: provider.calls, inputTokens: provider.inputTokens, outputTokens: provider.outputTokens, totalTokens: provider.totalTokens }, browser: lifecycle }, null, 2), 'utf8');
@@ -64,6 +66,8 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
     expect(result.metrics.pageTransitions).toBeGreaterThanOrEqual(2);
     expect(result.metrics.actions).toBeGreaterThanOrEqual(3);
     expect(result.metrics.loopDetections).toBe(0);
+    expect(result.metrics.failuresDetected).toBe(1);
+    expect(result.metrics.successfulRecoveries).toBe(1);
     expect(lifecycle.browsersLaunched).toBe(lifecycle.browsersClosed);
     expect(lifecycle.pagesCreated).toBe(lifecycle.pagesClosed);
     expect(provider.rawSecretInPrompt).toBe(false);
@@ -108,5 +112,21 @@ class AuditedProvider implements AIProvider {
     this.outputTokens += response.usage?.outputTokens ?? 0;
     this.totalTokens += response.usage?.totalTokens ?? 0;
     return response;
+  }
+}
+
+class FailOnceBrowserSession extends PlaywrightBrowserSession {
+  private fail = true;
+
+  override async createIsolatedPage(): Promise<BrowserPage> {
+    const page = await super.createIsolatedPage();
+    return new Proxy(page, { get: (target, property, receiver) => {
+      if (property === 'click') return async (...args: Parameters<BrowserPage['click']>) => {
+        if (this.fail) { this.fail = false; throw new Error('element detached during controlled rerender'); }
+        return target.click(...args);
+      };
+      const method = Reflect.get(target, property, receiver);
+      return typeof method === 'function' ? method.bind(target) : method;
+    } }) as BrowserPage;
   }
 }

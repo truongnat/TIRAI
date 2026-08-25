@@ -28,6 +28,7 @@ import {
   type SemanticApplicationState,
   type JourneyPageContext,
 } from './models.js';
+import { classifyRuntimeFailure, decideRecovery } from './recovery.js';
 
 export interface JourneyAgentOptions {
   browserSession: BrowserSession;
@@ -100,6 +101,7 @@ export class JourneyAgent {
       loopDetections: 0,
       noProgressIterations: 0,
       pageContexts: [],
+      recoveryHistory: [],
     };
 
     const coordination = await this.dataNeedCoordinator.prepare(this.testDataItems, {
@@ -181,13 +183,31 @@ export class JourneyAgent {
         const history = compactJourneyHistory(journey, this.policy.observationHistoryLimit);
         const safeObservation = await redactObservationForAI(observation, testCase, context);
         if (metrics.agentCalls >= this.policy.maxAgentCalls) return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_AGENT_CALL_BUDGET_EXCEEDED');
-        const grounding = await groundStep(this.aiProvider, {
-          testCaseId: testCase.id,
-          stepIndex: decision,
-          stepDescription: `Complete the overall journey goal: ${journey.goal}`,
-          stepTarget: `Current semantic state: ${state.key}. Pending milestone: ${milestone.intent}. Runtime binding references: ${journey.runtimeBindings.join(', ') || 'none'}. Recent journey: ${history}`,
-          observation: safeObservation,
-        });
+        let grounding;
+        try {
+          grounding = await groundStep(this.aiProvider, {
+            testCaseId: testCase.id,
+            stepIndex: decision,
+            stepDescription: `Complete the overall journey goal: ${journey.goal}`,
+            stepTarget: `Current semantic state: ${state.key}. Pending milestone: ${milestone.intent}. Runtime binding references: ${journey.runtimeBindings.join(', ') || 'none'}. Recent journey: ${history}`,
+            observation: safeObservation,
+          });
+        } catch (error) {
+          const classification = classifyRuntimeFailure(error instanceof Error ? error.message : String(error));
+          metrics.failuresDetected++;
+          metrics.recoveryAttempts++;
+          const recovery = decideRecovery(classification, metrics.recoveryAttempts, this.policy.maxRecoveryAttempts);
+          appendRecovery(journey, { classification, operation: recovery.operation, attempt: metrics.recoveryAttempts, stateBefore: state.key, outcome: recovery.allowed ? 'SUCCESS' : 'BLOCKED', evidenceIds: [] });
+          if (recovery.allowed) {
+            metrics.successfulRecoveries++;
+            metrics.invalidDecisionRecoveries++;
+            metrics.recoveries++;
+            await boundedWait(50);
+            continue;
+          }
+          metrics.failedRecoveries++;
+          return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_RECOVERY_BLOCKED', recovery.reason);
+        }
         metrics.agentCalls++;
         const journeyDecision: JourneyDecision = grounding.action
           ? { type: 'ACTION', subGoal: milestone.intent, targetIntent: state.key, reasoningSummary: grounding.reasoning }
@@ -239,6 +259,7 @@ export class JourneyAgent {
         const beforeUrl = observation.url;
         const actionResult = await executeAction(page, resolvedAction.action, idMap);
         metrics.actions++;
+        await boundedWait(100);
         if (resolvedAction.action.type === 'navigate') metrics.navigationActions++;
         const actionKey = `${state.key}|${resolvedAction.action.type}|${resolvedAction.action.elementId ?? resolvedAction.action.url ?? ''}`;
         const repetitions = (seenDecisions.get(actionKey) ?? 0) + 1;
@@ -271,9 +292,18 @@ export class JourneyAgent {
           await boundedWait(50);
         }
         if (!actionResult.success) {
-          journey.recoveryAttempts++;
+          const classification = classifyRuntimeFailure(actionResult.error ?? 'Action failed', resolvedAction.action.type);
+          metrics.failuresDetected++;
+          metrics.recoveryAttempts++;
+          const recovery = decideRecovery(classification, metrics.recoveryAttempts, this.policy.maxRecoveryAttempts);
+          appendRecovery(journey, { classification, operation: recovery.operation, attempt: metrics.recoveryAttempts, stateBefore: state.key, outcome: recovery.allowed ? 'SUCCESS' : 'BLOCKED', evidenceIds: [] });
+          if (!recovery.allowed) {
+            metrics.failedRecoveries++;
+            return this.finish(journey, metrics, evidence, assertions, classification === 'CONTEXT_LOST' ? 'error' : 'blocked', 'JOURNEY_RECOVERY_BLOCKED', recovery.reason);
+          }
+          metrics.successfulRecoveries++;
           metrics.recoveries++;
-          if (journey.recoveryAttempts > this.policy.maxJourneyRecoveries) return this.finish(journey, metrics, evidence, assertions, 'blocked', actionResult.error ?? 'JOURNEY_ACTION_FAILED');
+          await boundedWait(50);
         }
         metrics.evidenceCount = evidence.length;
       }
@@ -416,9 +446,16 @@ function createJourneyMetrics(): JourneyExecutionResult['metrics'] {
     statesObserved: 0, uniqueSemanticStates: 0, milestonesPlanned: 1, milestonesReached: 0,
     journeyReplans: 0, recoveries: 0, loopDetections: 0, noProgressIterations: 0,
     pageTransitions: 0, dialogTransitions: 0, popupTransitions: 0, maxSimultaneousPages: 1,
+    failuresDetected: 0, successfulRecoveries: 0, failedRecoveries: 0, recoveryLoopsDetected: 0,
+    recoveryAttempts: 0, invalidDecisionRecoveries: 0,
   };
 }
 
 function toJourneyPageContext(context: BrowserPageContext): JourneyPageContext {
   return { id: context.id, url: context.url, openerPageId: context.openerPageId, active: context.active };
+}
+
+function appendRecovery(journey: JourneyState, event: JourneyState['recoveryHistory'][number]): void {
+  journey.recoveryHistory.push(event);
+  if (journey.recoveryHistory.length > 8) journey.recoveryHistory.shift();
 }
