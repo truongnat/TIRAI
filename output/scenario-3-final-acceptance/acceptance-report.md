@@ -16,8 +16,8 @@ Stale build artifacts were rebuilt during preflight because the source export wa
 Secondary canary-only finding: PLANNER_CALL_EXPLOSION occurred when the acceptance fixture allowed stochastic alternate scenarios/cases; the fixture now states minimal-sufficient coverage explicitly. Production planner semantics were not globally capped.
 
 ## Preflight and bounded policies
-Fixture/server/browser preflight: PASS (209ms)
-Fixture HTTP/API readiness: PASS; browser startup: 187ms
+Fixture/server/browser preflight: PASS (210ms)
+Fixture HTTP/API readiness: PASS; browser startup: 188ms
 Acceptance safety ceiling: 240000ms; DeepSeek request timeout: 30000ms; provider attempts per request: 1
 Stage budgets: REQUIREMENT_BUILDING=60000ms; TEST_PLANNING=120000ms; DATA_PLANNING=90000ms; SCENARIO2_EXECUTION=90000ms.
 Product result is materialized before acceptance artifact generation: YES.
@@ -43,27 +43,27 @@ Journey: replan budget=3; actual replans=0. Recovery budget=2; actual recoveries
 Verification: max attempts=1; verification AI calls=0.
 
 ## Stage timings
-REQUIREMENT_BUILDING: completed start=2026-08-25T13:01:00.051Z end=2026-08-25T13:01:02.645Z elapsed=2593ms
-TEST_PLANNING: completed start=2026-08-25T13:01:02.645Z end=2026-08-25T13:01:10.300Z elapsed=7655ms
-DATA_PLANNING: completed start=2026-08-25T13:01:10.300Z end=2026-08-25T13:01:11.584Z elapsed=1285ms
-SCENARIO2_EXECUTION: completed start=2026-08-25T13:01:11.584Z end=2026-08-25T13:01:17.806Z elapsed=6221ms
-Pipeline total: 17755ms
-Scenario 2 preparation/execution: 6221ms
-Journey: 6190ms; Cleanup: 30ms
+REQUIREMENT_BUILDING: completed start=2026-08-25T13:02:46.879Z end=2026-08-25T13:02:49.718Z elapsed=2839ms
+TEST_PLANNING: completed start=2026-08-25T13:02:49.718Z end=2026-08-25T13:02:57.821Z elapsed=8102ms
+DATA_PLANNING: completed start=2026-08-25T13:02:57.821Z end=2026-08-25T13:02:59.162Z elapsed=1341ms
+SCENARIO2_EXECUTION: completed start=2026-08-25T13:02:59.162Z end=2026-08-25T13:03:04.794Z elapsed=5632ms
+Pipeline total: 17915ms
+Scenario 2 preparation/execution: 5632ms
+Journey: 5603ms; Cleanup: 28ms
 
 ## Real planning and execution AI profile
 Model: deepseek-v4-flash; structured JSON; DeepSeek thinking=disabled.
 Logical provider calls: 8
 Transport requests: 8
 Provider failures: 0
-Tokens: 7154 input / 1821 output / 8975 total
-REQUIREMENT_BUILDING: calls=1, transport=1, failures=0, promptChars=6422, responseChars=1441, tokens=1726
-TEST_PLANNING: calls=3, transport=3, failures=0, promptChars=14969, responseChars=4653, tokens=4390
-DATA_PLANNING: calls=1, transport=1, failures=0, promptChars=3980, responseChars=273, tokens=1014
-EXECUTING: calls=3, transport=3, failures=0, promptChars=3240, responseChars=1430, tokens=1845
-Call details: #1 REQUIREMENT_BUILDING succeeded 2591ms prompt=6422 response=1441 tokens=1726 | #2 TEST_PLANNING succeeded 1403ms prompt=3755 response=617 tokens=947 | #3 TEST_PLANNING succeeded 2388ms prompt=4571 response=1182 tokens=1273 | #4 TEST_PLANNING succeeded 3858ms prompt=6643 response=2854 tokens=2170 | #5 DATA_PLANNING succeeded 1267ms prompt=3980 response=273 tokens=1014 | #6 EXECUTING succeeded 1920ms prompt=1067 response=580 tokens=636 | #7 EXECUTING succeeded 1788ms prompt=1075 response=540 tokens=626 | #8 EXECUTING succeeded 1483ms prompt=1098 response=310 tokens=583
+Tokens: 7131 input / 1867 output / 8998 total
+REQUIREMENT_BUILDING: calls=1, transport=1, failures=0, promptChars=6422, responseChars=1485, tokens=1735
+TEST_PLANNING: calls=3, transport=3, failures=0, promptChars=14732, responseChars=4640, tokens=4346
+DATA_PLANNING: calls=1, transport=1, failures=0, promptChars=4120, responseChars=386, tokens=1078
+EXECUTING: calls=3, transport=3, failures=0, promptChars=3213, responseChars=1470, tokens=1839
+Call details: #1 REQUIREMENT_BUILDING succeeded 2837ms prompt=6422 response=1485 tokens=1735 | #2 TEST_PLANNING succeeded 1643ms prompt=3779 response=460 tokens=921 | #3 TEST_PLANNING succeeded 2049ms prompt=4440 response=1115 tokens=1238 | #4 TEST_PLANNING succeeded 4403ms prompt=6513 response=3065 tokens=2187 | #5 DATA_PLANNING succeeded 1323ms prompt=4120 response=386 tokens=1078 | #6 EXECUTING succeeded 1436ms prompt=1058 response=522 tokens=614 | #7 EXECUTING succeeded 1573ms prompt=1066 response=525 tokens=621 | #8 EXECUTING succeeded 1577ms prompt=1089 response=423 tokens=604
 Test Planner call breakdown: 3 calls = coverage, scenario generation, executable TestCase generation; no repair call.
-Test Data Planner call breakdown: 2 calls = data-requirement extraction and dependency analysis; no repair call.
+Test Data Planner call breakdown: 1 provider call(s); deterministic extraction/dependency analysis used where applicable; no repair call.
 Retries: provider=0, Requirement Builder=0, Test Planner=0, Test Data Planner=0, Journey replans=0, Recovery=0; structured repairs=0.
 
 ## Planning output and exact canary contract
@@ -82,7 +82,7 @@ Cardinality policy: one requirement, one scenario, one executable TestCase, two 
 
 ## Scenario 2 / journey / Chromium / verification
 Scenario 2 status: passed
-Scenario 2 preparation: 6221ms
+Scenario 2 preparation: 5632ms
 Journey status: passed
 Journey states: 3
 Journey actions: 3
@@ -161,6 +161,6 @@ Orphans: 0
 
 ## Final decision
 Cleanup: PASS
-Total: 17755ms
+Total: 17915ms
 FINAL: SCENARIO 3 = ACCEPTED
 Acceptance artifact generation: 1ms
