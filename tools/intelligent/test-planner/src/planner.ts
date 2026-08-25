@@ -40,12 +40,25 @@ import { analyzeCoverage } from './analysis/coverage-analyzer.js';
 import { generateScenarios } from './analysis/scenario-generator.js';
 import { generateTestCases } from './analysis/test-case-generator.js';
 import { deduplicateScenarios, deduplicateTestCases } from './merge/deduplicator.js';
-import { buildValidRequirementIds, validateRequirementReferences } from './validation/requirement-ir-validator.js';
-import { validateScenarioReferences, validateExpectedResults } from './validation/traceability-validator.js';
+import {
+  buildValidRequirementIds,
+  validateRequirementReferences,
+} from './validation/requirement-ir-validator.js';
+import {
+  validateScenarioReferences,
+  validateScenarioCoverage,
+  validateRequirementCoverageChain,
+  validateExpectedResults,
+  validateExecutableTestCases,
+} from './validation/traceability-validator.js';
 import { validateTestProvenance } from './validation/provenance-validator.js';
 import { computeQualityMetrics } from './quality/metrics.js';
 import { writeOutput, writeIntermediate } from './persistence/writer.js';
-import { loadCheckpoint, writeStageCheckpoint, writeCheckpointMeta } from './persistence/checkpoint.js';
+import {
+  loadCheckpoint,
+  writeStageCheckpoint,
+  writeCheckpointMeta,
+} from './persistence/checkpoint.js';
 import { computeFingerprint } from './fingerprint.js';
 import { TEST_PLANNER_PROMPT_VERSION } from './prompts/system.js';
 
@@ -111,11 +124,11 @@ export async function buildTestPlan(
   } else {
     // Run coverage analysis
     for (const batch of batches) {
-      const { result, usage, warnings: coverageWarnings } = await analyzeCoverage(
-        batch,
-        provider,
-        maxRepairAttempts,
-      );
+      const {
+        result,
+        usage,
+        warnings: coverageWarnings,
+      } = await analyzeCoverage(batch, provider, maxRepairAttempts);
 
       aiRequests++;
       totalInputTokens += usage.inputTokens ?? 0;
@@ -150,8 +163,11 @@ export async function buildTestPlan(
     scenarioResult = { scenarios: checkpoint.scenarios };
   } else {
     // Run scenario generation
-    const { result, usage, warnings: scenarioWarnings } =
-      await generateScenarios(requirements, allCoverage, provider, maxRepairAttempts);
+    const {
+      result,
+      usage,
+      warnings: scenarioWarnings,
+    } = await generateScenarios(requirements, allCoverage, provider, maxRepairAttempts);
 
     aiRequests++;
     totalInputTokens += usage.inputTokens ?? 0;
@@ -173,8 +189,16 @@ export async function buildTestPlan(
     testCaseResult = { testCases: checkpoint.testCases, additionalDataNeeds: [] };
   } else {
     // Run test case generation
-    const { result, usage, warnings: testCaseWarnings } =
-      await generateTestCases(requirements, scenarioResult.scenarios, provider, maxRepairAttempts);
+    const {
+      result,
+      usage,
+      warnings: testCaseWarnings,
+    } = await generateTestCases(
+      requirements,
+      scenarioResult.scenarios,
+      provider,
+      maxRepairAttempts,
+    );
 
     aiRequests++;
     totalInputTokens += usage.inputTokens ?? 0;
@@ -190,12 +214,14 @@ export async function buildTestPlan(
   }
 
   // ---- Deduplication ------------------------------------------------------
-  const { deduped: dedupedScenarios, warnings: dedupScenarioWarnings } =
-    deduplicateScenarios(scenarioResult.scenarios);
+  const { deduped: dedupedScenarios, warnings: dedupScenarioWarnings } = deduplicateScenarios(
+    scenarioResult.scenarios,
+  );
   allWarnings.push(...dedupScenarioWarnings);
 
-  const { deduped: dedupedTestCases, warnings: dedupTCWarnings } =
-    deduplicateTestCases(testCaseResult.testCases);
+  const { deduped: dedupedTestCases, warnings: dedupTCWarnings } = deduplicateTestCases(
+    testCaseResult.testCases,
+  );
   allWarnings.push(...dedupTCWarnings);
 
   // ---- Assign deterministic IDs -------------------------------------------
@@ -218,7 +244,7 @@ export async function buildTestPlan(
       dataNeeds: [], // Populated later from data needs
       expectedBehavior: s.expectedBehavior,
       priority: s.priority,
-      provenance: s.provenance.filter((p) => validReqIds.has(p.requirementId)),
+      provenance: mergeRequirementProvenance(s.provenance, s.requirementIds, requirements),
       confidence: s.confidence,
     };
   });
@@ -261,6 +287,7 @@ export async function buildTestPlan(
         description: e.description,
         verificationType: e.verificationType,
         target: e.target,
+        verificationIntent: e.verificationIntent,
       })),
       cleanup: tc.cleanup.map((c) => ({
         description: c.description,
@@ -271,7 +298,7 @@ export async function buildTestPlan(
         suggestedExecutor: tc.automation.suggestedExecutor,
         reasons: tc.automation.reasons,
       },
-      provenance: tc.provenance.filter((p) => validReqIds.has(p.requirementId)),
+      provenance: mergeRequirementProvenance(tc.provenance, tc.requirementIds, requirements),
       confidence: tc.confidence,
     });
   }
@@ -281,10 +308,22 @@ export async function buildTestPlan(
   const dataNeedMap = new Map<string, number>(); // description → index
 
   const collectDataNeeds = (
-    rawNeeds: Array<{ description: string; type: string; constraints: string[]; relatedRequirementIds: string[] }>,
+    rawNeeds: Array<{
+      description: string;
+      type: string;
+      constraints: string[];
+      relatedRequirementIds: string[];
+      sourceScenarioId?: string;
+      provenance?: TestProvenance[];
+    }>,
   ): void => {
     for (const dn of rawNeeds) {
-      const key = dn.description.toLowerCase().trim();
+      const key = [
+        dn.description.toLowerCase().trim(),
+        dn.type,
+        ...[...dn.constraints].sort(),
+        ...[...dn.relatedRequirementIds].sort(),
+      ].join('|');
       if (dataNeedMap.has(key)) continue;
 
       const id = `DATA-${String(allDataNeeds.length + 1).padStart(4, '0')}`;
@@ -296,13 +335,20 @@ export async function buildTestPlan(
         type: dn.type as TestDataNeed['type'],
         constraints: dn.constraints,
         relatedRequirementIds: dn.relatedRequirementIds.filter((id) => validReqIds.has(id)),
+        sourceScenarioId: dn.sourceScenarioId,
+        provenance: dn.provenance,
       });
     }
   };
 
   // Collect from scenarios
   for (const s of dedupedScenarios) {
-    collectDataNeeds(s.dataNeeds);
+    collectDataNeeds(
+      s.dataNeeds.map((need) => ({
+        ...need,
+        sourceScenarioId: need.sourceScenarioId ?? s.temporaryId,
+      })),
+    );
   }
   // Collect from test cases
   for (const tc of dedupedTestCases) {
@@ -310,18 +356,77 @@ export async function buildTestPlan(
   }
   // Collect additional data needs from test case extraction
   collectDataNeeds(testCaseResult.additionalDataNeeds);
+  // Collect requirement-owned needs before linking scenario/test-case views.
+  for (const requirement of requirements) {
+    collectDataNeeds(
+      (requirement.dataNeeds ?? []).map((need) => ({
+        description: need.description,
+        type: need.type ?? 'other',
+        constraints: need.constraints ?? [],
+        relatedRequirementIds: [requirement.id],
+        provenance: need.provenance.map((provenance) => ({
+          ...provenance,
+          requirementId: requirement.id,
+        })),
+      })),
+    );
+  }
 
   // Link data needs to scenarios and test cases
   for (const s of finalScenarios) {
     const candidate = dedupedScenarios.find((c) => scenarioIdMap.get(c.temporaryId) === s.id);
     if (candidate) {
-      s.dataNeeds = resolveDataNeeds(candidate.dataNeeds, allDataNeeds, dataNeedMap);
+      const requirementNeeds = s.requirementIds.flatMap((requirementId) => {
+        const requirement = requirements.find(
+          (candidateRequirement) => candidateRequirement.id === requirementId,
+        );
+        return (
+          requirement?.dataNeeds?.map((need) => ({
+            description: need.description,
+            type: need.type ?? 'other',
+            constraints: need.constraints ?? [],
+            relatedRequirementIds: [requirementId],
+          })) ?? []
+        );
+      });
+      s.dataNeeds = resolveDataNeeds(
+        [...candidate.dataNeeds, ...requirementNeeds],
+        allDataNeeds,
+        dataNeedMap,
+      );
     }
   }
   for (const tc of finalTestCases) {
-    const candidate = dedupedTestCases.find((c) => scenarioIdMap.get(c.scenarioTemporaryId) === tc.scenarioId && c.title === tc.title);
+    const candidate = dedupedTestCases.find(
+      (c) => scenarioIdMap.get(c.scenarioTemporaryId) === tc.scenarioId && c.title === tc.title,
+    );
     if (candidate) {
-      tc.dataNeeds = resolveDataNeeds(candidate.dataNeeds, allDataNeeds, dataNeedMap);
+      const scenario = finalScenarios.find((s) => s.id === tc.scenarioId);
+      const scenarioCandidate = scenario
+        ? dedupedScenarios.find((s) => scenarioIdMap.get(s.temporaryId) === scenario.id)
+        : undefined;
+      const inherited =
+        scenarioCandidate?.dataNeeds.map((need) => ({
+          ...need,
+          sourceScenarioId: tc.scenarioId,
+        })) ?? [];
+      const requirementNeeds = tc.requirementIds.flatMap((requirementId) => {
+        const requirement = requirements.find(
+          (candidateRequirement) => candidateRequirement.id === requirementId,
+        );
+        return (requirement?.dataNeeds ?? []).map((need) => ({
+          description: need.description,
+          type: need.type ?? 'other',
+          constraints: need.constraints ?? [],
+          relatedRequirementIds: [requirementId],
+          provenance: need.provenance.map((provenance) => ({ ...provenance, requirementId })),
+        }));
+      });
+      tc.dataNeeds = resolveDataNeeds(
+        [...candidate.dataNeeds, ...inherited, ...requirementNeeds],
+        allDataNeeds,
+        dataNeedMap,
+      );
     }
   }
 
@@ -330,6 +435,7 @@ export async function buildTestPlan(
     requirements,
     allCoverage,
     finalScenarios,
+    finalTestCases,
   );
 
   // ---- Build unresolved ---------------------------------------------------
@@ -355,14 +461,22 @@ export async function buildTestPlan(
 
   // ---- Final validation ---------------------------------------------------
   for (const tc of finalTestCases) {
-    allWarnings.push(...validateScenarioReferences(finalTestCases, finalScenarios));
     allWarnings.push(...validateExpectedResults([tc]));
     allWarnings.push(...validateTestProvenance(tc.provenance, validReqIds, tc.id));
-    allWarnings.push(...validateRequirementReferences(tc.requirementIds, validReqIds, tc.id, 'test-case'));
+    allWarnings.push(
+      ...validateRequirementReferences(tc.requirementIds, validReqIds, tc.id, 'test-case'),
+    );
   }
 
+  allWarnings.push(...validateScenarioCoverage(finalScenarios, finalTestCases));
+  allWarnings.push(...validateRequirementCoverageChain(requirementCoverage, finalScenarios));
+  allWarnings.push(...validateScenarioReferences(finalTestCases, finalScenarios));
+  allWarnings.push(...validateExecutableTestCases(finalTestCases));
+
   for (const s of finalScenarios) {
-    allWarnings.push(...validateRequirementReferences(s.requirementIds, validReqIds, s.id, 'scenario'));
+    allWarnings.push(
+      ...validateRequirementReferences(s.requirementIds, validReqIds, s.id, 'scenario'),
+    );
     allWarnings.push(...validateTestProvenance(s.provenance, validReqIds, s.id));
   }
 
@@ -378,14 +492,24 @@ export async function buildTestPlan(
   }
 
   // ---- Quality metrics ----------------------------------------------------
-  const quality = computeQualityMetrics(requirementCoverage, finalScenarios, finalTestCases, finalUnresolved);
+  const quality = computeQualityMetrics(
+    requirementCoverage,
+    finalScenarios,
+    finalTestCases,
+    finalUnresolved,
+  );
 
   // ---- Assemble final IR --------------------------------------------------
   const scope = {
     requirementIds: requirements.map((r) => r.id),
-    objective: requirementIR.document.summary ?? `Test plan for ${requirementIR.requirements.length} requirements`,
+    objective:
+      requirementIR.document.summary ??
+      `Test plan for ${requirementIR.requirements.length} requirements`,
     assumptions: ['All requirements in the Requirement IR are in scope'],
-    exclusions: ['Test data generation (belongs to Test Data Planner)', 'Test execution (belongs to executor)'],
+    exclusions: [
+      'Test data generation (belongs to Test Data Planner)',
+      'Test execution (belongs to executor)',
+    ],
   };
 
   const testPlanIR: TestPlanIR = {
@@ -397,6 +521,7 @@ export async function buildTestPlan(
     dataNeeds: allDataNeeds,
     unresolved: finalUnresolved,
     quality,
+    warnings: allWarnings,
   };
 
   // ---- Write output -------------------------------------------------------
@@ -459,11 +584,15 @@ function buildRequirementCoverage(
   requirements: RequirementIRInput['requirements'],
   coverage: CoverageCandidate[],
   scenarios: TestScenario[],
+  testCases: TestCase[],
 ): RequirementCoverage[] {
   const coverageMap = new Map(coverage.map((c) => [c.requirementId, c]));
 
   // Build scenario lookup per requirement
   const reqToScenarios = new Map<string, string[]>();
+  const executableScenarioIds = new Set(
+    testCases.filter((tc) => isExecutableTestCase(tc)).map((tc) => tc.scenarioId),
+  );
   for (const s of scenarios) {
     for (const reqId of s.requirementIds) {
       const ids = reqToScenarios.get(reqId) ?? [];
@@ -477,9 +606,9 @@ function buildRequirementCoverage(
     const scenarioIds = reqToScenarios.get(req.id) ?? [];
 
     let status: CoverageStatus;
-    if (scenarioIds.length > 0) {
+    if (scenarioIds.some((scenarioId) => executableScenarioIds.has(scenarioId))) {
       status = 'covered';
-    } else if (cov && cov.strategies.length > 0) {
+    } else if (scenarioIds.length > 0 || (cov && cov.strategies.length > 0)) {
       status = 'partially-covered';
     } else {
       status = 'not-covered';
@@ -495,11 +624,28 @@ function buildRequirementCoverage(
   });
 }
 
+function isExecutableTestCase(testCase: TestCase): boolean {
+  if (testCase.steps.length === 0 || testCase.expectedResults.length === 0) return false;
+  if (testCase.automation.status === 'manual-only' || testCase.automation.status === 'unknown')
+    return false;
+  return testCase.steps.every(
+    (step, index) =>
+      step.action.trim().length > 0 &&
+      Number.isFinite(step.order) &&
+      (index === 0 || step.order > testCase.steps[index - 1]!.order),
+  );
+}
+
 /**
  * Resolve data need references to actual data need objects with IDs.
  */
 function resolveDataNeeds(
-  rawNeeds: Array<{ description: string; type: string; constraints: string[]; relatedRequirementIds: string[] }>,
+  rawNeeds: Array<{
+    description: string;
+    type: string;
+    constraints: string[];
+    relatedRequirementIds: string[];
+  }>,
   allDataNeeds: TestDataNeed[],
   dataNeedMap: Map<string, number>,
 ): TestDataNeed[] {
@@ -507,7 +653,12 @@ function resolveDataNeeds(
   const seen = new Set<string>();
 
   for (const dn of rawNeeds) {
-    const key = dn.description.toLowerCase().trim();
+    const key = [
+      dn.description.toLowerCase().trim(),
+      dn.type,
+      ...[...dn.constraints].sort(),
+      ...[...dn.relatedRequirementIds].sort(),
+    ].join('|');
     const idx = dataNeedMap.get(key);
     if (idx !== undefined && !seen.has(allDataNeeds[idx]!.id)) {
       seen.add(allDataNeeds[idx]!.id);
@@ -516,4 +667,39 @@ function resolveDataNeeds(
   }
 
   return result;
+}
+
+function mergeRequirementProvenance(
+  own: TestProvenance[],
+  requirementIds: string[],
+  requirements: RequirementIRInput['requirements'],
+): TestProvenance[] {
+  const merged = [...own];
+  for (const requirementId of requirementIds) {
+    const requirement = requirements.find((candidate) => candidate.id === requirementId);
+    for (const provenance of requirement?.provenance ?? []) {
+      const inherited: TestProvenance = { ...provenance, requirementId };
+      if (!merged.some((existing) => provenanceKey(existing) === provenanceKey(inherited))) {
+        merged.push(inherited);
+      }
+    }
+  }
+  return merged.filter((provenance) => validRequirementId(requirements, provenance.requirementId));
+}
+
+function validRequirementId(
+  requirements: RequirementIRInput['requirements'],
+  requirementId: string,
+): boolean {
+  return requirements.some((requirement) => requirement.id === requirementId);
+}
+
+function provenanceKey(provenance: TestProvenance): string {
+  return [
+    provenance.requirementId,
+    provenance.contextId ?? '',
+    provenance.sheet ?? '',
+    ...(provenance.ranges ?? []),
+    ...(provenance.cells ?? []),
+  ].join('|');
 }

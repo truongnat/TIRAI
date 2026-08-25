@@ -13,14 +13,22 @@ export function buildScenarioPrompt(
 ): string {
   const reqMap = new Map(requirements.map((r) => [r.id, r]));
 
-  const batchDescriptions = coverage.map((c) => {
-    const req = reqMap.get(c.requirementId);
-    if (!req) return null;
-    return `Requirement: ${req.id} – ${req.title}
+  const batchDescriptions = coverage
+    .map((c) => {
+      const req = reqMap.get(c.requirementId);
+      if (!req) return null;
+      return `Requirement: ${req.id} – ${req.title}
   Statement: ${req.statement}
+  Preconditions: ${req.preconditions.map((p) => p.description).join('; ') || '(none)'}
+  Constraints: ${req.constraints.map((c) => c.description).join('; ') || '(none)'}
+  Expected behaviors: ${req.expectedBehaviors.map((b) => b.description).join('; ') || '(none)'}
+  Business outcomes: ${req.outcomes.map((o) => `${o.description}${o.state ? ` [state: ${o.state}]` : ''}`).join('; ') || '(none)'}
+  Required data: ${req.dataNeeds?.map((d) => d.description).join('; ') || '(none)'}
   Strategies: ${c.strategies.join(', ')}
   Reasons: ${c.reasons.join('; ')}`;
-  }).filter(Boolean).join('\n\n');
+    })
+    .filter(Boolean)
+    .join('\n\n');
 
   return `Based on the coverage analysis, generate test scenario candidates.
 

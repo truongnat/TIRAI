@@ -31,7 +31,9 @@ export function buildExtractionPrompt(batch: EvidenceBatch): string {
 
   // ---- What is/isn't a requirement ----
   parts.push('## WHAT IS A REQUIREMENT?');
-  parts.push('A verifiable system obligation: behavior, constraint, expected state, business rule.');
+  parts.push(
+    'A verifiable system obligation: behavior, constraint, expected state, business rule.',
+  );
   parts.push('');
   parts.push('## WHAT IS NOT A REQUIREMENT?');
   parts.push('Entity names alone. Inventory. Design decisions without evidence. Assumptions.');
@@ -40,7 +42,9 @@ export function buildExtractionPrompt(batch: EvidenceBatch): string {
   // ---- Explicit vs Derived ----
   parts.push('## EXPLICIT VS DERIVED');
   parts.push('explicit: Source directly states the obligation.');
-  parts.push('derived: Obligation follows from flow steps, rules, or relationships with clear evidence.');
+  parts.push(
+    'derived: Obligation follows from flow steps, rules, or relationships with clear evidence.',
+  );
   parts.push('ambiguous: Indication exists but evidence is insufficient.');
   parts.push('');
 
@@ -69,7 +73,9 @@ export function buildExtractionPrompt(batch: EvidenceBatch): string {
 
   // ---- Relationship Usage ----
   parts.push('## RELATIONSHIP USAGE');
-  parts.push('Relationships provide supporting evidence but do not automatically become requirements.');
+  parts.push(
+    'Relationships provide supporting evidence but do not automatically become requirements.',
+  );
   parts.push('');
 
   // ---- Testability ----
@@ -132,7 +138,8 @@ export function buildExtractionPrompt(batch: EvidenceBatch): string {
           parts.push(`  Effect: ${e.description}`);
         }
       }
-      if (r.relatedEntityIds?.length) parts.push(`  Related entities: ${r.relatedEntityIds.join(', ')}`);
+      if (r.relatedEntityIds?.length)
+        parts.push(`  Related entities: ${r.relatedEntityIds.join(', ')}`);
       parts.push(`  Provenance: ${r.provenance.map((p) => p.contextId).join(', ')}`);
       parts.push('');
     }
@@ -175,7 +182,9 @@ export function buildExtractionPrompt(batch: EvidenceBatch): string {
   parts.push('');
   parts.push('Each candidate must have: temporaryId, title, type, statement, sourceNature,');
   parts.push('semanticEvidenceIds, provenance, confidence.');
-  parts.push('Optional: actor, trigger, preconditions, inputs, expectedBehaviors, outcomes,');
+  parts.push(
+    'Optional: actor, trigger, preconditions, inputs, dataNeeds, expectedBehaviors, outcomes,',
+  );
   parts.push('constraints, rationale.');
 
   return parts.join('\n');

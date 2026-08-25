@@ -45,6 +45,7 @@ export interface Requirement {
   trigger?: string;
   preconditions: RequirementCondition[];
   inputs: RequirementInput[];
+  dataNeeds: RequirementDataNeed[];
   expectedBehaviors: RequirementBehavior[];
   outcomes: RequirementOutcome[];
   constraints: RequirementConstraint[];
@@ -52,6 +53,13 @@ export interface Requirement {
   provenance: ProvenanceReference[];
   confidence: number;
   testability: RequirementTestability;
+}
+
+export interface RequirementDataNeed {
+  description: string;
+  type?: string;
+  constraints?: string[];
+  provenance: ProvenanceReference[];
 }
 
 // ---- Requirement type taxonomy -------------------------------------------
@@ -70,10 +78,7 @@ export type RequirementType =
 
 // ---- Source nature -------------------------------------------------------
 
-export type RequirementSourceNature =
-  | 'explicit'
-  | 'derived'
-  | 'ambiguous';
+export type RequirementSourceNature = 'explicit' | 'derived' | 'ambiguous';
 
 // ---- Sub-models ----------------------------------------------------------
 
@@ -170,6 +175,7 @@ export interface RequirementCandidate {
   trigger?: string;
   preconditions: RequirementCondition[];
   inputs: RequirementInput[];
+  dataNeeds: RequirementDataNeed[];
   expectedBehaviors: RequirementBehavior[];
   outcomes: RequirementOutcome[];
   constraints: RequirementConstraint[];
@@ -195,11 +201,44 @@ export interface RawCandidate {
   semanticEvidenceIds: string[];
   actor?: string;
   trigger?: string;
-  preconditions: Array<{ description: string; relatedSemanticIds?: string[]; provenance: ProvenanceReference[] }>;
-  inputs: Array<{ name: string; description?: string; dataType?: string; required?: boolean; constraints?: string[]; relatedSemanticId?: string; provenance: ProvenanceReference[] }>;
-  expectedBehaviors: Array<{ description: string; condition?: string; target?: string; provenance: ProvenanceReference[] }>;
-  outcomes: Array<{ condition?: string; description: string; state?: string; provenance: ProvenanceReference[] }>;
-  constraints: Array<{ type: string; description: string; value?: unknown; provenance: ProvenanceReference[] }>;
+  preconditions: Array<{
+    description: string;
+    relatedSemanticIds?: string[];
+    provenance: ProvenanceReference[];
+  }>;
+  inputs: Array<{
+    name: string;
+    description?: string;
+    dataType?: string;
+    required?: boolean;
+    constraints?: string[];
+    relatedSemanticId?: string;
+    provenance: ProvenanceReference[];
+  }>;
+  dataNeeds?: Array<{
+    description: string;
+    type?: string;
+    constraints?: string[];
+    provenance: ProvenanceReference[];
+  }>;
+  expectedBehaviors: Array<{
+    description: string;
+    condition?: string;
+    target?: string;
+    provenance: ProvenanceReference[];
+  }>;
+  outcomes: Array<{
+    condition?: string;
+    description: string;
+    state?: string;
+    provenance: ProvenanceReference[];
+  }>;
+  constraints: Array<{
+    type: string;
+    description: string;
+    value?: unknown;
+    provenance: ProvenanceReference[];
+  }>;
   provenance: ProvenanceReference[];
   confidence: number;
   rationale?: string;
@@ -319,7 +358,13 @@ export interface SemanticIRInput {
     name: string;
     type: string;
     description?: string;
-    attributes?: Array<{ name: string; value?: unknown; dataType?: string; description?: string; provenance?: ProvenanceReference[] }>;
+    attributes?: Array<{
+      name: string;
+      value?: unknown;
+      dataType?: string;
+      description?: string;
+      provenance?: ProvenanceReference[];
+    }>;
     aliases?: string[];
     provenance: ProvenanceReference[];
     confidence: number;
@@ -347,8 +392,17 @@ export interface SemanticIRInput {
     id: string;
     type: string;
     statement: string;
-    conditions?: Array<{ expression: string; operands?: string[]; provenance?: ProvenanceReference[] }>;
-    effects?: Array<{ description: string; target?: string; value?: unknown; provenance?: ProvenanceReference[] }>;
+    conditions?: Array<{
+      expression: string;
+      operands?: string[];
+      provenance?: ProvenanceReference[];
+    }>;
+    effects?: Array<{
+      description: string;
+      target?: string;
+      value?: unknown;
+      provenance?: ProvenanceReference[];
+    }>;
     relatedEntityIds?: string[];
     provenance: ProvenanceReference[];
     confidence: number;

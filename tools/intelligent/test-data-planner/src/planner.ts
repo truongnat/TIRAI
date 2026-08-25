@@ -31,16 +31,31 @@ import type {
   DataConstraintType,
 } from './models.js';
 import { TestDataPlannerWarningCode } from './warnings.js';
-import { loadTestCaseIR, loadTestCaseIRContent, loadTestPlanIRContent } from './persistence/loader.js';
+import {
+  loadTestCaseIR,
+  loadTestCaseIRContent,
+  loadTestPlanIRContent,
+} from './persistence/loader.js';
 import { extractDataRequirements } from './analysis/data-requirement-extractor.js';
-import { extractDeterministic, mergeExtractionResults } from './analysis/deterministic-extractor.js';
+import {
+  extractDeterministic,
+  mergeExtractionResults,
+} from './analysis/deterministic-extractor.js';
 import { analyzeDependencies } from './analysis/dependency-analyzer.js';
 import { deduplicateDataCandidates } from './merge/deduplicator.js';
 import { buildDependencyGraph } from './graph/dependency-graph.js';
-import { validateTestCaseReferences, validateRequirementReferences, validateProvenance } from './validation/reference-validator.js';
+import {
+  validateTestCaseReferences,
+  validateRequirementReferences,
+  validateProvenance,
+} from './validation/reference-validator.js';
 import { computeDataQualityMetrics } from './quality/metrics.js';
 import { writeDataOutput, writeDataIntermediate } from './persistence/writer.js';
-import { loadDataCheckpoint, writeDataStageCheckpoint, writeDataCheckpointMeta } from './persistence/checkpoint.js';
+import {
+  loadDataCheckpoint,
+  writeDataStageCheckpoint,
+  writeDataCheckpointMeta,
+} from './persistence/checkpoint.js';
 import { computeFingerprint } from './fingerprint.js';
 import { TEST_DATA_PLANNER_PROMPT_VERSION } from './prompts/system.js';
 import { classifyConstraints } from './normalization/constraint-classifier.js';
@@ -72,7 +87,12 @@ export async function buildTestDataPlan(
   const validTCIds = new Set(testCases.map((tc) => tc.id));
 
   // ---- Compute fingerprint ------------------------------------------------
-  const fingerprint = computeFingerprint(testCaseContent, promptVersion, provider.name, testPlanContent ?? undefined);
+  const fingerprint = computeFingerprint(
+    testCaseContent,
+    promptVersion,
+    provider.name,
+    testPlanContent ?? undefined,
+  );
 
   // ---- Load checkpoint if resuming ----------------------------------------
   const resume = options?.resume ?? false;
@@ -91,9 +111,11 @@ export async function buildTestDataPlan(
     const deterministicResult = extractDeterministic(testCases);
 
     // AI enrichment layer
-    const { result: aiResult, usage, warnings } = await extractDataRequirements(
-      testCases, provider, maxRepairAttempts, testCaseIR.dataNeeds,
-    );
+    const {
+      result: aiResult,
+      usage,
+      warnings,
+    } = await extractDataRequirements(testCases, provider, maxRepairAttempts, testCaseIR.dataNeeds);
     aiRequests++;
     totalInputTokens += usage.inputTokens ?? 0;
     totalOutputTokens += usage.outputTokens ?? 0;
@@ -113,7 +135,9 @@ export async function buildTestDataPlan(
     depResult = checkpoint.dependencyAnalysis;
   } else {
     const { result, usage, warnings } = await analyzeDependencies(
-      dataReqResult.dataCandidates, provider, maxRepairAttempts,
+      dataReqResult.dataCandidates,
+      provider,
+      maxRepairAttempts,
     );
     aiRequests++;
     totalInputTokens += usage.inputTokens ?? 0;
@@ -127,8 +151,9 @@ export async function buildTestDataPlan(
   }
 
   // ---- Deduplication ------------------------------------------------------
-  const { deduped: dedupedCandidates, warnings: dedupWarnings } =
-    deduplicateDataCandidates(dataReqResult.dataCandidates);
+  const { deduped: dedupedCandidates, warnings: dedupWarnings } = deduplicateDataCandidates(
+    dataReqResult.dataCandidates,
+  );
   allWarnings.push(...dedupWarnings);
 
   // ---- Assign deterministic IDs -------------------------------------------
@@ -163,7 +188,7 @@ export async function buildTestDataPlan(
         operator: con.operator,
         value: con.value,
         description: con.description,
-        provenance: [],  // Will be enriched by constraint classifier + provenance inheritance
+        provenance: [], // Will be enriched by constraint classifier + provenance inheritance
       })),
       dependencies: [],
       relatedTestCaseIds: relatedTCIds.filter((tcId) => validTCIds.has(tcId)),
@@ -190,7 +215,9 @@ export async function buildTestDataPlan(
 
   // ---- Build dependency graph ---------------------------------------------
   const depCandidates = depResult.dependencyCandidates
-    .filter((d) => tempIdToFinalId.has(d.sourceTemporaryId) && tempIdToFinalId.has(d.targetTemporaryId))
+    .filter(
+      (d) => tempIdToFinalId.has(d.sourceTemporaryId) && tempIdToFinalId.has(d.targetTemporaryId),
+    )
     .map((d) => ({
       sourceDataItemId: tempIdToFinalId.get(d.sourceTemporaryId)!,
       targetDataItemId: tempIdToFinalId.get(d.targetTemporaryId)!,
@@ -223,7 +250,11 @@ export async function buildTestDataPlan(
       id: `DATASET-${String(i + 1).padStart(4, '0')}`,
       name: `Reusable set ${i + 1}`,
       dataItemIds: r.temporaryIds.map((id) => tempIdToFinalId.get(id)!),
-      applicableTestCaseIds: findApplicableTestCases(r.temporaryIds, dataReqResult.dataCandidates, tempIdToFinalId),
+      applicableTestCaseIds: findApplicableTestCases(
+        r.temporaryIds,
+        dataReqResult.dataCandidates,
+        tempIdToFinalId,
+      ),
       reusePolicy: r.reusePolicy,
       reason: r.reason,
     }));
@@ -232,8 +263,8 @@ export async function buildTestDataPlan(
   for (const rs of reusableSets) {
     if (rs.reusePolicy === 'safe') {
       const items = rs.dataItemIds.map((id) => dataItems.find((d) => d.id === id)).filter(Boolean);
-      const hasMutable = items.some((item) =>
-        item && (item.strategy === 'create-new' || item.lifecycle === 'temporary')
+      const hasMutable = items.some(
+        (item) => item && (item.strategy === 'create-new' || item.lifecycle === 'temporary'),
       );
       if (hasMutable) {
         allWarnings.push({
@@ -245,14 +276,13 @@ export async function buildTestDataPlan(
   }
 
   // ---- Build unresolved ---------------------------------------------------
-  const finalUnresolved: TestDataUnresolved[] = dataReqResult.unresolvedCandidates
-    .map((u, i) => ({
-      id: `DATA-UNRESOLVED-${String(i + 1).padStart(4, '0')}`,
-      testCaseIds: u.testCaseIds.filter((id) => validTCIds.has(id)),
-      description: u.description,
-      reason: u.reason,
-      provenance: u.provenance,
-    }));
+  const finalUnresolved: TestDataUnresolved[] = dataReqResult.unresolvedCandidates.map((u, i) => ({
+    id: `DATA-UNRESOLVED-${String(i + 1).padStart(4, '0')}`,
+    testCaseIds: u.testCaseIds.filter((id) => validTCIds.has(id)),
+    description: u.description,
+    reason: u.reason,
+    provenance: u.provenance,
+  }));
 
   // ---- Build per-test-case data plans -------------------------------------
   const testCasePlans: TestCaseDataPlan[] = [];
@@ -313,12 +343,18 @@ export async function buildTestDataPlan(
 
   // ---- Final validation ---------------------------------------------------
   allWarnings.push(...validateTestCaseReferences(dataItems, validTCIds));
-  allWarnings.push(...validateRequirementReferences(dataItems, new Set())); // Accept all req IDs from AI
+  const validRequirementIds = new Set(testCases.flatMap((tc) => tc.requirementIds));
+  allWarnings.push(...validateRequirementReferences(dataItems, validRequirementIds));
   allWarnings.push(...validateProvenance(dataItems));
 
   // ---- Quality metrics ----------------------------------------------------
   const quality = computeDataQualityMetrics(
-    testCasePlans, dataItems, dependencies, reusableSets, finalUnresolved, cycles.length,
+    testCasePlans,
+    dataItems,
+    dependencies,
+    reusableSets,
+    finalUnresolved,
+    cycles.length,
     testCases,
   );
 
@@ -385,20 +421,28 @@ function buildSetupIntents(c: DataRequirementCandidate): Array<{
   description: string;
   executorHint?: 'database' | 'api' | 'ui' | 'file' | 'configuration' | 'unknown';
 }> {
-  const setupMap: Record<string, { type: 'select' | 'create' | 'generate' | 'configure' | 'mock' | 'derive' | 'none'; executorHint?: 'database' | 'api' | 'ui' | 'file' | 'configuration' | 'unknown' }> = {
+  const setupMap: Record<
+    string,
+    {
+      type: 'select' | 'create' | 'generate' | 'configure' | 'mock' | 'derive' | 'none';
+      executorHint?: 'database' | 'api' | 'ui' | 'file' | 'configuration' | 'unknown';
+    }
+  > = {
     'reuse-existing': { type: 'select', executorHint: 'database' },
     'create-new': { type: 'create', executorHint: 'database' },
-    'generate': { type: 'generate' },
-    'derive': { type: 'derive' },
-    'mock': { type: 'mock', executorHint: 'api' },
-    'stub': { type: 'mock', executorHint: 'api' },
-    'configure': { type: 'configure', executorHint: 'configuration' },
+    generate: { type: 'generate' },
+    derive: { type: 'derive' },
+    mock: { type: 'mock', executorHint: 'api' },
+    stub: { type: 'mock', executorHint: 'api' },
+    configure: { type: 'configure', executorHint: 'configuration' },
     'select-existing': { type: 'select', executorHint: 'database' },
-    'unknown': { type: 'none' },
+    unknown: { type: 'none' },
   };
 
   const setup = setupMap[c.strategy] ?? { type: 'none' as const };
-  return [{ type: setup.type, description: `Setup: ${c.description}`, executorHint: setup.executorHint }];
+  return [
+    { type: setup.type, description: `Setup: ${c.description}`, executorHint: setup.executorHint },
+  ];
 }
 
 function buildCleanupIntents(c: DataRequirementCandidate): Array<{

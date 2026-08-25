@@ -13,19 +13,35 @@ export function buildTestCasePrompt(
 ): string {
   const reqMap = new Map(requirements.map((r) => [r.id, r]));
 
-  const scenarioDescriptions = scenarios.map((s) => {
-    const reqs = s.requirementIds.map((id) => {
-      const r = reqMap.get(id);
-      return r ? `${id}: ${r.statement}` : id;
-    }).join('\n    ');
+  const scenarioDescriptions = scenarios
+    .map((s) => {
+      const reqs = s.requirementIds
+        .map((id) => {
+          const r = reqMap.get(id);
+          return r ? `${id}: ${r.statement}` : id;
+        })
+        .join('\n    ');
 
-    return `Scenario: ${s.temporaryId} – ${s.title}
+      const requirementContext = s.requirementIds
+        .map((id) => {
+          const r = reqMap.get(id);
+          if (!r) return id;
+          return `${id}: preconditions=[${r.preconditions.map((p) => p.description).join('; ')}]; constraints=[${r.constraints.map((c) => c.description).join('; ')}]; outcomes=[${r.outcomes.map((o) => `${o.description}${o.state ? ` (${o.state})` : ''}`).join('; ')}]; data=[${r.dataNeeds?.map((d) => d.description).join('; ') || ''}]`;
+        })
+        .join('\n    ');
+
+      return `Scenario: ${s.temporaryId} – ${s.title}
   Category: ${s.category}
   Objective: ${s.objective}
   Requirements:
     ${reqs}
+  Requirement context:
+    ${requirementContext}
+  Scenario preconditions: ${s.preconditions.map((p) => p.description).join('; ') || '(none)'}
+  Scenario data needs: ${s.dataNeeds.map((d) => d.description).join('; ') || '(none)'}
   Expected behavior: ${s.expectedBehavior.join('; ')}`;
-  }).join('\n\n');
+    })
+    .join('\n\n');
 
   return `Based on the scenario candidates, generate test case candidates.
 
@@ -55,15 +71,15 @@ Return exactly one JSON object with this structure:
       "requirementIds": ["REQ-XXXX"],
       "title": "Test case title",
       "objective": "What to verify",
-      "type": "positive",
+      "type": "ui",
       "priority": "medium",
       "preconditions": [{"description": "Precondition", "sourceRequirementIds": ["REQ-XXXX"]}],
       "inputs": [{"name": "inputName", "valueStrategy": "valid", "value": "", "description": "Input description"}],
       "dataNeeds": [{"description": "Data needed", "type": "other", "constraints": [], "relatedRequirementIds": []}],
       "steps": [{"order": 1, "action": "Action", "target": "target", "input": "input", "expectedIntermediateResult": ""}],
-      "expectedResults": [{"description": "Expected result", "verificationType": "assertion", "target": "target"}],
+      "expectedResults": [{"description": "Order status is CANCELLED", "verificationType": "state", "target": "order", "verificationIntent": {"kind": "persisted-business-state", "subject": "order", "property": "status", "expectedValue": "CANCELLED", "authority": "PERSISTED_BUSINESS_STATE"}}],
       "cleanup": [],
-      "automation": {"ready": true, "notes": ""},
+      "automation": {"status": "ready", "suggestedExecutor": "ui", "reasons": []},
       "provenance": [{"requirementId": "REQ-XXXX"}],
       "confidence": 0.8
     }

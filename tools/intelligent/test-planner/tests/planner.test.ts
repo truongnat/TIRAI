@@ -26,9 +26,18 @@ import { analyzeCoverage } from '../src/analysis/coverage-analyzer.js';
 import { generateScenarios } from '../src/analysis/scenario-generator.js';
 import { generateTestCases } from '../src/analysis/test-case-generator.js';
 import { deduplicateScenarios, deduplicateTestCases } from '../src/merge/deduplicator.js';
-import { buildValidRequirementIds, validateRequirementReferences } from '../src/validation/requirement-ir-validator.js';
-import { validateScenarioReferences, validateExpectedResults } from '../src/validation/traceability-validator.js';
-import { validateTestProvenance, buildValidContextIdsFromRequirementIR } from '../src/validation/provenance-validator.js';
+import {
+  buildValidRequirementIds,
+  validateRequirementReferences,
+} from '../src/validation/requirement-ir-validator.js';
+import {
+  validateScenarioReferences,
+  validateExpectedResults,
+} from '../src/validation/traceability-validator.js';
+import {
+  validateTestProvenance,
+  buildValidContextIdsFromRequirementIR,
+} from '../src/validation/provenance-validator.js';
 import { computeQualityMetrics } from '../src/quality/metrics.js';
 import { computeFingerprint } from '../src/fingerprint.js';
 import { buildTestPlan } from '../src/planner.js';
@@ -38,11 +47,7 @@ import { TEST_PLANNER_PROMPT_VERSION, TEST_PLANNER_SYSTEM_PROMPT } from '../src/
 import { buildCoveragePrompt } from '../src/prompts/coverage.js';
 import { buildScenarioPrompt } from '../src/prompts/scenarios.js';
 import { buildRepairPrompt } from '../src/prompts/repair.js';
-import type {
-  TestScenario,
-  TestCase,
-  RequirementCoverage,
-} from '../src/models.js';
+import type { TestScenario, TestCase, RequirementCoverage } from '../src/models.js';
 
 // ===========================================================================
 // 1. LOADER TESTS (1-8)
@@ -118,8 +123,25 @@ describe('Loader', () => {
 
   it('8. loads IR with unresolved and conflicts', () => {
     const ir = minimalRequirementIR({
-      unresolved: [{ id: 'U1', description: 'Ambiguous', reason: 'unclear', semanticEvidenceIds: [], provenance: [] }],
-      conflicts: [{ id: 'C1', requirementIds: ['REQ-0001'], description: 'Conflict', type: 'contradiction', provenance: [], confidence: 0.5 }],
+      unresolved: [
+        {
+          id: 'U1',
+          description: 'Ambiguous',
+          reason: 'unclear',
+          semanticEvidenceIds: [],
+          provenance: [],
+        },
+      ],
+      conflicts: [
+        {
+          id: 'C1',
+          requirementIds: ['REQ-0001'],
+          description: 'Conflict',
+          type: 'contradiction',
+          provenance: [],
+          confidence: 0.5,
+        },
+      ],
     });
     const tmpDir = createTempRequirementIR(ir);
     const loaded = loadRequirementIR(tmpDir);
@@ -139,7 +161,12 @@ describe('Coverage analyzer', () => {
     const provider = new FakeAIProvider({
       response: {
         coverageCandidates: [
-          { requirementId: 'REQ-0001', strategies: ['positive', 'validation'], reasons: ['Has constraints'], confidence: 0.9 },
+          {
+            requirementId: 'REQ-0001',
+            strategies: ['positive', 'validation'],
+            reasons: ['Has constraints'],
+            confidence: 0.9,
+          },
         ],
         unresolvedCandidates: [],
       },
@@ -157,7 +184,12 @@ describe('Coverage analyzer', () => {
     const provider = new FakeAIProvider({
       response: {
         coverageCandidates: [
-          { requirementId: 'REQ-9999', strategies: ['positive'], reasons: ['Wrong ID'], confidence: 0.9 },
+          {
+            requirementId: 'REQ-9999',
+            strategies: ['positive'],
+            reasons: ['Wrong ID'],
+            confidence: 0.9,
+          },
         ],
         unresolvedCandidates: [],
       },
@@ -172,7 +204,12 @@ describe('Coverage analyzer', () => {
     const provider = new FakeAIProvider({
       response: {
         coverageCandidates: [
-          { requirementId: 'REQ-0001', strategies: ['invalid-strategy', 'positive'], reasons: [], confidence: 0.8 },
+          {
+            requirementId: 'REQ-0001',
+            strategies: ['invalid-strategy', 'positive'],
+            reasons: [],
+            confidence: 0.8,
+          },
         ],
         unresolvedCandidates: [],
       },
@@ -186,9 +223,7 @@ describe('Coverage analyzer', () => {
     const ir = minimalRequirementIR();
     const provider = new FakeAIProvider({
       response: {
-        coverageCandidates: [
-          { requirementId: 'REQ-0001', strategies: ['positive'], reasons: [] },
-        ],
+        coverageCandidates: [{ requirementId: 'REQ-0001', strategies: ['positive'], reasons: [] }],
         unresolvedCandidates: [],
       },
     });
@@ -203,7 +238,12 @@ describe('Coverage analyzer', () => {
       response: {
         coverageCandidates: [],
         unresolvedCandidates: [
-          { requirementId: 'REQ-0001', description: 'Error behavior unspecified', reason: 'missing-error-behavior', provenance: [] },
+          {
+            requirementId: 'REQ-0001',
+            description: 'Error behavior unspecified',
+            reason: 'missing-error-behavior',
+            provenance: [],
+          },
         ],
       },
     });
@@ -219,7 +259,12 @@ describe('Coverage analyzer', () => {
       response: {
         coverageCandidates: [],
         unresolvedCandidates: [
-          { requirementId: 'REQ-0001', description: 'Something', reason: 'invalid-reason', provenance: [] },
+          {
+            requirementId: 'REQ-0001',
+            description: 'Something',
+            reason: 'invalid-reason',
+            provenance: [],
+          },
         ],
       },
     });
@@ -309,10 +354,17 @@ describe('Scenario generator', () => {
       response: {
         scenarios: [
           {
-            temporaryId: 'SCN-001', title: 'Test', objective: 'Test',
-            category: 'happy-path', requirementIds: ['REQ-9999'],
-            preconditions: [], dataNeeds: [], expectedBehavior: [],
-            priority: 'medium', provenance: [], confidence: 0.5,
+            temporaryId: 'SCN-001',
+            title: 'Test',
+            objective: 'Test',
+            category: 'happy-path',
+            requirementIds: ['REQ-9999'],
+            preconditions: [],
+            dataNeeds: [],
+            expectedBehavior: [],
+            priority: 'medium',
+            provenance: [],
+            confidence: 0.5,
           },
         ],
       },
@@ -327,10 +379,17 @@ describe('Scenario generator', () => {
       response: {
         scenarios: [
           {
-            temporaryId: 'SCN-001', title: 'Test', objective: 'Test',
-            category: 'invalid-category', requirementIds: ['REQ-0001'],
-            preconditions: [], dataNeeds: [], expectedBehavior: [],
-            priority: 'medium', provenance: [], confidence: 0.5,
+            temporaryId: 'SCN-001',
+            title: 'Test',
+            objective: 'Test',
+            category: 'invalid-category',
+            requirementIds: ['REQ-0001'],
+            preconditions: [],
+            dataNeeds: [],
+            expectedBehavior: [],
+            priority: 'medium',
+            provenance: [],
+            confidence: 0.5,
           },
         ],
       },
@@ -345,10 +404,17 @@ describe('Scenario generator', () => {
       response: {
         scenarios: [
           {
-            temporaryId: 'SCN-001', title: 'Test', objective: 'Test',
-            category: 'happy-path', requirementIds: ['REQ-0001'],
-            preconditions: [], dataNeeds: [], expectedBehavior: [],
-            priority: 'super-critical', provenance: [], confidence: 0.5,
+            temporaryId: 'SCN-001',
+            title: 'Test',
+            objective: 'Test',
+            category: 'happy-path',
+            requirementIds: ['REQ-0001'],
+            preconditions: [],
+            dataNeeds: [],
+            expectedBehavior: [],
+            priority: 'super-critical',
+            provenance: [],
+            confidence: 0.5,
           },
         ],
       },
@@ -363,10 +429,16 @@ describe('Scenario generator', () => {
       response: {
         scenarios: [
           {
-            title: 'Test', objective: 'Test',
-            category: 'happy-path', requirementIds: ['REQ-0001'],
-            preconditions: [], dataNeeds: [], expectedBehavior: [],
-            priority: 'medium', provenance: [], confidence: 0.5,
+            title: 'Test',
+            objective: 'Test',
+            category: 'happy-path',
+            requirementIds: ['REQ-0001'],
+            preconditions: [],
+            dataNeeds: [],
+            expectedBehavior: [],
+            priority: 'medium',
+            provenance: [],
+            confidence: 0.5,
           },
         ],
       },
@@ -381,10 +453,17 @@ describe('Scenario generator', () => {
       response: {
         scenarios: [
           {
-            temporaryId: 'SCN-001', title: '', objective: '',
-            category: 'happy-path', requirementIds: ['REQ-0001'],
-            preconditions: [], dataNeeds: [], expectedBehavior: [],
-            priority: 'medium', provenance: [], confidence: 0.5,
+            temporaryId: 'SCN-001',
+            title: '',
+            objective: '',
+            category: 'happy-path',
+            requirementIds: ['REQ-0001'],
+            preconditions: [],
+            dataNeeds: [],
+            expectedBehavior: [],
+            priority: 'medium',
+            provenance: [],
+            confidence: 0.5,
           },
         ],
       },
@@ -399,12 +478,24 @@ describe('Scenario generator', () => {
       response: {
         scenarios: [
           {
-            temporaryId: 'SCN-001', title: 'Test', objective: 'Test',
-            category: 'happy-path', requirementIds: ['REQ-0001'],
-            preconditions: [], dataNeeds: [
-              { description: 'User account', type: 'account', constraints: ['active'], relatedRequirementIds: ['REQ-0001'] },
+            temporaryId: 'SCN-001',
+            title: 'Test',
+            objective: 'Test',
+            category: 'happy-path',
+            requirementIds: ['REQ-0001'],
+            preconditions: [],
+            dataNeeds: [
+              {
+                description: 'User account',
+                type: 'account',
+                constraints: ['active'],
+                relatedRequirementIds: ['REQ-0001'],
+              },
             ],
-            expectedBehavior: [], priority: 'medium', provenance: [], confidence: 0.5,
+            expectedBehavior: [],
+            priority: 'medium',
+            provenance: [],
+            confidence: 0.5,
           },
         ],
       },
@@ -473,12 +564,22 @@ describe('Test case generator', () => {
       response: {
         testCases: [
           {
-            temporaryId: 'TC-001', scenarioTemporaryId: 'SCN-NONEXISTENT',
-            requirementIds: ['REQ-0001'], title: 'Test', objective: 'Test',
-            type: 'ui', priority: 'medium', preconditions: [], inputs: [],
-            dataNeeds: [], steps: [], expectedResults: [], cleanup: [],
+            temporaryId: 'TC-001',
+            scenarioTemporaryId: 'SCN-NONEXISTENT',
+            requirementIds: ['REQ-0001'],
+            title: 'Test',
+            objective: 'Test',
+            type: 'ui',
+            priority: 'medium',
+            preconditions: [],
+            inputs: [],
+            dataNeeds: [],
+            steps: [],
+            expectedResults: [],
+            cleanup: [],
             automation: { status: 'unknown', reasons: [] },
-            provenance: [], confidence: 0.5,
+            provenance: [],
+            confidence: 0.5,
           },
         ],
         additionalDataNeeds: [],
@@ -494,12 +595,22 @@ describe('Test case generator', () => {
       response: {
         testCases: [
           {
-            temporaryId: 'TC-001', scenarioTemporaryId: 'SCN-CAND-001',
-            requirementIds: ['REQ-0001'], title: 'Test', objective: 'Test',
-            type: 'quantum', priority: 'medium', preconditions: [], inputs: [],
-            dataNeeds: [], steps: [], expectedResults: [], cleanup: [],
+            temporaryId: 'TC-001',
+            scenarioTemporaryId: 'SCN-CAND-001',
+            requirementIds: ['REQ-0001'],
+            title: 'Test',
+            objective: 'Test',
+            type: 'quantum',
+            priority: 'medium',
+            preconditions: [],
+            inputs: [],
+            dataNeeds: [],
+            steps: [],
+            expectedResults: [],
+            cleanup: [],
             automation: { status: 'unknown', reasons: [] },
-            provenance: [], confidence: 0.5,
+            provenance: [],
+            confidence: 0.5,
           },
         ],
         additionalDataNeeds: [],
@@ -515,14 +626,22 @@ describe('Test case generator', () => {
       response: {
         testCases: [
           {
-            temporaryId: 'TC-001', scenarioTemporaryId: 'SCN-CAND-001',
-            requirementIds: ['REQ-0001'], title: 'Test', objective: 'Test',
-            type: 'ui', priority: 'medium', preconditions: [], inputs: [
-              { name: 'field', valueStrategy: 'magical' },
-            ],
-            dataNeeds: [], steps: [], expectedResults: [], cleanup: [],
+            temporaryId: 'TC-001',
+            scenarioTemporaryId: 'SCN-CAND-001',
+            requirementIds: ['REQ-0001'],
+            title: 'Test',
+            objective: 'Test',
+            type: 'ui',
+            priority: 'medium',
+            preconditions: [],
+            inputs: [{ name: 'field', valueStrategy: 'magical' }],
+            dataNeeds: [],
+            steps: [],
+            expectedResults: [],
+            cleanup: [],
             automation: { status: 'unknown', reasons: [] },
-            provenance: [], confidence: 0.5,
+            provenance: [],
+            confidence: 0.5,
           },
         ],
         additionalDataNeeds: [],
@@ -538,12 +657,22 @@ describe('Test case generator', () => {
       response: {
         testCases: [
           {
-            temporaryId: 'TC-001', scenarioTemporaryId: 'SCN-CAND-001',
-            requirementIds: ['REQ-0001'], title: 'Test', objective: 'Test',
-            type: 'ui', priority: 'medium', preconditions: [], inputs: [],
-            dataNeeds: [], steps: [], expectedResults: [], cleanup: [],
+            temporaryId: 'TC-001',
+            scenarioTemporaryId: 'SCN-CAND-001',
+            requirementIds: ['REQ-0001'],
+            title: 'Test',
+            objective: 'Test',
+            type: 'ui',
+            priority: 'medium',
+            preconditions: [],
+            inputs: [],
+            dataNeeds: [],
+            steps: [],
+            expectedResults: [],
+            cleanup: [],
             automation: { status: 'fully-automated', reasons: [] },
-            provenance: [], confidence: 0.5,
+            provenance: [],
+            confidence: 0.5,
           },
         ],
         additionalDataNeeds: [],
@@ -559,7 +688,12 @@ describe('Test case generator', () => {
       response: {
         testCases: [],
         additionalDataNeeds: [
-          { description: 'Existing user', type: 'account', constraints: ['active'], relatedRequirementIds: ['REQ-0001'] },
+          {
+            description: 'Existing user',
+            type: 'account',
+            constraints: ['active'],
+            relatedRequirementIds: ['REQ-0001'],
+          },
         ],
       },
     });
@@ -574,16 +708,22 @@ describe('Test case generator', () => {
       response: {
         testCases: [
           {
-            temporaryId: 'TC-001', scenarioTemporaryId: 'SCN-CAND-001',
-            requirementIds: ['REQ-0001'], title: 'Test', objective: 'Test',
-            type: 'ui', priority: 'medium', preconditions: [], inputs: [],
-            dataNeeds: [], steps: [
-              { action: 'Step 1' },
-              { order: 5, action: 'Step 2' },
-            ],
-            expectedResults: [], cleanup: [],
+            temporaryId: 'TC-001',
+            scenarioTemporaryId: 'SCN-CAND-001',
+            requirementIds: ['REQ-0001'],
+            title: 'Test',
+            objective: 'Test',
+            type: 'ui',
+            priority: 'medium',
+            preconditions: [],
+            inputs: [],
+            dataNeeds: [],
+            steps: [{ action: 'Step 1' }, { order: 5, action: 'Step 2' }],
+            expectedResults: [],
+            cleanup: [],
             automation: { status: 'unknown', reasons: [] },
-            provenance: [], confidence: 0.5,
+            provenance: [],
+            confidence: 0.5,
           },
         ],
         additionalDataNeeds: [],
@@ -600,14 +740,22 @@ describe('Test case generator', () => {
       response: {
         testCases: [
           {
-            temporaryId: 'TC-001', scenarioTemporaryId: 'SCN-CAND-001',
-            requirementIds: ['REQ-0001'], title: 'Test', objective: 'Test',
-            type: 'ui', priority: 'medium', preconditions: [], inputs: [],
-            dataNeeds: [], steps: [],
+            temporaryId: 'TC-001',
+            scenarioTemporaryId: 'SCN-CAND-001',
+            requirementIds: ['REQ-0001'],
+            title: 'Test',
+            objective: 'Test',
+            type: 'ui',
+            priority: 'medium',
+            preconditions: [],
+            inputs: [],
+            dataNeeds: [],
+            steps: [],
             expectedResults: [{ description: 'Check', verificationType: 'telepathy' }],
             cleanup: [],
             automation: { status: 'unknown', reasons: [] },
-            provenance: [], confidence: 0.5,
+            provenance: [],
+            confidence: 0.5,
           },
         ],
         additionalDataNeeds: [],
@@ -626,8 +774,14 @@ describe('Test case generator', () => {
 describe('Deduplicator', () => {
   it('34. removes duplicate scenarios by title+category+reqIds', () => {
     const scenarios = [
-      scenarioCandidate('SCN-001', 'Login test', ['REQ-0001'], { category: 'happy-path', confidence: 0.9 }),
-      scenarioCandidate('SCN-002', 'Login test', ['REQ-0001'], { category: 'happy-path', confidence: 0.7 }),
+      scenarioCandidate('SCN-001', 'Login test', ['REQ-0001'], {
+        category: 'happy-path',
+        confidence: 0.9,
+      }),
+      scenarioCandidate('SCN-002', 'Login test', ['REQ-0001'], {
+        category: 'happy-path',
+        confidence: 0.7,
+      }),
     ];
 
     const { deduped, warnings } = deduplicateScenarios(scenarios);
@@ -715,13 +869,23 @@ describe('Validation – requirement references', () => {
   });
 
   it('43. warns on dangling requirement references', () => {
-    const warnings = validateRequirementReferences(['REQ-9999'], new Set(['REQ-0001']), 'TC-0001', 'test-case');
+    const warnings = validateRequirementReferences(
+      ['REQ-9999'],
+      new Set(['REQ-0001']),
+      'TC-0001',
+      'test-case',
+    );
     expect(warnings.length).toBe(1);
     expect(warnings[0]!.code).toBe(TestPlannerWarningCode.CASE_DANGLING_REQUIREMENT);
   });
 
   it('44. no warnings for valid references', () => {
-    const warnings = validateRequirementReferences(['REQ-0001'], new Set(['REQ-0001']), 'TC-0001', 'test-case');
+    const warnings = validateRequirementReferences(
+      ['REQ-0001'],
+      new Set(['REQ-0001']),
+      'TC-0001',
+      'test-case',
+    );
     expect(warnings.length).toBe(0);
   });
 });
@@ -729,21 +893,39 @@ describe('Validation – requirement references', () => {
 describe('Validation – traceability', () => {
   const scenarios: TestScenario[] = [
     {
-      id: 'SCN-0001', title: 'Test', objective: 'Test', category: 'happy-path',
-      requirementIds: ['REQ-0001'], preconditions: [], dataNeeds: [],
-      expectedBehavior: [], priority: 'medium', provenance: [], confidence: 0.9,
+      id: 'SCN-0001',
+      title: 'Test',
+      objective: 'Test',
+      category: 'happy-path',
+      requirementIds: ['REQ-0001'],
+      preconditions: [],
+      dataNeeds: [],
+      expectedBehavior: [],
+      priority: 'medium',
+      provenance: [],
+      confidence: 0.9,
     },
   ];
 
   it('45. warns on invalid scenario reference', () => {
     const testCases: TestCase[] = [
       {
-        id: 'TC-0001', scenarioId: 'SCN-9999', requirementIds: ['REQ-0001'],
-        title: 'Test', objective: 'Test', type: 'ui', priority: 'medium',
-        preconditions: [], inputs: [], dataNeeds: [], steps: [],
+        id: 'TC-0001',
+        scenarioId: 'SCN-9999',
+        requirementIds: ['REQ-0001'],
+        title: 'Test',
+        objective: 'Test',
+        type: 'ui',
+        priority: 'medium',
+        preconditions: [],
+        inputs: [],
+        dataNeeds: [],
+        steps: [],
         expectedResults: [{ description: 'OK', verificationType: 'ui' }],
-        cleanup: [], automation: { status: 'ready', reasons: [] },
-        provenance: [], confidence: 0.9,
+        cleanup: [],
+        automation: { status: 'ready', reasons: [] },
+        provenance: [],
+        confidence: 0.9,
       },
     ];
 
@@ -755,12 +937,22 @@ describe('Validation – traceability', () => {
   it('46. no warnings for valid scenario reference', () => {
     const testCases: TestCase[] = [
       {
-        id: 'TC-0001', scenarioId: 'SCN-0001', requirementIds: ['REQ-0001'],
-        title: 'Test', objective: 'Test', type: 'ui', priority: 'medium',
-        preconditions: [], inputs: [], dataNeeds: [], steps: [],
+        id: 'TC-0001',
+        scenarioId: 'SCN-0001',
+        requirementIds: ['REQ-0001'],
+        title: 'Test',
+        objective: 'Test',
+        type: 'ui',
+        priority: 'medium',
+        preconditions: [],
+        inputs: [],
+        dataNeeds: [],
+        steps: [],
         expectedResults: [{ description: 'OK', verificationType: 'ui' }],
-        cleanup: [], automation: { status: 'ready', reasons: [] },
-        provenance: [], confidence: 0.9,
+        cleanup: [],
+        automation: { status: 'ready', reasons: [] },
+        provenance: [],
+        confidence: 0.9,
       },
     ];
 
@@ -771,12 +963,22 @@ describe('Validation – traceability', () => {
   it('47. warns on empty expected results', () => {
     const testCases: TestCase[] = [
       {
-        id: 'TC-0001', scenarioId: 'SCN-0001', requirementIds: [],
-        title: 'Test', objective: 'Test', type: 'ui', priority: 'medium',
-        preconditions: [], inputs: [], dataNeeds: [], steps: [],
-        expectedResults: [], cleanup: [],
+        id: 'TC-0001',
+        scenarioId: 'SCN-0001',
+        requirementIds: [],
+        title: 'Test',
+        objective: 'Test',
+        type: 'ui',
+        priority: 'medium',
+        preconditions: [],
+        inputs: [],
+        dataNeeds: [],
+        steps: [],
+        expectedResults: [],
+        cleanup: [],
         automation: { status: 'unknown', reasons: [] },
-        provenance: [], confidence: 0.5,
+        provenance: [],
+        confidence: 0.5,
       },
     ];
 
@@ -820,8 +1022,20 @@ describe('Validation – provenance', () => {
 describe('Quality metrics', () => {
   it('51. computes coverage rate correctly', () => {
     const coverages: RequirementCoverage[] = [
-      { requirementId: 'REQ-0001', strategies: ['positive'], scenarioIds: ['SCN-0001'], status: 'covered', reasons: [] },
-      { requirementId: 'REQ-0002', strategies: [], scenarioIds: [], status: 'not-covered', reasons: [] },
+      {
+        requirementId: 'REQ-0001',
+        strategies: ['positive'],
+        scenarioIds: ['SCN-0001'],
+        status: 'covered',
+        reasons: [],
+      },
+      {
+        requirementId: 'REQ-0002',
+        strategies: [],
+        scenarioIds: [],
+        status: 'not-covered',
+        reasons: [],
+      },
     ];
 
     const metrics = computeQualityMetrics(coverages, [], [], []);
@@ -833,12 +1047,70 @@ describe('Quality metrics', () => {
 
   it('52. counts test cases by scenario category', () => {
     const scenarios: TestScenario[] = [
-      { id: 'SCN-0001', title: 'A', objective: '', category: 'happy-path', requirementIds: [], preconditions: [], dataNeeds: [], expectedBehavior: [], priority: 'medium', provenance: [], confidence: 0.9 },
-      { id: 'SCN-0002', title: 'B', objective: '', category: 'negative', requirementIds: [], preconditions: [], dataNeeds: [], expectedBehavior: [], priority: 'medium', provenance: [], confidence: 0.9 },
+      {
+        id: 'SCN-0001',
+        title: 'A',
+        objective: '',
+        category: 'happy-path',
+        requirementIds: [],
+        preconditions: [],
+        dataNeeds: [],
+        expectedBehavior: [],
+        priority: 'medium',
+        provenance: [],
+        confidence: 0.9,
+      },
+      {
+        id: 'SCN-0002',
+        title: 'B',
+        objective: '',
+        category: 'negative',
+        requirementIds: [],
+        preconditions: [],
+        dataNeeds: [],
+        expectedBehavior: [],
+        priority: 'medium',
+        provenance: [],
+        confidence: 0.9,
+      },
     ];
     const testCases: TestCase[] = [
-      { id: 'TC-0001', scenarioId: 'SCN-0001', requirementIds: [], title: '', objective: '', type: 'ui', priority: 'medium', preconditions: [], inputs: [], dataNeeds: [], steps: [], expectedResults: [], cleanup: [], automation: { status: 'ready', reasons: [] }, provenance: [], confidence: 0.9 },
-      { id: 'TC-0002', scenarioId: 'SCN-0002', requirementIds: [], title: '', objective: '', type: 'ui', priority: 'medium', preconditions: [], inputs: [], dataNeeds: [], steps: [], expectedResults: [], cleanup: [], automation: { status: 'ready', reasons: [] }, provenance: [], confidence: 0.9 },
+      {
+        id: 'TC-0001',
+        scenarioId: 'SCN-0001',
+        requirementIds: [],
+        title: '',
+        objective: '',
+        type: 'ui',
+        priority: 'medium',
+        preconditions: [],
+        inputs: [],
+        dataNeeds: [],
+        steps: [],
+        expectedResults: [],
+        cleanup: [],
+        automation: { status: 'ready', reasons: [] },
+        provenance: [],
+        confidence: 0.9,
+      },
+      {
+        id: 'TC-0002',
+        scenarioId: 'SCN-0002',
+        requirementIds: [],
+        title: '',
+        objective: '',
+        type: 'ui',
+        priority: 'medium',
+        preconditions: [],
+        inputs: [],
+        dataNeeds: [],
+        steps: [],
+        expectedResults: [],
+        cleanup: [],
+        automation: { status: 'ready', reasons: [] },
+        provenance: [],
+        confidence: 0.9,
+      },
     ];
 
     const metrics = computeQualityMetrics([], scenarios, testCases, []);
@@ -848,8 +1120,42 @@ describe('Quality metrics', () => {
 
   it('53. counts automation readiness', () => {
     const testCases: TestCase[] = [
-      { id: 'TC-0001', scenarioId: 'SCN-0001', requirementIds: [], title: '', objective: '', type: 'ui', priority: 'medium', preconditions: [], inputs: [], dataNeeds: [], steps: [], expectedResults: [], cleanup: [], automation: { status: 'ready', reasons: [] }, provenance: [], confidence: 0.9 },
-      { id: 'TC-0002', scenarioId: 'SCN-0001', requirementIds: [], title: '', objective: '', type: 'ui', priority: 'medium', preconditions: [], inputs: [], dataNeeds: [], steps: [], expectedResults: [], cleanup: [], automation: { status: 'manual-only', reasons: [] }, provenance: [], confidence: 0.9 },
+      {
+        id: 'TC-0001',
+        scenarioId: 'SCN-0001',
+        requirementIds: [],
+        title: '',
+        objective: '',
+        type: 'ui',
+        priority: 'medium',
+        preconditions: [],
+        inputs: [],
+        dataNeeds: [],
+        steps: [],
+        expectedResults: [],
+        cleanup: [],
+        automation: { status: 'ready', reasons: [] },
+        provenance: [],
+        confidence: 0.9,
+      },
+      {
+        id: 'TC-0002',
+        scenarioId: 'SCN-0001',
+        requirementIds: [],
+        title: '',
+        objective: '',
+        type: 'ui',
+        priority: 'medium',
+        preconditions: [],
+        inputs: [],
+        dataNeeds: [],
+        steps: [],
+        expectedResults: [],
+        cleanup: [],
+        automation: { status: 'manual-only', reasons: [] },
+        provenance: [],
+        confidence: 0.9,
+      },
     ];
 
     const metrics = computeQualityMetrics([], [], testCases, []);
@@ -858,8 +1164,42 @@ describe('Quality metrics', () => {
 
   it('54. computes provenance coverage', () => {
     const testCases: TestCase[] = [
-      { id: 'TC-0001', scenarioId: 'SCN-0001', requirementIds: [], title: '', objective: '', type: 'ui', priority: 'medium', preconditions: [], inputs: [], dataNeeds: [], steps: [], expectedResults: [], cleanup: [], automation: { status: 'ready', reasons: [] }, provenance: [{ requirementId: 'REQ-0001' }], confidence: 0.9 },
-      { id: 'TC-0002', scenarioId: 'SCN-0001', requirementIds: [], title: '', objective: '', type: 'ui', priority: 'medium', preconditions: [], inputs: [], dataNeeds: [], steps: [], expectedResults: [], cleanup: [], automation: { status: 'ready', reasons: [] }, provenance: [], confidence: 0.9 },
+      {
+        id: 'TC-0001',
+        scenarioId: 'SCN-0001',
+        requirementIds: [],
+        title: '',
+        objective: '',
+        type: 'ui',
+        priority: 'medium',
+        preconditions: [],
+        inputs: [],
+        dataNeeds: [],
+        steps: [],
+        expectedResults: [],
+        cleanup: [],
+        automation: { status: 'ready', reasons: [] },
+        provenance: [{ requirementId: 'REQ-0001' }],
+        confidence: 0.9,
+      },
+      {
+        id: 'TC-0002',
+        scenarioId: 'SCN-0001',
+        requirementIds: [],
+        title: '',
+        objective: '',
+        type: 'ui',
+        priority: 'medium',
+        preconditions: [],
+        inputs: [],
+        dataNeeds: [],
+        steps: [],
+        expectedResults: [],
+        cleanup: [],
+        automation: { status: 'ready', reasons: [] },
+        provenance: [],
+        confidence: 0.9,
+      },
     ];
 
     const metrics = computeQualityMetrics([], [], testCases, []);
@@ -972,9 +1312,11 @@ describe('Planner – end-to-end pipeline', () => {
   it('68. produces valid TestPlanIR from fixture', async () => {
     const tmpOutput = createTempOutput();
     const provider = buildTestPlannerFakeProvider(
-      [coverageResult({
-        coverageCandidates: [coverageCandidate('REQ-0001', ['positive', 'validation'])],
-      })],
+      [
+        coverageResult({
+          coverageCandidates: [coverageCandidate('REQ-0001', ['positive', 'validation'])],
+        }),
+      ],
       scenarioResult({
         scenarios: [scenarioCandidate('SCN-CAND-001', 'Valid username', ['REQ-0001'])],
       }),
@@ -1009,7 +1351,9 @@ describe('Planner – end-to-end pipeline', () => {
     expect(fs.existsSync(path.join(tmpOutput, 'test-case-ir.json'))).toBe(true);
     expect(fs.existsSync(path.join(tmpOutput, 'manifest.json'))).toBe(true);
     expect(fs.existsSync(path.join(tmpOutput, 'quality-report.json'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpOutput, 'intermediate', 'coverage-analysis.json'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpOutput, 'intermediate', 'coverage-analysis.json'))).toBe(
+      true,
+    );
 
     fs.rmSync(tmpOutput, { recursive: true });
   });
@@ -1056,12 +1400,14 @@ describe('Planner – end-to-end pipeline', () => {
 
   it('72. assigns deterministic IDs', async () => {
     const provider = buildTestPlannerFakeProvider(
-      [coverageResult({
-        coverageCandidates: [
-          coverageCandidate('REQ-0001', ['positive']),
-          coverageCandidate('REQ-0002', ['boundary']),
-        ],
-      })],
+      [
+        coverageResult({
+          coverageCandidates: [
+            coverageCandidate('REQ-0001', ['positive']),
+            coverageCandidate('REQ-0002', ['boundary']),
+          ],
+        }),
+      ],
       scenarioResult({
         scenarios: [
           scenarioCandidate('SCN-A', 'Scenario A', ['REQ-0001']),
@@ -1086,9 +1432,11 @@ describe('Planner – end-to-end pipeline', () => {
 
   it('73. builds requirement coverage mapping', async () => {
     const provider = buildTestPlannerFakeProvider(
-      [coverageResult({
-        coverageCandidates: [coverageCandidate('REQ-0001', ['positive'])],
-      })],
+      [
+        coverageResult({
+          coverageCandidates: [coverageCandidate('REQ-0001', ['positive'])],
+        }),
+      ],
       scenarioResult({
         scenarios: [scenarioCandidate('SCN-001', 'Test', ['REQ-0001'])],
       }),
@@ -1107,9 +1455,11 @@ describe('Planner – end-to-end pipeline', () => {
 
   it('74. marks uncovered requirements', async () => {
     const provider = buildTestPlannerFakeProvider(
-      [coverageResult({
-        coverageCandidates: [coverageCandidate('REQ-0001', ['positive'])],
-      })],
+      [
+        coverageResult({
+          coverageCandidates: [coverageCandidate('REQ-0001', ['positive'])],
+        }),
+      ],
       scenarioResult({
         scenarios: [scenarioCandidate('SCN-001', 'Test', ['REQ-0001'])],
       }),
@@ -1127,12 +1477,19 @@ describe('Planner – end-to-end pipeline', () => {
 
   it('75. collects unresolved items', async () => {
     const provider = buildTestPlannerFakeProvider(
-      [coverageResult({
-        coverageCandidates: [coverageCandidate('REQ-0001', ['positive'])],
-        unresolvedCandidates: [
-          { requirementId: 'REQ-0001', description: 'Error behavior unknown', reason: 'missing-error-behavior', provenance: [] },
-        ],
-      })],
+      [
+        coverageResult({
+          coverageCandidates: [coverageCandidate('REQ-0001', ['positive'])],
+          unresolvedCandidates: [
+            {
+              requirementId: 'REQ-0001',
+              description: 'Error behavior unknown',
+              reason: 'missing-error-behavior',
+              provenance: [],
+            },
+          ],
+        }),
+      ],
       scenarioResult({ scenarios: [scenarioCandidate('SCN-001', 'Test', ['REQ-0001'])] }),
       testCaseResult({ testCases: [testCaseCandidate('TC-001', 'SCN-001', ['REQ-0001'])] }),
     );
@@ -1148,9 +1505,18 @@ describe('Planner – end-to-end pipeline', () => {
     const provider = buildTestPlannerFakeProvider(
       [coverageResult({ coverageCandidates: [coverageCandidate('REQ-0001', ['positive'])] })],
       scenarioResult({
-        scenarios: [scenarioCandidate('SCN-001', 'Test', ['REQ-0001'], {
-          dataNeeds: [{ description: 'User account', type: 'account', constraints: ['active'], relatedRequirementIds: ['REQ-0001'] }],
-        })],
+        scenarios: [
+          scenarioCandidate('SCN-001', 'Test', ['REQ-0001'], {
+            dataNeeds: [
+              {
+                description: 'User account',
+                type: 'account',
+                constraints: ['active'],
+                relatedRequirementIds: ['REQ-0001'],
+              },
+            ],
+          }),
+        ],
       }),
       testCaseResult({ testCases: [testCaseCandidate('TC-001', 'SCN-001', ['REQ-0001'])] }),
     );

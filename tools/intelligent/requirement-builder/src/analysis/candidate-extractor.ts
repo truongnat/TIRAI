@@ -27,13 +27,19 @@ const DEFAULT_MAX_REPAIR_ATTEMPTS = 1;
 const DEFAULT_CONFIDENCE = 0.7;
 
 const VALID_TYPES: ReadonlySet<string> = new Set([
-  'functional', 'validation', 'business-rule', 'data', 'interface',
-  'security', 'state-transition', 'non-functional', 'technical-constraint', 'unknown',
+  'functional',
+  'validation',
+  'business-rule',
+  'data',
+  'interface',
+  'security',
+  'state-transition',
+  'non-functional',
+  'technical-constraint',
+  'unknown',
 ]);
 
-const VALID_SOURCE_NATURES: ReadonlySet<string> = new Set([
-  'explicit', 'derived', 'ambiguous',
-]);
+const VALID_SOURCE_NATURES: ReadonlySet<string> = new Set(['explicit', 'derived', 'ambiguous']);
 
 /**
  * Lenient schema for json_object mode. Actual normalization is done afterwards.
@@ -63,17 +69,26 @@ export async function extractCandidates(
   let lastError: unknown;
   for (let attempt = 0; attempt <= maxRepairAttempts; attempt++) {
     try {
-      const messages = attempt === 0
-        ? [
-            { role: 'system' as const, content: systemPrompt },
-            { role: 'user' as const, content: userPrompt },
-          ]
-        : [
-            { role: 'system' as const, content: systemPrompt },
-            { role: 'user' as const, content: userPrompt },
-            { role: 'assistant' as const, content: `My previous response was invalid. Let me correct it.` },
-            { role: 'user' as const, content: buildRepairPrompt('', [lastError instanceof Error ? lastError.message : String(lastError)]) },
-          ];
+      const messages =
+        attempt === 0
+          ? [
+              { role: 'system' as const, content: systemPrompt },
+              { role: 'user' as const, content: userPrompt },
+            ]
+          : [
+              { role: 'system' as const, content: systemPrompt },
+              { role: 'user' as const, content: userPrompt },
+              {
+                role: 'assistant' as const,
+                content: `My previous response was invalid. Let me correct it.`,
+              },
+              {
+                role: 'user' as const,
+                content: buildRepairPrompt('', [
+                  lastError instanceof Error ? lastError.message : String(lastError),
+                ]),
+              },
+            ];
 
       const response = await provider.generate<Record<string, unknown>>({
         messages,
@@ -114,9 +129,15 @@ function normalizeExtractionResult(
   raw: Record<string, unknown>,
   batchLabel: string,
 ): CandidateExtractionResult {
-  const rawCandidates = (Array.isArray(raw.candidates) ? raw.candidates : []) as Array<Record<string, unknown>>;
-  const rawUnresolved = (Array.isArray(raw.unresolvedCandidates) ? raw.unresolvedCandidates : []) as Array<Record<string, unknown>>;
-  const rawConflicts = (Array.isArray(raw.conflictCandidates) ? raw.conflictCandidates : []) as Array<Record<string, unknown>>;
+  const rawCandidates = (Array.isArray(raw.candidates) ? raw.candidates : []) as Array<
+    Record<string, unknown>
+  >;
+  const rawUnresolved = (
+    Array.isArray(raw.unresolvedCandidates) ? raw.unresolvedCandidates : []
+  ) as Array<Record<string, unknown>>;
+  const rawConflicts = (
+    Array.isArray(raw.conflictCandidates) ? raw.conflictCandidates : []
+  ) as Array<Record<string, unknown>>;
 
   let autoId = 0;
   const ensureId = (item: Record<string, unknown>): void => {
@@ -132,20 +153,25 @@ function normalizeExtractionResult(
     if (typeof c.statement !== 'string' || c.statement.length === 0) continue;
 
     const type = VALID_TYPES.has(c.type as string) ? (c.type as RequirementType) : 'unknown';
-    const sourceNature = VALID_SOURCE_NATURES.has(c.sourceNature as string) ? (c.sourceNature as RequirementSourceNature) : 'ambiguous';
+    const sourceNature = VALID_SOURCE_NATURES.has(c.sourceNature as string)
+      ? (c.sourceNature as RequirementSourceNature)
+      : 'ambiguous';
     const confidence = typeof c.confidence === 'number' ? c.confidence : DEFAULT_CONFIDENCE;
 
     candidates.push({
       temporaryId: c.temporaryId as string,
-      title: (typeof c.title === 'string' ? c.title : c.statement as string).slice(0, 200),
+      title: (typeof c.title === 'string' ? c.title : (c.statement as string)).slice(0, 200),
       type,
       statement: c.statement as string,
       sourceNature,
-      semanticEvidenceIds: Array.isArray(c.semanticEvidenceIds) ? c.semanticEvidenceIds.filter((x): x is string => typeof x === 'string') : [],
+      semanticEvidenceIds: Array.isArray(c.semanticEvidenceIds)
+        ? c.semanticEvidenceIds.filter((x): x is string => typeof x === 'string')
+        : [],
       actor: typeof c.actor === 'string' ? c.actor : undefined,
       trigger: typeof c.trigger === 'string' ? c.trigger : undefined,
       preconditions: normalizeProvenancedArray(c.preconditions, 'description'),
       inputs: normalizeProvenancedArray(c.inputs, 'name'),
+      dataNeeds: normalizeProvenancedArray(c.dataNeeds, 'description'),
       expectedBehaviors: normalizeProvenancedArray(c.expectedBehaviors, 'description'),
       outcomes: normalizeProvenancedArray(c.outcomes, 'description'),
       constraints: normalizeProvenancedArray(c.constraints, 'description'),
@@ -165,9 +191,13 @@ function normalizeExtractionResult(
       temporaryId: u.temporaryId as string,
       description: u.description as string,
       reason: typeof u.reason === 'string' ? u.reason : 'Insufficient evidence',
-      semanticEvidenceIds: Array.isArray(u.semanticEvidenceIds) ? u.semanticEvidenceIds.filter((x): x is string => typeof x === 'string') : [],
+      semanticEvidenceIds: Array.isArray(u.semanticEvidenceIds)
+        ? u.semanticEvidenceIds.filter((x): x is string => typeof x === 'string')
+        : [],
       provenance: normalizeProvenance(u.provenance),
-      candidates: Array.isArray(u.candidates) ? u.candidates.filter((x): x is string => typeof x === 'string') : undefined,
+      candidates: Array.isArray(u.candidates)
+        ? u.candidates.filter((x): x is string => typeof x === 'string')
+        : undefined,
     });
   }
 
@@ -179,7 +209,9 @@ function normalizeExtractionResult(
 
     conflictCandidates.push({
       temporaryId: cf.temporaryId as string,
-      requirementTemporaryIds: Array.isArray(cf.requirementTemporaryIds) ? cf.requirementTemporaryIds.filter((x): x is string => typeof x === 'string') : [],
+      requirementTemporaryIds: Array.isArray(cf.requirementTemporaryIds)
+        ? cf.requirementTemporaryIds.filter((x): x is string => typeof x === 'string')
+        : [],
       description: cf.description as string,
       type: typeof cf.type === 'string' ? cf.type : 'ambiguous',
       provenance: normalizeProvenance(cf.provenance),
@@ -194,12 +226,19 @@ function normalizeExtractionResult(
 function normalizeProvenance(raw: unknown): ProvenanceReference[] {
   if (!Array.isArray(raw)) return [{ contextId: 'unknown' }];
   return raw
-    .filter((p): p is Record<string, unknown> => typeof p === 'object' && p !== null && typeof p.contextId === 'string')
+    .filter(
+      (p): p is Record<string, unknown> =>
+        typeof p === 'object' && p !== null && typeof p.contextId === 'string',
+    )
     .map((p) => ({
       contextId: p.contextId as string,
       sheet: typeof p.sheet === 'string' ? p.sheet : undefined,
-      ranges: Array.isArray(p.ranges) ? p.ranges.filter((x): x is string => typeof x === 'string') : undefined,
-      cells: Array.isArray(p.cells) ? p.cells.filter((x): x is string => typeof x === 'string') : undefined,
+      ranges: Array.isArray(p.ranges)
+        ? p.ranges.filter((x): x is string => typeof x === 'string')
+        : undefined,
+      cells: Array.isArray(p.cells)
+        ? p.cells.filter((x): x is string => typeof x === 'string')
+        : undefined,
     }));
 }
 
@@ -210,8 +249,9 @@ function normalizeProvenancedArray<T extends Record<string, unknown>>(
 ): T[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .filter((item): item is Record<string, unknown> =>
-      typeof item === 'object' && item !== null && typeof item[keyField] === 'string',
+    .filter(
+      (item): item is Record<string, unknown> =>
+        typeof item === 'object' && item !== null && typeof item[keyField] === 'string',
     )
     .map((item) => {
       // Ensure provenance exists

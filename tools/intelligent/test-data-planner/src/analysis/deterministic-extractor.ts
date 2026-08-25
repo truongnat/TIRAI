@@ -25,44 +25,107 @@ import type {
 // ---- Keyword-based type inference -----------------------------------------
 
 const ACCOUNT_KEYWORDS = [
-  'account', 'user', 'login', 'authenticated', 'credential', 'password',
-  'username', 'session', 'logged in', 'sign in', 'register',
+  'account',
+  'user',
+  'login',
+  'authenticated',
+  'credential',
+  'password',
+  'username',
+  'session',
+  'logged in',
+  'sign in',
+  'register',
 ];
 
 const DATE_KEYWORDS = [
-  'date', 'time', 'timestamp', 'deadline', 'schedule', 'period',
-  'duration', 'created_at', 'updated_at', 'expiry',
+  'date',
+  'time',
+  'timestamp',
+  'deadline',
+  'schedule',
+  'period',
+  'duration',
+  'created_at',
+  'updated_at',
+  'expiry',
 ];
 
 const FILE_KEYWORDS = [
-  'file', 'upload', 'document', 'attachment', 'image', 'csv', 'pdf',
-  'spreadsheet', 'excel',
+  'file',
+  'upload',
+  'document',
+  'attachment',
+  'image',
+  'csv',
+  'pdf',
+  'spreadsheet',
+  'excel',
 ];
 
 const CONFIG_KEYWORDS = [
-  'config', 'setting', 'parameter', 'threshold', 'limit', 'timeout',
-  'max', 'min', 'policy',
+  'config',
+  'setting',
+  'parameter',
+  'threshold',
+  'limit',
+  'timeout',
+  'max',
+  'min',
+  'policy',
 ];
 
 const TOKEN_KEYWORDS = [
-  'token', 'jwt', 'api key', 'apikey', 'secret', 'session id',
-  'access token', 'refresh token', 'auth token',
+  'token',
+  'jwt',
+  'api key',
+  'apikey',
+  'secret',
+  'session id',
+  'access token',
+  'refresh token',
+  'auth token',
 ];
 
 const ID_KEYWORDS = [
-  'id', 'uuid', 'identifier', 'reference number', 'code', 'serial',
-  'generated id', 'unique id',
+  'id',
+  'uuid',
+  'identifier',
+  'reference number',
+  'code',
+  'serial',
+  'generated id',
+  'unique id',
 ];
 
 const STATE_KEYWORDS = [
-  'state', 'status', 'flag', 'mode', 'phase', 'stage', 'condition',
-  'active', 'inactive', 'enabled', 'disabled', 'pending', 'approved',
-  'rejected', 'completed',
+  'state',
+  'status',
+  'flag',
+  'mode',
+  'phase',
+  'stage',
+  'condition',
+  'active',
+  'inactive',
+  'enabled',
+  'disabled',
+  'pending',
+  'approved',
+  'rejected',
+  'completed',
 ];
 
 const DB_STATE_KEYWORDS = [
-  'record', 'entry', 'row', 'existing', 'database', 'table',
-  'must exist', 'already exists', 'previously created',
+  'record',
+  'entry',
+  'row',
+  'existing',
+  'database',
+  'table',
+  'must exist',
+  'already exists',
+  'previously created',
 ];
 
 // ---- Classification helpers -----------------------------------------------
@@ -123,9 +186,7 @@ function classifyStrategy(description: string, type: TestDataType): TestDataStra
 
 // ---- Deterministic extraction from dataNeeds ------------------------------
 
-function extractFromDataNeeds(
-  testCases: TestCaseIRInput['testCases'],
-): DataRequirementCandidate[] {
+function extractFromDataNeeds(testCases: TestCaseIRInput['testCases']): DataRequirementCandidate[] {
   const candidates: DataRequirementCandidate[] = [];
   let counter = 0;
   // Track temporaryId by dedup key so identical data needs share the same ID
@@ -149,6 +210,17 @@ function extractFromDataNeeds(
       }
 
       const provenance: TestProvenance[] = [];
+      if (Array.isArray(dn.provenance)) {
+        provenance.push(
+          ...dn.provenance.map((p) => ({
+            requirementId: p.requirementId,
+            contextId: p.contextId,
+            sheet: p.sheet,
+            ranges: p.ranges,
+            cells: p.cells,
+          })),
+        );
+      }
       if (Array.isArray(dn.relatedRequirementIds)) {
         for (const reqId of dn.relatedRequirementIds) {
           if (typeof reqId === 'string' && reqId) {
@@ -168,6 +240,7 @@ function extractFromDataNeeds(
                 contextId: p.contextId,
                 sheet: p.sheet,
                 ranges: p.ranges,
+                cells: p.cells,
               });
             }
           }
@@ -183,9 +256,14 @@ function extractFromDataNeeds(
         lifecycle,
         strategy,
         constraints: Array.isArray(dn.constraints)
-          ? dn.constraints.map((c) => ({ type: 'other' as const, description: typeof c === 'string' ? c : String(c) }))
+          ? dn.constraints.map((c) => ({
+              type: 'other' as const,
+              description: typeof c === 'string' ? c : String(c),
+            }))
           : [],
-        relatedRequirementIds: Array.isArray(dn.relatedRequirementIds) ? dn.relatedRequirementIds : [],
+        relatedRequirementIds: Array.isArray(dn.relatedRequirementIds)
+          ? dn.relatedRequirementIds
+          : [],
         relatedEntityIds: Array.isArray(dn.relatedEntityIds) ? dn.relatedEntityIds : [],
         provenance,
         confidence: 0.9,
@@ -214,15 +292,24 @@ function extractFromContext(
     // Scan preconditions for data indicators
     for (const p of tc.preconditions) {
       const text = p.description.toLowerCase();
-      const isUIState = text.includes('is displayed') || text.includes('is shown') ||
-        text.includes('is visible') || text.includes('is rendered') ||
-        text.includes('screen is') || text.includes('page is') ||
-        text.includes('form is') || text.includes('button is');
+      const isUIState =
+        text.includes('is displayed') ||
+        text.includes('is shown') ||
+        text.includes('is visible') ||
+        text.includes('is rendered') ||
+        text.includes('screen is') ||
+        text.includes('page is') ||
+        text.includes('form is') ||
+        text.includes('button is');
       if (isUIState) continue;
-      if (ACCOUNT_KEYWORDS.some((k) => text.includes(k)) ||
-          DB_STATE_KEYWORDS.some((k) => text.includes(k)) ||
-          STATE_KEYWORDS.some((k) => text.includes(k)) ||
-          text.includes('must') || text.includes('has') || text.includes('exists')) {
+      if (
+        ACCOUNT_KEYWORDS.some((k) => text.includes(k)) ||
+        DB_STATE_KEYWORDS.some((k) => text.includes(k)) ||
+        STATE_KEYWORDS.some((k) => text.includes(k)) ||
+        text.includes('must') ||
+        text.includes('has') ||
+        text.includes('exists')
+      ) {
         contextItems.push({ description: p.description, source: 'precondition' });
       }
     }
@@ -241,14 +328,23 @@ function extractFromContext(
     for (const step of tc.steps) {
       const text = `${step.action} ${step.input ?? ''}`.toLowerCase();
       const actionText = step.action.toLowerCase();
-      const isVerification = actionText.startsWith('observe') || actionText.startsWith('verify') ||
-        actionText.startsWith('check') || actionText.startsWith('confirm') ||
-        actionText.startsWith('ensure') || actionText.startsWith('assert');
+      const isVerification =
+        actionText.startsWith('observe') ||
+        actionText.startsWith('verify') ||
+        actionText.startsWith('check') ||
+        actionText.startsWith('confirm') ||
+        actionText.startsWith('ensure') ||
+        actionText.startsWith('assert');
       if (isVerification) continue;
-      if (DATE_KEYWORDS.some((k) => text.includes(k)) ||
-          FILE_KEYWORDS.some((k) => text.includes(k)) ||
-          text.includes('enter') || text.includes('select') || text.includes('provide') ||
-          text.includes('input') || text.includes('type')) {
+      if (
+        DATE_KEYWORDS.some((k) => text.includes(k)) ||
+        FILE_KEYWORDS.some((k) => text.includes(k)) ||
+        text.includes('enter') ||
+        text.includes('select') ||
+        text.includes('provide') ||
+        text.includes('input') ||
+        text.includes('type')
+      ) {
         contextItems.push({
           description: step.action,
           source: 'step',
@@ -284,7 +380,8 @@ function extractFromContext(
       candidates.push({
         temporaryId: `DET-CTX-${String(counter).padStart(4, '0')}`,
         testCaseId: tc.id,
-        name: item.description.length > 80 ? `${item.description.slice(0, 77)}...` : item.description,
+        name:
+          item.description.length > 80 ? `${item.description.slice(0, 77)}...` : item.description,
         description: item.description,
         type,
         lifecycle,
@@ -351,10 +448,7 @@ export function mergeExtractionResults(
   });
 
   // Merge unresolved (union, no dedup needed)
-  const allUnresolved = [
-    ...deterministic.unresolvedCandidates,
-    ...ai.unresolvedCandidates,
-  ];
+  const allUnresolved = [...deterministic.unresolvedCandidates, ...ai.unresolvedCandidates];
 
   return {
     dataCandidates: [...deterministic.dataCandidates, ...newAICandidates],
