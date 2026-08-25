@@ -45,6 +45,9 @@ export { validateCapabilities, isCapabilityAvailable } from './capability/capabi
 
 export { observeBrowser } from './observation/browser-observer.js';
 export { ElementIdMap } from './observation/element-id-map.js';
+export { normalizeBaseUrl } from './runtime/base-url.js';
+export { runRealAppPreflight } from './real-app/preflight.js';
+export type { RealAppPreflightInput, RealAppPreflightResult, RealAppPreflightStatus } from './real-app/preflight.js';
 
 export { groundStep } from './grounding/step-grounding.js';
 export { groundAssertion } from './assertion/assertion-grounding.js';

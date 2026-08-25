@@ -161,7 +161,9 @@ const UI_CHANGED_LOGIN_PAGE = `<!DOCTYPE html>
 export async function startFixtureServer(): Promise<FixtureServer> {
   const server: Server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
-    const path = url.pathname;
+    // Accept the canonical base URL form used by the agent while preserving
+    // route semantics for this disposable fixture.
+    const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
 
     const routes: Record<string, string> = {
       '/login': LOGIN_PAGE,
