@@ -6,6 +6,7 @@ import type {
   BrowserObservation,
 } from '../models.js';
 import type { EvidenceReference, TestResultStatus } from 'test-execution-orchestrator';
+import type { RecoveryEvent } from './recovery.js';
 
 export interface SemanticApplicationState {
   key: string;
@@ -75,6 +76,7 @@ export interface JourneyState {
   noProgressIterations: number;
   activePageId?: string;
   pageContexts: JourneyPageContext[];
+  recoveryHistory: RecoveryEvent[];
 }
 
 export interface JourneyExecutionPolicy extends AgentExecutionPolicy {
@@ -85,6 +87,7 @@ export interface JourneyExecutionPolicy extends AgentExecutionPolicy {
   maxVisitedPages: number;
   maxNoProgressIterations: number;
   observationHistoryLimit: number;
+  maxRecoveryAttempts: number;
 }
 
 export function defaultJourneyPolicy(base: AgentExecutionPolicy): JourneyExecutionPolicy {
@@ -97,6 +100,7 @@ export function defaultJourneyPolicy(base: AgentExecutionPolicy): JourneyExecuti
     maxVisitedPages: 12,
     maxNoProgressIterations: 3,
     observationHistoryLimit: 5,
+    maxRecoveryAttempts: 2,
   };
 }
 
@@ -120,6 +124,12 @@ export interface JourneyExecutionResult {
     dialogTransitions: number;
     popupTransitions: number;
     maxSimultaneousPages: number;
+    failuresDetected: number;
+    successfulRecoveries: number;
+    failedRecoveries: number;
+    recoveryLoopsDetected: number;
+    recoveryAttempts: number;
+    invalidDecisionRecoveries: number;
   };
   error?: { code: string; message: string };
 }
