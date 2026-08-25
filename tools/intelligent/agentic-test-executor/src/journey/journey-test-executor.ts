@@ -62,8 +62,11 @@ function mapJourneyResult(result: JourneyExecutionResult): TestExecutorResult {
   }));
   // Intermediate observations are evidence, not final assertion failures.
   // The orchestrator classifies from this canonical assertion list.
-  const assertions: AssertionResult[] = result.assertions.slice(-1).map((assertion, index) => ({
-    id: `JOURNEY-ASSERT-${index + 1}`,
+  const assertions: AssertionResult[] = result.assertions.slice(-1).map((assertion) => ({
+    // Preserve the canonical assertion reference used by journey evidence.
+    // Traceability relies on this ID to connect evidence to the expected
+    // result/verification need across the orchestrator boundary.
+    id: `ASSERT-${String(assertion.expectedResultIndex + 1).padStart(4, '0')}`,
     expectedResultIndex: assertion.expectedResultIndex,
     description: assertion.description,
     verificationType: 'ui',

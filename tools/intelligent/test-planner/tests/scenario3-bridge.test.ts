@@ -198,4 +198,29 @@ describe('Scenario 3 producer bridge', () => {
     ]);
     expect(warnings.some((warning) => warning.code === 'TEST_CASE_NON_EXECUTABLE')).toBe(true);
   });
+
+  it('derives a canonical verification type from a valid semantic intent', () => {
+    const normalized = normalizeTestCaseResult(
+      {
+        testCases: [{
+          temporaryId: 'TC-1', scenarioTemporaryId: 'SCEN-1', requirementIds: ['REQ-1'],
+          title: 'Complete order', objective: 'Complete order', type: 'ui',
+          steps: [{ order: 1, action: 'Complete the order' }],
+          expectedResults: [{
+            description: 'Persisted order status is COMPLETED',
+            verificationType: 'assertion',
+            verificationIntent: {
+              kind: 'persisted-business-state', subject: 'order', property: 'status',
+              expectedValue: 'COMPLETED', authority: 'PERSISTED_BUSINESS_STATE',
+            },
+          }],
+          automation: { status: 'ready' }, provenance: [{ requirementId: 'REQ-1' }],
+        }],
+      },
+      new Set(['REQ-1']),
+      new Set(['SCEN-1']),
+    );
+    expect(normalized.testCases[0]?.expectedResults[0]?.verificationType).toBe('state');
+    expect(normalized.warnings?.some((warning) => warning.code === 'TEST_EXPECTATION_UNTRACEABLE')).toBe(false);
+  });
 });

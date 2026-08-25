@@ -121,19 +121,26 @@ export async function buildTestDataPlanFromTestCaseIR(
     // Deterministic pre-layer: extract from explicit dataNeeds first
     const deterministicResult = extractDeterministic(testCases);
 
-    // AI enrichment layer
-    const {
-      result: aiResult,
-      usage,
-      warnings,
-    } = await extractDataRequirements(testCases, provider, maxRepairAttempts, testCaseIR.dataNeeds);
-    aiRequests++;
-    totalInputTokens += usage.inputTokens ?? 0;
-    totalOutputTokens += usage.outputTokens ?? 0;
-    if (warnings) allWarnings.push(...warnings);
+    // When every test case already has a grounded deterministic candidate,
+    // enrichment cannot add coverage without guessing. Avoid an unnecessary
+    // provider call and its retry/timeout budget; ambiguous/implicit cases
+    // continue through the AI enrichment path below.
+    if (coversEveryTestCase(deterministicResult, testCases) && deterministicResult.dataCandidates.every((candidate) => candidate.type === 'state' || candidate.type === 'database-record')) {
+      dataReqResult = deterministicResult;
+    } else {
+      const {
+        result: aiResult,
+        usage,
+        warnings,
+      } = await extractDataRequirements(testCases, provider, maxRepairAttempts, testCaseIR.dataNeeds);
+      aiRequests++;
+      totalInputTokens += usage.inputTokens ?? 0;
+      totalOutputTokens += usage.outputTokens ?? 0;
+      if (warnings) allWarnings.push(...warnings);
 
-    // Merge: deterministic candidates take precedence
-    dataReqResult = mergeExtractionResults(deterministicResult, aiResult);
+      // Merge: deterministic candidates take precedence
+      dataReqResult = mergeExtractionResults(deterministicResult, aiResult);
+    }
 
     if (outputDir) {
       writeDataStageCheckpoint(outputDir, 'dataRequirements', dataReqResult);
@@ -144,6 +151,11 @@ export async function buildTestDataPlanFromTestCaseIR(
   let depResult: DependencyAnalysisResult;
   if (checkpoint.dependencyAnalysis) {
     depResult = checkpoint.dependencyAnalysis;
+  } else if (dataReqResult.dataCandidates.length < 2) {
+    // A dependency edge requires two distinct candidates. Avoid an
+    // unnecessary provider call (and its retry/timeout budget) when the
+    // deterministic input has zero or one data item.
+    depResult = { dependencyCandidates: [], reuseCandidates: [] };
   } else {
     const { result, usage, warnings } = await analyzeDependencies(
       dataReqResult.dataCandidates,
@@ -423,6 +435,15 @@ export async function buildTestDataPlanFromTestCaseIR(
   }
 
   return dataPlanIR;
+}
+
+function coversEveryTestCase(
+  result: DataRequirementExtractionResult,
+  testCases: TestCaseIRInput['testCases'],
+): boolean {
+  if (testCases.length === 0) return true;
+  const covered = new Set(result.dataCandidates.map((candidate) => candidate.testCaseId));
+  return testCases.every((testCase) => covered.has(testCase.id));
 }
 
 // ---- Helpers --------------------------------------------------------------

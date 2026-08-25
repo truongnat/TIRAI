@@ -10,6 +10,16 @@ export interface Scenario3Input {
   runtimeContext?: unknown;
   capabilities?: unknown;
   policy?: unknown;
+  onProgress?: (event: Scenario3ProgressEvent) => void;
+}
+
+export type Scenario3Stage = 'REQUIREMENT_BUILDING' | 'TEST_PLANNING' | 'DATA_PLANNING' | 'EXECUTING';
+
+export interface Scenario3ProgressEvent {
+  stage: Scenario3Stage;
+  phase: 'started' | 'completed' | 'failed';
+  elapsedMs?: number;
+  error?: string;
 }
 
 /** @deprecated Use Scenario3Input. */
@@ -317,7 +327,7 @@ function toTestCaseIRInput(testPlan: TestPlanIR): TestCaseIRInput {
 }
 
 function hasPlanningBlocker(warnings: TestPlannerWarning[]): boolean {
-  return warnings.some((warning) => ['TEST_CASE_NON_EXECUTABLE', 'TEST_CASE_INVALID_STEP_ORDER', 'TEST_CASE_UNSUPPORTED_AUTOMATION', 'TEST_EXPECTATION_UNTRACEABLE', 'TEST_REQUIREMENT_NOT_COVERED'].includes(warning.code));
+  return warnings.some((warning) => ['TEST_CASE_NON_EXECUTABLE', 'TEST_CASE_INVALID_STEP_ORDER', 'TEST_CASE_UNSUPPORTED_AUTOMATION', 'TEST_EXPECTATION_UNSPECIFIED', 'TEST_EXPECTATION_UNTRACEABLE', 'TEST_REQUIREMENT_NOT_COVERED'].includes(warning.code));
 }
 
 function statusFromExecution(execution: TestRunResultIR): Scenario3Result['status'] {
