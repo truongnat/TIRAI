@@ -111,7 +111,7 @@ export class EndToEndRunner {
     let testResults: TestRunResultIR;
     if (this.options.orchestrator && this.policy.mode === 'execute') {
       // Delegate to real orchestrator for execute mode.
-      testResults = normalizeTestRunStatus(await this.options.orchestrator.run(selectedTests as TestCase[]));
+      testResults = normalizeTestRunStatus(await this.options.orchestrator.run(selectedTests as TestCase[], input.dataPlan));
     } else {
       testResults = this.executeTests(runId, selectedTests, input);
     }

@@ -117,7 +117,7 @@ export class JourneyAgent {
       recoveryHistory: [],
     };
 
-    const coordination = await this.dataNeedCoordinator.prepare(this.testDataItems, {
+    const coordination = await this.dataNeedCoordinator.prepare(context.testDataItems ?? this.testDataItems, {
       inputs: testCase.inputs.map((input) => ({ name: input.name, value: input.value, valueStrategy: input.valueStrategy })),
       bindings: context.bindings,
       secretProvider: context.secrets,

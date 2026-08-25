@@ -136,7 +136,7 @@ export class AgenticTestExecutor implements TestExecutor {
 
     let coordination;
     try {
-      coordination = await this.dataNeedCoordinator.prepare(this.testDataItems, {
+      coordination = await this.dataNeedCoordinator.prepare(context.testDataItems ?? this.testDataItems, {
         inputs: testCase.inputs.map((input) => ({
           name: input.name,
           value: input.value,

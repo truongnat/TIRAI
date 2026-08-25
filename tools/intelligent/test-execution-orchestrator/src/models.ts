@@ -14,6 +14,8 @@ import type {
   TestCaseType,
 } from 'test-planner';
 
+import type { TestDataItem, TestDataPlanIR } from 'test-data-planner';
+
 import type {
   RuntimeBindingStore,
   RuntimeBindingResult,
@@ -32,6 +34,7 @@ export type {
   VerificationType,
   TestCaseType,
 };
+export type { TestDataItem, TestDataPlanIR };
 export type {
   RuntimeBindingStore,
   RuntimeBindingResult,
@@ -351,6 +354,8 @@ export interface TestExecutionContext {
   environmentId: string;
   /** Explicit platform opt-in for the journey-capable UI executor. */
   journeyEnabled?: boolean;
+  /** Phase 2B items selected by the platform for this test case. */
+  testDataItems?: TestDataItem[];
 }
 
 export interface TestRunAuditRecorder {
