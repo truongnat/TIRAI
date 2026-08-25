@@ -290,6 +290,12 @@ export async function startFixtureServer(): Promise<FixtureServer> {
     // route semantics for this disposable fixture.
     const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '') : url.pathname;
 
+    if (path === '/verification/item' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ businessKey: 'ITEM-001', status: url.searchParams.get('wrong') === '1' ? 'ACTIVE' : 'COMPLETED' }));
+      return;
+    }
+
     const routes: Record<string, string> = {
       '/login': LOGIN_PAGE,
       '/dashboard': DASHBOARD_PAGE,

@@ -29,6 +29,7 @@ import {
   type JourneyPageContext,
 } from './models.js';
 import { classifyRuntimeFailure, decideRecovery, type RecoveryReconciliationAdapter } from './recovery.js';
+import { verifyCrossLayer, type VerificationReport, type VerificationRuntime } from '../verification.js';
 
 export interface JourneyAgentOptions {
   browserSession: BrowserSession;
@@ -42,6 +43,7 @@ export interface JourneyAgentOptions {
   preparationPolicy?: Partial<PreparationMutationPolicy>;
   generationSeed?: string;
   reconciliationAdapter?: RecoveryReconciliationAdapter;
+  verification?: VerificationRuntime;
 }
 
 /**
@@ -61,6 +63,8 @@ export class JourneyAgent {
   private lastCleanup: { status: 'succeeded' | 'failed'; error?: { code: string; message: string } } | undefined;
   private readonly reconciliationAdapter?: RecoveryReconciliationAdapter;
   private readonly reconciledCleanup: Array<() => Promise<void>> = [];
+  private readonly verification?: VerificationRuntime;
+  private verificationReport?: VerificationReport;
 
   constructor(options: JourneyAgentOptions) {
     this.browserSession = options.browserSession;
@@ -81,6 +85,7 @@ export class JourneyAgent {
       generationSeed: options.generationSeed,
     });
     this.reconciliationAdapter = options.reconciliationAdapter;
+    this.verification = options.verification;
   }
 
   async execute(testCase: TestCase, context: TestExecutionContext): Promise<JourneyExecutionResult> {
@@ -199,6 +204,28 @@ export class JourneyAgent {
         if (assertion) {
           assertions.push(assertion);
           if (assertion.status === 'passed') {
+            if (this.verification) {
+              this.verificationReport = await verifyCrossLayer(testCase, this.verification, context.bindings, observation);
+              metrics.verificationAcquisitions += this.verificationReport.acquisitions;
+              metrics.verificationAICalls += this.verificationReport.verificationAICalls;
+              for (const item of this.verificationReport.evidence) {
+                const evidenceRef = context.evidence.add({
+                  type: item.source === 'UI' ? 'text' : item.source === 'API' ? 'api-response' : 'database-result',
+                  sourceExecutor: item.source === 'UI' ? 'ui' : item.source === 'API' ? 'api' : 'database',
+                  testCaseId: testCase.id,
+                  assertionId: 'ASSERT-0001',
+                  metadata: { verificationEvidenceId: item.id, source: item.source, entityKey: item.entityKey, property: item.property, normalizedValue: item.normalizedValue, provenance: item.provenance },
+                  sensitive: false,
+                });
+                evidence.push(evidenceRef);
+                assertion.evidenceIds.push(evidenceRef.id);
+              }
+              if (this.verificationReport.status !== 'VERIFIED') {
+                assertion.status = this.verificationReport.status === 'CONTRADICTED' ? 'failed' : 'blocked';
+                const terminal = this.verificationReport.status === 'ACQUISITION_ERROR' ? 'error' : assertion.status;
+                return this.finish(journey, metrics, evidence, assertions, terminal, `VERIFICATION_${this.verificationReport.status}`, this.verificationReport.explanation);
+              }
+            }
             milestone.status = 'reached';
             milestone.evidenceIds = assertion.evidenceIds;
             journey.completedMilestones.push(milestone);
@@ -480,7 +507,7 @@ export class JourneyAgent {
     metrics.noProgressIterations = journey.noProgressIterations;
     metrics.evidenceCount = evidence.length;
     metrics.maxSimultaneousPages = journey.pageContexts.length;
-    return { testCaseId: journey.testCaseId, status, journey, assertions, evidence, metrics, ...(code ? { error: { code, message: message ?? code } } : {}) };
+    return { testCaseId: journey.testCaseId, status, journey, assertions, evidence, metrics, ...(this.verificationReport ? { verification: this.verificationReport } : {}), ...(code ? { error: { code, message: message ?? code } } : {}) };
   }
 }
 
@@ -534,7 +561,7 @@ function createJourneyMetrics(): JourneyExecutionResult['metrics'] {
     pageTransitions: 0, dialogTransitions: 0, popupTransitions: 0, maxSimultaneousPages: 1,
     failuresDetected: 0, successfulRecoveries: 0, failedRecoveries: 0, recoveryLoopsDetected: 0,
     recoveryAttempts: 0, invalidDecisionRecoveries: 0, sessionRecoveries: 0, reauthAttempts: 0,
-    pageRecoveries: 0, outcomeReconciliations: 0,
+    pageRecoveries: 0, outcomeReconciliations: 0, verificationAcquisitions: 0, verificationAICalls: 0,
   };
 }
 

@@ -71,7 +71,7 @@ function mapJourneyResult(result: JourneyExecutionResult): TestExecutorResult {
     actual: assertion.actual,
     evidenceIds: assertion.evidenceIds,
   }));
-  const error = result.error ? toError(result.error.code, result.error.message) : undefined;
+  const error = result.error && result.status === 'error' ? toError(result.error.code, result.error.message) : undefined;
   return { status: result.status, steps, assertions, evidence: result.evidence, warnings: [], ...(error ? { error } : {}) };
 }
 
