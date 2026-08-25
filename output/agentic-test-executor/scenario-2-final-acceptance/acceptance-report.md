@@ -1,125 +1,113 @@
-# TIRAI — SCENARIO 2 FINAL ACCEPTANCE AUDIT
+# TIRAI — SCENARIO 2 FINAL ACCEPTANCE
 
-Decision: NOT ACCEPTED
+Decision: ACCEPTED
 
-HEAD: 9557685
-Branch: main
+Audit baseline: `cbf0a1e`
+Final source changes: Scenario 2.1 orchestration closure
+Branch: `main`
 
-## Closed-loop control flow observed
+## Closed-loop architecture
 
-The normal platform path is:
+`TestCase` → `TestExecutionOrchestrator.run(testCases, dataPlan)` → per-test data-plan selection → `TestExecutionContext.testDataItems` → `JourneyTestExecutor`/`JourneyAgent` → Phase 2B resolution and protected RuntimeBindings → semantic journey → Phase 2D recovery → Phase 2E verification → result classification → executor cleanup → run aggregation/report.
 
-`TestExecutionOrchestrator.run` → executor registry selection → executor `execute` → JourneyAgent (when a preconfigured `JourneyTestExecutor` is registered) → browser observation/grounding → recovery → Phase 2E verification → executor cleanup → orchestrator result.
+The E2E runner passes its canonical `dataPlan` into the normal orchestrator. Journey/Agentic executors consume the context-selected items; constructor-provided items remain only as backwards-compatible fallback. No separate journey planner or canary-only path is required.
 
-The JourneyAgent itself runs:
+## Fixed blockers
 
-`DataNeedCoordinator.prepare(testDataItems)` → RuntimeBindings → browser journey → source hint resolution/confirmation → recovery → `verifyCrossLayer` → cleanup.
+### 1. Phase 2B → Journey bridge
 
-This is coherent for a manually pre-wired executor, but the normal orchestrator does not supply the Phase 2B `TestDataItem[]`/data-plan to the JourneyTestExecutor. `TestCase` has `dataNeeds`, while `JourneyAgent` reads only constructor option `testDataItems`. The orchestrator's own preparation phase currently records a zero-operation summary and does not bridge the data plan into the executor. Therefore the full 2B → 2C → 2D → 2E → cleanup lifecycle is not reachable from a semantic TestCase plus runtime capabilities alone.
+Root cause: the orchestrator did not carry the canonical data plan into executor context; JourneyAgent only read constructor state.
 
-## SCENARIO_2_BLOCKERS
+Fix: `TestExecutionOrchestrator.run` accepts the existing `TestDataPlanIR`, selects only the current test case's required/setup/cleanup items, and exposes them through `TestExecutionContext`. JourneyAgent and AgenticTestExecutor prefer those items. `EndToEndRunner` forwards the plan.
 
-### BLOCKER 1 — Phase 2B is not connected to normal journey orchestration
+Proof: normal orchestrator test passes without constructor `testDataItems`; generated binding `runtime.DATA-0001` reaches the journey. Missing existing data blocks before browser launch and AI calls.
 
-Evidence:
+### 2. Run-level BLOCKED semantics
 
-- `TestCase.dataNeeds` is defined in the canonical Test Planner IR.
-- `JourneyAgent.execute` calls `prepare(this.testDataItems, ...)`.
-- `JourneyTestExecutor` receives `testDataItems` only through constructor options.
-- `TestExecutionOrchestrator` builds context but does not carry data items/data-plan into that executor.
-- Repository search found no production bridge from `dataPlan`/`requiredDataItemIds` to `JourneyTestExecutor`.
+Root cause: aggregation had no blocked branch and could report a blocked-only run as passed.
 
-Impact: a normal orchestrated journey can execute without resolving a required existing entity. The accepted Phase 2B safety contract is individually tested, but not enforced at the Scenario 2 platform boundary.
+Fix: blocked results now produce the existing non-clean terminal status `partial`; errors take precedence, then failures, then blocked work, then passed.
 
-### BLOCKER 2 — all-blocked orchestrator run is reported as passed
+Proof: all-blocked run is `partial`, with `blocked` count retained; mixed FAIL/BLOCKED and ERROR/BLOCKED preserve the stronger terminal result. No contradictory clean PASS remains.
 
-Reproduction against current built orchestrator:
+### 3. Cleanup after executor exception
 
-```json
-{"runStatus":"passed","testStatus":"blocked","blocked":1}
-```
+Root cause: the orchestrator catch path returned an ERROR without invoking the selected executor cleanup.
 
-`TestExecutionOrchestrator.run` determines run status from errors/failures/passed counts and has no blocked-only branch. This violates canonical `BLOCKED` semantics at the platform result boundary.
+Fix: selected executor/context are retained and cleanup is attempted exactly once from the exception path. Cleanup exceptions are represented alongside the original execution error. Normal cleanup failures cannot be overwritten by `completed` phase.
 
-### BLOCKER 3 — executor exception skips cleanup
+Proof: executor-throw, mid-journey-throw, execute+cleanup-throw, exactly-once, external-existing, and temporary-restore regressions pass.
 
-Reproduction with a registered executor whose `execute()` throws:
+## Normal execution path
 
-```json
-{"status":"error","cleanupAttempted":0,"cleaned":0}
-```
+`TestCase` → `TestExecutionOrchestrator` → executor registry → automatic data-plan bridge → Phase 2B coordinator/runtime bindings → Journey execution/recovery/verification → canonical `PASS`/`FAIL`/`BLOCKED`/`ERROR` → cleanup.
 
-The orchestrator catch path sets `ERROR` and exits the test lifecycle without invoking `executor.cleanup()`. This violates the closed-loop requirement that cleanup runs after relevant `ERROR` paths.
+Manual test-data wiring required: **NO** for normal platform execution.
 
-## Canaries and integration evidence
+## Run semantics
 
-The existing phase-level canaries remain green, but they do not close the blockers above:
+- all blocked: `partial` (not passed), blocked count preserved
+- PASS + BLOCKED: `partial`
+- FAIL + BLOCKED: `failed`
+- ERROR + BLOCKED: `error`
+- cleanup failure: execution result is not a clean PASS and cleanup failure is reported
 
-- Phase 2F gray-box canary: PASS; DeepSeek `deepseek-v4-flash`, real Chromium, 4 AI calls, 2,033 input / 399 output / 2,432 total tokens, 3 semantic states, 2 transitions, stale recovery, UI+API verification.
-- Phase 2C orchestrator journey: PASS.
-- Phase 2D recovery suite: PASS, including session recovery, popup loss, stale recovery, and reconciliation.
-- Phase 2E contradiction acceptance: PASS; UI success with wrong backend state becomes `failed`.
-- Phase 2F stale-source acceptance: PASS; stale hint rejected and runtime grounding continues.
+## Acceptance canaries
 
-These are not a full Scenario 2 happy/recovery canary because the real canary has no orchestrator-provided Phase 2B data plan/runtime data item set; it uses an executor configured directly with its own options.
+- Happy closed loop: PASS through `TestExecutionOrchestrator`; automatic generated binding, real Chromium, UI/API verification, cleanup.
+- Full recovery closed loop: PASS; controlled stale action classified/recovered, then verification passed.
+- Business contradiction: PASS regression; UI success with backend ACTIVE produces test `failed`.
+- Missing capability: BLOCKED before browser/AI actions; fabrication count 0.
+- Executor infrastructure error: ERROR; cleanup attempted and owned state cleaned.
+- Gray-box: PASS; source remains optional and runtime remains authoritative.
 
-Required full canaries therefore remain unproven:
+### Real AI + Chromium canary
 
-- Full happy closed loop with normal data-plan-to-executor binding: NOT PROVEN.
-- Full recovery closed loop after real Phase 2B preparation: NOT PROVEN.
-- Missing-capability closed loop before browser/AI action: NOT PROVEN through the normal orchestrator data boundary.
-- Error cleanup closed loop: FAILS as reproduced above.
+- provider/model: DeepSeek `deepseek-v4-flash`
+- AI calls/tokens: 4 calls; 2,033 input / 461 output / 2,494 total
+- browser: real Chromium; 3 semantic states; 2 page transitions; 4 actions
+- disruption: controlled stale action; 1 failure detected; 1 successful recovery
+- data: `runtime.DATA-REAL-AI-MARKER` consumed through the automatic data-plan bridge
+- verification: UI + API, `VERIFIED`, 2 acquisitions, 0 verification AI calls
+- source: 17 hints available, 4 used, 5 confirmed
+- generated selectors: 0; external actions: 0; lifecycle leaks: 0
+- result: PASS; orchestrator status `passed`
 
-## Phase integration audit
+## Safety counters
 
-- 2B → 2C: PARTIAL. Works inside JourneyAgent when `testDataItems` are pre-wired; missing normal platform bridge.
-- 2C → 2D: PASS in accepted recovery tests.
-- 2D → 2E: PASS in stale/recovery plus verification tests.
-- 2F → runtime: PASS; source optional, runtime confirmation authoritative, no selectors.
-- 2F → 2E: advisory only and capability-safe; no escalation observed.
-- Verification → cleanup: PASS inside JourneyAgent; final verification is performed before `JourneyAgent.cleanup()`.
-- Cleanup after executor-thrown ERROR: FAIL at orchestrator boundary.
-
-## Safety counters observed
-
-Existing phase acceptance counters remain zero for fabricated data, generated/source-direct selectors, stale executions, blind mutation retries, duplicate mutations, invented SQL/endpoints, capability escalation, verification mutations, production mutations, unauthorized external actions, raw secrets, orphans, and lifecycle leaks. However, Scenario 2 cannot claim these counters for the missing normal Phase 2B bridge and skipped-error-cleanup path until the blockers are fixed and rerun end-to-end.
+All required Scenario 2 counters are zero: `fabricated existing data`, `generated selectors`, `source-direct selectors`, `stale executions`, `blind mutation retries`, `duplicate mutations`, `duplicate preparations`, `invented SQL`, `invented endpoints`, `capability escalation`, `verification mutations`, `production mutations`, `unauthorized external actions`, `raw secrets in AI/artifacts`, `unowned deletes`, `orphans`, `lifecycle leaks`, `uncorrelated evidence used for PASS`, `clean PASS with cleanup failure`, `blocked-only run reported PASS`, and `executor-error cleanup skipped`.
 
 ## Regression
 
-- Agentic: 151 passed, 2 skipped.
-- Planner: 144 passed.
-- Resolver: 111 passed.
-- DB: 112 passed, 1 skipped.
-- API: 148 passed.
-- UI: 176 passed.
-- Orchestrator: 144 passed.
-- Execution Engine: 153 passed on isolated rerun; one parallel run exposed a timestamp-sensitive determinism flake, then the isolated suite passed.
-- AI Provider: 94 passed, 2 skipped.
-- Project Adapter: 157 passed.
-- Agentic typecheck: PASS.
-- Agentic build: PASS.
-- Agentic changed-scope lint: PASS.
+- Agentic: 153 passed, 2 skipped
+- Planner: 144 passed
+- Resolver: 111 passed
+- DB: 112 passed, 1 skipped
+- API: 148 passed
+- UI: 176 passed
+- Orchestrator: 147 passed
+- Execution Engine: 153 passed
+- AI Provider: targeted missing-key regression passed; full suite has 94 passed, 2 skipped when run without the ambient key
+- Project Adapter: 157 passed
+- E2E Runner: 223 passed
+- Typecheck: PASS for changed packages
+- Build: PASS for changed packages
+- Changed-scope lint: PASS (pre-existing warnings only in E2E CLI/tests; zero errors)
 
-No source changes were made during this audit. The two known unrelated semantic-analyzer workspace lint errors remain out of scope.
+The earlier parallel execution-engine timestamp flake passed on isolated rerun. The AI missing-key test requires the key to be unset; no key value was printed or recorded.
 
-## IMPORTANT
+## Frozen-module audit
 
-- Execution Engine determinism test is timing-sensitive under parallel workspace load; isolated rerun passed. This is not the primary Scenario 2 blocker but should be stabilized separately.
-- Existing phase canaries are strong evidence for individual contracts, not sufficient evidence for the missing cross-phase data bridge.
+No Phase 2B–2F contract was redesigned. Minimal generic extension points were used in orchestration context, Journey/Agentic context consumption, and E2E plan forwarding. Regressions cover the concrete integration defects.
 
-## DEFERRED
+## Deferred
 
-- mSale real-environment validation.
-- Full browser-process resurrection.
-- Durable cross-process resume.
-- Broader provider/runtime matrix.
+- mSale real-environment validation — unavailable and non-blocking
+- full browser-process resurrection
+- durable cross-process resume
+- broader provider/runtime matrix
+- unrelated workspace semantic-analyzer lint debt
 
 ## Final decision
 
-SCENARIO 2 = NOT ACCEPTED
-
-Minimal next fixes required before acceptance:
-
-1. Bridge canonical TestCase/data-plan runtime data into the normal JourneyTestExecutor path without requiring manual internal wiring.
-2. Preserve `BLOCKED` at the orchestrator run-status boundary.
-3. Guarantee executor cleanup on thrown execution errors, with regression coverage.
+`SCENARIO 2 = ACCEPTED`

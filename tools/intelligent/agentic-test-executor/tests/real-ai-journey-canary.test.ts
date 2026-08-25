@@ -38,7 +38,7 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
     });
     const registry = new TestExecutorRegistry();
     registry.register(executor);
-    const run = await new TestExecutionOrchestrator({ registry, journeyEnabled: true, policy: { mode: 'execute' } }).run([makeJourneyTestCase()]);
+    const run = await new TestExecutionOrchestrator({ registry, journeyEnabled: true, policy: { mode: 'execute' } }).run([makeJourneyTestCase()], makeCanaryDataPlan());
     const result = executor.getLastJourneyResult();
     if (!result) throw new Error('JOURNEY_RESULT_MISSING');
     const lifecycle = session.getCounters();
@@ -64,6 +64,7 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
       `Evidence: ${result.evidence.length}`,
       `Verification: ${result.verification?.status ?? 'not-run'}`,
       `Verification acquisitions: ${result.metrics.verificationAcquisitions}`,
+      `Runtime bindings: ${result.journey.runtimeBindings.join(', ')}`,
       `Verification AI calls: ${result.metrics.verificationAICalls}`,
       `Source hints: ${result.metrics.sourceHintsAvailable} available / ${result.metrics.sourceHintsUsed} used / ${result.metrics.sourceHintsConfirmed} confirmed / ${result.metrics.sourceHintsRejected} rejected`,
       `Orchestrator status: ${run.status}`,
@@ -75,6 +76,7 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
     await writeFile(join(outputDir, 'metrics.json'), JSON.stringify({ result: result.metrics, provider: { calls: provider.calls, inputTokens: provider.inputTokens, outputTokens: provider.outputTokens, totalTokens: provider.totalTokens }, browser: lifecycle }, null, 2), 'utf8');
 
     expect(result.status).toBe('passed');
+    expect(result.journey.runtimeBindings).toContain('runtime.DATA-REAL-AI-MARKER');
     expect(result.verification?.status).toBe('VERIFIED');
     expect(result.verification?.evidence.map((item) => item.source)).toEqual(expect.arrayContaining(['UI', 'API']));
     expect(result.metrics.sourceHintsAvailable).toBeGreaterThan(0);
@@ -100,6 +102,15 @@ function makeJourneyTestCase() {
     steps: [{ order: 1, action: 'Complete the item across the application journey.' }],
     expectedResults: [{ description: 'Item status: Completed', verificationType: 'ui' }],
     cleanup: [], automation: { status: 'ready' as const, suggestedExecutor: 'ui', reasons: [] }, provenance: [], confidence: 1,
+  } as never;
+}
+
+function makeCanaryDataPlan() {
+  return {
+    schemaVersion: '1.0',
+    testCases: [{ testCaseId: 'TC-REAL-AI-JOURNEY', requiredDataItemIds: ['DATA-REAL-AI-MARKER'], setupItemIds: [], cleanupItemIds: [], reusableDataSetIds: [], unresolvedIds: [] }],
+    dataItems: [{ id: 'DATA-REAL-AI-MARKER', name: 'journey marker', description: 'A synthetic run marker', type: 'input', lifecycle: 'generated', strategy: 'generate', constraints: [], dependencies: [], relatedTestCaseIds: ['TC-REAL-AI-JOURNEY'], relatedRequirementIds: [], relatedEntityIds: [], setup: [], cleanup: [], provenance: [], confidence: 1 }],
+    dependencyGraph: [], reusableSets: [], unresolved: [], quality: {},
   } as never;
 }
 

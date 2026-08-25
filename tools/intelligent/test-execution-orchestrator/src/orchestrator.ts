@@ -24,6 +24,7 @@ import type {
   AssertionResult,
   EvidenceReference,
   TestCleanupSummary,
+  TestCleanupResult,
   TestExecutionError,
   TestExecutionWarning,
   TestDataExecutionSummary,
@@ -31,6 +32,9 @@ import type {
   TestExecutionTiming,
   TestRunManifest,
   TestExecutorType,
+  TestExecutor,
+  TestDataPlanIR,
+  TestDataItem,
   Clock,
   RunIdProvider,
   SecretProvider,
@@ -138,7 +142,7 @@ export class TestExecutionOrchestrator {
 
   // ---- Run all test cases -------------------------------------------------
 
-  async run(testCases: TestCase[]): Promise<TestRunResultIR> {
+  async run(testCases: TestCase[], dataPlan?: TestDataPlanIR): Promise<TestRunResultIR> {
     const runId = this.runIdProvider.generate();
     const mode = this.policy.mode;
     const startedAt = this.clock.nowIso();
@@ -158,7 +162,7 @@ export class TestExecutionOrchestrator {
         continue;
       }
 
-      const result = await this.executeTestCase(tc, runId, mode, audit);
+      const result = await this.executeTestCase(tc, runId, mode, audit, dataPlan);
       results.push(result);
 
       // Fail-fast: stop scheduling after first failure/error
@@ -181,12 +185,14 @@ export class TestExecutionOrchestrator {
 
     // Determine run status
     let runStatus: TestRunResultIR['status'];
-    if (summary.errors > 0 && summary.passed === 0 && summary.failed === 0) {
+    if (summary.errors > 0) {
       runStatus = 'error';
     } else if (summary.failed > 0 && summary.passed > 0) {
       runStatus = 'partial';
     } else if (summary.failed > 0) {
       runStatus = 'failed';
+    } else if (summary.blocked > 0) {
+      runStatus = 'partial';
     } else {
       runStatus = 'passed';
     }
@@ -212,6 +218,7 @@ export class TestExecutionOrchestrator {
     runId: string,
     mode: TestRunMode,
     audit: InMemoryTestRunAuditRecorder,
+    dataPlan?: TestDataPlanIR,
   ): Promise<TestExecutionResultIR> {
     const testStartedAt = this.clock.nowIso();
     let phase: TestExecutionPhase = 'pending';
@@ -223,6 +230,9 @@ export class TestExecutionOrchestrator {
     let cleanup: TestCleanupSummary = { attempted: 0, succeeded: 0, failed: 0, results: [] };
     let dataPreparation: TestDataExecutionSummary | undefined;
     let status: TestResultStatus = 'blocked';
+    let selectedExecutor: TestExecutor | undefined;
+    let executionContext: TestExecutionContext | undefined;
+    let cleanupCompleted = false;
 
     const evidenceCollector = new InMemoryEvidenceCollector();
     const bindings = new InMemoryBindingStore();
@@ -254,7 +264,9 @@ export class TestExecutionOrchestrator {
         testCaseId: tc.id,
         environmentId: this.environmentId,
         journeyEnabled: this.journeyEnabled,
+        testDataItems: selectTestDataItems(tc, dataPlan),
       };
+      executionContext = context;
 
       // Phase: data preparation (spec §16)
       if (this.policy.prepareData && mode !== 'dry-run') {
@@ -267,6 +279,7 @@ export class TestExecutionOrchestrator {
       // Phase: executor selection
       phase = 'ready';
       const executor = this.registry.resolve(tc, context);
+      selectedExecutor = executor;
       audit.record({ type: 'executor-selected', testCaseId: tc.id, message: `Executor '${executor.type}' selected for ${tc.id}.` });
 
       // Dry-run: validate only, no execution
@@ -329,7 +342,21 @@ export class TestExecutionOrchestrator {
       if (this.policy.cleanupAfterTest && executor.cleanup) {
         phase = 'cleaning-up';
         audit.record({ type: 'cleanup-start', testCaseId: tc.id, message: `Cleanup started for ${tc.id}.` });
-        const cleanupResult = await executor.cleanup(tc, context);
+        cleanupCompleted = true;
+        let cleanupResult: TestCleanupResult;
+        try {
+          cleanupResult = await executor.cleanup(tc, context);
+        } catch (cleanupError) {
+          cleanupResult = {
+            status: 'failed',
+            error: {
+              code: 'TEST_CLEANUP_FAILED',
+              message: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+              retryable: false,
+              executorType: executor.type,
+            },
+          };
+        }
         cleanup = {
           attempted: 1,
           succeeded: cleanupResult.status === 'succeeded' ? 1 : 0,
@@ -358,13 +385,50 @@ export class TestExecutionOrchestrator {
         }
       }
 
-      phase = 'completed';
+      if (status !== 'error') {
+        phase = 'completed';
+      }
     } catch (err) {
       phase = 'failed';
       status = 'error';
       const message = err instanceof Error ? err.message : String(err);
       const code = err instanceof TestExecutionOrchestratorError ? err.code : TestErrorCode.TEST_INTERNAL_ERROR;
       errors.push({ code, message, retryable: false });
+      if (selectedExecutor && executionContext && this.policy.cleanupAfterTest && !cleanupCompleted && selectedExecutor.cleanup) {
+        phase = 'cleaning-up';
+        audit.record({ type: 'cleanup-start', testCaseId: tc.id, message: `Cleanup started for ${tc.id} after executor error.` });
+        cleanupCompleted = true;
+        let cleanupResult: TestCleanupResult;
+        try {
+          cleanupResult = await selectedExecutor.cleanup(tc, executionContext);
+        } catch (cleanupError) {
+          cleanupResult = {
+            status: 'failed',
+            error: {
+              code: 'TEST_CLEANUP_FAILED',
+              message: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+              retryable: false,
+              executorType: selectedExecutor.type,
+            },
+          };
+        }
+        cleanup = {
+          attempted: 1,
+          succeeded: cleanupResult.status === 'succeeded' ? 1 : 0,
+          failed: cleanupResult.status === 'failed' ? 1 : 0,
+          results: [cleanupResult],
+        };
+        audit.record({ type: 'cleanup-end', testCaseId: tc.id, message: `Cleanup ${cleanupResult.status} for ${tc.id}.` });
+        if (cleanupResult.status === 'failed') {
+          errors.push({
+            code: 'TEST_CLEANUP_FAILED',
+            message: cleanupResult.error?.message ?? `Cleanup failed for test case '${tc.id}'.`,
+            retryable: false,
+            executorType: selectedExecutor.type,
+          });
+        }
+        phase = 'failed';
+      }
     }
 
     audit.record({ type: 'test-end', testCaseId: tc.id, message: `Test case ${tc.id} completed. Status: ${status}.` });
@@ -503,4 +567,16 @@ export class TestExecutionOrchestrator {
       warnings: runResult.testResults.flatMap((r) => r.warnings),
     };
   }
+}
+
+function selectTestDataItems(testCase: TestCase, dataPlan?: TestDataPlanIR): TestDataItem[] | undefined {
+  if (!dataPlan) return undefined;
+  const testCasePlan = dataPlan.testCases.find((candidate) => candidate.testCaseId === testCase.id);
+  if (!testCasePlan) return [];
+  const itemIds = new Set([
+    ...testCasePlan.requiredDataItemIds,
+    ...testCasePlan.setupItemIds,
+    ...testCasePlan.cleanupItemIds,
+  ]);
+  return dataPlan.dataItems.filter((item) => itemIds.has(item.id));
 }

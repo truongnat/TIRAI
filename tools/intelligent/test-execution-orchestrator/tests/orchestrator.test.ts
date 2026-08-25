@@ -968,6 +968,21 @@ describe('Simulate', () => {
     expect(result.testResults[0].status).toBe('blocked');
   });
 
+  it('90b. a blocked-only run is not reported as passed', async () => {
+    const registry = new TestExecutorRegistry();
+    registry.register(new FakeTestExecutor({ resultStatus: 'blocked' }));
+    const orch = new TestExecutionOrchestrator({
+      registry,
+      policy: { mode: 'simulate' },
+      clock: new FixedClock('2025-01-01T00:00:00.000Z'),
+      runIdProvider: new DeterministicRunIdProvider(),
+    });
+    const result = await orch.run([minimalTestCase()]);
+    expect(result.status).toBe('partial');
+    expect(result.summary.blocked).toBe(1);
+    expect(result.summary.passed).toBe(0);
+  });
+
   it('91. error test', async () => {
     const registry = new TestExecutorRegistry();
     registry.register(new FakeTestExecutor({ shouldError: true }));
@@ -979,6 +994,45 @@ describe('Simulate', () => {
     });
     const result = await orch.run([minimalTestCase()]);
     expect(result.testResults[0].status).toBe('error');
+  });
+
+  it('91b. executor exception still invokes cleanup', async () => {
+    let cleanupCalls = 0;
+    const executor = {
+      type: 'ui' as const,
+      canExecute: () => ({ supported: true, score: 1, reasons: [] }),
+      validate: async () => ({ valid: true, errors: [] }),
+      execute: async () => { throw new Error('injected executor failure'); },
+      cleanup: async () => { cleanupCalls++; return { status: 'succeeded' as const }; },
+    };
+    const registry = new TestExecutorRegistry();
+    registry.register(executor);
+    const orch = new TestExecutionOrchestrator({
+      registry,
+      policy: { mode: 'execute' },
+      clock: new FixedClock('2025-01-01T00:00:00.000Z'),
+      runIdProvider: new DeterministicRunIdProvider(),
+    });
+    const result = await orch.run([minimalTestCase()]);
+    expect(result.testResults[0].status).toBe('error');
+    expect(result.testResults[0].cleanup.attempted).toBe(1);
+    expect(cleanupCalls).toBe(1);
+  });
+
+  it('91c. executor and cleanup errors are both retained', async () => {
+    const executor = {
+      type: 'ui' as const,
+      canExecute: () => ({ supported: true, score: 1, reasons: [] }),
+      validate: async () => ({ valid: true, errors: [] }),
+      execute: async () => { throw new Error('execute failed'); },
+      cleanup: async () => { throw new Error('cleanup failed'); },
+    };
+    const registry = new TestExecutorRegistry();
+    registry.register(executor);
+    const result = await new TestExecutionOrchestrator({ registry, policy: { mode: 'execute' } }).run([minimalTestCase()]);
+    expect(result.testResults[0].status).toBe('error');
+    expect(result.testResults[0].cleanup.failed).toBe(1);
+    expect(result.testResults[0].errors.map((error) => error.message)).toEqual(expect.arrayContaining(['execute failed', 'cleanup failed']));
   });
 });
 
