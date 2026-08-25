@@ -25,6 +25,7 @@ import { TEST_PLANNER_SYSTEM_PROMPT } from '../prompts/system.js';
 import { buildTestCasePrompt } from '../prompts/test-cases.js';
 import { buildRepairPrompt } from '../prompts/repair.js';
 import { testCaseExtractionSchema } from '../schemas/test-schemas.js';
+import { shouldRepairStructuredOutput } from './provider-retry-policy.js';
 
 const DEFAULT_MAX_REPAIR_ATTEMPTS = 1;
 const DEFAULT_CONFIDENCE = 0.7;
@@ -93,13 +94,14 @@ export async function generateTestCases(
   scenarios: ScenarioCandidate[],
   provider: AIProvider,
   maxRepairAttempts: number = DEFAULT_MAX_REPAIR_ATTEMPTS,
+  coverageMode: 'comprehensive' | 'minimal-sufficient' = 'comprehensive',
 ): Promise<{
   result: TestCaseExtractionResult;
   usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
   warnings?: TestPlannerWarning[];
 }> {
   const systemPrompt = TEST_PLANNER_SYSTEM_PROMPT;
-  const userPrompt = buildTestCasePrompt(requirements, scenarios);
+  const userPrompt = buildTestCasePrompt(requirements, scenarios, coverageMode);
   const warnings: TestPlannerWarning[] = [];
 
   const validReqIds = new Set(requirements.map((r) => r.id));
@@ -134,6 +136,7 @@ export async function generateTestCases(
         messages,
         responseSchema: lenientObjectSchema,
         temperature: 0,
+        providerOptions: { deepseek: { thinking: 'disabled' } },
       });
 
       const result = normalizeTestCaseResult(response.data, validReqIds, validScenarioIds);
@@ -152,6 +155,7 @@ export async function generateTestCases(
         warnings: warnings.length > 0 ? warnings : undefined,
       };
     } catch (err) {
+      if (!shouldRepairStructuredOutput(err)) throw err;
       lastError = err;
     }
   }

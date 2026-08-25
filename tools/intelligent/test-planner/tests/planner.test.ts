@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { FakeAIProvider } from 'ai-provider';
+import { AIProviderError, AIProviderErrorCode, FakeAIProvider } from 'ai-provider';
 import {
   VALID_REQUIREMENT_IR_DIR,
   minimalRequirementIR,
@@ -284,6 +284,19 @@ describe('Coverage analyzer', () => {
       expect(err).toBeInstanceOf(TestPlannerError);
       expect((err as TestPlannerError).code).toBe(TestPlannerErrorCode.SCHEMA_FAILURE);
     }
+  });
+
+  it('15a. does not treat provider transport timeout as structured-output repair', async () => {
+    const ir = minimalRequirementIR();
+    const timeout = new AIProviderError({
+      code: AIProviderErrorCode.TIMEOUT,
+      provider: 'deepseek',
+      message: 'Request timed out',
+    });
+    const provider = new FakeAIProvider({ error: timeout });
+
+    await expect(analyzeCoverage(ir.requirements, provider, 1)).rejects.toBe(timeout);
+    expect(provider.requestLog).toHaveLength(1);
   });
 
   it('16. returns usage information', async () => {

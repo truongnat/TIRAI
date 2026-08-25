@@ -10,6 +10,7 @@ import type { RequirementIRInput, ScenarioCandidate } from '../models.js';
 export function buildTestCasePrompt(
   requirements: RequirementIRInput['requirements'],
   scenarios: ScenarioCandidate[],
+  coverageMode: 'comprehensive' | 'minimal-sufficient' = 'comprehensive',
 ): string {
   const reqMap = new Map(requirements.map((r) => [r.id, r]));
 
@@ -43,7 +44,12 @@ export function buildTestCasePrompt(
     })
     .join('\n\n');
 
+  const coveragePolicy = coverageMode === 'minimal-sufficient'
+    ? `\nAcceptance coverage policy: use minimal sufficient coverage. For each atomic requirement, generate one executable TestCase when the browser journey can cover the compatible obligations together. Combine visible and persisted expected outcomes in that TestCase; do not split one flow into step-level cases or add alternate permutations unless the requirement makes them distinct and necessary.\n`
+    : '';
+
   return `Based on the scenario candidates, generate test case candidates.
+${coveragePolicy}
 
 Each test case should:
 - Verify one primary behavior (atomic)
@@ -52,6 +58,13 @@ Each test case should:
 - Have expected results derived ONLY from requirement evidence
 - Identify data needs without generating concrete data
 - Describe automation readiness (what could be automated, what is manual)
+
+For every expected result, verificationType MUST be exactly one of:
+ui, api, database, state, log, or other.
+Use ui for a visible browser outcome, state for a business state transition,
+api for an API response, and database for persisted database evidence.
+Never invent values such as assertion, business, visible-ui, or other
+verification type names. Put the business meaning in verificationIntent.
 
 Do NOT:
 - Invent expected results not supported by requirements

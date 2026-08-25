@@ -18,6 +18,10 @@ export type {
   Scenario3Specification,
   Scenario3StageAdapters,
   Scenario3ExecutionAdapter,
+  Scenario3StageName,
+  Scenario3StageMetric,
+  Scenario3RunMetrics,
+  Scenario3StageObserver,
 } from './scenario3.js';
 
 // Policy

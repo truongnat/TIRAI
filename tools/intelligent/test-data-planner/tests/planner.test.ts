@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { buildTestDataPlan } from '../src/planner.js';
+import { buildDependencyGraph } from '../src/graph/dependency-graph.js';
 import { TestDataPlannerError } from '../src/errors.js';
 import {
   minimalTestCaseIR, dataReqResult, dataCandidate, depResult,
@@ -215,6 +216,14 @@ describe('Dependencies', () => {
     const result = await buildTestDataPlan(tmpDir, provider);
     expect(result.quality.cyclicDependencies).toBeGreaterThan(0);
     fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it('drops malformed self-dependencies before runtime resolution', () => {
+    const result = buildDependencyGraph([
+      { sourceDataItemId: 'DATA-1', targetDataItemId: 'DATA-1', type: 'requires' },
+    ]);
+    expect(result.dependencies).toEqual([]);
+    expect(result.cycles).toEqual([]);
   });
 
   it('ignores dependencies with invalid references', async () => {

@@ -147,6 +147,9 @@ describe('Scenario 3 producer bridge', () => {
       expect(prompt).toContain('CANCELLED');
       expect(prompt).toContain('Precondition');
     }
+    const testCasePrompt = buildTestCasePrompt(requirements, [scenario]);
+    expect(testCasePrompt).toContain('verificationType MUST be exactly one of');
+    expect(testCasePrompt).toContain('ui, api, database, state, log, or other');
   });
 
   it('rejects malformed verification types and non-executable cases explicitly', () => {

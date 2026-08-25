@@ -35,7 +35,7 @@ import type {
   UnresolvedReason,
 } from './models.js';
 import { TestPlannerWarningCode, TEST_CONFIDENCE_THRESHOLD } from './warnings.js';
-import { loadRequirementIR } from './persistence/loader.js';
+import { loadRequirementIR, loadRequirementIRContent } from './persistence/loader.js';
 import { analyzeCoverage } from './analysis/coverage-analyzer.js';
 import { generateScenarios } from './analysis/scenario-generator.js';
 import { generateTestCases } from './analysis/test-case-generator.js';
@@ -73,11 +73,13 @@ export async function buildTestPlan(
   provider: AIProvider,
   options?: TestPlannerOptions,
 ): Promise<TestPlanIR> {
+  const requirementContent = loadRequirementIRContent(inputDir);
   return buildTestPlanFromRequirementIR(
     loadRequirementIR(inputDir),
     provider,
     options,
     inputDir,
+    requirementContent,
   );
 }
 
@@ -87,14 +89,14 @@ export async function buildTestPlanFromRequirementIR(
   provider: AIProvider,
   options?: TestPlannerOptions,
   sourceRef = 'in-memory://requirement-ir',
+  fingerprintContent = JSON.stringify(requirementIR),
 ): Promise<TestPlanIR> {
   const promptVersion = options?.promptVersion ?? TEST_PLANNER_PROMPT_VERSION;
   const maxRepairAttempts = options?.maxRepairAttempts ?? 1;
+  const coverageMode = options?.coverageMode ?? 'comprehensive';
   const outputDir = options?.outputDir;
 
   // ---- Load Requirement IR ------------------------------------------------
-  const requirementContent = JSON.stringify(requirementIR);
-
   const allWarnings: TestPlannerWarning[] = [];
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
@@ -104,7 +106,7 @@ export async function buildTestPlanFromRequirementIR(
   const requirements = requirementIR.requirements;
 
   // ---- Compute fingerprint for checkpoint validation ----------------------
-  const fingerprint = computeFingerprint(requirementContent, promptVersion, provider.name);
+  const fingerprint = computeFingerprint(fingerprintContent, promptVersion, provider.name);
 
   // ---- Load checkpoint if resuming ----------------------------------------
   const resume = options?.resume ?? false;
@@ -181,7 +183,7 @@ export async function buildTestPlanFromRequirementIR(
       result,
       usage,
       warnings: scenarioWarnings,
-    } = await generateScenarios(requirements, allCoverage, provider, maxRepairAttempts);
+    } = await generateScenarios(requirements, allCoverage, provider, maxRepairAttempts, coverageMode);
 
     aiRequests++;
     totalInputTokens += usage.inputTokens ?? 0;
@@ -212,6 +214,7 @@ export async function buildTestPlanFromRequirementIR(
       scenarioResult.scenarios,
       provider,
       maxRepairAttempts,
+      coverageMode,
     );
 
     aiRequests++;

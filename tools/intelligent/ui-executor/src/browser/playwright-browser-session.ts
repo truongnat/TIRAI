@@ -59,7 +59,7 @@ export class PlaywrightBrowserSession implements BrowserSession {
   }
 
   async start(config: UIEnvironmentConfig): Promise<void> {
-    if (this._started) return;
+    if (this._started && !this._closed) return;
     try {
       const playwright = await getPlaywright();
       this.browser = await playwright.chromium.launch({
@@ -192,6 +192,7 @@ export class PlaywrightBrowserSession implements BrowserSession {
       this.browser = null;
     } finally {
       this._closed = true;
+      this._started = false;
     }
   }
 

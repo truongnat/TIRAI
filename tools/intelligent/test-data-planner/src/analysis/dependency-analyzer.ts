@@ -64,6 +64,7 @@ export async function analyzeDependencies(
         messages,
         responseSchema: lenientObjectSchema,
         temperature: 0,
+        providerOptions: { deepseek: { thinking: 'disabled' } },
       });
 
       // Provider compatibility adapter: all alias resolution happens here

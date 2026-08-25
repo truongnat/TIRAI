@@ -94,6 +94,7 @@ export async function extractCandidates(
         messages,
         responseSchema: lenientObjectSchema,
         temperature: 0,
+        providerOptions: { deepseek: { thinking: 'disabled' } },
       });
 
       const result = normalizeExtractionResult(response.data, batch.label);
