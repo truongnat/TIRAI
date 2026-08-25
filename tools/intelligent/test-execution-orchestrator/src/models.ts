@@ -349,6 +349,8 @@ export interface TestExecutionContext {
   runId: string;
   testCaseId: string;
   environmentId: string;
+  /** Explicit platform opt-in for the journey-capable UI executor. */
+  journeyEnabled?: boolean;
 }
 
 export interface TestRunAuditRecorder {

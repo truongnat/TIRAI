@@ -256,6 +256,19 @@ const JOURNEY_WRONG_TARGET_PAGE = `<!DOCTYPE html>
   <p>This is not the requested item flow.</p><a href="/journey-catalog">Return to catalog</a>
 </body></html>`;
 
+const JOURNEY_POPUP_PAGE = `<!DOCTYPE html>
+<html><head><title>Popup launcher</title></head><body><h1>Popup launcher</h1>
+  <a href="/journey-detail" target="_blank" rel="noopener">Open item in new tab</a>
+</body></html>`;
+const JOURNEY_POPUP_EXTERNAL_PAGE = `<!DOCTYPE html>
+<html><head><title>External launcher</title></head><body><h1>External launcher</h1>
+  <a href="https://example.invalid/blocked" target="_blank" rel="noopener">Open external tab</a>
+</body></html>`;
+const JOURNEY_POPUP_AMBIGUOUS_PAGE = `<!DOCTYPE html>
+<html><head><title>Ambiguous launcher</title></head><body><h1>Ambiguous launcher</h1>
+  <button type="button" onclick="window.open('/journey-detail'); window.open('/journey-catalog');">Open two tabs</button>
+</body></html>`;
+
 export async function startFixtureServer(): Promise<FixtureServer> {
   const server: Server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
@@ -285,6 +298,9 @@ export async function startFixtureServer(): Promise<FixtureServer> {
       '/journey-binding': JOURNEY_BINDING_PAGE,
       '/journey-wrong-start': JOURNEY_WRONG_START_PAGE,
       '/journey-wrong-target': JOURNEY_WRONG_TARGET_PAGE,
+      '/journey-popup': JOURNEY_POPUP_PAGE,
+      '/journey-popup-external': JOURNEY_POPUP_EXTERNAL_PAGE,
+      '/journey-popup-ambiguous': JOURNEY_POPUP_AMBIGUOUS_PAGE,
     };
 
     const html = routes[path];

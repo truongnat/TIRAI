@@ -114,6 +114,7 @@ export interface OrchestratorOptions {
   runIdProvider?: RunIdProvider;
   environmentId?: string;
   secretProvider?: SecretProvider;
+  journeyEnabled?: boolean;
 }
 
 export class TestExecutionOrchestrator {
@@ -123,6 +124,7 @@ export class TestExecutionOrchestrator {
   private runIdProvider: RunIdProvider;
   private environmentId: string;
   private secretProvider: SecretProvider;
+  private journeyEnabled: boolean;
 
   constructor(options: OrchestratorOptions) {
     this.registry = options.registry;
@@ -131,6 +133,7 @@ export class TestExecutionOrchestrator {
     this.runIdProvider = options.runIdProvider ?? new UniqueRunIdProvider();
     this.environmentId = options.environmentId ?? 'default';
     this.secretProvider = options.secretProvider ?? new NoOpSecretProvider();
+    this.journeyEnabled = options.journeyEnabled ?? false;
   }
 
   // ---- Run all test cases -------------------------------------------------
@@ -250,6 +253,7 @@ export class TestExecutionOrchestrator {
         runId,
         testCaseId: tc.id,
         environmentId: this.environmentId,
+        journeyEnabled: this.journeyEnabled,
       };
 
       // Phase: data preparation (spec §16)

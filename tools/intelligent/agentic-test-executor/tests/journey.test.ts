@@ -239,6 +239,49 @@ describe('Phase 2C JourneyAgent', () => {
     expect(result.metrics.pageTransitions).toBeGreaterThanOrEqual(3);
     await agent.cleanup();
   }, 30_000);
+  it('switches to one allowed popup and re-grounds on the new page', async () => {
+    fixture = await startFixtureServer();
+    const session = new PlaywrightBrowserSession();
+    const agent = new JourneyAgent({ browserSession: session, aiProvider: new JourneyFakeAI(), baseUrl: `${fixture.origin}/journey-popup`, allowedOrigins: [fixture.origin] });
+    const result = await run(agent, testCase('Item status: Completed'));
+    expect(result.status).toBe('passed');
+    expect(result.metrics.popupTransitions).toBeGreaterThanOrEqual(1);
+    expect(result.journey.pageContexts.some((entry) => entry.active && entry.url.includes('/journey-detail'))).toBe(true);
+    await agent.cleanup();
+  }, 30_000);
+
+  it('rejects an external popup without executing actions in it', async () => {
+    fixture = await startFixtureServer();
+    const session = new PlaywrightBrowserSession();
+    const agent = new JourneyAgent({ browserSession: session, aiProvider: new JourneyFakeAI(), baseUrl: `${fixture.origin}/journey-popup-external`, allowedOrigins: [fixture.origin] });
+    const result = await run(agent, testCase('Item status: Completed'));
+    expect(result.status).toBe('blocked');
+    expect(['JOURNEY_EXTERNAL_POPUP_DENIED', 'JOURNEY_AMBIGUOUS_POPUP']).toContain(result.error?.code);
+    expect(result.metrics.popupTransitions).toBe(0);
+    await agent.cleanup();
+  }, 30_000);
+
+  it('fails closed when one action opens multiple ambiguous popups', async () => {
+    fixture = await startFixtureServer();
+    const session = new PlaywrightBrowserSession();
+    const agent = new JourneyAgent({ browserSession: session, aiProvider: new JourneyFakeAI(), baseUrl: `${fixture.origin}/journey-popup-ambiguous`, allowedOrigins: [fixture.origin] });
+    const result = await run(agent, testCase('Item status: Completed'));
+    expect(result.status).toBe('blocked');
+    expect(result.error?.code).toBe('JOURNEY_AMBIGUOUS_POPUP');
+    expect(result.metrics.popupTransitions).toBe(0);
+    await agent.cleanup();
+  }, 30_000);
+
+  it('uses bounded browser history recovery and blocks when no progress remains', async () => {
+    fixture = await startFixtureServer();
+    const session = new PlaywrightBrowserSession();
+    const agent = new JourneyAgent({ browserSession: session, aiProvider: new ThenNoActionAI(), baseUrl: `${fixture.origin}/journey-home`, allowedOrigins: [fixture.origin], policy: { maxJourneyRecoveries: 1 } });
+    const result = await run(agent, testCase('Item status: Completed'));
+    expect(result.status).toBe('blocked');
+    expect(result.metrics.recoveries).toBe(1);
+    expect(result.journey.actionHistory.some((action) => action.actionType === 'goBack')).toBe(true);
+    await agent.cleanup();
+  }, 30_000);
 });
 
 function testCase(expected: string, overrides: Record<string, unknown> = {}) {
@@ -318,6 +361,19 @@ class LoadingAI extends JourneyFakeAI {
 class NoActionAI extends JourneyFakeAI {
   override async generate<T>(_request: AIGenerationRequest<T>): Promise<AIGenerationResponse<T>> {
     return { data: { confidence: 'low', reasoning: 'No grounded target exists.', unresolvedReason: 'MISSING_DESTINATION' } as T, usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 } };
+  }
+}
+
+class ThenNoActionAI extends JourneyFakeAI {
+  private calls = 0;
+  override async generate<T>(request: AIGenerationRequest<T>): Promise<AIGenerationResponse<T>> {
+    const system = request.messages[0]?.content ?? '';
+    if (system.includes('verification')) return { data: { confidence: 'low', reasoning: 'Outcome is not yet proven.', unresolvedReason: 'NOT_READY' } as T, usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 } };
+    this.calls++;
+    const data = this.calls === 1
+      ? { action: { type: 'click', elementId: 'el-001' }, confidence: 'high', reasoning: 'Open the catalog.' }
+      : { confidence: 'low', reasoning: 'No further target exists.', unresolvedReason: 'DEAD_END' };
+    return { data: data as T, usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 } };
   }
 }
 

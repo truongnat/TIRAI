@@ -5,6 +5,8 @@
 export { AgenticTestExecutor, addTextEvidence, redactObservationForAI, resolveActionValue } from './agent.js';
 export type { AgenticTestExecutorOptions } from './agent.js';
 export { JourneyAgent } from './journey/journey-agent.js';
+export { JourneyTestExecutor } from './journey/journey-test-executor.js';
+export type { JourneyAgentOptions as JourneyTestExecutorOptions } from './journey/journey-agent.js';
 export type {
   JourneyAgentOptions,
 } from './journey/journey-agent.js';
@@ -15,6 +17,7 @@ export type {
   JourneyActionRecord,
   JourneyObservationSummary,
   JourneyLocation,
+  JourneyPageContext,
   JourneyState,
   JourneyExecutionPolicy,
   JourneyExecutionResult,

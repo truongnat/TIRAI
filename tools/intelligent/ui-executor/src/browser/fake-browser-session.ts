@@ -32,17 +32,24 @@ export class FakeBrowserPage implements BrowserPage {
   private config: FakeBrowserConfig;
   private _url: string;
   private _title: string;
+  private history: string[];
+  private historyIndex: number;
   private actions: Array<{ type: string; target?: string; value?: string }> = [];
 
   constructor(config: FakeBrowserConfig) {
     this.config = config;
     this._url = config.currentUrl ?? 'http://127.0.0.1/';
     this._title = config.pageTitle ?? 'Test Page';
+    this.history = [this._url];
+    this.historyIndex = 0;
   }
 
   async goto(url: string, _options?: { timeoutMs?: number }): Promise<void> {
     if (this.config.shouldFail) throw new Error(this.config.failMessage ?? 'Navigation failed');
     this._url = url;
+    this.history = this.history.slice(0, this.historyIndex + 1);
+    this.history.push(url);
+    this.historyIndex++;
     this.actions.push({ type: 'goto', target: url });
   }
 
@@ -141,6 +148,13 @@ export class FakeBrowserPage implements BrowserPage {
 
   url(): string {
     return this._url;
+  }
+
+  async goBack() {
+    if (this.historyIndex === 0) return { success: false, url: this._url };
+    this.historyIndex--;
+    this._url = this.history[this.historyIndex];
+    return { success: true, url: this._url };
   }
 
   async evaluate<T>(_expression: string): Promise<T> {

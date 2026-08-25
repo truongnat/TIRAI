@@ -1,5 +1,5 @@
 import type { AIProvider } from 'ai-provider';
-import type { BrowserPage, BrowserSession } from 'ui-executor';
+import type { BrowserPage, BrowserPageContext, BrowserSession } from 'ui-executor';
 import type {
   TestCase,
   TestExecutionContext,
@@ -26,6 +26,7 @@ import {
   type JourneyMilestone,
   type JourneyDecision,
   type SemanticApplicationState,
+  type JourneyPageContext,
 } from './models.js';
 
 export interface JourneyAgentOptions {
@@ -54,6 +55,8 @@ export class JourneyAgent {
   private readonly allowedOrigins: string[];
   private readonly testDataItems: TestDataItem[];
   private readonly dataNeedCoordinator: DataNeedCoordinator;
+  private cleaned = false;
+  private lastCleanup: { status: 'succeeded' | 'failed'; error?: { code: string; message: string } } | undefined;
 
   constructor(options: JourneyAgentOptions) {
     this.browserSession = options.browserSession;
@@ -96,6 +99,7 @@ export class JourneyAgent {
       recoveryAttempts: 0,
       loopDetections: 0,
       noProgressIterations: 0,
+      pageContexts: [],
     };
 
     const coordination = await this.dataNeedCoordinator.prepare(this.testDataItems, {
@@ -113,11 +117,18 @@ export class JourneyAgent {
     for (const binding of coordination.runtimeData.toBindingResults()) context.bindings.produce(binding);
 
     let page: BrowserPage;
+    let activePageId: string | undefined;
+    let knownPageIds = new Set<string>();
     try {
       await this.browserSession.start({ baseUrl: this.baseUrl, allowedOrigins: this.allowedOrigins, headless: true });
       const isolated = this.browserSession as BrowserSession & { createIsolatedPage?: () => Promise<BrowserPage> };
       page = isolated.createIsolatedPage ? await isolated.createIsolatedPage() : this.browserSession.page();
       await page.goto(this.baseUrl);
+      const contexts = this.browserSession.pageContexts ? await this.browserSession.pageContexts() : [];
+      activePageId = contexts.find((candidate) => candidate.active)?.id;
+      knownPageIds = new Set(contexts.map((candidate) => candidate.id));
+      journey.activePageId = activePageId;
+      journey.pageContexts = contexts.map(toJourneyPageContext);
     } catch (error) {
       journey.phase = 'error';
       return this.finish(journey, metrics, evidence, assertions, 'error', 'JOURNEY_BROWSER_ERROR', error instanceof Error ? error.message : String(error));
@@ -142,6 +153,7 @@ export class JourneyAgent {
         recordObservation(journey, state, this.policy.observationHistoryLimit);
         metrics.statesObserved++;
         journey.currentState = state;
+        if (activePageId) journey.activePageId = activePageId;
         if (!journey.visitedLocations.some((location) => location.url === state.url && location.stateKey === state.key)) {
           if (journey.visitedLocations.length >= this.policy.maxVisitedPages) return this.finish(journey, metrics, evidence, assertions, 'blocked', 'JOURNEY_PAGE_BUDGET_EXCEEDED');
           journey.visitedLocations.push({ url: state.url, stateKey: state.key, firstSeenObservation: metrics.observations });
@@ -187,6 +199,24 @@ export class JourneyAgent {
             await boundedWait(100);
             continue;
           }
+          if (assertion?.status !== 'failed' && journey.actionHistory.length > 0 && journey.recoveryAttempts < this.policy.maxJourneyRecoveries && page.goBack) {
+            const recovery = await page.goBack();
+            journey.recoveryAttempts++;
+            metrics.recoveries++;
+            journey.actionHistory.push({
+              decision,
+              stateKey: state.key,
+              actionType: 'goBack',
+              urlBefore: observation.url,
+              urlAfter: recovery.url ?? page.url(),
+              success: recovery.success,
+              error: recovery.error,
+            });
+            if (recovery.success) {
+              await boundedWait(50);
+              continue;
+            }
+          }
           journey.phase = journey.actionHistory.length > 0 && assertion?.status === 'failed' ? 'failed' : 'blocked';
           return this.finish(journey, metrics, evidence, assertions, journey.phase === 'failed' ? 'failed' : 'blocked', journeyDecision.reason);
         }
@@ -229,6 +259,17 @@ export class JourneyAgent {
           success: actionResult.success,
           error: actionResult.error,
         });
+        const pageTransition = await this.handleNewPageTransition(knownPageIds, journey, metrics);
+        if (pageTransition.status === 'blocked') return this.finish(journey, metrics, evidence, assertions, 'blocked', pageTransition.error);
+        if (pageTransition.context) {
+          page = pageTransition.context.page;
+          activePageId = pageTransition.context.id;
+          const refreshed = await this.browserSession.pageContexts?.() ?? [];
+          knownPageIds = new Set(refreshed.map((candidate) => candidate.id));
+          journey.activePageId = activePageId;
+          journey.pageContexts = refreshed.map(toJourneyPageContext);
+          await boundedWait(50);
+        }
         if (!actionResult.success) {
           journey.recoveryAttempts++;
           metrics.recoveries++;
@@ -244,8 +285,41 @@ export class JourneyAgent {
     }
   }
 
-  async cleanup(): Promise<void> {
-    try { await this.browserSession.close(); } finally { await this.dataNeedCoordinator.cleanup(); }
+  async cleanup(): Promise<{ status: 'succeeded' | 'failed'; error?: { code: string; message: string } }> {
+    if (this.cleaned) return this.lastCleanup ?? { status: 'succeeded' };
+    this.cleaned = true;
+    try {
+      await this.browserSession.close();
+      await this.dataNeedCoordinator.cleanup();
+      this.lastCleanup = { status: 'succeeded' };
+    } catch (error) {
+      this.lastCleanup = { status: 'failed', error: { code: 'JOURNEY_CLEANUP_FAILED', message: error instanceof Error ? error.message : String(error) } };
+    }
+    return this.lastCleanup;
+  }
+
+  private async handleNewPageTransition(
+    knownPageIds: Set<string>,
+    journey: JourneyState,
+    metrics: ReturnType<typeof createJourneyMetrics>,
+  ): Promise<{ status: 'ok' | 'blocked'; context?: BrowserPageContext; error?: string }> {
+    if (!this.browserSession.pageContexts) return { status: 'ok' };
+    const contexts = await this.browserSession.pageContexts();
+    const created = contexts.filter((candidate) => !knownPageIds.has(candidate.id));
+    if (created.length === 0) return { status: 'ok' };
+    const allowed = created.filter((candidate) => this.isAllowedOrigin(candidate.url));
+    if (created.length !== 1 || allowed.length !== 1) {
+      for (const candidate of created) if (this.browserSession.closePage) await this.browserSession.closePage(candidate.id);
+      return { status: 'blocked', error: created.length > 1 ? 'JOURNEY_AMBIGUOUS_POPUP' : 'JOURNEY_EXTERNAL_POPUP_DENIED' };
+    }
+    const context = this.browserSession.activatePage ? await this.browserSession.activatePage(allowed[0].id) : allowed[0];
+    metrics.popupTransitions++;
+    journey.pageContexts = contexts.map(toJourneyPageContext).map((entry) => ({ ...entry, active: entry.id === context.id }));
+    return { status: 'ok', context };
+  }
+
+  private isAllowedOrigin(url: string): boolean {
+    try { return this.allowedOrigins.includes(new URL(url).origin); } catch { return false; }
   }
 
   private async tryAssertion(
@@ -295,6 +369,7 @@ export class JourneyAgent {
     metrics.dialogTransitions = journey.observationHistory.filter((entry, index, all) => index > 0 && entry.state.dialogPresent !== all[index - 1].state.dialogPresent).length;
     metrics.noProgressIterations = journey.noProgressIterations;
     metrics.evidenceCount = evidence.length;
+    metrics.maxSimultaneousPages = journey.pageContexts.length;
     return { testCaseId: journey.testCaseId, status, journey, assertions, evidence, metrics, ...(code ? { error: { code, message: message ?? code } } : {}) };
   }
 }
@@ -340,6 +415,10 @@ function createJourneyMetrics(): JourneyExecutionResult['metrics'] {
     navigationActions: 0, assertions: 0, evidenceCount: 0, journeyDecisions: 0,
     statesObserved: 0, uniqueSemanticStates: 0, milestonesPlanned: 1, milestonesReached: 0,
     journeyReplans: 0, recoveries: 0, loopDetections: 0, noProgressIterations: 0,
-    pageTransitions: 0, dialogTransitions: 0,
+    pageTransitions: 0, dialogTransitions: 0, popupTransitions: 0, maxSimultaneousPages: 1,
   };
+}
+
+function toJourneyPageContext(context: BrowserPageContext): JourneyPageContext {
+  return { id: context.id, url: context.url, openerPageId: context.openerPageId, active: context.active };
 }
