@@ -10,6 +10,16 @@ export interface Scenario3Input {
   runtimeContext?: unknown;
   capabilities?: unknown;
   policy?: unknown;
+  onProgress?: (event: Scenario3ProgressEvent) => void;
+}
+
+export type Scenario3Stage = 'REQUIREMENT_BUILDING' | 'TEST_PLANNING' | 'DATA_PLANNING' | 'EXECUTING';
+
+export interface Scenario3ProgressEvent {
+  stage: Scenario3Stage;
+  phase: 'started' | 'completed' | 'failed';
+  elapsedMs?: number;
+  error?: string;
 }
 
 /** @deprecated Use Scenario3Input. */
@@ -99,13 +109,27 @@ export class Scenario3Pipeline {
     if (!('aiProvider' in this.dependencies) || !this.orchestrator) {
       throw new Error('Scenario3Pipeline requires canonical platform dependencies');
     }
+    const dependencies = this.dependencies as Scenario3Dependencies;
+    const orchestrator = this.orchestrator;
     const canonicalInput = input as Scenario3Input;
+    const runStage = async <T>(stage: Scenario3Stage, operation: () => Promise<T>): Promise<T> => {
+      const startedAt = performance.now();
+      canonicalInput.onProgress?.({ stage, phase: 'started' });
+      try {
+        const value = await operation();
+        canonicalInput.onProgress?.({ stage, phase: 'completed', elapsedMs: performance.now() - startedAt });
+        return value;
+      } catch (error) {
+        canonicalInput.onProgress?.({ stage, phase: 'failed', elapsedMs: performance.now() - startedAt, error: String(error) });
+        throw error;
+      }
+    };
     let requirements: RequirementIR;
     let testPlan: TestPlanIR;
     const warnings: TestPlannerWarning[] = [];
     try {
-      requirements = await buildRequirementsFromSemanticIR(canonicalInput.semanticIR, this.dependencies.aiProvider);
-      testPlan = await buildTestPlanFromRequirementIR(requirements, this.dependencies.aiProvider);
+      requirements = await runStage('REQUIREMENT_BUILDING', () => buildRequirementsFromSemanticIR(canonicalInput.semanticIR, dependencies.aiProvider));
+      testPlan = await runStage('TEST_PLANNING', () => buildTestPlanFromRequirementIR(requirements, dependencies.aiProvider));
       warnings.push(...(testPlan.warnings ?? []));
     } catch (error) {
       return this.errorResult(error, warnings);
@@ -116,13 +140,13 @@ export class Scenario3Pipeline {
 
     let dataPlan: TestDataPlanIR;
     try {
-      dataPlan = await buildTestDataPlanFromTestCaseIR(toTestCaseIRInput(testPlan), this.dependencies.aiProvider);
+      dataPlan = await runStage('DATA_PLANNING', () => buildTestDataPlanFromTestCaseIR(toTestCaseIRInput(testPlan), dependencies.aiProvider));
     } catch (error) {
       return this.withoutExecution(requirements, testPlan, [...warnings, { code: 'SCENARIO3_DATA_PLAN_ERROR', message: String(error) }], 'error');
     }
 
     try {
-      const execution = await this.orchestrator.run(testPlan.testCases, dataPlan);
+      const execution = await runStage('EXECUTING', () => orchestrator.run(testPlan.testCases, dataPlan));
       const trace = buildTrace(requirements, testPlan, dataPlan, execution);
       return {
         status: statusFromExecution(execution), requirements, testPlan, dataPlan, execution,
@@ -189,7 +213,7 @@ function toTestCaseIRInput(testPlan: TestPlanIR): TestCaseIRInput {
 }
 
 function hasPlanningBlocker(warnings: TestPlannerWarning[]): boolean {
-  return warnings.some((warning) => ['TEST_CASE_NON_EXECUTABLE', 'TEST_CASE_INVALID_STEP_ORDER', 'TEST_CASE_UNSUPPORTED_AUTOMATION', 'TEST_EXPECTATION_UNTRACEABLE', 'TEST_REQUIREMENT_NOT_COVERED'].includes(warning.code));
+  return warnings.some((warning) => ['TEST_CASE_NON_EXECUTABLE', 'TEST_CASE_INVALID_STEP_ORDER', 'TEST_CASE_UNSUPPORTED_AUTOMATION', 'TEST_EXPECTATION_UNSPECIFIED', 'TEST_EXPECTATION_UNTRACEABLE', 'TEST_REQUIREMENT_NOT_COVERED'].includes(warning.code));
 }
 
 function statusFromExecution(execution: TestRunResultIR): Scenario3Result['status'] {
