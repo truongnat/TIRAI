@@ -28,6 +28,8 @@ export { classifyRuntimeFailure, decideRecovery } from './journey/recovery.js';
 export type { FailureClassification, RecoveryOperation, RecoveryDecision, RecoveryEvent, ReconciliationStatus, ReconciliationResult, ReconciliationRequest, RecoveryReconciliationAdapter } from './journey/recovery.js';
 export { verifyCrossLayer, correlationKey } from './verification.js';
 export type { VerificationSource, VerificationConfidence, EntityReference, SemanticExpectation, VerificationNeed, RawEvidence, VerificationAcquisitionRequest, VerificationSourceAdapter, VerificationPlan, VerificationRuntime, NormalizedFact, VerificationResultStatus, VerificationEvidenceView, VerificationNeedResult, VerificationReport } from './verification.js';
+export { sourceIntelligenceFromProjectProfile, StaticSourceIntelligenceProvider, resolveRelevantSourceHints, confirmSourceHints, groundConfirmedAction, sanitizeIntelligence } from './source-intelligence.js';
+export type { SourceHintKind, SourceHintConfidence, SourceHintLifecycle, SourceHintProvenance, SourceHint, SourceIntelligence, SourceIntelligenceRequest, SourceIntelligenceProvider, SourceHintResolution, SourceProfileLike } from './source-intelligence.js';
 
 export type {
   AgentCapabilities,
