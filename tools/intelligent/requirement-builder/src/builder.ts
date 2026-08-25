@@ -30,9 +30,10 @@ import type {
   RequirementType,
   RequirementSourceNature,
   RequirementTestability,
+  SemanticIRInput,
 } from './models.js';
 import { RequirementWarningCode } from './warnings.js';
-import { loadSemanticIR, loadSemanticIRContent } from './persistence/loader.js';
+import { loadSemanticIR } from './persistence/loader.js';
 import { buildEvidenceBatches } from './analysis/evidence-grouper.js';
 import type { EvidenceBatch } from './prompts/extraction.js';
 import { extractCandidates } from './analysis/candidate-extractor.js';
@@ -66,14 +67,26 @@ export async function buildRequirements(
   provider: AIProvider,
   options?: RequirementBuilderOptions,
 ): Promise<RequirementIR> {
+  return buildRequirementsFromSemanticIR(
+    loadSemanticIR(inputDir),
+    provider,
+    options,
+    inputDir,
+  );
+}
+
+/** Build requirements directly from an in-memory Semantic IR. */
+export async function buildRequirementsFromSemanticIR(
+  semanticIR: SemanticIRInput,
+  provider: AIProvider,
+  options?: RequirementBuilderOptions,
+  sourceRef = 'in-memory://semantic-ir',
+): Promise<RequirementIR> {
   const promptVersion = options?.promptVersion ?? REQUIREMENT_PROMPT_VERSION;
   const maxRepairAttempts = options?.maxRepairAttempts ?? 1;
   const outputDir = options?.outputDir;
 
   // ---- Load Semantic IR ---------------------------------------------------
-  const semanticIR = loadSemanticIR(inputDir);
-  const _semanticContent = loadSemanticIRContent(inputDir);
-
   const allWarnings: RequirementWarning[] = [];
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
@@ -359,7 +372,7 @@ export async function buildRequirements(
   const document = {
     title: semanticIR.document.title,
     summary: semanticIR.document.summary,
-    sourceSemanticIR: inputDir,
+    sourceSemanticIR: sourceRef,
     provenance: semanticIR.document.provenance,
   };
 
@@ -377,7 +390,7 @@ export async function buildRequirements(
   if (outputDir) {
     const manifest: RequirementManifest = {
       schemaVersion: '1.0',
-      source: { semanticIR: inputDir },
+      source: { semanticIR: sourceRef },
       provider: { name: provider.name, model: '' },
       promptVersion,
       stats: {

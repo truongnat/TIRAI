@@ -35,7 +35,7 @@ import type {
   UnresolvedReason,
 } from './models.js';
 import { TestPlannerWarningCode, TEST_CONFIDENCE_THRESHOLD } from './warnings.js';
-import { loadRequirementIR, loadRequirementIRContent } from './persistence/loader.js';
+import { loadRequirementIR } from './persistence/loader.js';
 import { analyzeCoverage } from './analysis/coverage-analyzer.js';
 import { generateScenarios } from './analysis/scenario-generator.js';
 import { generateTestCases } from './analysis/test-case-generator.js';
@@ -73,13 +73,27 @@ export async function buildTestPlan(
   provider: AIProvider,
   options?: TestPlannerOptions,
 ): Promise<TestPlanIR> {
+  return buildTestPlanFromRequirementIR(
+    loadRequirementIR(inputDir),
+    provider,
+    options,
+    inputDir,
+  );
+}
+
+/** Build a test plan directly from an in-memory Requirement IR. */
+export async function buildTestPlanFromRequirementIR(
+  requirementIR: RequirementIRInput,
+  provider: AIProvider,
+  options?: TestPlannerOptions,
+  sourceRef = 'in-memory://requirement-ir',
+): Promise<TestPlanIR> {
   const promptVersion = options?.promptVersion ?? TEST_PLANNER_PROMPT_VERSION;
   const maxRepairAttempts = options?.maxRepairAttempts ?? 1;
   const outputDir = options?.outputDir;
 
   // ---- Load Requirement IR ------------------------------------------------
-  const requirementIR = loadRequirementIR(inputDir);
-  const requirementContent = loadRequirementIRContent(inputDir);
+  const requirementContent = JSON.stringify(requirementIR);
 
   const allWarnings: TestPlannerWarning[] = [];
   let totalInputTokens = 0;
@@ -533,7 +547,7 @@ export async function buildTestPlan(
 
     const manifest: TestPlannerManifest = {
       schemaVersion: '1.0',
-      source: { requirementIR: inputDir },
+      source: { requirementIR: sourceRef },
       provider: { name: provider.name, model: '' },
       promptVersion,
       stats: {

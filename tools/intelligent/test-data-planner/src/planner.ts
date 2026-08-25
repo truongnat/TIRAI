@@ -29,13 +29,10 @@ import type {
   DataRequirementExtractionResult,
   DependencyAnalysisResult,
   DataConstraintType,
+  TestCaseIRInput,
 } from './models.js';
 import { TestDataPlannerWarningCode } from './warnings.js';
-import {
-  loadTestCaseIR,
-  loadTestCaseIRContent,
-  loadTestPlanIRContent,
-} from './persistence/loader.js';
+import { loadTestCaseIR } from './persistence/loader.js';
 import { extractDataRequirements } from './analysis/data-requirement-extractor.js';
 import {
   extractDeterministic,
@@ -69,14 +66,28 @@ export async function buildTestDataPlan(
   provider: AIProvider,
   options?: TestDataPlannerOptions,
 ): Promise<TestDataPlanIR> {
+  return buildTestDataPlanFromTestCaseIR(
+    loadTestCaseIR(inputDir),
+    provider,
+    options,
+    inputDir,
+  );
+}
+
+/** Build a data plan directly from an in-memory Test Case IR. */
+export async function buildTestDataPlanFromTestCaseIR(
+  testCaseIR: TestCaseIRInput,
+  provider: AIProvider,
+  options?: TestDataPlannerOptions,
+  sourceRef = 'in-memory://test-case-ir',
+): Promise<TestDataPlanIR> {
   const promptVersion = options?.promptVersion ?? TEST_DATA_PLANNER_PROMPT_VERSION;
   const maxRepairAttempts = options?.maxRepairAttempts ?? 1;
   const outputDir = options?.outputDir;
 
   // ---- Load Test Case IR --------------------------------------------------
-  const testCaseIR = loadTestCaseIR(inputDir);
-  const testCaseContent = loadTestCaseIRContent(inputDir);
-  const testPlanContent = loadTestPlanIRContent(inputDir);
+  const testCaseContent = JSON.stringify(testCaseIR);
+  const testPlanContent: string | undefined = undefined;
 
   const allWarnings: TestDataPlannerWarning[] = [];
   let totalInputTokens = 0;
@@ -382,7 +393,7 @@ export async function buildTestDataPlan(
   if (outputDir) {
     const manifest: TestDataPlannerManifest = {
       schemaVersion: '1.0',
-      source: { testCaseIR: inputDir },
+      source: { testCaseIR: sourceRef },
       provider: { name: provider.name, model: '' },
       promptVersion,
       stats: {

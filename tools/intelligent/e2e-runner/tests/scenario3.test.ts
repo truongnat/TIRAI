@@ -3,6 +3,11 @@ import { Scenario3Pipeline } from '../src/scenario3.js';
 import { makeTestCase } from './fixtures.js';
 import type { TestPlanIR } from 'test-planner';
 import type { TestDataPlanIR } from 'test-data-planner';
+import { FakeAIProvider } from 'ai-provider';
+import { semanticIR, extractionResult, candidate } from '../../requirement-builder/tests/fixtures/helpers.js';
+import { coverageResult, scenarioResult, scenarioCandidate, testCaseResult, testCaseCandidate } from '../../test-planner/tests/fixtures/helpers.js';
+import { dataReqResult, depResult } from '../../test-data-planner/tests/fixtures/helpers.js';
+import type { TestExecutionOrchestrator } from 'test-execution-orchestrator';
 
 function plan(overrides: Partial<TestPlanIR> = {}): TestPlanIR {
   return {
@@ -80,5 +85,34 @@ describe('Scenario 3 programmatic bridge', () => {
     expect(result.status).toBe('blocked');
     expect(dataPlanning).toBe(0);
     expect(execution).toBe(0);
+  });
+
+  it('owns the default in-memory composition and returns a canonical source-to-proof trace', async () => {
+    const provider = new FakeAIProvider({
+      name: 'fake',
+      model: 'scenario3-test',
+      responses: [
+        extractionResult({ candidates: [candidate({ temporaryId: 'r1', statement: 'An approved order can be cancelled', dataNeeds: [{ description: 'existing approved order', type: 'database-record', constraints: ['status = APPROVED'], provenance: [{ contextId: 'ctx-order' }] }], outcomes: [{ description: 'Order status is CANCELLED', state: 'CANCELLED', provenance: [{ contextId: 'ctx-order' }] }], provenance: [{ contextId: 'ctx-order' }] })] }),
+        coverageResult({ coverageCandidates: [{ requirementId: 'REQ-0001', strategies: ['state-transition'], reasons: ['state'], confidence: 1 }] }),
+        scenarioResult({ scenarios: [scenarioCandidate('SCEN-1', 'Cancel order', ['REQ-0001'])] }),
+        testCaseResult({ testCases: [testCaseCandidate('TC-1', 'SCEN-1', ['REQ-0001'], { steps: [{ order: 1, action: 'Cancel the approved order' }], expectedResults: [{ description: 'Order status is CANCELLED', verificationType: 'state', verificationIntent: { kind: 'persisted-business-state', subject: 'order', property: 'status', expectedValue: 'CANCELLED', authority: 'PERSISTED_BUSINESS_STATE' } }] })] }),
+        dataReqResult(),
+        depResult(),
+      ],
+    });
+    const execution = { status: 'passed', testResults: [{ testCaseId: 'TC-1', scenarioId: 'SCEN-1', requirementIds: ['REQ-0001'], status: 'passed', assertions: [{ id: 'A-1', expectedResultIndex: 0, description: 'Order status', verificationType: 'state', status: 'passed', evidenceIds: ['E-1'] }], evidence: [{ id: 'E-1', type: 'api-response', sourceExecutor: 'api', testCaseId: 'TC-1', assertionId: 'A-1', metadata: {}, sensitive: false }], runtimeBindings: [], steps: [], cleanup: { attempted: 1, succeeded: 1, failed: 0, results: [] }, errors: [], warnings: [], provenance: [{ requirementId: 'REQ-0001', contextId: 'ctx-order' }], phase: 'completed', timings: { startedAt: '', finishedAt: '', durationMs: 0 } }], summary: { failed: 0, errors: 0, blocked: 0, skipped: 0, passed: 1, testsTotal: 1, manual: 0, assertionsTotal: 1, assertionsPassed: 1, assertionsFailed: 0, assertionsBlocked: 0, evidenceItems: 1, cleanupFailures: 0, provenanceCoverage: 1, durationMs: 0 }, evidence: [], auditTrail: [] } as never;
+    const orchestrator = { run: async () => execution } as unknown as TestExecutionOrchestrator;
+    const result = await new Scenario3Pipeline({ aiProvider: provider, orchestrator }).run({ semanticIR: semanticIR() });
+
+    expect(result.status).toBe('passed');
+    expect(result.testPlan.testCases).toHaveLength(1);
+    expect(result.dataPlan).toBeDefined();
+    expect(result.requirementResults[0]?.status).toBe('passed');
+    expect(result.trace.edges).toEqual(expect.arrayContaining([
+      expect.objectContaining({ relation: 'SOURCE_SUPPORTS_REQUIREMENT' }),
+      expect.objectContaining({ relation: 'EXPECTED_RESULT_VERIFIED_BY_NEED' }),
+      expect.objectContaining({ relation: 'VERIFICATION_NEED_SUPPORTED_BY_EVIDENCE' }),
+    ]));
+    expect(result.trace.orphanEvidenceIds).toEqual([]);
   });
 });
