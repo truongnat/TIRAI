@@ -12,6 +12,7 @@ export interface TestProvenance {
   contextId?: string;
   sheet?: string;
   ranges?: string[];
+  cells?: string[];
 }
 
 // ---- Top-level Test Data Plan IR ------------------------------------------
@@ -53,12 +54,7 @@ export type TestDataType =
   | 'other';
 
 export type TestDataLifecycle =
-  | 'existing'
-  | 'temporary'
-  | 'generated'
-  | 'shared'
-  | 'persistent'
-  | 'unknown';
+  'existing' | 'temporary' | 'generated' | 'shared' | 'persistent' | 'unknown';
 
 export type TestDataStrategy =
   | 'reuse-existing'
@@ -135,7 +131,8 @@ export interface DataDependency {
 
 // ---- Setup / cleanup intents ----------------------------------------------
 
-export type DataSetupType = 'select' | 'create' | 'generate' | 'configure' | 'mock' | 'derive' | 'none';
+export type DataSetupType =
+  'select' | 'create' | 'generate' | 'configure' | 'mock' | 'derive' | 'none';
 export type ExecutorHint = 'database' | 'api' | 'ui' | 'file' | 'configuration' | 'unknown';
 
 export interface DataSetupIntent {
@@ -328,12 +325,20 @@ export interface TestCaseIRInput {
       constraints: string[];
       relatedRequirementIds: string[];
       relatedEntityIds?: string[];
+      sourceScenarioId?: string;
+      provenance?: TestProvenance[];
     }>;
     steps: Array<{ order: number; action: string; target?: string; input?: string }>;
     expectedResults: Array<{ description: string; verificationType: string; target?: string }>;
     cleanup: Array<{ description: string; target?: string }>;
     automation: { status: string; suggestedExecutor?: string; reasons: string[] };
-    provenance: Array<{ requirementId: string; contextId?: string; sheet?: string; ranges?: string[] }>;
+    provenance: Array<{
+      requirementId: string;
+      contextId?: string;
+      sheet?: string;
+      ranges?: string[];
+      cells?: string[];
+    }>;
     confidence: number;
   }>;
   dataNeeds?: Array<{

@@ -3,12 +3,7 @@
 // ---------------------------------------------------------------------------
 // Ensures: Test Case → Scenario → Requirement chain is intact.
 
-import type {
-  TestScenario,
-  TestCase,
-  TestPlannerWarning,
-  RequirementCoverage,
-} from '../models.js';
+import type { TestScenario, TestCase, TestPlannerWarning, RequirementCoverage } from '../models.js';
 import { TestPlannerWarningCode } from '../warnings.js';
 
 /**
@@ -85,6 +80,14 @@ export function validateRequirementCoverageChain(
         requirementId: c.requirementId,
       });
     }
+
+    if (c.status !== 'covered' && c.scenarioIds.length > 0) {
+      warnings.push({
+        code: TestPlannerWarningCode.REQUIREMENT_PARTIAL_COVERAGE,
+        message: `Requirement ${c.requirementId} has scenarios but no executable test case`,
+        requirementId: c.requirementId,
+      });
+    }
   }
 
   return warnings;
@@ -101,6 +104,52 @@ export function validateExpectedResults(testCases: TestCase[]): TestPlannerWarni
       warnings.push({
         code: TestPlannerWarningCode.EXPECTATION_UNSPECIFIED,
         message: `Test case ${tc.id} has no expected results`,
+        testCaseId: tc.id,
+      });
+    }
+  }
+
+  return warnings;
+}
+
+/** Validate the minimum semantic contract required by Scenario 2. */
+export function validateExecutableTestCases(testCases: TestCase[]): TestPlannerWarning[] {
+  const warnings: TestPlannerWarning[] = [];
+
+  for (const tc of testCases) {
+    if (tc.steps.length === 0) {
+      warnings.push({
+        code: TestPlannerWarningCode.CASE_NON_EXECUTABLE,
+        message: `Test case ${tc.id} has no executable steps`,
+        testCaseId: tc.id,
+      });
+    }
+
+    const orders = tc.steps.map((step) => step.order);
+    if (
+      orders.some(
+        (order, index) => !Number.isFinite(order) || (index > 0 && order <= orders[index - 1]!),
+      )
+    ) {
+      warnings.push({
+        code: TestPlannerWarningCode.CASE_INVALID_STEP_ORDER,
+        message: `Test case ${tc.id} has non-deterministic step ordering`,
+        testCaseId: tc.id,
+      });
+    }
+
+    if (tc.steps.some((step) => step.action.trim().length === 0)) {
+      warnings.push({
+        code: TestPlannerWarningCode.CASE_NON_EXECUTABLE,
+        message: `Test case ${tc.id} contains an empty semantic action`,
+        testCaseId: tc.id,
+      });
+    }
+
+    if (tc.automation.status === 'manual-only' || tc.automation.status === 'unknown') {
+      warnings.push({
+        code: TestPlannerWarningCode.CASE_UNSUPPORTED_AUTOMATION,
+        message: `Test case ${tc.id} is not executable by the autonomous platform`,
         testCaseId: tc.id,
       });
     }

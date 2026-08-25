@@ -25,18 +25,30 @@ const DEFAULT_MAX_REPAIR_ATTEMPTS = 1;
 const DEFAULT_CONFIDENCE = 0.7;
 
 const VALID_CATEGORIES: ReadonlySet<string> = new Set([
-  'happy-path', 'negative', 'validation', 'boundary', 'error-handling',
-  'state-transition', 'data-integrity', 'interface', 'security',
-  'compatibility', 'other',
+  'happy-path',
+  'negative',
+  'validation',
+  'boundary',
+  'error-handling',
+  'state-transition',
+  'data-integrity',
+  'interface',
+  'security',
+  'compatibility',
+  'other',
 ]);
 
-const VALID_PRIORITIES: ReadonlySet<string> = new Set([
-  'critical', 'high', 'medium', 'low',
-]);
+const VALID_PRIORITIES: ReadonlySet<string> = new Set(['critical', 'high', 'medium', 'low']);
 
 const VALID_DATA_NEED_TYPES: ReadonlySet<string> = new Set([
-  'input', 'database-record', 'account', 'state', 'external-response',
-  'file', 'configuration', 'other',
+  'input',
+  'database-record',
+  'account',
+  'state',
+  'external-response',
+  'file',
+  'configuration',
+  'other',
 ]);
 
 const lenientObjectSchema: JSONSchema = {
@@ -67,20 +79,27 @@ export async function generateScenarios(
   let lastError: unknown;
   for (let attempt = 0; attempt <= maxRepairAttempts; attempt++) {
     try {
-      const messages = attempt === 0
-        ? [
-            { role: 'system' as const, content: systemPrompt },
-            { role: 'user' as const, content: userPrompt },
-          ]
-        : [
-            { role: 'system' as const, content: systemPrompt },
-            { role: 'user' as const, content: userPrompt },
-            { role: 'assistant' as const, content: 'My previous response was invalid. Let me correct it.' },
-            { role: 'user' as const, content: buildRepairPrompt(
-              lastError instanceof Error ? lastError.message : String(lastError),
-              scenarioExtractionSchema,
-            ) },
-          ];
+      const messages =
+        attempt === 0
+          ? [
+              { role: 'system' as const, content: systemPrompt },
+              { role: 'user' as const, content: userPrompt },
+            ]
+          : [
+              { role: 'system' as const, content: systemPrompt },
+              { role: 'user' as const, content: userPrompt },
+              {
+                role: 'assistant' as const,
+                content: 'My previous response was invalid. Let me correct it.',
+              },
+              {
+                role: 'user' as const,
+                content: buildRepairPrompt(
+                  lastError instanceof Error ? lastError.message : String(lastError),
+                  scenarioExtractionSchema,
+                ),
+              },
+            ];
 
       const response = await provider.generate<Record<string, unknown>>({
         messages,
@@ -120,45 +139,54 @@ export function normalizeScenarioResult(
   raw: Record<string, unknown>,
   validReqIds: Set<string>,
 ): ScenarioExtractionResult {
-  const rawScenarios = (Array.isArray(raw.scenarios) ? raw.scenarios : []) as Array<Record<string, unknown>>;
+  const rawScenarios = (Array.isArray(raw.scenarios) ? raw.scenarios : []) as Array<
+    Record<string, unknown>
+  >;
 
   let autoId = 0;
   const scenarios: ScenarioCandidate[] = [];
 
   for (const s of rawScenarios) {
     // Accept title or objective as the title
-    const title = typeof s.title === 'string' && s.title.length > 0
-      ? s.title
-      : typeof s.objective === 'string' && s.objective.length > 0
-        ? s.objective
-        : '';
+    const title =
+      typeof s.title === 'string' && s.title.length > 0
+        ? s.title
+        : typeof s.objective === 'string' && s.objective.length > 0
+          ? s.objective
+          : '';
     if (title.length === 0) continue;
 
-    const objective = typeof s.objective === 'string' && s.objective.length > 0
-      ? s.objective
-      : title;
+    const objective =
+      typeof s.objective === 'string' && s.objective.length > 0 ? s.objective : title;
 
-    const temporaryId = (typeof s.temporaryId === 'string' && s.temporaryId.length > 0)
-      ? s.temporaryId
-      : (typeof s.id === 'string' && s.id.length > 0)
-        ? s.id
-        : `SCN-CAND-${String(++autoId).padStart(3, '0')}`;
+    const temporaryId =
+      typeof s.temporaryId === 'string' && s.temporaryId.length > 0
+        ? s.temporaryId
+        : typeof s.id === 'string' && s.id.length > 0
+          ? s.id
+          : `SCN-CAND-${String(++autoId).padStart(3, '0')}`;
 
-    const category = typeof s.category === 'string' && VALID_CATEGORIES.has(s.category)
-      ? s.category as TestScenarioCategory
-      : 'other';
+    const category =
+      typeof s.category === 'string' && VALID_CATEGORIES.has(s.category)
+        ? (s.category as TestScenarioCategory)
+        : 'other';
 
-    const priority = typeof s.priority === 'string' && VALID_PRIORITIES.has(s.priority)
-      ? s.priority as Priority
-      : 'medium';
+    const priority =
+      typeof s.priority === 'string' && VALID_PRIORITIES.has(s.priority)
+        ? (s.priority as Priority)
+        : 'medium';
 
     // Accept requirementIds, requirements, or linkedRequirements
-    const rawReqIds = Array.isArray(s.requirementIds) ? s.requirementIds
-      : Array.isArray(s.requirements) ? s.requirements
-      : Array.isArray(s.linkedRequirements) ? s.linkedRequirements
-      : [];
-    const requirementIds = rawReqIds
-      .filter((id): id is string => typeof id === 'string' && validReqIds.has(id));
+    const rawReqIds = Array.isArray(s.requirementIds)
+      ? s.requirementIds
+      : Array.isArray(s.requirements)
+        ? s.requirements
+        : Array.isArray(s.linkedRequirements)
+          ? s.linkedRequirements
+          : [];
+    const requirementIds = rawReqIds.filter(
+      (id): id is string => typeof id === 'string' && validReqIds.has(id),
+    );
 
     if (requirementIds.length === 0) continue;
 
@@ -179,9 +207,8 @@ export function normalizeScenarioResult(
     const confidence = typeof s.confidence === 'number' ? s.confidence : DEFAULT_CONFIDENCE;
 
     // Build provenance from requirement IDs if empty
-    const finalProvenance = provenance.length > 0
-      ? provenance
-      : requirementIds.map((id) => ({ requirementId: id }));
+    const finalProvenance =
+      provenance.length > 0 ? provenance : requirementIds.map((id) => ({ requirementId: id }));
 
     scenarios.push({
       temporaryId,
@@ -201,44 +228,66 @@ export function normalizeScenarioResult(
   return { scenarios };
 }
 
-function normalizePreconditions(raw: unknown): Array<{ description: string; sourceRequirementIds: string[] }> {
+function normalizePreconditions(
+  raw: unknown,
+): Array<{ description: string; sourceRequirementIds: string[] }> {
   if (typeof raw === 'string' && raw.length > 0) {
     return [{ description: raw, sourceRequirementIds: [] }];
   }
   if (!Array.isArray(raw)) return [];
   return raw
-    .filter((p): p is Record<string, unknown> => typeof p === 'object' && p !== null && typeof p.description === 'string')
+    .filter(
+      (p): p is Record<string, unknown> =>
+        typeof p === 'object' && p !== null && typeof p.description === 'string',
+    )
     .map((p) => ({
       description: p.description as string,
-      sourceRequirementIds: (Array.isArray(p.sourceRequirementIds) ? p.sourceRequirementIds : [])
-        .filter((id): id is string => typeof id === 'string'),
+      sourceRequirementIds: (Array.isArray(p.sourceRequirementIds)
+        ? p.sourceRequirementIds
+        : []
+      ).filter((id): id is string => typeof id === 'string'),
     }));
 }
 
 function normalizeDataNeeds(
   raw: unknown,
   validReqIds: Set<string>,
-): Array<{ description: string; type: DataNeedType; constraints: string[]; relatedRequirementIds: string[] }> {
+): Array<{
+  description: string;
+  type: DataNeedType;
+  constraints: string[];
+  relatedRequirementIds: string[];
+  sourceScenarioId?: string;
+  provenance?: TestProvenance[];
+}> {
   if (typeof raw === 'string' && raw.length > 0) {
     return [{ description: raw, type: 'other', constraints: [], relatedRequirementIds: [] }];
   }
   if (!Array.isArray(raw)) return [];
   return raw
-    .filter((d): d is Record<string, unknown> => typeof d === 'object' && d !== null && typeof d.description === 'string')
+    .filter(
+      (d): d is Record<string, unknown> =>
+        typeof d === 'object' && d !== null && typeof d.description === 'string',
+    )
     .map((d) => {
-      const type = typeof d.type === 'string' && VALID_DATA_NEED_TYPES.has(d.type)
-        ? d.type as DataNeedType
-        : 'other';
+      const type =
+        typeof d.type === 'string' && VALID_DATA_NEED_TYPES.has(d.type)
+          ? (d.type as DataNeedType)
+          : 'other';
 
-      const relatedRequirementIds = (Array.isArray(d.relatedRequirementIds) ? d.relatedRequirementIds : [])
-        .filter((id): id is string => typeof id === 'string' && validReqIds.has(id));
+      const relatedRequirementIds = (
+        Array.isArray(d.relatedRequirementIds) ? d.relatedRequirementIds : []
+      ).filter((id): id is string => typeof id === 'string' && validReqIds.has(id));
 
       return {
         description: d.description as string,
         type,
-        constraints: (Array.isArray(d.constraints) ? d.constraints : [])
-          .filter((c): c is string => typeof c === 'string'),
+        constraints: (Array.isArray(d.constraints) ? d.constraints : []).filter(
+          (c): c is string => typeof c === 'string',
+        ),
         relatedRequirementIds,
+        sourceScenarioId: typeof d.sourceScenarioId === 'string' ? d.sourceScenarioId : undefined,
+        provenance: normalizeTestProvenance(d.provenance),
       };
     });
 }
@@ -246,11 +295,19 @@ function normalizeDataNeeds(
 function normalizeTestProvenance(raw: unknown): TestProvenance[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .filter((p): p is Record<string, unknown> => typeof p === 'object' && p !== null && typeof p.requirementId === 'string')
+    .filter(
+      (p): p is Record<string, unknown> =>
+        typeof p === 'object' && p !== null && typeof p.requirementId === 'string',
+    )
     .map((p) => ({
       requirementId: p.requirementId as string,
       contextId: typeof p.contextId === 'string' ? p.contextId : undefined,
       sheet: typeof p.sheet === 'string' ? p.sheet : undefined,
-      ranges: Array.isArray(p.ranges) ? p.ranges.filter((x): x is string => typeof x === 'string') : undefined,
+      ranges: Array.isArray(p.ranges)
+        ? p.ranges.filter((x): x is string => typeof x === 'string')
+        : undefined,
+      cells: Array.isArray(p.cells)
+        ? p.cells.filter((x): x is string => typeof x === 'string')
+        : undefined,
     }));
 }

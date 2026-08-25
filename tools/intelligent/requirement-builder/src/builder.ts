@@ -41,8 +41,14 @@ import { orderCandidates } from './merge/deterministic-order.js';
 import { findDuplicateCandidates, applyMerge } from './merge/requirement-merger.js';
 import { detectConflicts } from './merge/conflict-detector.js';
 import { validateRequirement } from './validation/requirement-validator.js';
-import { validateProvenanceArray, buildValidContextIdsFromIR } from './validation/provenance-validator.js';
-import { validateSemanticReferences, buildValidSemanticIds } from './validation/semantic-reference-validator.js';
+import {
+  validateProvenanceArray,
+  buildValidContextIdsFromIR,
+} from './validation/provenance-validator.js';
+import {
+  validateSemanticReferences,
+  buildValidSemanticIds,
+} from './validation/semantic-reference-validator.js';
 import { computeQualityMetrics } from './quality/metrics.js';
 import { writeOutput, writeAnalysis } from './persistence/writer.js';
 import { REQUIREMENT_PROMPT_VERSION } from './prompts/system.js';
@@ -96,11 +102,11 @@ export async function buildRequirements(
   const extractionResults: CandidateExtractionResult[] = [];
 
   for (const batch of batches) {
-    const { result, usage, warnings: extractionWarnings } = await extractCandidates(
-      batch,
-      provider,
-      maxRepairAttempts,
-    );
+    const {
+      result,
+      usage,
+      warnings: extractionWarnings,
+    } = await extractCandidates(batch, provider, maxRepairAttempts);
 
     aiRequests++;
     totalInputTokens += usage.inputTokens ?? 0;
@@ -121,7 +127,10 @@ export async function buildRequirements(
 
       // Backfill provenance from batch context when AI returns empty or unknown
       let provenance = c.provenance;
-      if (provenance.length === 0 || (provenance.length === 1 && provenance[0]!.contextId === 'unknown')) {
+      if (
+        provenance.length === 0 ||
+        (provenance.length === 1 && provenance[0]!.contextId === 'unknown')
+      ) {
         provenance = inferProvenanceFromEvidence(sanitizedEvidenceIds, batchProvenance);
       }
       // If still unknown, fall back to batch-level provenance
@@ -144,6 +153,7 @@ export async function buildRequirements(
           relatedSemanticIds: p.relatedSemanticIds,
           provenance: p.provenance ?? [],
         })),
+        dataNeeds: c.dataNeeds ?? [],
         inputs: c.inputs.map((i) => ({
           name: i.name,
           description: i.description,
@@ -227,16 +237,20 @@ export async function buildRequirements(
   const allMergeGroups = [...deterministicGroups];
   for (const aiGroup of aiMergeGroups) {
     const aiSet = new Set(aiGroup.indices);
-    const alreadyCovered = allMergeGroups.some((existing) =>
-      existing.indices.length === aiGroup.indices.length &&
-      existing.indices.every((idx) => aiSet.has(idx)),
+    const alreadyCovered = allMergeGroups.some(
+      (existing) =>
+        existing.indices.length === aiGroup.indices.length &&
+        existing.indices.every((idx) => aiSet.has(idx)),
     );
     if (!alreadyCovered) {
       allMergeGroups.push(aiGroup);
     }
   }
 
-  const { merged: dedupedCandidates, warnings: mergeWarnings } = applyMerge(allCandidates, allMergeGroups);
+  const { merged: dedupedCandidates, warnings: mergeWarnings } = applyMerge(
+    allCandidates,
+    allMergeGroups,
+  );
   allWarnings.push(...mergeWarnings);
 
   // ---- Conflict detection -------------------------------------------------
@@ -257,9 +271,8 @@ export async function buildRequirements(
     const testability: RequirementTestability = assessTestability(c);
 
     // Infer type when AI returned 'unknown'
-    const type: RequirementType = c.type === 'unknown'
-      ? inferRequirementType(c.statement, c.semanticEvidenceIds)
-      : c.type;
+    const type: RequirementType =
+      c.type === 'unknown' ? inferRequirementType(c.statement, c.semanticEvidenceIds) : c.type;
 
     return {
       id,
@@ -271,6 +284,7 @@ export async function buildRequirements(
       trigger: c.trigger,
       preconditions: c.preconditions,
       inputs: c.inputs,
+      dataNeeds: c.dataNeeds ?? [],
       expectedBehaviors: c.expectedBehaviors,
       outcomes: c.outcomes,
       constraints: c.constraints,
@@ -308,17 +322,19 @@ export async function buildRequirements(
   }
 
   // ---- Assign conflict IDs ------------------------------------------------
-  const finalConflicts: RequirementConflict[] = detectedConflicts.map((c, i) => ({
-    ...c,
-    id: `CONFLICT-${String(i + 1).padStart(4, '0')}`,
-    // Remap temporary IDs to final requirement IDs
-    requirementIds: c.requirementIds
-      .map((tid) => {
-        const idx = orderedCandidates.findIndex((cand) => cand.temporaryId === tid);
-        return idx >= 0 ? finalRequirements[idx]!.id : null;
-      })
-      .filter((id): id is string => id !== null),
-  })).filter((c) => c.requirementIds.length >= 2);
+  const finalConflicts: RequirementConflict[] = detectedConflicts
+    .map((c, i) => ({
+      ...c,
+      id: `CONFLICT-${String(i + 1).padStart(4, '0')}`,
+      // Remap temporary IDs to final requirement IDs
+      requirementIds: c.requirementIds
+        .map((tid) => {
+          const idx = orderedCandidates.findIndex((cand) => cand.temporaryId === tid);
+          return idx >= 0 ? finalRequirements[idx]!.id : null;
+        })
+        .filter((id): id is string => id !== null),
+    }))
+    .filter((c) => c.requirementIds.length >= 2);
 
   // ---- Final validation ---------------------------------------------------
   const validContextIds = buildValidContextIdsFromIR(semanticIR);
@@ -328,7 +344,9 @@ export async function buildRequirements(
     allWarnings.push(...validateProvenanceArray(req.provenance, validContextIds, req.id));
 
     // Validate semantic references
-    allWarnings.push(...validateSemanticReferences(req.relatedSemanticIds, validSemanticIds, req.id));
+    allWarnings.push(
+      ...validateSemanticReferences(req.relatedSemanticIds, validSemanticIds, req.id),
+    );
 
     // Structural validation
     allWarnings.push(...validateRequirement(req, validSemanticIds));
@@ -462,16 +480,51 @@ function hasMeasurableCriteria(description: string): boolean {
 
   // Contains measurable keywords
   const measurableKeywords = [
-    'must be', 'shall be', 'required', 'valid', 'invalid',
-    'equal', 'greater', 'less', 'between', 'within',
-    'accept', 'reject', 'success', 'fail', 'error',
-    'display', 'show', 'hide', 'enable', 'disable',
-    'navigate', 'redirect', 'return', 'respond',
-    'at least', 'at most', 'no more than', 'no less than',
-    'expire', 'lock', 'block', 'deny', 'allow',
-    'single-use', 'unique', 'hash', 'encrypt',
-    'send', 'email', 'generate', 'invalidate',
-    'activate', 'verify', 'validate', 'check',
+    'must be',
+    'shall be',
+    'required',
+    'valid',
+    'invalid',
+    'equal',
+    'greater',
+    'less',
+    'between',
+    'within',
+    'accept',
+    'reject',
+    'success',
+    'fail',
+    'error',
+    'display',
+    'show',
+    'hide',
+    'enable',
+    'disable',
+    'navigate',
+    'redirect',
+    'return',
+    'respond',
+    'at least',
+    'at most',
+    'no more than',
+    'no less than',
+    'expire',
+    'lock',
+    'block',
+    'deny',
+    'allow',
+    'single-use',
+    'unique',
+    'hash',
+    'encrypt',
+    'send',
+    'email',
+    'generate',
+    'invalidate',
+    'activate',
+    'verify',
+    'validate',
+    'check',
   ];
 
   return measurableKeywords.some((kw) => lower.includes(kw));
@@ -483,9 +536,17 @@ function hasMeasurableCriteria(description: string): boolean {
 function hasObligationKeywords(statement: string): boolean {
   const lower = statement.toLowerCase();
   const obligationKeywords = [
-    'shall', 'must', 'should', 'will',
-    'required', 'ensure', 'verify', 'validate',
-    'prevent', 'restrict', 'limit',
+    'shall',
+    'must',
+    'should',
+    'will',
+    'required',
+    'ensure',
+    'verify',
+    'validate',
+    'prevent',
+    'restrict',
+    'limit',
   ];
   return obligationKeywords.some((kw) => lower.includes(kw));
 }

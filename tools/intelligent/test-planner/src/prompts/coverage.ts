@@ -7,30 +7,47 @@ import type { RequirementIRInput } from '../models.js';
 /**
  * Build the user prompt for coverage analysis of a requirement batch.
  */
-export function buildCoveragePrompt(
-  requirements: RequirementIRInput['requirements'],
-): string {
-  const reqSummaries = requirements.map((r) => {
-    const parts = [
-      `ID: ${r.id}`,
-      `Type: ${r.type}`,
-      `Statement: ${r.statement}`,
-      `Nature: ${r.sourceNature}`,
-      `Testability: ${r.testability.status}`,
-    ];
-    if (r.actor) parts.push(`Actor: ${r.actor}`);
-    if (r.trigger) parts.push(`Trigger: ${r.trigger}`);
-    if (r.expectedBehaviors.length > 0) {
-      parts.push(`Expected behaviors: ${r.expectedBehaviors.map((b) => b.description).join('; ')}`);
-    }
-    if (r.constraints.length > 0) {
-      parts.push(`Constraints: ${r.constraints.map((c) => c.description).join('; ')}`);
-    }
-    if (r.inputs.length > 0) {
-      parts.push(`Inputs: ${r.inputs.map((i) => `${i.name}${i.required ? ' (required)' : ''}${i.constraints?.length ? ` [${i.constraints.join(', ')}]` : ''}`).join(', ')}`);
-    }
-    return parts.join('\n  ');
-  }).join('\n\n');
+export function buildCoveragePrompt(requirements: RequirementIRInput['requirements']): string {
+  const reqSummaries = requirements
+    .map((r) => {
+      const parts = [
+        `ID: ${r.id}`,
+        `Type: ${r.type}`,
+        `Statement: ${r.statement}`,
+        `Nature: ${r.sourceNature}`,
+        `Testability: ${r.testability.status}`,
+      ];
+      if (r.actor) parts.push(`Actor: ${r.actor}`);
+      if (r.trigger) parts.push(`Trigger: ${r.trigger}`);
+      if (r.preconditions.length > 0) {
+        parts.push(`Preconditions: ${r.preconditions.map((p) => p.description).join('; ')}`);
+      }
+      if (r.expectedBehaviors.length > 0) {
+        parts.push(
+          `Expected behaviors: ${r.expectedBehaviors.map((b) => b.description).join('; ')}`,
+        );
+      }
+      if (r.constraints.length > 0) {
+        parts.push(`Constraints: ${r.constraints.map((c) => c.description).join('; ')}`);
+      }
+      if (r.outcomes.length > 0) {
+        parts.push(
+          `Business outcomes: ${r.outcomes.map((o) => `${o.description}${o.state ? ` [state: ${o.state}]` : ''}`).join('; ')}`,
+        );
+      }
+      if (r.dataNeeds && r.dataNeeds.length > 0) {
+        parts.push(
+          `Required data: ${r.dataNeeds.map((d) => `${d.description}${d.constraints?.length ? ` [${d.constraints.join(', ')}]` : ''}`).join('; ')}`,
+        );
+      }
+      if (r.inputs.length > 0) {
+        parts.push(
+          `Inputs: ${r.inputs.map((i) => `${i.name}${i.required ? ' (required)' : ''}${i.constraints?.length ? ` [${i.constraints.join(', ')}]` : ''}`).join(', ')}`,
+        );
+      }
+      return parts.join('\n  ');
+    })
+    .join('\n\n');
 
   return `Analyze the following requirements and determine what testing strategies are justified for each.
 

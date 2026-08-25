@@ -5,6 +5,13 @@
 
 // Runner
 export { EndToEndRunner } from './runner.js';
+export { Scenario3Pipeline } from './scenario3.js';
+export type {
+  Scenario3Specification,
+  Scenario3StageAdapters,
+  Scenario3ExecutionAdapter,
+  Scenario3PipelineResult,
+} from './scenario3.js';
 
 // Policy
 export { defaultPolicy, checkExecutionGate, isValidMode, enforceMaxTests } from './policy.js';
@@ -16,10 +23,30 @@ export { runPreflight } from './preflight.js';
 export { selectTests, sortByTestId, applyMaxTests } from './selection.js';
 
 // Fingerprints
-export { computeHash, computeObjectHash, computeInputHashes, computeTestCasesSemanticHash, isMappingStale, isDataPlanStale, isPreparedDataStale, canonicalJson, verifyMappingTestCaseConsistency, verifyDataPlanTestCaseConsistency, verifyPreparedDataConsistency } from './fingerprints.js';
+export {
+  computeHash,
+  computeObjectHash,
+  computeInputHashes,
+  computeTestCasesSemanticHash,
+  isMappingStale,
+  isDataPlanStale,
+  isPreparedDataStale,
+  canonicalJson,
+  verifyMappingTestCaseConsistency,
+  verifyDataPlanTestCaseConsistency,
+  verifyPreparedDataConsistency,
+} from './fingerprints.js';
 
 // Loader
-export { loadAllInputs, loadProfile, loadTestCases, loadMappings, loadDataPlan, loadPreparedData, assertWithinRoot } from './loader.js';
+export {
+  loadAllInputs,
+  loadProfile,
+  loadTestCases,
+  loadMappings,
+  loadDataPlan,
+  loadPreparedData,
+  assertWithinRoot,
+} from './loader.js';
 export type { LoadInputOptions } from './loader.js';
 
 // Runtime

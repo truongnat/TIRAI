@@ -24,6 +24,7 @@ export interface TestPlanIR {
   dataNeeds: TestDataNeed[];
   unresolved: TestPlanningUnresolved[];
   quality: TestPlanQualityMetrics;
+  warnings?: TestPlannerWarning[];
 }
 
 // ---- Test scope -----------------------------------------------------------
@@ -96,7 +97,34 @@ export type TestCaseType = 'ui' | 'api' | 'database' | 'integration' | 'manual' 
 
 export type VerificationType = 'ui' | 'api' | 'database' | 'state' | 'log' | 'other';
 
-export type ValueStrategy = 'fixed' | 'valid' | 'invalid' | 'boundary' | 'generated' | 'existing-data' | 'unknown';
+export type VerificationIntentKind =
+  | 'visible-ui-state'
+  | 'persisted-business-state'
+  | 'api-response'
+  | 'entity-exists'
+  | 'entity-absent'
+  | 'value-equals'
+  | 'numeric-delta'
+  | 'semantic';
+
+export type VerificationAuthorityIntent =
+  | 'VISIBLE_UI_STATE'
+  | 'PERSISTED_BUSINESS_STATE'
+  | 'API_RESPONSE'
+  | 'ENTITY_EXISTENCE'
+  | 'ENTITY_ABSENCE';
+
+export interface VerificationIntent {
+  kind: VerificationIntentKind;
+  subject?: string;
+  property?: string;
+  expectedValue?: string | number | boolean;
+  authority?: VerificationAuthorityIntent;
+  requiredSources?: Array<'UI' | 'API' | 'DATABASE'>;
+}
+
+export type ValueStrategy =
+  'fixed' | 'valid' | 'invalid' | 'boundary' | 'generated' | 'existing-data' | 'unknown';
 
 export type DataNeedType =
   | 'input'
@@ -153,6 +181,7 @@ export interface ExpectedResult {
   description: string;
   verificationType: VerificationType;
   target?: string;
+  verificationIntent?: VerificationIntent;
 }
 
 export interface TestPrecondition {
@@ -174,6 +203,8 @@ export interface TestDataNeed {
   constraints: string[];
   relatedRequirementIds: string[];
   relatedEntityIds?: string[];
+  sourceScenarioId?: string;
+  provenance?: TestProvenance[];
 }
 
 export interface TestCleanup {
@@ -192,6 +223,7 @@ export interface TestProvenance {
   contextId?: string;
   sheet?: string;
   ranges?: string[];
+  cells?: string[];
 }
 
 // ---- Unresolved -----------------------------------------------------------
@@ -244,6 +276,8 @@ export interface ScenarioCandidate {
     type: DataNeedType;
     constraints: string[];
     relatedRequirementIds: string[];
+    sourceScenarioId?: string;
+    provenance?: TestProvenance[];
   }>;
   expectedBehavior: string[];
   priority: Priority;
@@ -260,17 +294,39 @@ export interface TestCaseCandidate {
   type: TestCaseType;
   priority: Priority;
   preconditions: Array<{ description: string; sourceRequirementIds: string[] }>;
-  inputs: Array<{ name: string; valueStrategy: ValueStrategy; value?: unknown; description?: string }>;
+  inputs: Array<{
+    name: string;
+    valueStrategy: ValueStrategy;
+    value?: unknown;
+    description?: string;
+  }>;
   dataNeeds: Array<{
     description: string;
     type: DataNeedType;
     constraints: string[];
     relatedRequirementIds: string[];
+    sourceScenarioId?: string;
+    provenance?: TestProvenance[];
   }>;
-  steps: Array<{ order: number; action: string; target?: string; input?: string; expectedIntermediateResult?: string }>;
-  expectedResults: Array<{ description: string; verificationType: VerificationType; target?: string }>;
+  steps: Array<{
+    order: number;
+    action: string;
+    target?: string;
+    input?: string;
+    expectedIntermediateResult?: string;
+  }>;
+  expectedResults: Array<{
+    description: string;
+    verificationType: VerificationType;
+    target?: string;
+    verificationIntent?: VerificationIntent;
+  }>;
   cleanup: Array<{ description: string; target?: string }>;
-  automation: { status: AutomationStatus; suggestedExecutor?: SuggestedExecutor; reasons: string[] };
+  automation: {
+    status: AutomationStatus;
+    suggestedExecutor?: SuggestedExecutor;
+    reasons: string[];
+  };
   provenance: TestProvenance[];
   confidence: number;
 }
@@ -297,6 +353,7 @@ export interface TestCaseExtractionResult {
     constraints: string[];
     relatedRequirementIds: string[];
   }>;
+  warnings?: TestPlannerWarning[];
 }
 
 // ---- Builder options ------------------------------------------------------
@@ -368,11 +425,44 @@ export interface RequirementIRInput {
     sourceNature: string;
     actor?: string;
     trigger?: string;
-    preconditions: Array<{ description: string; relatedSemanticIds?: string[]; provenance: ProvenanceReference[] }>;
-    inputs: Array<{ name: string; description?: string; dataType?: string; required?: boolean; constraints?: string[]; relatedSemanticId?: string; provenance: ProvenanceReference[] }>;
-    expectedBehaviors: Array<{ description: string; condition?: string; target?: string; provenance: ProvenanceReference[] }>;
-    outcomes: Array<{ condition?: string; description: string; state?: string; provenance: ProvenanceReference[] }>;
-    constraints: Array<{ type: string; description: string; value?: unknown; provenance: ProvenanceReference[] }>;
+    preconditions: Array<{
+      description: string;
+      relatedSemanticIds?: string[];
+      provenance: ProvenanceReference[];
+    }>;
+    inputs: Array<{
+      name: string;
+      description?: string;
+      dataType?: string;
+      required?: boolean;
+      constraints?: string[];
+      relatedSemanticId?: string;
+      provenance: ProvenanceReference[];
+    }>;
+    dataNeeds?: Array<{
+      description: string;
+      type?: string;
+      constraints?: string[];
+      provenance: ProvenanceReference[];
+    }>;
+    expectedBehaviors: Array<{
+      description: string;
+      condition?: string;
+      target?: string;
+      provenance: ProvenanceReference[];
+    }>;
+    outcomes: Array<{
+      condition?: string;
+      description: string;
+      state?: string;
+      provenance: ProvenanceReference[];
+    }>;
+    constraints: Array<{
+      type: string;
+      description: string;
+      value?: unknown;
+      provenance: ProvenanceReference[];
+    }>;
     relatedSemanticIds: string[];
     provenance: ProvenanceReference[];
     confidence: number;

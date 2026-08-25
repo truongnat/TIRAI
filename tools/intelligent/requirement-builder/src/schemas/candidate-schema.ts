@@ -96,6 +96,20 @@ const candidateSchema = {
     trigger: { type: 'string' },
     preconditions: { type: 'array', items: conditionSchema },
     inputs: { type: 'array', items: inputSchema },
+    dataNeeds: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          description: { type: 'string' },
+          type: { type: 'string' },
+          constraints: { type: 'array', items: { type: 'string' } },
+          provenance: provenanceArray,
+        },
+        required: ['description', 'provenance'],
+        additionalProperties: false,
+      },
+    },
     expectedBehaviors: { type: 'array', items: behaviorSchema },
     outcomes: { type: 'array', items: outcomeSchema },
     constraints: { type: 'array', items: constraintSchema },
@@ -103,7 +117,16 @@ const candidateSchema = {
     confidence: { type: 'number' },
     rationale: { type: 'string' },
   },
-  required: ['temporaryId', 'title', 'type', 'statement', 'sourceNature', 'semanticEvidenceIds', 'provenance', 'confidence'],
+  required: [
+    'temporaryId',
+    'title',
+    'type',
+    'statement',
+    'sourceNature',
+    'semanticEvidenceIds',
+    'provenance',
+    'confidence',
+  ],
   additionalProperties: false,
 } as const;
 
@@ -131,7 +154,14 @@ const conflictCandidateSchema = {
     provenance: provenanceArray,
     confidence: { type: 'number' },
   },
-  required: ['temporaryId', 'requirementTemporaryIds', 'description', 'type', 'provenance', 'confidence'],
+  required: [
+    'temporaryId',
+    'requirementTemporaryIds',
+    'description',
+    'type',
+    'provenance',
+    'confidence',
+  ],
   additionalProperties: false,
 } as const;
 
