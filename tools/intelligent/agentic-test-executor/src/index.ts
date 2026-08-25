@@ -26,6 +26,8 @@ export type {
 export { defaultJourneyPolicy, summarizeObservationState, compactJourneyHistory } from './journey/models.js';
 export { classifyRuntimeFailure, decideRecovery } from './journey/recovery.js';
 export type { FailureClassification, RecoveryOperation, RecoveryDecision, RecoveryEvent, ReconciliationStatus, ReconciliationResult, ReconciliationRequest, RecoveryReconciliationAdapter } from './journey/recovery.js';
+export { verifyCrossLayer, correlationKey } from './verification.js';
+export type { VerificationSource, VerificationConfidence, EntityReference, SemanticExpectation, VerificationNeed, RawEvidence, VerificationAcquisitionRequest, VerificationSourceAdapter, VerificationPlan, VerificationRuntime, NormalizedFact, VerificationResultStatus, VerificationEvidenceView, VerificationNeedResult, VerificationReport } from './verification.js';
 
 export type {
   AgentCapabilities,

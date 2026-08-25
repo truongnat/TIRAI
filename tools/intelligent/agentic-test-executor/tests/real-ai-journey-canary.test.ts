@@ -5,6 +5,7 @@ import { DeepSeekProvider, type AIGenerationRequest, type AIGenerationResponse, 
 import { TestExecutionOrchestrator, TestExecutorRegistry } from 'test-execution-orchestrator';
 import { PlaywrightBrowserSession, type BrowserPage } from 'ui-executor';
 import { JourneyTestExecutor } from '../src/journey/journey-test-executor.js';
+import type { VerificationRuntime } from '../src/verification.js';
 import { startFixtureServer, type FixtureServer } from './fixtures/fixture-server.js';
 
 const enabled = process.env.RUN_REAL_AI_JOURNEY_CANARY === 'true';
@@ -21,12 +22,14 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
     fixture = await startFixtureServer();
     const session = new FailOnceBrowserSession();
     const provider = new AuditedProvider(new DeepSeekProvider({ model: 'deepseek-v4-flash', maxRetries: 1 }));
+    const verification = makeVerificationRuntime(fixture.origin);
     const executor = new JourneyTestExecutor({
       browserSession: session,
       aiProvider: provider,
       baseUrl: `${fixture.origin}/journey-home`,
       allowedOrigins: [fixture.origin],
       policy: { maxJourneyDecisions: 8, maxAgentCalls: 20, maxObservationRounds: 20 },
+      verification,
     });
     const registry = new TestExecutorRegistry();
     registry.register(executor);
@@ -54,6 +57,9 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
       `External navigation: 0`,
       `Chromium lifecycle leaks: ${lifecycle.browsersLaunched - lifecycle.browsersClosed + lifecycle.pagesCreated - lifecycle.pagesClosed}`,
       `Evidence: ${result.evidence.length}`,
+      `Verification: ${result.verification?.status ?? 'not-run'}`,
+      `Verification acquisitions: ${result.metrics.verificationAcquisitions}`,
+      `Verification AI calls: ${result.metrics.verificationAICalls}`,
       `Orchestrator status: ${run.status}`,
     ].join('\n');
     const outputDir = join(process.cwd(), 'output/agentic-test-executor/real-ai-journey-canary');
@@ -62,6 +68,8 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
     await writeFile(join(outputDir, 'metrics.json'), JSON.stringify({ result: result.metrics, provider: { calls: provider.calls, inputTokens: provider.inputTokens, outputTokens: provider.outputTokens, totalTokens: provider.totalTokens }, browser: lifecycle }, null, 2), 'utf8');
 
     expect(result.status).toBe('passed');
+    expect(result.verification?.status).toBe('VERIFIED');
+    expect(result.verification?.evidence.map((item) => item.source)).toEqual(expect.arrayContaining(['UI', 'API']));
     expect(result.metrics.uniqueSemanticStates).toBeGreaterThanOrEqual(3);
     expect(result.metrics.pageTransitions).toBeGreaterThanOrEqual(2);
     expect(result.metrics.actions).toBeGreaterThanOrEqual(3);
@@ -83,6 +91,19 @@ function makeJourneyTestCase() {
     expectedResults: [{ description: 'Item status: Completed', verificationType: 'ui' }],
     cleanup: [], automation: { status: 'ready' as const, suggestedExecutor: 'ui', reasons: [] }, provenance: [], confidence: 1,
   } as never;
+}
+
+function makeVerificationRuntime(origin: string): VerificationRuntime {
+  return {
+    plan: {
+      needs: [{ id: 'item-status', subject: { entityType: 'item', businessKey: 'ITEM-001' }, property: 'status', expectation: { kind: 'equals', value: 'COMPLETED' }, requiredSources: ['UI', 'API'], authority: 'API' }],
+      acquisitions: ['UI', 'API'],
+    },
+    sources: {
+      UI: { source: 'UI', readOnly: true, acquire: async ({ observation }) => observation && /Item status: Completed/i.test(observation.pageText) ? [{ source: 'UI', acquisitionRef: 'browser-observation', entityKey: 'ITEM-001', property: 'status', rawValue: 'Completed', normalizedValue: 'COMPLETED', mappingKnown: true, provenance: { kind: 'browser-observation', reference: 'journey-final-state' } }] : [] },
+      API: { source: 'API', readOnly: true, acquire: async () => { const response = await fetch(`${origin}/verification/item`); const body = await response.json() as { businessKey: string; status: string }; return [{ source: 'API', acquisitionRef: 'GET /verification/item', entityKey: body.businessKey, property: 'status', rawValue: body.status, normalizedValue: body.status, mappingKnown: true, provenance: { kind: 'fixture-api-read', reference: 'GET /verification/item' } }]; } },
+    },
+  };
 }
 
 class AuditedProvider implements AIProvider {

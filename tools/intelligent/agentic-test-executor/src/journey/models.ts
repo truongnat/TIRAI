@@ -7,6 +7,7 @@ import type {
 } from '../models.js';
 import type { EvidenceReference, TestResultStatus } from 'test-execution-orchestrator';
 import type { RecoveryEvent } from './recovery.js';
+import type { VerificationReport } from '../verification.js';
 
 export interface SemanticApplicationState {
   key: string;
@@ -138,7 +139,10 @@ export interface JourneyExecutionResult {
     reauthAttempts: number;
     pageRecoveries: number;
     outcomeReconciliations: number;
+    verificationAcquisitions: number;
+    verificationAICalls: number;
   };
+  verification?: VerificationReport;
   error?: { code: string; message: string };
 }
 
