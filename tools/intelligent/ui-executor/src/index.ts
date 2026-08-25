@@ -57,6 +57,8 @@ export type {
   UIEnvironmentConfig,
   BrowserSession,
   BrowserPage,
+  BrowserPageContext,
+  HistoryNavigationResult,
   ResolvedLocator,
   UIErrorCode,
   UIExecutorOptions,

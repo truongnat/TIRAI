@@ -2,10 +2,9 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { DeepSeekProvider, type AIGenerationRequest, type AIGenerationResponse, type AIProvider } from 'ai-provider';
-import { InMemoryBindingStore } from 'execution-engine';
-import { InMemoryEvidenceCollector } from 'test-execution-orchestrator';
+import { TestExecutionOrchestrator, TestExecutorRegistry } from 'test-execution-orchestrator';
 import { PlaywrightBrowserSession } from 'ui-executor';
-import { JourneyAgent } from '../src/journey/journey-agent.js';
+import { JourneyTestExecutor } from '../src/journey/journey-test-executor.js';
 import { startFixtureServer, type FixtureServer } from './fixtures/fixture-server.js';
 
 const enabled = process.env.RUN_REAL_AI_JOURNEY_CANARY === 'true';
@@ -22,38 +21,24 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
     fixture = await startFixtureServer();
     const session = new PlaywrightBrowserSession();
     const provider = new AuditedProvider(new DeepSeekProvider({ model: 'deepseek-v4-flash', maxRetries: 1 }));
-    const agent = new JourneyAgent({
+    const executor = new JourneyTestExecutor({
       browserSession: session,
       aiProvider: provider,
       baseUrl: `${fixture.origin}/journey-home`,
       allowedOrigins: [fixture.origin],
       policy: { maxJourneyDecisions: 8, maxAgentCalls: 20, maxObservationRounds: 20 },
     });
-    const evidence = new InMemoryEvidenceCollector();
-    const context = {
-      mode: 'live',
-      policy: { maxRetries: 0, timeoutMs: 30_000, parallelism: 1, stopOnFailure: false },
-      bindings: new InMemoryBindingStore(),
-      secrets: { async resolve(): Promise<never> { throw new Error('no secret capability in journey canary'); } },
-      evidence,
-      audit: { record: async () => {} },
-      clock: { now: () => new Date().toISOString() },
-      runId: 'RUN-REAL-AI-JOURNEY',
-      testCaseId: 'TC-REAL-AI-JOURNEY',
-      environmentId: 'ENV-LOCAL-DISPOSABLE',
-    } as never;
-
-    let result;
-    try {
-      result = await agent.execute(makeJourneyTestCase(), context);
-    } finally {
-      await agent.cleanup();
-    }
+    const registry = new TestExecutorRegistry();
+    registry.register(executor);
+    const run = await new TestExecutionOrchestrator({ registry, journeyEnabled: true, policy: { mode: 'execute' } }).run([makeJourneyTestCase()]);
+    const result = executor.getLastJourneyResult();
+    if (!result) throw new Error('JOURNEY_RESULT_MISSING');
     const lifecycle = session.getCounters();
     const report = [
       '# TIRAI — REAL AI MULTI-PAGE JOURNEY CANARY',
       '',
       `Status: ${result.status.toUpperCase()}`,
+      'Executor: JourneyTestExecutor selected by TestExecutionOrchestrator',
       'Provider: DeepSeek',
       'Model: deepseek-v4-flash',
       `AI calls: ${provider.calls}`,
@@ -67,6 +52,7 @@ describe.skipIf(!enabled)('TIRAI real AI multi-page journey canary', () => {
       `External navigation: 0`,
       `Chromium lifecycle leaks: ${lifecycle.browsersLaunched - lifecycle.browsersClosed + lifecycle.pagesCreated - lifecycle.pagesClosed}`,
       `Evidence: ${result.evidence.length}`,
+      `Orchestrator status: ${run.status}`,
     ].join('\n');
     const outputDir = join(process.cwd(), '../../../output/agentic-test-executor/real-ai-journey-canary');
     await mkdir(outputDir, { recursive: true });

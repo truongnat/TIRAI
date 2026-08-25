@@ -10,6 +10,8 @@ import type {
   ResolvedLocator,
   UIEnvironmentConfig,
   BrowserLifecycleCounters,
+  BrowserPageContext,
+  HistoryNavigationResult,
   UILocatorStrategy,
 } from '../models.js';
 import type { Page, Locator, Browser, BrowserContext } from 'playwright';
@@ -38,6 +40,8 @@ export class PlaywrightBrowserSession implements BrowserSession {
   private browser: Browser | null = null;
   private currentContext: BrowserContext | null = null;
   private currentPage: Page | null = null;
+  private pageEntries = new Map<string, { page: Page; openerPageId?: string }>();
+  private nextPageId = 1;
   private _closed = false;
   private _started = false;
   private _counters: BrowserLifecycleCounters = {
@@ -83,6 +87,41 @@ export class PlaywrightBrowserSession implements BrowserSession {
     return new PlaywrightBrowserPage(this.currentPage);
   }
 
+  async pageContexts(): Promise<BrowserPageContext[]> {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const contexts: BrowserPageContext[] = [];
+    for (const [id, entry] of this.pageEntries) {
+      if (entry.page.isClosed()) continue;
+      if (!entry.openerPageId) {
+        const opener = await entry.page.opener();
+        if (opener) {
+          entry.openerPageId = [...this.pageEntries.entries()].find(([, candidate]) => candidate.page === opener)?.[0];
+        }
+      }
+      contexts.push({ id, page: new PlaywrightBrowserPage(entry.page), url: entry.page.url(), openerPageId: entry.openerPageId, active: entry.page === this.currentPage });
+    }
+    return contexts;
+  }
+
+  async activatePage(pageId: string): Promise<BrowserPageContext> {
+    const entry = this.pageEntries.get(pageId);
+    if (!entry || entry.page.isClosed()) throw new UIExecutorError('UI_BROWSER_SESSION_MISSING', `Page '${pageId}' is not available.`);
+    this.currentPage = entry.page;
+    const contexts = await this.pageContexts();
+    const context = contexts.find((candidate) => candidate.id === pageId);
+    if (!context) throw new UIExecutorError('UI_BROWSER_SESSION_MISSING', `Page '${pageId}' is not available.`);
+    return context;
+  }
+
+  async closePage(pageId: string): Promise<void> {
+    const entry = this.pageEntries.get(pageId);
+    if (!entry || entry.page.isClosed()) return;
+    await entry.page.close();
+    this._counters.pagesClosed++;
+    this.pageEntries.delete(pageId);
+    if (this.currentPage === entry.page) this.currentPage = null;
+  }
+
   /// Create an isolated BrowserContext + Page for a test case.
   /// Cookies/localStorage from previous contexts will not leak.
   async createIsolatedPage(): Promise<BrowserPage> {
@@ -94,10 +133,17 @@ export class PlaywrightBrowserSession implements BrowserSession {
     }
     // Close previous context if any
     if (this.currentContext) {
+      for (const entry of this.pageEntries.values()) {
+        if (!entry.page.isClosed()) {
+          await entry.page.close();
+          this._counters.pagesClosed++;
+        }
+      }
       await this.currentContext.close();
       this._counters.contextsClosed++;
       this.currentContext = null;
       this.currentPage = null;
+      this.pageEntries.clear();
     }
     const context = await this.browser.newContext();
     this._counters.contextsCreated++;
@@ -106,6 +152,14 @@ export class PlaywrightBrowserSession implements BrowserSession {
     const page = await context.newPage();
     this._counters.pagesCreated++;
     this.currentPage = page;
+    this.pageEntries.clear();
+    this.nextPageId = 1;
+    this.pageEntries.set(`page-${this.nextPageId++}`, { page });
+    context.on('page', (openedPage) => {
+      if (openedPage === page || [...this.pageEntries.values()].some((entry) => entry.page === openedPage)) return;
+      this._counters.pagesCreated++;
+      this.pageEntries.set(`page-${this.nextPageId++}`, { page: openedPage });
+    });
 
     return new PlaywrightBrowserPage(page);
   }
@@ -283,6 +337,15 @@ class PlaywrightBrowserPage implements BrowserPage {
 
   url(): string {
     return this.page.url();
+  }
+
+  async goBack(): Promise<HistoryNavigationResult> {
+    try {
+      const response = await this.page.goBack({ waitUntil: 'domcontentloaded', timeout: 2_000 });
+      return { success: response !== null, url: this.page.url() };
+    } catch (error) {
+      return { success: false, url: this.page.url(), error: error instanceof Error ? error.message : String(error) };
+    }
   }
 
   async evaluate<T>(expression: string): Promise<T> {

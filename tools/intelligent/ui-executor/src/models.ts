@@ -243,6 +243,10 @@ export interface UIEnvironmentConfig {
 export interface BrowserSession {
   start(config: UIEnvironmentConfig): Promise<void>;
   page(): BrowserPage;
+  /** Optional multi-page capabilities used by the journey layer. */
+  pageContexts?(): Promise<BrowserPageContext[]>;
+  activatePage?(pageId: string): Promise<BrowserPageContext>;
+  closePage?(pageId: string): Promise<void>;
   screenshot(): Promise<Buffer>;
   close(): Promise<void>;
   isClosed(): boolean;
@@ -270,7 +274,22 @@ export interface BrowserPage {
   count(target: ResolvedLocator): Promise<number>;
   title(): Promise<string>;
   url(): string;
+  goBack?(): Promise<HistoryNavigationResult>;
   evaluate<T>(expression: string): Promise<T>;
+}
+
+export interface BrowserPageContext {
+  id: string;
+  page: BrowserPage;
+  url: string;
+  openerPageId?: string;
+  active: boolean;
+}
+
+export interface HistoryNavigationResult {
+  success: boolean;
+  url?: string;
+  error?: string;
 }
 
 // ---- Resolved Locator (spec §12) ------------------------------------------

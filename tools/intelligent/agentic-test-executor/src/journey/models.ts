@@ -26,12 +26,19 @@ export interface JourneyMilestone {
 export interface JourneyActionRecord {
   decision: number;
   stateKey: string;
-  actionType: AgenticAction['type'];
+  actionType: AgenticAction['type'] | 'goBack';
   elementId?: string;
   urlBefore: string;
   urlAfter?: string;
   success: boolean;
   error?: string;
+}
+
+export interface JourneyPageContext {
+  id: string;
+  url: string;
+  openerPageId?: string;
+  active: boolean;
 }
 
 export interface JourneyObservationSummary {
@@ -66,6 +73,8 @@ export interface JourneyState {
   recoveryAttempts: number;
   loopDetections: number;
   noProgressIterations: number;
+  activePageId?: string;
+  pageContexts: JourneyPageContext[];
 }
 
 export interface JourneyExecutionPolicy extends AgentExecutionPolicy {
@@ -109,6 +118,8 @@ export interface JourneyExecutionResult {
     noProgressIterations: number;
     pageTransitions: number;
     dialogTransitions: number;
+    popupTransitions: number;
+    maxSimultaneousPages: number;
   };
   error?: { code: string; message: string };
 }
