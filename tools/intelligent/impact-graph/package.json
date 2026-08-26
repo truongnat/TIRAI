@@ -1,0 +1,23 @@
+{
+  "name": "impact-graph",
+  "version": "1.0.0",
+  "description": "Semantic impact graph for incremental planning",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fingerprint": "file:../fingerprint",
+    "semantic-analyzer": "file:../semantic-analyzer",
+    "requirement-builder": "file:../requirement-builder",
+    "source-ingestion": "file:../source-ingestion"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}

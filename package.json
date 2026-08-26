@@ -36,6 +36,7 @@
     "tools/intelligent/project-adapter",
     "tools/intelligent/agentic-test-executor",
     "tools/intelligent/fingerprint",
+    "tools/intelligent/impact-graph",
     "tools/intelligent/e2e-runner"
   ],
   "devDependencies": {
