@@ -146,7 +146,7 @@ export function validateExecutableTestCases(testCases: TestCase[]): TestPlannerW
       });
     }
 
-    if (tc.automation.status === 'manual-only' || tc.automation.status === 'unknown') {
+    if (tc.automation.status === 'manual-only') {
       warnings.push({
         code: TestPlannerWarningCode.CASE_UNSUPPORTED_AUTOMATION,
         message: `Test case ${tc.id} is not executable by the autonomous platform`,

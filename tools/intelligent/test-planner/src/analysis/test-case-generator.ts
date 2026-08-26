@@ -272,12 +272,7 @@ export function normalizeTestCaseResult(
     const expectedResults = normalizeExpectedResults(tc.expectedResults ?? tc.expectedResult);
     const cleanup = normalizeCleanup(tc.cleanup);
     const automation = normalizeAutomation(tc.automation);
-    if (
-      typeof tc.automation !== 'object' ||
-      tc.automation === null ||
-      (typeof (tc.automation as Record<string, unknown>).status === 'string' &&
-        !VALID_AUTOMATION_STATUSES.has((tc.automation as Record<string, unknown>).status as string))
-    ) {
+    if (automation.status === 'unknown') {
       normalizationWarnings.push({
         code: TestPlannerWarningCode.CASE_UNSUPPORTED_AUTOMATION,
         message: `Test case ${temporaryId} has unknown automation status`,
@@ -578,12 +573,36 @@ function normalizeCleanup(raw: unknown): Array<{ description: string; target?: s
     }));
 }
 
+const AUTOMATION_STRING_MAP: Record<string, AutomationStatus> = {
+  automated: 'ready',
+  auto: 'ready',
+  yes: 'ready',
+  ready: 'ready',
+  automatable: 'ready',
+  'partially-ready': 'partially-ready',
+  partial: 'partially-ready',
+  'manual-only': 'manual-only',
+  manual: 'manual-only',
+};
+
 function normalizeAutomation(raw: unknown): {
   status: AutomationStatus;
   suggestedExecutor?: SuggestedExecutor;
   reasons: string[];
 } {
-  if (typeof raw !== 'object' || raw === null) {
+  if (raw === null || raw === undefined) {
+    return { status: 'unknown', reasons: ['Automation assessment not provided'] };
+  }
+
+  if (typeof raw === 'string') {
+    const mapped = AUTOMATION_STRING_MAP[raw.toLowerCase().trim()];
+    if (mapped) {
+      return { status: mapped, reasons: [`AI assessed automation as: ${raw}`] };
+    }
+    return { status: 'unknown', reasons: [`Unrecognized automation assessment: ${raw}`] };
+  }
+
+  if (typeof raw !== 'object') {
     return { status: 'unknown', reasons: ['Automation assessment not provided'] };
   }
 
@@ -591,7 +610,9 @@ function normalizeAutomation(raw: unknown): {
   const status =
     typeof r.status === 'string' && VALID_AUTOMATION_STATUSES.has(r.status)
       ? (r.status as AutomationStatus)
-      : 'unknown';
+      : typeof r.status === 'string'
+        ? (AUTOMATION_STRING_MAP[r.status.toLowerCase().trim()] ?? 'unknown')
+        : 'unknown';
 
   const suggestedExecutor =
     typeof r.suggestedExecutor === 'string' && VALID_SUGGESTED_EXECUTORS.has(r.suggestedExecutor)

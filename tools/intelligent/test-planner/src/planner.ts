@@ -643,8 +643,7 @@ function buildRequirementCoverage(
 
 function isExecutableTestCase(testCase: TestCase): boolean {
   if (testCase.steps.length === 0 || testCase.expectedResults.length === 0) return false;
-  if (testCase.automation.status === 'manual-only' || testCase.automation.status === 'unknown')
-    return false;
+  if (testCase.automation.status === 'manual-only') return false;
   return testCase.steps.every(
     (step, index) =>
       step.action.trim().length > 0 &&

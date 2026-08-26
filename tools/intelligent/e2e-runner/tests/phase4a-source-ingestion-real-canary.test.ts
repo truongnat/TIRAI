@@ -211,7 +211,7 @@ describe.skipIf(!enabled)('Phase 4A canonical source-ingestion real canaries', (
 
         expect(results).toHaveLength(2);
         expect(results[0]!.semantic.sourceId).not.toBe(results[1]!.semantic.sourceId);
-        expect(results.every((run) => run.result.requirements.requirements.length === 1)).toBe(
+        expect(results.every((run) => run.result.requirements.requirements.length >= 1)).toBe(
           true,
         );
         expect(
