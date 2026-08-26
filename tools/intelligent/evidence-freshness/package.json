@@ -1,0 +1,21 @@
+{
+  "name": "evidence-freshness",
+  "version": "1.0.0",
+  "description": "Evidence freshness and safe reuse for incremental execution",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fingerprint": "file:../fingerprint",
+    "impact-graph": "file:../impact-graph"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}
