@@ -122,17 +122,15 @@ export class MarkdownSourceConnector implements SourceConnector {
           blockIndex,
         }),
       });
-      // Content-addressable context ID: hash of content + type + provenance fields
+      // Content-addressable context ID: hash of content + type only
+      // This makes context identity stable across revisions when content is unchanged
       const contextContentHash = sha256(
         JSON.stringify({
           content: blockContent,
           type: 'content-block',
-          sourceId,
-          revisionId,
-          artifactId,
         }),
       );
-      const contextId = stableId('ctx', `${sourceId}:${revisionId}:${contextContentHash}`);
+      const contextId = stableId('ctx', `${sourceId}:${contextContentHash}`);
       const relations = previousContextId
         ? [{ type: 'previous' as const, targetContextId: previousContextId }]
         : [];
