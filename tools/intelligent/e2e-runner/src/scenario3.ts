@@ -84,6 +84,8 @@ export interface Scenario3TraceNode {
   kind: 'source' | 'source-revision' | 'source-artifact' | 'semantic-context' | 'requirement' | 'scenario' | 'test-case' | 'data-need' | 'data-item' | 'expected-result' | 'verification-need' | 'evidence' | 'execution-result';
   ref: string;
   metadata?: Record<string, unknown>;
+  /** Content-addressable fingerprint of the source revision at time of trace node creation. */
+  revisionFingerprint?: string;
 }
 
 export type Scenario3TraceRelation =
@@ -123,6 +125,8 @@ export interface Scenario3Result {
   trace: Scenario3TraceGraph;
   warnings: TestPlannerWarning[];
   metrics?: Scenario3RunMetrics;
+  /** Content-addressable fingerprint of the source revision for cross-revision tracking. */
+  revisionFingerprint?: string;
 }
 
 /** Native specification-to-Scenario-2 owner. */
@@ -206,7 +210,7 @@ export class Scenario3Pipeline {
       );
       warnings.push(...(testPlan.warnings ?? []));
     } catch (error) {
-      return finalize(this.errorResult(error, warnings, requirements, testPlan));
+      return finalize(this.errorResult(error, warnings, requirements, testPlan, canonicalInput.semanticIR?.revisionFingerprint));
     }
     if (!requirements || !testPlan) {
       return finalize(this.errorResult(new Error('SCENARIO3_PLANNING_OUTPUT_MISSING'), warnings, requirements, testPlan));
@@ -230,10 +234,12 @@ export class Scenario3Pipeline {
         'SCENARIO2_EXECUTION',
         () => this.orchestrator!.run(testPlan.testCases, dataPlan),
       );
-      const trace = buildTrace(requirements, testPlan, dataPlan, execution);
+      const revisionFingerprint = canonicalInput.semanticIR?.revisionFingerprint;
+      const trace = buildTrace(requirements, testPlan, dataPlan, execution, revisionFingerprint);
       return finalize({
         status: statusFromExecution(execution), requirements, testPlan, dataPlan, execution,
         requirementResults: aggregateRequirements(testPlan, execution), trace, warnings,
+        revisionFingerprint,
       });
     } catch (error) {
       return finalize(this.withoutExecution(requirements, testPlan, [...warnings, { code: 'SCENARIO3_EXECUTION_ERROR', message: String(error) }], 'error', dataPlan));
@@ -255,11 +261,12 @@ export class Scenario3Pipeline {
     warnings: TestPlannerWarning[],
     requirements?: RequirementIR,
     testPlan?: TestPlanIR,
+    revisionFingerprint?: string,
   ): Scenario3Result {
     const trace = requirements
       ? testPlan
-        ? buildTrace(requirements, testPlan)
-        : buildRequirementTrace(requirements)
+        ? buildTrace(requirements, testPlan, undefined, undefined, revisionFingerprint)
+        : buildRequirementTrace(requirements, revisionFingerprint)
       : emptyTrace();
     return {
       status: 'error',
@@ -274,15 +281,17 @@ export class Scenario3Pipeline {
       })) ?? [],
       trace,
       warnings: [...warnings, { code: 'SCENARIO3_PLANNING_ERROR', message: String(error) }],
+      revisionFingerprint,
     };
   }
 
-  private withoutExecution(requirements: RequirementIR, testPlan: TestPlanIR, warnings: TestPlannerWarning[], status: Scenario3Result['status'], dataPlan?: TestDataPlanIR): Scenario3Result {
-    const trace = buildTrace(requirements, testPlan, dataPlan);
+  private withoutExecution(requirements: RequirementIR, testPlan: TestPlanIR, warnings: TestPlannerWarning[], status: Scenario3Result['status'], dataPlan?: TestDataPlanIR, revisionFingerprint?: string): Scenario3Result {
+    const trace = buildTrace(requirements, testPlan, dataPlan, undefined, revisionFingerprint);
     return {
       status, requirements, testPlan, dataPlan,
       requirementResults: testPlan.scope.requirementIds.map((requirementId) => ({ requirementId, status, testCaseIds: [], evidenceIds: [], traceNodeId: `requirement:${requirementId}` })),
       trace, warnings,
+      revisionFingerprint,
     };
   }
 }
@@ -304,26 +313,27 @@ function addProvenanceLineage(
   edges: Scenario3TraceEdge[],
   provenance: RequirementIR['requirements'][number]['provenance'][number],
   requirementId: string,
+  revisionFingerprint?: string,
 ): void {
   const sourceIdentity = provenance.sourceId ?? provenance.contextId;
   const sourceNodeId = `source:${sourceIdentity}`;
   if (!nodes.some((node) => node.id === sourceNodeId)) {
-    nodes.push({ id: sourceNodeId, kind: 'source', ref: sourceIdentity, metadata: { ...provenance } });
+    nodes.push({ id: sourceNodeId, kind: 'source', ref: sourceIdentity, metadata: { ...provenance }, revisionFingerprint });
   }
   if (provenance.revisionId && provenance.artifactId && provenance.location) {
     const revisionNodeId = `source-revision:${sourceIdentity}:${provenance.revisionId}`;
     const artifactNodeId = `source-artifact:${provenance.artifactId}`;
     const contextNodeId = `semantic-context:${provenance.contextId}`;
     if (!nodes.some((node) => node.id === revisionNodeId)) {
-      nodes.push({ id: revisionNodeId, kind: 'source-revision', ref: provenance.revisionId, metadata: { sourceId: sourceIdentity } });
+      nodes.push({ id: revisionNodeId, kind: 'source-revision', ref: provenance.revisionId, metadata: { sourceId: sourceIdentity }, revisionFingerprint });
       edges.push({ from: sourceNodeId, to: revisionNodeId, relation: 'SOURCE_HAS_REVISION' });
     }
     if (!nodes.some((node) => node.id === artifactNodeId)) {
-      nodes.push({ id: artifactNodeId, kind: 'source-artifact', ref: provenance.artifactId, metadata: { sourceId: sourceIdentity, revisionId: provenance.revisionId, location: provenance.location } });
+      nodes.push({ id: artifactNodeId, kind: 'source-artifact', ref: provenance.artifactId, metadata: { sourceId: sourceIdentity, revisionId: provenance.revisionId, location: provenance.location }, revisionFingerprint });
       edges.push({ from: revisionNodeId, to: artifactNodeId, relation: 'REVISION_HAS_ARTIFACT' });
     }
     if (!nodes.some((node) => node.id === contextNodeId)) {
-      nodes.push({ id: contextNodeId, kind: 'semantic-context', ref: provenance.contextId, metadata: { artifactId: provenance.artifactId, location: provenance.location } });
+      nodes.push({ id: contextNodeId, kind: 'semantic-context', ref: provenance.contextId, metadata: { artifactId: provenance.artifactId, location: provenance.location }, revisionFingerprint });
       edges.push({ from: artifactNodeId, to: contextNodeId, relation: 'ARTIFACT_CONTAINS_CONTEXT' });
     }
     edges.push({ from: contextNodeId, to: requirementId, relation: 'CONTEXT_SUPPORTS_REQUIREMENT' });
@@ -331,14 +341,14 @@ function addProvenanceLineage(
   edges.push({ from: sourceNodeId, to: requirementId, relation: 'SOURCE_SUPPORTS_REQUIREMENT' });
 }
 
-function buildRequirementTrace(requirements: RequirementIR): Scenario3TraceGraph {
+function buildRequirementTrace(requirements: RequirementIR, revisionFingerprint?: string): Scenario3TraceGraph {
   const nodes: Scenario3TraceNode[] = [];
   const edges: Scenario3TraceEdge[] = [];
   for (const requirement of requirements.requirements) {
     const requirementId = `requirement:${requirement.id}`;
-    nodes.push({ id: requirementId, kind: 'requirement', ref: requirement.id, metadata: { title: requirement.title } });
+    nodes.push({ id: requirementId, kind: 'requirement', ref: requirement.id, metadata: { title: requirement.title }, revisionFingerprint });
     for (const provenance of requirement.provenance) {
-      addProvenanceLineage(nodes, edges, provenance, requirementId);
+      addProvenanceLineage(nodes, edges, provenance, requirementId, revisionFingerprint);
     }
   }
   return { nodes, edges, orphanEvidenceIds: [] };
@@ -370,44 +380,44 @@ function statusFromExecution(execution: TestRunResultIR): Scenario3Result['statu
   return 'passed';
 }
 
-export function buildTrace(requirements: RequirementIR, testPlan: TestPlanIR, dataPlan?: TestDataPlanIR, execution?: TestRunResultIR): Scenario3TraceGraph {
+export function buildTrace(requirements: RequirementIR, testPlan: TestPlanIR, dataPlan?: TestDataPlanIR, execution?: TestRunResultIR, revisionFingerprint?: string): Scenario3TraceGraph {
   const nodes: Scenario3TraceNode[] = [];
   const edges: Scenario3TraceGraph['edges'] = [];
   const add = (node: Scenario3TraceNode) => { if (!nodes.some((n) => n.id === node.id)) nodes.push(node); };
   const link = (from: string, to: string, relation: Scenario3TraceRelation) => edges.push({ from, to, relation });
   for (const req of requirements.requirements) {
     const reqId = `requirement:${req.id}`;
-    add({ id: reqId, kind: 'requirement', ref: req.id, metadata: { title: req.title } });
+    add({ id: reqId, kind: 'requirement', ref: req.id, metadata: { title: req.title }, revisionFingerprint });
     for (const provenance of req.provenance) {
-      addProvenanceLineage(nodes, edges, provenance, req.id);
+      addProvenanceLineage(nodes, edges, provenance, req.id, revisionFingerprint);
     }
   }
   for (const scenario of testPlan.scenarios) {
     const id = `scenario:${scenario.id}`;
-    add({ id, kind: 'scenario', ref: scenario.id });
+    add({ id, kind: 'scenario', ref: scenario.id, revisionFingerprint });
     for (const reqId of scenario.requirementIds) link(`requirement:${reqId}`, id, 'REQUIREMENT_COVERED_BY_SCENARIO');
   }
   for (const tc of testPlan.testCases) {
     const tcId = `test-case:${tc.id}`;
-    add({ id: tcId, kind: 'test-case', ref: tc.id });
+    add({ id: tcId, kind: 'test-case', ref: tc.id, revisionFingerprint });
     link(`scenario:${tc.scenarioId}`, tcId, 'SCENARIO_IMPLEMENTED_BY_TESTCASE');
     for (let i = 0; i < tc.expectedResults.length; i++) {
       const erId = `expected:${tc.id}:${i}`;
       const vnId = `verification:${tc.id}:${i}`;
-      add({ id: erId, kind: 'expected-result', ref: erId, metadata: tc.expectedResults[i]!.verificationIntent ? { ...tc.expectedResults[i]!.verificationIntent } : undefined });
-      add({ id: vnId, kind: 'verification-need', ref: vnId, metadata: tc.expectedResults[i]!.verificationIntent ? { ...tc.expectedResults[i]!.verificationIntent } : undefined });
+      add({ id: erId, kind: 'expected-result', ref: erId, metadata: tc.expectedResults[i]!.verificationIntent ? { ...tc.expectedResults[i]!.verificationIntent } : undefined, revisionFingerprint });
+      add({ id: vnId, kind: 'verification-need', ref: vnId, metadata: tc.expectedResults[i]!.verificationIntent ? { ...tc.expectedResults[i]!.verificationIntent } : undefined, revisionFingerprint });
       link(tcId, erId, 'TESTCASE_EXPECTS_RESULT');
       link(erId, vnId, 'EXPECTED_RESULT_VERIFIED_BY_NEED');
     }
     for (const need of tc.dataNeeds) {
       const needId = `data-need:${need.id}`;
-      add({ id: needId, kind: 'data-need', ref: need.id, metadata: { description: need.description } });
+      add({ id: needId, kind: 'data-need', ref: need.id, metadata: { description: need.description }, revisionFingerprint });
       link(tcId, needId, 'TESTCASE_REQUIRES_DATA');
     }
   }
   for (const item of dataPlan?.dataItems ?? []) {
     const id = `data-item:${item.id}`;
-    add({ id, kind: 'data-item', ref: item.id, metadata: { lifecycle: item.lifecycle } });
+    add({ id, kind: 'data-item', ref: item.id, metadata: { lifecycle: item.lifecycle }, revisionFingerprint });
     for (const tcId of item.relatedTestCaseIds) link(`test-case:${tcId}`, id, 'TESTCASE_REQUIRES_DATA');
   }
   const evidenceIds = new Set<string>();

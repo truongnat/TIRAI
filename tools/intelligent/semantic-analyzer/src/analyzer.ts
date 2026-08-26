@@ -7,7 +7,7 @@
 //   Then: Deterministic ID assignment, provenance validation, output.
 
 import type { AIProvider } from 'ai-provider';
-import { assertCanonicalSourceDocument, type CanonicalSourceDocument } from 'source-ingestion';
+import { assertCanonicalSourceDocument, sha256, type CanonicalSourceDocument } from 'source-ingestion';
 import type {
   SemanticIR,
   SemanticEntity,
@@ -417,6 +417,7 @@ async function analyzeContextChunks(
     type: s.section.type,
     provenance: s.section.provenance,
     confidence: s.section.confidence,
+    semanticId: computeSemanticId(s.section.title, s.section.type ?? 'section', s.section.description, undefined),
   }));
 
   const finalEntities: SemanticEntity[] = dedupedEntities.map((e, i) => ({
@@ -428,6 +429,7 @@ async function analyzeContextChunks(
     aliases: e.entity.aliases,
     provenance: e.entity.provenance,
     confidence: e.entity.confidence,
+    semanticId: computeSemanticId(e.entity.name, e.entity.type, e.entity.description, undefined),
   }));
 
   const finalFlows: SemanticFlow[] = orderedFlows.map((f, i) => ({
@@ -440,6 +442,7 @@ async function analyzeContextChunks(
     postconditions: f.flow.postconditions,
     provenance: f.flow.provenance,
     confidence: f.flow.confidence,
+    semanticId: computeSemanticId(f.flow.name, 'flow', f.flow.description, undefined),
   }));
 
   const finalRules: SemanticRule[] = orderedRules.map((r, i) => ({
@@ -450,6 +453,7 @@ async function analyzeContextChunks(
     effects: r.rule.effects,
     provenance: r.rule.provenance,
     confidence: r.rule.confidence,
+    semanticId: computeSemanticId(r.rule.statement, r.rule.type, undefined, r.rule.statement),
   }));
 
   // Build ID map for relationship remapping
@@ -506,6 +510,16 @@ async function analyzeContextChunks(
     provenance: u.item.provenance,
     reason: u.item.reason,
   }));
+
+  // Compute semanticId for relationships
+  for (const rel of finalRelationships) {
+    rel.semanticId = computeSemanticId(
+      `${rel.sourceId}-${rel.targetId}`,
+      rel.type,
+      rel.description,
+      undefined,
+    );
+  }
 
   // ---- Validate relationships ---------------------------------------------
   const entityIds = new Set(finalEntities.map((e) => e.id));
@@ -611,7 +625,11 @@ async function analyzeContextChunks(
     relationships: finalRelationships,
     unresolved: finalUnresolved,
     analysis: { ...analysis, consolidationComplete, contextsExpected, contextsCompleted },
+    revisionFingerprint: undefined, // Computed below after assembly
   };
+
+  // Compute revisionFingerprint for the entire IR
+  semanticIR.revisionFingerprint = computeRevisionFingerprint(semanticIR);
 
   // ---- Write output -------------------------------------------------------
   if (outputDir) {
@@ -657,6 +675,66 @@ async function analyzeContextChunks(
   }
 
   return semanticIR;
+}
+
+// ---- Semantic fingerprint helpers -----------------------------------------
+
+/**
+ * Compute a content-addressable semanticId for a semantic object.
+ * Hashes the content fields that define the object's meaning.
+ */
+function computeSemanticId(
+  name: string,
+  type: string,
+  description: string | undefined,
+  statement: string | undefined,
+): string {
+  const fields = [name, type, description ?? '', statement ?? ''].join('|||');
+  return sha256(fields).slice(0, 16);
+}
+
+/**
+ * Compute a revisionFingerprint for the entire Semantic IR.
+ * This is a content-addressable hash of all semantic objects.
+ */
+function computeRevisionFingerprint(semanticIR: SemanticIR): string {
+  const objects = [
+    ...semanticIR.sections.map((s) => ({
+      kind: 'section',
+      id: s.id,
+      title: s.title,
+      description: s.description,
+      type: s.type,
+    })),
+    ...semanticIR.entities.map((e) => ({
+      kind: 'entity',
+      id: e.id,
+      name: e.name,
+      type: e.type,
+      description: e.description,
+    })),
+    ...semanticIR.flows.map((f) => ({
+      kind: 'flow',
+      id: f.id,
+      name: f.name,
+      description: f.description,
+      steps: f.steps.map((s) => s.action),
+    })),
+    ...semanticIR.rules.map((r) => ({
+      kind: 'rule',
+      id: r.id,
+      type: r.type,
+      statement: r.statement,
+    })),
+    ...semanticIR.relationships.map((r) => ({
+      kind: 'relationship',
+      id: r.id,
+      type: r.type,
+      sourceId: r.sourceId,
+      targetId: r.targetId,
+    })),
+  ];
+  return sha256(JSON.stringify(objects)).slice(0, 16);
 }
 
 // ---- Helpers --------------------------------------------------------------

@@ -89,6 +89,8 @@ export interface TestScenario {
   priority: Priority;
   provenance: TestProvenance[];
   confidence: number;
+  /** Content-addressable hash of the scenario's canonical form for cross-revision comparison. */
+  contentHash?: string;
 }
 
 // ---- Test case ------------------------------------------------------------
@@ -165,6 +167,8 @@ export interface TestCase {
   automation: AutomationReadiness;
   provenance: TestProvenance[];
   confidence: number;
+  /** Content-addressable hash of the test case's canonical form for cross-revision comparison. */
+  contentHash?: string;
 }
 
 // ---- Sub-models -----------------------------------------------------------

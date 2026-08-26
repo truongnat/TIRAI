@@ -14,6 +14,7 @@
 //  10. Compute quality metrics
 //  11. Write output
 
+import { sha256 } from 'source-ingestion';
 import type { AIProvider } from 'ai-provider';
 import type {
   TestPlanIR,
@@ -248,6 +249,17 @@ export async function buildTestPlanFromRequirementIR(
     const id = `SCN-${String(i + 1).padStart(4, '0')}`;
     scenarioIdMap.set(s.temporaryId, id);
 
+    // Compute content-addressable hash of the scenario's canonical form
+    const canonicalForm = JSON.stringify({
+      title: s.title,
+      objective: s.objective,
+      category: s.category,
+      requirementIds: [...s.requirementIds].sort(),
+      expectedBehavior: [...s.expectedBehavior].sort(),
+      priority: s.priority,
+    });
+    const contentHash = sha256(canonicalForm).slice(0, 16);
+
     return {
       id,
       title: s.title,
@@ -263,6 +275,7 @@ export async function buildTestPlanFromRequirementIR(
       priority: s.priority,
       provenance: mergeRequirementProvenance(s.provenance, s.requirementIds, requirements),
       confidence: s.confidence,
+      contentHash,
     };
   });
 
@@ -273,6 +286,18 @@ export async function buildTestPlanFromRequirementIR(
     if (!scenarioId) continue; // Skip test cases for removed scenarios
 
     const id = `TC-${String(finalTestCases.length + 1).padStart(4, '0')}`;
+
+    // Compute content-addressable hash of the test case's canonical form
+    const canonicalForm = JSON.stringify({
+      title: tc.title,
+      objective: tc.objective,
+      type: tc.type,
+      priority: tc.priority,
+      requirementIds: [...tc.requirementIds].sort(),
+      steps: tc.steps.map((s) => s.action).sort(),
+      expectedResults: tc.expectedResults.map((e) => e.description).sort(),
+    });
+    const contentHash = sha256(canonicalForm).slice(0, 16);
 
     finalTestCases.push({
       id,
@@ -317,6 +342,7 @@ export async function buildTestPlanFromRequirementIR(
       },
       provenance: mergeRequirementProvenance(tc.provenance, tc.requirementIds, requirements),
       confidence: tc.confidence,
+      contentHash,
     });
   }
 

@@ -9,7 +9,7 @@ import type {
   SourceConnector,
   SourceLocation,
 } from './models.js';
-import { locationKey, sha256, stableId } from './ids.js';
+import { sha256, stableId } from './ids.js';
 import { assertNoRawCredentials, sanitizeMetadata } from './sanitizer.js';
 
 export const MARKDOWN_CONNECTOR_ID = 'local-markdown';
@@ -76,6 +76,8 @@ export class MarkdownSourceConnector implements SourceConnector {
     let blockLines: string[] = [];
     let blockIndex = 0;
     let previousContextId: string | undefined;
+    // Content-addressable ID collision tracker
+    const contentIdCounts = new Map<string, number>();
 
     const flushBlock = () => {
       while (blockLines.length > 0 && blockLines[0].trim() === '') blockLines.shift();
@@ -94,10 +96,15 @@ export class MarkdownSourceConnector implements SourceConnector {
         ],
       };
       const blockContent = blockLines.join('\n');
-      const artifactId = stableId(
-        'artifact',
-        `${revisionId}:${locationKey(location)}:${sha256(blockContent)}`,
-      );
+      const contentHashValue = sha256(blockContent);
+      // Content-addressable artifact ID: hash of content, not position
+      // Includes revisionId for cross-revision disambiguation
+      const baseContentId = `${revisionId}:${contentHashValue}`;
+      const collisionCount = contentIdCounts.get(baseContentId) ?? 0;
+      contentIdCounts.set(baseContentId, collisionCount + 1);
+      const artifactId = collisionCount === 0
+        ? stableId('artifact', baseContentId)
+        : stableId('artifact', `${baseContentId}:collision-${collisionCount}`);
       artifacts.push({
         id: artifactId,
         sourceId,
@@ -107,7 +114,7 @@ export class MarkdownSourceConnector implements SourceConnector {
         location,
         mediaType: 'text/markdown',
         content: blockContent,
-        contentHash: sha256(blockContent),
+        contentHash: contentHashValue,
         metadata: sanitizeMetadata({
           headingLevel: heading?.level ?? 0,
           lineStart,
@@ -115,7 +122,17 @@ export class MarkdownSourceConnector implements SourceConnector {
           blockIndex,
         }),
       });
-      const contextId = stableId('ctx', `${sourceId}:${revisionId}:${artifactId}`);
+      // Content-addressable context ID: hash of content + type + provenance fields
+      const contextContentHash = sha256(
+        JSON.stringify({
+          content: blockContent,
+          type: 'content-block',
+          sourceId,
+          revisionId,
+          artifactId,
+        }),
+      );
+      const contextId = stableId('ctx', `${sourceId}:${revisionId}:${contextContentHash}`);
       const relations = previousContextId
         ? [{ type: 'previous' as const, targetContextId: previousContextId }]
         : [];
@@ -128,7 +145,7 @@ export class MarkdownSourceConnector implements SourceConnector {
         id: contextId,
         type: 'content-block',
         content: blockContent,
-        contentHash: sha256(blockContent),
+        contentHash: contentHashValue,
         provenance: { sourceId, revisionId, artifactId, location },
         relations,
         metadata: sanitizeMetadata({
@@ -157,10 +174,14 @@ export class MarkdownSourceConnector implements SourceConnector {
           ],
         };
         const headingContent = match[2];
-        const artifactId = stableId(
-          'artifact',
-          `${revisionId}:${locationKey(headingLocation)}:${sha256(headingContent)}`,
-        );
+        const headingContentHash = sha256(headingContent);
+        // Content-addressable heading artifact ID
+        const headingBaseContentId = `${revisionId}:heading:${headingContentHash}`;
+        const headingCollisionCount = contentIdCounts.get(headingBaseContentId) ?? 0;
+        contentIdCounts.set(headingBaseContentId, headingCollisionCount + 1);
+        const artifactId = headingCollisionCount === 0
+          ? stableId('artifact', headingBaseContentId)
+          : stableId('artifact', `${headingBaseContentId}:collision-${headingCollisionCount}`);
         artifacts.push({
           id: artifactId,
           sourceId,

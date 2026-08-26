@@ -14,6 +14,7 @@
 //  10. Compute quality metrics
 //  11. Write output
 
+import { sha256 } from 'source-ingestion';
 import type { AIProvider } from 'ai-provider';
 import type {
   RequirementIR,
@@ -287,6 +288,22 @@ export async function buildRequirementsFromSemanticIR(
     const type: RequirementType =
       c.type === 'unknown' ? inferRequirementType(c.statement, c.semanticEvidenceIds) : c.type;
 
+    // Compute content-addressable hash of the requirement's canonical form
+    const canonicalForm = JSON.stringify({
+      title: c.title,
+      type,
+      statement: c.statement,
+      sourceNature: c.sourceNature,
+      actor: c.actor,
+      trigger: c.trigger,
+      preconditions: c.preconditions.map((p) => p.description).sort(),
+      inputs: c.inputs.map((i) => i.name).sort(),
+      expectedBehaviors: c.expectedBehaviors.map((b) => b.description).sort(),
+      outcomes: c.outcomes.map((o) => o.description).sort(),
+      constraints: c.constraints.map((ct) => ct.description).sort(),
+    });
+    const contentHash = sha256(canonicalForm).slice(0, 16);
+
     return {
       id,
       title: c.title,
@@ -305,6 +322,7 @@ export async function buildRequirementsFromSemanticIR(
       provenance: c.provenance,
       confidence: c.confidence,
       testability,
+      contentHash,
     };
   });
 

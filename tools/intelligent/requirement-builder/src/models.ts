@@ -68,6 +68,8 @@ export interface Requirement {
   provenance: ProvenanceReference[];
   confidence: number;
   testability: RequirementTestability;
+  /** Content-addressable hash of the requirement's canonical form for cross-revision comparison. */
+  contentHash?: string;
 }
 
 export interface RequirementDataNeed {
@@ -368,6 +370,7 @@ export interface SemanticIRInput {
     parentId?: string;
     provenance: ProvenanceReference[];
     confidence: number;
+    semanticId?: string;
   }>;
   entities: Array<{
     id: string;
@@ -384,6 +387,7 @@ export interface SemanticIRInput {
     aliases?: string[];
     provenance: ProvenanceReference[];
     confidence: number;
+    semanticId?: string;
   }>;
   flows: Array<{
     id: string;
@@ -403,6 +407,7 @@ export interface SemanticIRInput {
     postconditions?: string[];
     provenance: ProvenanceReference[];
     confidence: number;
+    semanticId?: string;
   }>;
   rules: Array<{
     id: string;
@@ -422,6 +427,7 @@ export interface SemanticIRInput {
     relatedEntityIds?: string[];
     provenance: ProvenanceReference[];
     confidence: number;
+    semanticId?: string;
   }>;
   relationships: Array<{
     id: string;
@@ -431,6 +437,7 @@ export interface SemanticIRInput {
     description?: string;
     provenance: ProvenanceReference[];
     confidence: number;
+    semanticId?: string;
   }>;
   unresolved: Array<{
     id: string;
@@ -459,4 +466,6 @@ export interface SemanticIRInput {
       provenanceCoverage: number;
     };
   };
+  /** Content-addressable hash of the entire IR for cross-revision comparison. */
+  revisionFingerprint?: string;
 }

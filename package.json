@@ -35,6 +35,7 @@
     "tools/intelligent/execution-mapping-builder",
     "tools/intelligent/project-adapter",
     "tools/intelligent/agentic-test-executor",
+    "tools/intelligent/fingerprint",
     "tools/intelligent/e2e-runner"
   ],
   "devDependencies": {

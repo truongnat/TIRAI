@@ -24,6 +24,8 @@ export interface SemanticIR {
   relationships: SemanticRelationship[];
   unresolved: SemanticUnresolved[];
   analysis: SemanticAnalysisMetadata;
+  /** Content-addressable hash of the entire IR for cross-revision comparison. */
+  revisionFingerprint?: string;
 }
 
 // ---- Document ------------------------------------------------------------
@@ -57,6 +59,8 @@ export interface SemanticSection {
   parentId?: string;
   provenance: ProvenanceReference[];
   confidence: number;
+  /** Content-addressable fingerprint for cross-revision comparison. */
+  semanticId?: string;
 }
 
 // ---- Entity --------------------------------------------------------------
@@ -70,6 +74,8 @@ export interface SemanticEntity {
   aliases?: string[];
   provenance: ProvenanceReference[];
   confidence: number;
+  /** Content-addressable fingerprint for cross-revision comparison. */
+  semanticId?: string;
 }
 
 // ---- Attribute -----------------------------------------------------------
@@ -94,6 +100,8 @@ export interface SemanticFlow {
   postconditions?: string[];
   provenance: ProvenanceReference[];
   confidence: number;
+  /** Content-addressable fingerprint for cross-revision comparison. */
+  semanticId?: string;
 }
 
 export interface SemanticFlowStep {
@@ -117,6 +125,8 @@ export interface SemanticRule {
   relatedEntityIds?: string[];
   provenance: ProvenanceReference[];
   confidence: number;
+  /** Content-addressable fingerprint for cross-revision comparison. */
+  semanticId?: string;
 }
 
 // ---- Condition -----------------------------------------------------------
@@ -146,6 +156,8 @@ export interface SemanticRelationship {
   description?: string;
   provenance: ProvenanceReference[];
   confidence: number;
+  /** Content-addressable fingerprint for cross-revision comparison. */
+  semanticId?: string;
 }
 
 // ---- Unresolved ----------------------------------------------------------
