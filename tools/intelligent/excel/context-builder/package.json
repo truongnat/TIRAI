@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Transform deterministic Excel outputs into AI-friendly context packages",
   "type": "module",
-  "main": "dist/builder.js",
-  "types": "dist/builder.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "excel-context-builder": "dist/cli.js"
   },
