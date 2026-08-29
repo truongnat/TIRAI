@@ -15,8 +15,8 @@ export function writeRunResultJson(path: string, result: TestRunResultIR): void 
 }
 
 export interface SummaryContext {
-  framework: 'playwright';
-  executionMode: 'GENERATED_E2E';
+  framework: 'playwright' | 'vitest';
+  executionMode: 'GENERATED_E2E' | 'GENERATED_UNIT';
   generationStatus: string;
   testCasesReceived: number;
   testCasesGenerated: number;

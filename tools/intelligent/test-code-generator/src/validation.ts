@@ -6,9 +6,10 @@
 //
 // A syntactically invalid file is NEVER allowed to proceed to execution.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { dirname, resolve, join } from 'node:path';
 import ts from 'typescript';
 
 import type { ValidationOutcome } from './models.js';
@@ -21,6 +22,11 @@ export interface ValidationOptions {
   playwrightBin?: string;
 }
 
+export interface UnitValidationOptions {
+  /** Directory used to resolve relative imports inside the generated test. */
+  resolveDir: string;
+}
+
 function parseOk(source: string): { ok: boolean; errors: string[] } {
   const sf = ts.createSourceFile('generated.spec.ts', source, ts.ScriptTarget.Latest, true);
   const diags = (sf as unknown as { parseDiagnostics?: ts.Diagnostic[] }).parseDiagnostics ?? [];
@@ -30,6 +36,33 @@ function parseOk(source: string): { ok: boolean; errors: string[] } {
     return `Line ${line + 1}:${character + 1} — ${ts.flattenDiagnosticMessageText(d.messageText, '\n')}`;
   });
   return { ok: errors.length === 0, errors };
+}
+
+/** Resolve a (possibly extensionless) relative module specifier to a real file. */
+function resolveRelativeImport(importPath: string, fromDir: string): boolean {
+  if (!importPath.startsWith('.')) return true; // bare package import (e.g. 'vitest')
+  const base = resolve(fromDir, importPath);
+  const candidates = [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    `${base}.js`,
+    `${base}.mjs`,
+    `${base}.cjs`,
+    join(base, 'index.ts'),
+    join(base, 'index.js'),
+  ];
+  return candidates.some((c) => existsSync(c));
+}
+
+function extractRelativeImports(source: string): string[] {
+  const imports: string[] = [];
+  const re = /(?:import\s+(?:[^'"]*?\s+from\s+)?|import\s*\()\s*['"]([^'"]+)['"]/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(source)) !== null) {
+    if (m[1].startsWith('.')) imports.push(m[1]);
+  }
+  return imports;
 }
 
 async function discoverable(
@@ -91,3 +124,55 @@ export async function validateGeneratedSource(
     blockedReason: ok ? undefined : 'static-validation-failed',
   };
 }
+
+/**
+ * Static validation for GENERATED_UNIT (Vitest) files (spec §17).
+ *
+ * A file must parse as TypeScript AND every relative import it references must
+ * resolve to a real target file (the trusted Target-Code Mapping may only point
+ * at symbols that actually exist). A failure here means execution MUST NOT run.
+ */
+export function validateGeneratedUnitSource(
+  filePath: string,
+  opts: UnitValidationOptions,
+): ValidationOutcome {
+  let source: string;
+  try {
+    source = readFileSync(filePath, 'utf8');
+  } catch (err) {
+    return {
+      filePath,
+      status: 'invalid',
+      parseOk: false,
+      discoverable: false,
+      formattedWith: 'prettier',
+      errors: [`Cannot read file: ${err instanceof Error ? err.message : String(err)}`],
+      blockedReason: 'file-unreadable',
+    };
+  }
+
+  const parsed = parseOk(source);
+  const relativeImports = extractRelativeImports(source);
+  const missingImports = relativeImports.filter(
+    (p) => !resolveRelativeImport(p, opts.resolveDir),
+  );
+
+  const errors = [...parsed.errors];
+  for (const imp of missingImports) {
+    errors.push(`Relative import '${imp}' does not resolve from ${opts.resolveDir}`);
+  }
+
+  const ok = parsed.ok && missingImports.length === 0;
+  return {
+    filePath,
+    status: ok ? 'valid' : 'invalid',
+    parseOk: parsed.ok,
+    discoverable: missingImports.length === 0,
+    formattedWith: 'prettier',
+    errors,
+    blockedReason: ok ? undefined : 'static-validation-failed',
+  };
+}
+
+// re-export for callers that validate the on-disk generated directory.
+export { dirname };

@@ -57,7 +57,7 @@ export interface PlaywrightTest {
 export interface MapContext {
   runId: string;
   framework: 'playwright';
-  executionMode: 'GENERATED_E2E';
+  executionMode: 'GENERATED_E2E' | 'GENERATED_UNIT';
   startedAt: string;
   finishedAt: string;
   testCases: TestCase[];
@@ -74,7 +74,7 @@ function flattenSpecs(suites: PlaywrightSuite[] | undefined, out: PlaywrightSpec
   }
 }
 
-function isInfrastructureError(message: string): boolean {
+export function isInfrastructureError(message: string): boolean {
   return /net::|ECONNREFUSED|ECONNRESET|Timeout .* exceeded|Target (page|context or browser) (has been closed|is closed)|browserType\.launch|Navigation failed|page\.goto|Failed to launch|Playwright|Executable|closed unexpectedly/i.test(
     message,
   );

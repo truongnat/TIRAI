@@ -25,11 +25,11 @@ export type {
   TestRunResultIR,
 };
 
-/** Only Playwright is implemented in Phase 5.1 (spec §39). */
-export type SupportedFramework = 'playwright';
+/** Playwright (E2E) implemented in Phase 5.1; Vitest (unit) added in Phase 5.2. */
+export type SupportedFramework = 'playwright' | 'vitest';
 
 /** Distinct execution mode vs AGENTIC_BROWSER (spec §18). Recorded in result envelope, NOT in frozen TestRunMode. */
-export type GenerationExecutionMode = 'GENERATED_E2E';
+export type GenerationExecutionMode = 'GENERATED_E2E' | 'GENERATED_UNIT';
 
 // ---- Generation block reasons (fail-closed taxonomy) ----------------------
 
@@ -38,7 +38,14 @@ export type GenerationBlockCode =
   | 'MISSING_LOCATOR'
   | 'UNSUPPORTED_ACTION'
   | 'UNMAPPABLE_ASSERTION'
-  | 'MISSING_VALUE';
+  | 'MISSING_VALUE'
+  // Phase 5.2 — unit / target-code mapping block reasons
+  | 'NOT_FOUND'
+  | 'AMBIGUOUS'
+  | 'UNSUPPORTED_SYMBOL'
+  | 'UNRESOLVED_INPUT'
+  | 'UNSUPPORTED_ASSERTION'
+  | 'STALE_MAPPING';
 
 export interface GenerationBlockReason {
   code: GenerationBlockCode;
@@ -160,5 +167,141 @@ export interface GeneratedTestExecutionResult {
   result: TestRunResultIR;
   metrics: ExecutionMetrics;
   playwrightJsonPath?: string;
+  logs: string[];
+}
+
+// ===========================================================================
+// Phase 5.2 — Unit test generation (Vitest) + Target-Code Mapping Bridge.
+//
+// Design (spec §3, §4, §9, §10): canonical TestCase describes WHAT; the
+// TargetCodeMapping (a trusted bridge layer, NOT the canonical TestCase) describes
+// WHERE/HOW the behavior is implemented and how inputs/expected map to the
+// target symbol. The generator emits a real, independently executable Vitest
+// test. No AI symbol guessing, no source-connector (Excel/Markdown/PDF) branching.
+// ===========================================================================
+
+export type TargetSymbolKind = 'function' | 'class' | 'method';
+
+/** Minimal trusted target-project profile (spec §7). No credentials. */
+export interface TargetProjectProfile {
+  projectRoot: string;
+  language: 'typescript' | 'javascript';
+  moduleSystem: 'esm' | 'cjs';
+  unitTestFramework: 'vitest';
+  sourceRoots: string[];
+  testRoots: string[];
+  testCommand: string;
+  tsconfigPath?: string;
+}
+
+/** Trusted identity of a discovered target symbol (spec §9). */
+export interface TargetCodeSymbol {
+  sourceFile: string;
+  symbolName: string;
+  kind: TargetSymbolKind;
+  /** POSIX relative import path (no extension) from the generated test dir. */
+  importPath: string;
+  params: Array<{ name: string; type?: string }>;
+  isAsync: boolean;
+  returnType?: string;
+  /** Hash of the target source file for staleness detection (spec §34). */
+  fingerprint: string;
+}
+
+export type TargetMappingStatus =
+  | 'RESOLVED'
+  | 'AMBIGUOUS'
+  | 'NOT_FOUND'
+  | 'UNSUPPORTED'
+  | 'STALE_MAPPING'
+  | 'UNRESOLVED_INPUT'
+  | 'UNSUPPORTED_ASSERTION';
+
+export type UnitAssertionType =
+  | 'deep-equal'
+  | 'primitive-equal'
+  | 'boolean'
+  | 'null'
+  | 'non-null'
+  | 'throws'
+  | 'rejects';
+
+/**
+ * Trusted bridge mapping a canonical TestCase to a concrete target symbol.
+ * This is NOT part of the canonical TestCase model. The binding is explicit
+ * (argumentInputNames reference TestCase.inputs[].name by name), so mapping is
+ * deterministic and never inferred from JSON ordering (spec §18).
+ */
+export interface UnitTargetCodeMapping {
+  testCaseId: string;
+  symbolRef: { sourceFile: string; symbolName: string; kind?: TargetSymbolKind };
+  /** Ordered TestCase.inputs[].name values bound to function parameters. */
+  argumentInputNames: string[];
+  /** Index into testCase.expectedResults used for the assertion. */
+  expectedResultIndex?: number;
+  assertionType: UnitAssertionType;
+  /** Recorded fingerprint of the target source at mapping time (staleness). */
+  targetFingerprint?: string;
+}
+
+export interface UnitGenerationInput {
+  testCases: TestCase[];
+  profile: TargetProjectProfile;
+  targetMappings: UnitTargetCodeMapping[];
+  framework: 'vitest';
+  options: TestCodeGenerationOptions;
+}
+
+export interface UnitGenerationMetrics {
+  testCasesReceived: number;
+  testCasesGenerated: number;
+  testCasesBlocked: number;
+  targetSymbolsScanned: number;
+  targetSymbolsResolved: number;
+  targetSymbolsAmbiguous: number;
+  targetSymbolsMissing: number;
+  staleMappingsDetected: number;
+  inputMappingsResolved: number;
+  inputMappingsBlocked: number;
+  assertionMappingsResolved: number;
+  assertionMappingsBlocked: number;
+  generatedUnitFiles: number;
+  generatedUnitBytes: number;
+  generationAiCalls: number;
+  aiSymbolGuesses: number;
+  guessedMappings: number;
+  sourceSpecificBranchesInUnitGenerator: number;
+  unsupportedAssertions: number;
+}
+
+export interface UnitGenerationResult {
+  framework: 'vitest';
+  status: TestCodeGenerationStatus;
+  generatedFiles: string[];
+  caseResults: TestCaseGenerationResult[];
+  metrics: UnitGenerationMetrics;
+  fingerprint: string;
+}
+
+export interface UnitExecutionMetrics {
+  validationAttempts: number;
+  validationPassed: number;
+  validationFailed: number;
+  vitestExecutionAttempts: number;
+  vitestPassed: number;
+  vitestFailed: number;
+  vitestErrors: number;
+  executionAiCalls: number;
+  agenticFallbacks: number;
+  aiSymbolGuesses: number;
+}
+
+export interface UnitExecutionResult {
+  executionMode: 'GENERATED_UNIT';
+  framework: 'vitest';
+  /** Canonical result (reused TestRunResultIR). */
+  result: TestRunResultIR;
+  metrics: UnitExecutionMetrics;
+  vitestJsonPath?: string;
   logs: string[];
 }
