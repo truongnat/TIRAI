@@ -24,6 +24,11 @@ export {
   type PlaywrightTest,
   type MapContext,
   type MappedRun,
+  mapVitestJsonToRunResult,
+  type VitestJsonReport,
+  type VitestFileResult,
+  type VitestAssertionResult,
+  type VitestMapContext,
 } from './result-mapper.js';
 export { locatorExpression, type LocatorSpec } from './locator.js';
 export {

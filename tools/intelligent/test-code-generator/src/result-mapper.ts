@@ -190,17 +190,15 @@ export function mapPlaywrightJsonToRunResult(
 
   const total = testResults.length;
   const overall: TestRunResultIR['status'] =
-    errors > 0 && passed + failed === 0
+    total === 0
       ? 'error'
-      : failed > 0 && errors === 0
-        ? 'failed'
-        : errors > 0
-          ? 'partial'
-          : total === passed
-            ? 'passed'
-            : total === 0
-              ? 'error'
-              : 'partial';
+      : errors > 0 && passed + failed === 0
+        ? 'error'
+        : failed > 0 && errors === 0
+          ? 'failed'
+          : errors > 0
+            ? 'partial'
+            : 'passed';
 
   const result: TestRunResultIR = {
     schemaVersion: '1.0',
@@ -247,6 +245,192 @@ export function mapPlaywrightJsonToRunResult(
         type: 'run-end',
         timestamp: ctx.finishedAt,
         message: `GENERATED_E2E run finished (status=${overall}; passed=${passed}; failed=${failed}; errors=${errors})`,
+      },
+    ],
+  };
+
+  return { result, passed, failed, errors, blocked };
+}
+
+// ---- Vitest JSON normalization (Phase 5.4 integration gap) -----------------
+//
+// Mirrors mapPlaywrightJsonToRunResult but for the Vitest JSON reporter
+// output emitted by `vitest run --reporter=json`. Real generated Unit code is
+// executed by the actual Vitest CLI; this normalizes its reporter JSON into the
+// canonical TestRunResultIR (reused from test-execution-orchestrator) so both
+// GENERATED_E2E and GENERATED_UNIT branches share one result envelope.
+//
+// A Vitest assertion failure is a business FAIL; the Vitest runner does not
+// emit infrastructure-error classification, so every non-passing result is
+// treated as a business failure unless explicitly skipped.
+
+export interface VitestAssertionResult {
+  title: string;
+  fullName?: string;
+  status?: string;
+  duration?: number;
+  failureMessages?: string[];
+}
+
+export interface VitestFileResult {
+  name?: string;
+  status?: string;
+  assertionResults?: VitestAssertionResult[];
+  startTime?: number;
+  endTime?: number;
+  duration?: number;
+}
+
+export interface VitestJsonReport {
+  numTotalTests?: number;
+  numPassedTests?: number;
+  numFailedTests?: number;
+  numPendingTests?: number;
+  startTime?: number;
+  endTime?: number;
+  duration?: number;
+  testResults?: VitestFileResult[];
+}
+
+export interface VitestMapContext {
+  runId: string;
+  framework: 'vitest';
+  executionMode: 'GENERATED_UNIT';
+  startedAt: string;
+  finishedAt: string;
+  testCases: TestCase[];
+  titleToTestCaseId: Map<string, string>;
+}
+
+function vitestStatus(status: string | undefined, failureMessages: string[] | undefined): TestResultStatus {
+  switch (status) {
+    case 'passed':
+      return 'passed';
+    case 'skipped':
+    case 'todo':
+    case 'pending':
+      return 'skipped';
+    case 'failed':
+    case 'unknown':
+    default:
+      // Vitest assertion failures are business FAIL; no infra classifier exists.
+      return failureMessages && failureMessages.length > 0 ? 'failed' : 'failed';
+  }
+}
+
+export function mapVitestJsonToRunResult(report: VitestJsonReport, ctx: VitestMapContext): MappedRun {
+  const files = report.testResults ?? [];
+  const testResults: TestExecutionResultIR[] = [];
+  let passed = 0;
+  let failed = 0;
+  let errors = 0;
+  let blocked = 0;
+
+  for (const file of files) {
+    for (const assertion of file.assertionResults ?? []) {
+      const status = vitestStatus(assertion.status, assertion.failureMessages);
+      if (status === 'passed') passed++;
+      else if (status === 'error') errors++;
+      else if (status === 'failed') failed++;
+      else if (status === 'blocked') blocked++;
+
+      const testCaseId = ctx.titleToTestCaseId.get(assertion.title) ?? assertion.title;
+      const tc = ctx.testCases.find((t) => t.id === testCaseId);
+      const duration = assertion.duration ?? 0;
+      const finishedAt = new Date(new Date(ctx.startedAt).getTime() + duration).toISOString();
+
+      const mappedErrors: TestExecutionError[] = (assertion.failureMessages ?? []).map((m) => ({
+        code: 'GENERATED_UNIT_ASSERTION',
+        message: m,
+        retryable: false,
+        executorType: 'integration',
+      }));
+
+      testResults.push({
+        schemaVersion: '1.0',
+        runId: ctx.runId,
+        testCaseId,
+        scenarioId: tc?.scenarioId ?? '',
+        requirementIds: tc?.requirementIds ?? [],
+        status,
+        phase: status === 'passed' ? 'completed' : 'failed',
+        steps: [],
+        assertions: [],
+        evidence: [
+          {
+            id: `gen-unit-evidence-${testCaseId}`,
+            kind: 'vitest-result',
+            path: file.name ?? '',
+            description: `GENERATED_UNIT execution of '${assertion.title}' (status=${status})`,
+          } as unknown as TestExecutionResultIR['evidence'][number],
+        ],
+        runtimeBindings: [],
+        cleanup: { attempted: 0, succeeded: 0, failed: 0, results: [] },
+        errors: mappedErrors,
+        warnings: [],
+        provenance: tc?.provenance ?? [],
+        timings: { startedAt: ctx.startedAt, finishedAt, durationMs: duration },
+      });
+    }
+  }
+
+  const total = testResults.length;
+  const overall: TestRunResultIR['status'] =
+    total === 0
+      ? 'error'
+      : errors > 0 && passed + failed === 0
+        ? 'error'
+        : failed > 0 && errors === 0
+          ? 'failed'
+          : errors > 0
+            ? 'partial'
+            : 'passed';
+
+  const result: TestRunResultIR = {
+    schemaVersion: '1.0',
+    runId: ctx.runId,
+    mode: 'execute',
+    startedAt: ctx.startedAt,
+    finishedAt: ctx.finishedAt,
+    status: overall,
+    testResults,
+    summary: {
+      testsTotal: total,
+      passed,
+      failed,
+      blocked,
+      skipped: 0,
+      manual: 0,
+      errors,
+      assertionsTotal: 0,
+      assertionsPassed: 0,
+      assertionsFailed: 0,
+      assertionsBlocked: 0,
+      evidenceItems: testResults.length,
+      cleanupFailures: 0,
+      provenanceCoverage: total > 0 ? 1 : 0,
+      durationMs: report.duration ?? 0,
+    },
+    evidence: [
+      {
+        id: `gen-unit-run-evidence-${ctx.runId}`,
+        kind: 'execution-mode',
+        path: '',
+        description: `executionMode=${ctx.executionMode}; framework=${ctx.framework}`,
+      } as unknown as TestRunResultIR['evidence'][number],
+    ],
+    auditTrail: [
+      {
+        sequence: 1,
+        type: 'run-start',
+        timestamp: ctx.startedAt,
+        message: `GENERATED_UNIT run started (framework=${ctx.framework})`,
+      },
+      {
+        sequence: 2,
+        type: 'run-end',
+        timestamp: ctx.finishedAt,
+        message: `GENERATED_UNIT run finished (status=${overall}; passed=${passed}; failed=${failed}; errors=${errors})`,
       },
     ],
   };
