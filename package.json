@@ -36,7 +36,8 @@
     "tools/intelligent/project-adapter",
     "tools/intelligent/agentic-test-executor",
     "tools/intelligent/e2e-runner",
-    "tools/intelligent/test-code-generator"
+    "tools/intelligent/test-code-generator",
+    "tools/intelligent/source-to-testcase"
   ],
   "devDependencies": {
     "typescript": "^5.5.0",
