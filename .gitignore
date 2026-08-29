@@ -33,3 +33,7 @@ tools/deterministic/excel/cell-layout-extractor/tests/fixtures/*.xlsm
 
 # Output
 output/
+
+# Build / test artifacts
+*.tsbuildinfo
+test-results/

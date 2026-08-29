@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>TIRAI Phase 5.1 Fixture — Login</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+      }
+      label {
+        display: block;
+        margin: 0.5rem 0 0.25rem;
+      }
+      input {
+        padding: 0.4rem;
+        width: 18rem;
+      }
+      button {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+      }
+      #welcome {
+        margin-top: 1.5rem;
+        font-weight: 600;
+        color: #0a7;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>TIRAI Demo Login</h1>
+    <form id="login-form">
+      <label for="email">Email</label>
+      <input id="email" data-testid="email" type="email" value="" />
+
+      <label for="password">Password</label>
+      <input id="password" data-testid="password" type="password" value="" />
+
+      <button id="submit" data-testid="submit" type="submit" role="button">Sign in</button>
+    </form>
+
+    <div id="welcome" data-testid="welcome" class="hidden" aria-live="polite"></div>
+
+    <script>
+      // Minimal deterministic behavior: echo the entered email into a welcome banner.
+      // No network, no randomness — purely local and reproducible.
+      document.getElementById('login-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var email = document.getElementById('email').value || '';
+        var banner = document.getElementById('welcome');
+        banner.textContent = 'Welcome, ' + email;
+        banner.classList.remove('hidden');
+      });
+    </script>
+  </body>
+</html>

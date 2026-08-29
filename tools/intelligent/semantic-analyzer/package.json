@@ -16,7 +16,8 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
-    "ai-provider": "file:../ai-provider"
+    "ai-provider": "file:../ai-provider",
+    "source-ingestion": "file:../source-ingestion"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
