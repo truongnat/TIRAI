@@ -1,7 +1,7 @@
 {
-  "name": "semantic-analyzer",
+  "name": "source-ingestion",
   "version": "1.0.0",
-  "description": "Semantic Analyzer v1 – Context Package → Canonical Semantic IR",
+  "description": "Canonical, read-only source ingestion contracts and local connectors",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,8 +16,9 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
-    "ai-provider": "file:../ai-provider",
-    "source-ingestion": "file:../source-ingestion"
+    "cell-layout-extractor": "file:../../deterministic/excel/cell-layout-extractor",
+    "excel-context-builder": "file:../excel/context-builder",
+    "workbook-inspector": "file:../../deterministic/excel/workbook-inspector"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

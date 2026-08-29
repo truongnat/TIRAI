@@ -6,7 +6,7 @@
   "description": "TIRAI – TypeScript toolchain for Excel intelligence",
   "scripts": {
     "check:deterministic": "npm run check --workspace=tools/deterministic/excel/workbook-inspector && npm run check --workspace=tools/deterministic/excel/cell-layout-extractor",
-    "check:intelligent": "npm run check --workspace=tools/intelligent/ai-provider && npm run check --workspace=tools/intelligent/excel/context-builder && npm run check --workspace=tools/intelligent/excel/analyzer && npm run check --workspace=tools/intelligent/semantic-analyzer && npm run check --workspace=tools/intelligent/requirement-builder && npm run check --workspace=tools/intelligent/test-planner && npm run check --workspace=tools/intelligent/test-data-planner && npm run check --workspace=tools/intelligent/data-resolver && npm run check --workspace=tools/intelligent/execution-engine && npm run check --workspace=tools/intelligent/database-executor && npm run check --workspace=tools/intelligent/api-executor && npm run check --workspace=tools/intelligent/test-execution-orchestrator && npm run check --workspace=tools/intelligent/ui-executor && npm run check --workspace=tools/intelligent/execution-mapping-builder && npm run check --workspace=tools/intelligent/project-adapter && npm run check --workspace=tools/intelligent/e2e-runner",
+    "check:intelligent": "npm run check --workspace=tools/intelligent/ai-provider && npm run check --workspace=tools/intelligent/excel/context-builder && npm run check --workspace=tools/intelligent/excel/analyzer && npm run check --workspace=tools/intelligent/semantic-analyzer && npm run check --workspace=tools/intelligent/requirement-builder && npm run check --workspace=tools/intelligent/test-planner && npm run check --workspace=tools/intelligent/test-data-planner && npm run check --workspace=tools/intelligent/data-resolver && npm run check --workspace=tools/intelligent/execution-engine && npm run check --workspace=tools/intelligent/database-executor && npm run check --workspace=tools/intelligent/api-executor && npm run check --workspace=tools/intelligent/test-execution-orchestrator && npm run check --workspace=tools/intelligent/ui-executor && npm run check --workspace=tools/intelligent/execution-mapping-builder && npm run check --workspace=tools/intelligent/project-adapter && npm run check --workspace=tools/intelligent/e2e-runner && npm run check --workspace=tools/intelligent/test-code-generator",
     "check": "npm run check:deterministic && npm run check:intelligent",
     "build:all": "npm run build --workspaces --if-present",
     "test:all": "npm test --workspaces --if-present",
@@ -19,6 +19,7 @@
     "tools/deterministic/excel/officecli-adapter",
     "tools/deterministic/performance-benchmark",
     "tools/intelligent/ai-provider",
+    "tools/intelligent/source-ingestion",
     "tools/intelligent/excel/context-builder",
     "tools/intelligent/excel/analyzer",
     "tools/intelligent/semantic-analyzer",
@@ -34,7 +35,8 @@
     "tools/intelligent/execution-mapping-builder",
     "tools/intelligent/project-adapter",
     "tools/intelligent/agentic-test-executor",
-    "tools/intelligent/e2e-runner"
+    "tools/intelligent/e2e-runner",
+    "tools/intelligent/test-code-generator"
   ],
   "devDependencies": {
     "typescript": "^5.5.0",

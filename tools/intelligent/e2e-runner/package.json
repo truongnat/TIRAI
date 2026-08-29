@@ -30,7 +30,9 @@
     "database-executor": "file:../database-executor",
     "api-executor": "file:../api-executor",
     "requirement-builder": "file:../requirement-builder",
-    "ai-provider": "file:../ai-provider"
+    "ai-provider": "file:../ai-provider",
+    "semantic-analyzer": "file:../semantic-analyzer",
+    "source-ingestion": "file:../source-ingestion"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

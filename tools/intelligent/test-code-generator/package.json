@@ -1,0 +1,37 @@
+{
+  "name": "test-code-generator",
+  "version": "1.0.0",
+  "description": "Phase 5.1 — Test Code Generation vertical slice: canonical TestCase + ExecutionMappingIR → real Playwright *.spec.ts",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "tirai-generate-tests": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests",
+    "format": "prettier --write \"src/**/*.{ts,json}\" \"tests/**/*.{ts,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,json}\" \"tests/**/*.{ts,json}\"",
+    "acceptance": "vitest run tests/acceptance.test.ts",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+  },
+  "dependencies": {
+    "test-planner": "file:../test-planner",
+    "execution-mapping-builder": "file:../execution-mapping-builder",
+    "ui-executor": "file:../ui-executor",
+    "test-execution-orchestrator": "file:../test-execution-orchestrator",
+    "project-adapter": "file:../project-adapter"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.0.0",
+    "prettier": "^3.3.0",
+    "@playwright/test": "^1.62.0",
+    "playwright": "^1.62.0"
+  }
+}
