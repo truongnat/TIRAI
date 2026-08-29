@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Order Validation</title>
+  </head>
+  <body>
+    <h1>Order Validation</h1>
+    <form id="order-form">
+      <label>
+        Quantity
+        <input id="quantity" data-testid="quantity" type="number" value="0" />
+      </label>
+      <label>
+        Available Stock
+        <input id="availableStock" data-testid="availableStock" type="number" value="0" />
+      </label>
+      <button id="submit" data-testid="submit" type="submit">Submit</button>
+    </form>
+    <div id="result" data-testid="result" role="status"></div>
+
+    <script>
+      const form = document.getElementById('order-form');
+      const result = document.getElementById('result');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const quantity = Number(document.getElementById('quantity').value);
+        const availableStock = Number(document.getElementById('availableStock').value);
+        const resp = await fetch(
+          '/validate?quantity=' +
+            encodeURIComponent(quantity) +
+            '&availableStock=' +
+            encodeURIComponent(availableStock),
+        );
+        const data = await resp.json();
+        result.textContent = data.status;
+      });
+    </script>
+  </body>
+</html>
