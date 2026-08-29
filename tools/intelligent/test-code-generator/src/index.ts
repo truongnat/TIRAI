@@ -4,11 +4,20 @@
 // Public contract (spec §5): generateE2ETests(input) -> TestCodeGenerationResult.
 
 export { generateE2ETests, generationFingerprintFor } from './generator.js';
-export { validateGeneratedSource, type ValidationOptions } from './validation.js';
+export {
+  generateUnitTests,
+} from './unit-generator.js';
+export { validateGeneratedSource, validateGeneratedUnitSource, type ValidationOptions, type UnitValidationOptions } from './validation.js';
 export { executeGeneratedTests, type ExecuteOptions } from './executor-bridge.js';
+export {
+  executeUnitTests,
+  type UnitExecuteOptions,
+} from './vitest-executor.js';
+export { inspectTargetProject, resolveUnitMapping, type SymbolIndex } from './target-inspector.js';
 export {
   mapPlaywrightJsonToRunResult,
   classifyFailure,
+  isInfrastructureError,
   type PlaywrightJsonReport,
   type PlaywrightSuite,
   type PlaywrightSpec,
@@ -58,4 +67,16 @@ export type {
   ValidationOutcome,
   ExecutionMetrics,
   GeneratedTestExecutionResult,
+  // Phase 5.2 — unit (Vitest) types
+  TargetProjectProfile,
+  TargetCodeSymbol,
+  TargetSymbolKind,
+  TargetMappingStatus,
+  UnitAssertionType,
+  UnitTargetCodeMapping,
+  UnitGenerationInput,
+  UnitGenerationMetrics,
+  UnitGenerationResult,
+  UnitExecutionMetrics,
+  UnitExecutionResult,
 } from './models.js';
