@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // tirai CLI — thin product surface over frozen core capabilities.
 // Composes: source-to-testcase, test-code-generator, project-adapter, execution-mapping-builder, ai-provider.
 
