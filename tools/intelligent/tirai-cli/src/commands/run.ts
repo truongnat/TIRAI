@@ -30,12 +30,38 @@ function parseJsonLoose(s: string): unknown | null {
 }
 
 function tiraiRoot(): string {
-  // dist/commands -> src/commands -> tirai-cli -> intelligent -> tools -> TIRAI
   try {
     const url = new URL(import.meta.url);
-    const dir = path.dirname(url.pathname);
-    // dist/commands/run.js -> dist -> tirai-cli -> intelligent -> tools -> root
-    return path.resolve(dir, '..', '..', '..', '..', '..');
+    let dir = path.dirname(url.pathname);
+    // Walk up until we find a directory containing package.json with name "tirai" or .git
+    for (let i = 0; i < 10; i++) {
+      const pkgPath = path.join(dir, 'package.json');
+      if (fs.existsSync(pkgPath)) {
+        try {
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+          if (pkg.name === 'tirai') return dir;
+        } catch {}
+      }
+      if (fs.existsSync(path.join(dir, '.git'))) return dir;
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    // Fallback: from dist/cli.js go up 4 to TIRAI, from dist/commands/run.js go up 5
+    const cliDir = path.dirname(new URL(import.meta.url).pathname);
+    const candidates = [
+      path.resolve(cliDir, '..', '..', '..', '..'), // from dist/cli.js
+      path.resolve(cliDir, '..', '..', '..', '..', '..'), // from dist/commands/run.js
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(path.join(c, 'package.json'))) {
+        try {
+          const pkg = JSON.parse(fs.readFileSync(path.join(c, 'package.json'), 'utf8'));
+          if (pkg.name === 'tirai') return c;
+        } catch {}
+      }
+    }
+    return path.resolve(cliDir, '..', '..', '..', '..');
   } catch {
     return process.cwd();
   }
@@ -149,9 +175,6 @@ export async function runRun(opts: RunOptions): Promise<number> {
   copyDirRecursive(paths.generatedE2eDir, e2eExecDir);
 
   // Ensure Playwright/Vitest can resolve from the project's node_modules.
-  // When the workspace is outside the TIRAI repo (e.g., /tmp), the project has no node_modules and the test's
-  // `import { test } from "@playwright/test"` would resolve via NODE_PATH to TIRAI's copy, causing a
-  // "two different versions of @playwright/test" error. Creating a symlink makes both runner and test resolve to the same copy.
   const repoNodeModules = path.join(tiraiRoot(), 'node_modules');
   const projectNodeModules = path.join(paths.root, 'node_modules');
   if (fs.existsSync(repoNodeModules)) {
@@ -162,8 +185,26 @@ export async function runRun(opts: RunOptions): Promise<number> {
       if (!stat) {
         fs.symlinkSync(repoNodeModules, projectNodeModules, 'dir');
       } else if (isDir && !isSymlink) {
-        // Existing real directory (e.g., vitest cache .vite) — keep it, but ensure @playwright/test is resolvable via NODE_PATH fallback.
-        // Do not overwrite.
+        // Real directory exists (e.g., after npm install or vitest cache). Ensure @playwright/test is available.
+        const playwrightInProject = path.join(projectNodeModules, '@playwright', 'test');
+        const playwrightInRepo = path.join(repoNodeModules, '@playwright', 'test');
+        if (!fs.existsSync(playwrightInProject) && fs.existsSync(playwrightInRepo)) {
+          // Create symlink for @playwright specifically
+          const playwrightDir = path.join(projectNodeModules, '@playwright');
+          if (!fs.existsSync(playwrightDir)) fs.mkdirSync(playwrightDir, { recursive: true });
+          try {
+            fs.symlinkSync(playwrightInRepo, playwrightInProject, 'dir');
+          } catch {
+            // fallback: copy
+          }
+        }
+        const vitestInProject = path.join(projectNodeModules, 'vitest');
+        const vitestInRepo = path.join(repoNodeModules, 'vitest');
+        if (!fs.existsSync(vitestInProject) && fs.existsSync(vitestInRepo)) {
+          try {
+            fs.symlinkSync(vitestInRepo, vitestInProject, 'dir');
+          } catch {}
+        }
       }
     } catch {
       // ignore symlink errors

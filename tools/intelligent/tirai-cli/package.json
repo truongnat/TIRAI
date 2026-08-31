@@ -42,21 +42,22 @@
   },
   "dependencies": {
     "ai-provider": "file:../ai-provider",
+    "ajv": "^8.17.0",
+    "exceljs": "^4.4.0",
     "execution-mapping-builder": "file:../execution-mapping-builder",
+    "groq-sdk": "^0.15.0",
+    "jszip": "^3.10.1",
+    "prettier": "^3.3.0",
     "project-adapter": "file:../project-adapter",
     "source-ingestion": "file:../source-ingestion",
     "source-to-testcase": "file:../source-to-testcase",
     "test-code-generator": "file:../test-code-generator",
-    "ajv": "^8.17.0",
-    "exceljs": "^4.4.0",
-    "groq-sdk": "^0.15.0",
-    "jszip": "^3.10.1",
-    "prettier": "^3.3.0",
     "typescript": "^5.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "esbuild": "^0.21.5",
+    "pdf-lib": "^1.17.1",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
   }
