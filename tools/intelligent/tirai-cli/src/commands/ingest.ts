@@ -22,12 +22,21 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     throw new CliError('SOURCE_INPUT_ERROR', 'Missing source path. Usage: tirai ingest <spec.xlsx>', 'Provide a path to an .xlsx or .md file.');
   }
 
-  const absSource = path.resolve(opts.cwd, opts.sourcePath);
-  if (!fs.existsSync(absSource)) {
+  // Handle URL vs file path
+  const isUrlSource = (() => {
+    try {
+      const u = new URL(opts.sourcePath);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  })();
+  const absSource = isUrlSource ? opts.sourcePath : path.resolve(opts.cwd, opts.sourcePath);
+  if (!isUrlSource && !fs.existsSync(absSource)) {
     throw new CliError('SOURCE_NOT_FOUND', `Source not found: ${opts.sourcePath}`);
   }
 
-  const sourceStat = fs.statSync(absSource);
+  const sourceStat = isUrlSource ? { size: Buffer.byteLength(absSource, 'utf8') } as fs.Stats : fs.statSync(absSource);
 
   // Select provider
   let provider;
@@ -50,14 +59,27 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     }
   }
 
-  // Auto-detect sourceKind from extension (so PDF/DOCX/CSV work without explicit config)
-  const ext = path.extname(absSource).toLowerCase();
+  // Auto-detect sourceKind from extension or URL (so PDF/DOCX/CSV/JSON/URL work without explicit config)
   let sourceKind: string | undefined;
-  if (ext === '.pdf') sourceKind = 'pdf';
-  else if (ext === '.docx') sourceKind = 'docx';
-  else if (ext === '.csv') sourceKind = 'csv';
-  else if (ext === '.md' || ext === '.markdown') sourceKind = 'markdown';
-  else if (ext === '.xlsx' || ext === '.xlsm') sourceKind = 'excel';
+  const isUrl = (() => {
+    try {
+      const u = new URL(absSource);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  })();
+  if (isUrl) {
+    sourceKind = 'url';
+  } else {
+    const ext = path.extname(absSource).toLowerCase();
+    if (ext === '.pdf') sourceKind = 'pdf';
+    else if (ext === '.docx') sourceKind = 'docx';
+    else if (ext === '.csv') sourceKind = 'csv';
+    else if (ext === '.json') sourceKind = 'json';
+    else if (ext === '.md' || ext === '.markdown') sourceKind = 'markdown';
+    else if (ext === '.xlsx' || ext === '.xlsm') sourceKind = 'excel';
+  }
 
   let result;
   try {
@@ -99,10 +121,16 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     },
   }));
 
-  // Copy source into workspace sources for reproducibility
-  ensureDir(paths.sourcesDir);
-  const destSource = path.join(paths.sourcesDir, path.basename(absSource));
-  fs.copyFileSync(absSource, destSource);
+  // Copy source into workspace sources for reproducibility (skip for URL, just record)
+  if (!isUrlSource) {
+    ensureDir(paths.sourcesDir);
+    const destSource = path.join(paths.sourcesDir, path.basename(absSource));
+    fs.copyFileSync(absSource, destSource);
+  } else {
+    ensureDir(paths.sourcesDir);
+    // For URL, just record the URL string
+    fs.writeFileSync(path.join(paths.sourcesDir, 'url-source.txt'), absSource, 'utf8');
+  }
 
   // Also ensure .tirai/sources is not secret-leaking (source is spec, not secret)
 
