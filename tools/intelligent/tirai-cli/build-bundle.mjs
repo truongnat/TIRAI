@@ -14,7 +14,7 @@ await esbuild.build({
     'node:fs', 'node:path', 'node:crypto', 'node:stream', 'node:zlib', 'node:http', 'node:https', 'node:util', 'node:events', 'node:buffer', 'node:url', 'node:querystring', 'node:os', 'node:child_process', 'node:worker_threads',
     'fs', 'path', 'crypto', 'stream', 'zlib', 'http', 'https', 'util', 'events', 'buffer', 'url', 'querystring', 'os', 'child_process', 'worker_threads',
     // Externalize npm deps that are problematic to bundle (dynamic requires) or large
-    'groq-sdk', 'node-fetch', 'ajv', 'exceljs', 'jszip', '@google/generative-ai', 'prettier', 'typescript',
+    'groq-sdk', 'node-fetch', 'ajv', 'exceljs', 'jszip', '@google/generative-ai', 'prettier', 'typescript', 'mammoth', 'pdfjs-dist', 'pdf-parse', 'docx',
   ],
   sourcemap: false,
   logLevel: 'info',

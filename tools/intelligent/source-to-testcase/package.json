@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "docx": "^9.7.1",
     "exceljs": "^4.4.0",
     "pdf-lib": "^1.17.1",
     "typescript": "^5.5.0",

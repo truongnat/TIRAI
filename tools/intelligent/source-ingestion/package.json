@@ -18,12 +18,14 @@
   "dependencies": {
     "cell-layout-extractor": "file:../../deterministic/excel/cell-layout-extractor",
     "excel-context-builder": "file:../excel/context-builder",
+    "mammoth": "^1.12.2",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^4.4.168",
     "workbook-inspector": "file:../../deterministic/excel/workbook-inspector"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "docx": "^9.7.1",
     "pdf-lib": "^1.17.1",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
