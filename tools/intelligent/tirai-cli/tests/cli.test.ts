@@ -75,6 +75,86 @@ describe('tirai CLI', () => {
     }
   });
 
+  it('ingest pdf via CLI and full pipeline', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-pdf-'));
+    try {
+      // Create PDF fixture dynamically using pdf-lib
+      const { PDFDocument, rgb } = await import('pdf-lib');
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([600, 400]);
+      page.drawText('Order Validation\nIf quantity > availableStock then INSUFFICIENT_STOCK', { x: 50, y: 300, size: 12, color: rgb(0, 0, 0) });
+      const pdfBytes = await pdfDoc.save();
+      fs.writeFileSync(path.join(tmp, 'spec.pdf'), pdfBytes);
+      fs.cpSync(path.join(REPO, 'tools/intelligent/source-to-testcase/fixtures/order-app'), path.join(tmp, 'order-app'), { recursive: true });
+      fs.writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({ name: 'test-pdf', private: true, type: 'module' }, null, 2));
+
+      let r = await run(['init'], tmp);
+      expect(r.code).toBe(0);
+
+      r = await run(['ingest', './spec.pdf'], tmp);
+      expect(r.code).toBe(0);
+      expect(r.out).toContain('TIRAI ingest complete');
+      expect(fs.existsSync(path.join(tmp, '.tirai/artifacts/testcases.json'))).toBe(true);
+      const tcsPdf = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/artifacts/testcases.json'), 'utf8'));
+      const tcPdf = Array.isArray(tcsPdf) ? tcsPdf[0] : tcsPdf.testCases[0];
+      expect(tcPdf).toBeDefined();
+
+      // Create mappings same as xlsx happy path but with PDF-derived TestCase
+      const catalogPdf = {
+        environmentId: 'order-app',
+        pages: [{ id: 'order', route: '/', elements: [
+          { logicalName: 'quantity', locator: { strategy: 'test-id', value: 'quantity' } },
+          { logicalName: 'availableStock', locator: { strategy: 'test-id', value: 'availableStock' } },
+          { logicalName: 'submit', locator: { strategy: 'test-id', value: 'submit' } },
+          { logicalName: 'result', locator: { strategy: 'test-id', value: 'result' } },
+        ]}]
+      };
+      const e2eMappingPdf = {
+        schemaVersion: '1.0',
+        testMappings: [{ testCaseId: tcPdf.id, status: 'ready', ui: {
+          testCaseId: tcPdf.id, executorType: 'ui',
+          stepMappings: [
+            { stepOrder: 1, action: 'navigate', valueLiteral: '/' },
+            { stepOrder: 2, action: 'fill', targetLogicalName: 'quantity', valueLiteral: '10' },
+            { stepOrder: 3, action: 'fill', targetLogicalName: 'availableStock', valueLiteral: '5' },
+            { stepOrder: 4, action: 'click', targetLogicalName: 'submit' },
+          ],
+          assertionMappings: [{ expectedResultIndex: 0, assertionType: 'text-contains', targetLogicalName: 'result', expectedValue: 'INSUFFICIENT_STOCK' }],
+        }}],
+        unresolved: [],
+        catalogs: { uiCatalog: catalogPdf },
+        quality: { testCasesTotal: 1, ready: 1, partial: 0, manual: 0, unresolved: 0, uiMappings: 1, apiMappings: 0, databaseMappings: 0, integrationMappings: 0, stepsTotal: 4, stepsMapped: 4, assertionsTotal: 1, assertionsMapped: 1, bindingsRequired: 0, bindingsResolved: 0, catalogReferenceValidity: 1, provenanceCoverage: 1 },
+      };
+      fs.writeFileSync(path.join(tmp, '.tirai/mappings/e2e.json'), JSON.stringify(e2eMappingPdf, null, 2));
+      const contentPdf = fs.readFileSync(path.join(tmp, 'order-app/order-validation.ts'), 'utf8');
+      function stableStringifyPdf(v: unknown): string {
+        if (v === null || typeof v !== 'object') return JSON.stringify(v);
+        if (Array.isArray(v)) return `[${(v as unknown[]).map(stableStringifyPdf).join(',')}]`;
+        const keys = Object.keys(v as Record<string, unknown>).filter(k => (v as Record<string, unknown>)[k] !== undefined).sort();
+        return `{${keys.map(k => `${JSON.stringify(k)}:${stableStringifyPdf((v as Record<string, unknown>)[k])}`).join(',')}}`;
+      }
+      const cryptoPdf = await import('node:crypto');
+      const fpPdf = cryptoPdf.createHash('sha256').update(stableStringifyPdf(contentPdf)).digest('hex');
+      const unitMappingPdf = { mappings: [{ testCaseId: tcPdf.id, symbolRef: { sourceFile: 'order-validation.ts', symbolName: 'validateOrder' }, argumentInputNames: ['quantity','availableStock'], expectedResultIndex: 0, assertionType: 'primitive-equal', targetFingerprint: fpPdf }] };
+      fs.writeFileSync(path.join(tmp, '.tirai/mappings/unit.json'), JSON.stringify(unitMappingPdf, null, 2));
+      const cfgPdf = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/config.json'), 'utf8'));
+      cfgPdf.unit.projectRoot = path.join(tmp, 'order-app');
+      cfgPdf.e2e.startCommand = 'node order-app/server.mjs';
+      fs.writeFileSync(path.join(tmp, '.tirai/config.json'), JSON.stringify(cfgPdf, null, 2));
+
+      r = await run(['generate'], tmp);
+      expect(r.code).toBe(0);
+      expect(fs.existsSync(path.join(tmp, '.tirai/generated/e2e/TC-0001.spec.ts'))).toBe(true);
+
+      r = await run(['run'], tmp);
+      expect(r.code).toBe(0);
+      const e2eResPdf = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/results/e2e-run-result-ir.json'), 'utf8'));
+      expect(e2eResPdf.status).toBe('passed');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }, 60000);
+
   it('ingest + generate + run happy path via CLI (no custom orchestration)', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-e2e-'));
     try {

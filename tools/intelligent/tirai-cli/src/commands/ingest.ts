@@ -50,12 +50,20 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     }
   }
 
+  // Auto-detect sourceKind from extension (so PDF works without explicit config)
+  const ext = path.extname(absSource).toLowerCase();
+  let sourceKind: string | undefined;
+  if (ext === '.pdf') sourceKind = 'pdf';
+  else if (ext === '.md' || ext === '.markdown') sourceKind = 'markdown';
+  else if (ext === '.xlsx' || ext === '.xlsm') sourceKind = 'excel';
+
   let result;
   try {
     result = await runSourceToTestCasePipeline({
       sourcePath: absSource,
       provider,
       outputDir: paths.artifactsDir,
+      ...(sourceKind ? { sourceKind } : {}),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
