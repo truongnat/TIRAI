@@ -155,6 +155,66 @@ describe('tirai CLI', () => {
     }
   }, 60000);
 
+  it('ingest docx via CLI and full pipeline', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-docx-'));
+    try {
+      const { Document, Packer, Paragraph, TextRun } = await import('docx');
+      const doc = new Document({ sections: [{ children: [new Paragraph({ children: [new TextRun('Order Validation If quantity > availableStock then INSUFFICIENT_STOCK')] })] }] });
+      const buffer = await Packer.toBuffer(doc);
+      fs.writeFileSync(path.join(tmp, 'spec.docx'), buffer);
+      fs.cpSync(path.join(REPO, 'tools/intelligent/source-to-testcase/fixtures/order-app'), path.join(tmp, 'order-app'), { recursive: true });
+      fs.writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({ name: 'test-docx', private: true, type: 'module' }, null, 2));
+      let r = await run(['init'], tmp);
+      expect(r.code).toBe(0);
+      r = await run(['ingest', './spec.docx'], tmp);
+      expect(r.code).toBe(0);
+      expect(fs.existsSync(path.join(tmp, '.tirai/artifacts/testcases.json'))).toBe(true);
+      const tcsDocx = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/artifacts/testcases.json'), 'utf8'));
+      const tcDocx = Array.isArray(tcsDocx) ? tcsDocx[0] : tcsDocx.testCases[0];
+      expect(tcDocx).toBeDefined();
+      const catalogDocx = { environmentId: 'order-app', pages: [{ id: 'order', route: '/', elements: [
+        { logicalName: 'quantity', locator: { strategy: 'test-id', value: 'quantity' } },
+        { logicalName: 'availableStock', locator: { strategy: 'test-id', value: 'availableStock' } },
+        { logicalName: 'submit', locator: { strategy: 'test-id', value: 'submit' } },
+        { logicalName: 'result', locator: { strategy: 'test-id', value: 'result' } },
+      ]}] };
+      const e2eMappingDocx = { schemaVersion: '1.0', testMappings: [{ testCaseId: tcDocx.id, status: 'ready', ui: {
+        testCaseId: tcDocx.id, executorType: 'ui',
+        stepMappings: [
+          { stepOrder: 1, action: 'navigate', valueLiteral: '/' },
+          { stepOrder: 2, action: 'fill', targetLogicalName: 'quantity', valueLiteral: '10' },
+          { stepOrder: 3, action: 'fill', targetLogicalName: 'availableStock', valueLiteral: '5' },
+          { stepOrder: 4, action: 'click', targetLogicalName: 'submit' },
+        ],
+        assertionMappings: [{ expectedResultIndex: 0, assertionType: 'text-contains', targetLogicalName: 'result', expectedValue: 'INSUFFICIENT_STOCK' }],
+      }}], unresolved: [], catalogs: { uiCatalog: catalogDocx }, quality: { testCasesTotal: 1, ready: 1 } };
+      fs.writeFileSync(path.join(tmp, '.tirai/mappings/e2e.json'), JSON.stringify(e2eMappingDocx, null, 2));
+      const contentDocx = fs.readFileSync(path.join(tmp, 'order-app/order-validation.ts'), 'utf8');
+      function stableStringifyDocx(v: unknown): string {
+        if (v === null || typeof v !== 'object') return JSON.stringify(v);
+        if (Array.isArray(v)) return `[${(v as unknown[]).map(stableStringifyDocx).join(',')}]`;
+        const keys = Object.keys(v as Record<string, unknown>).filter(k => (v as Record<string, unknown>)[k] !== undefined).sort();
+        return `{${keys.map(k => `${JSON.stringify(k)}:${stableStringifyDocx((v as Record<string, unknown>)[k])}`).join(',')}}`;
+      }
+      const cryptoDocx = await import('node:crypto');
+      const fpDocx = cryptoDocx.createHash('sha256').update(stableStringifyDocx(contentDocx)).digest('hex');
+      const unitMappingDocx = { mappings: [{ testCaseId: tcDocx.id, symbolRef: { sourceFile: 'order-validation.ts', symbolName: 'validateOrder' }, argumentInputNames: ['quantity','availableStock'], expectedResultIndex: 0, assertionType: 'primitive-equal', targetFingerprint: fpDocx }] };
+      fs.writeFileSync(path.join(tmp, '.tirai/mappings/unit.json'), JSON.stringify(unitMappingDocx, null, 2));
+      const cfgDocx = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/config.json'), 'utf8'));
+      cfgDocx.unit.projectRoot = path.join(tmp, 'order-app');
+      cfgDocx.e2e.startCommand = 'node order-app/server.mjs';
+      fs.writeFileSync(path.join(tmp, '.tirai/config.json'), JSON.stringify(cfgDocx, null, 2));
+      r = await run(['generate'], tmp);
+      expect(r.code).toBe(0);
+      r = await run(['run'], tmp);
+      expect(r.code).toBe(0);
+      const e2eResDocx = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/results/e2e-run-result-ir.json'), 'utf8'));
+      expect(e2eResDocx.status).toBe('passed');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }, 60000);
+
   it('ingest + generate + run happy path via CLI (no custom orchestration)', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-e2e-'));
     try {
