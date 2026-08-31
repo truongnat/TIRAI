@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "cell-layout-extractor": "file:../../deterministic/excel/cell-layout-extractor",
+    "cheerio": "^1.2.0",
     "excel-context-builder": "file:../excel/context-builder",
     "mammoth": "^1.12.2",
     "pdf-parse": "^2.4.5",
