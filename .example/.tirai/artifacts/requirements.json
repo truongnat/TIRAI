@@ -6,35 +6,35 @@
     "sourceSemanticIR": "semantic-ir.json",
     "provenance": [
       {
-        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "contextId": "ctx-72bf0e82f91621cacf990d81",
         "sheet": "Luồng nghiệp vụ",
         "ranges": [
           "A1:I18"
         ]
       },
       {
-        "contextId": "ctx-474611b444f9250eae2af657",
+        "contextId": "ctx-36b9d89f6ff95d5eb16a8905",
         "sheet": "Thiết kế UI",
         "ranges": [
           "A1:I20"
         ]
       },
       {
-        "contextId": "ctx-758ba1e7576744f574808ff6",
+        "contextId": "ctx-4d877c923edeef7963e04256",
         "sheet": "Thiết kế DB",
         "ranges": [
           "A1:N23"
         ]
       },
       {
-        "contextId": "ctx-a97ccf3de95cd13ec62b411e",
+        "contextId": "ctx-1b90520e9df52d96ecfd06b1",
         "sheet": "Thiết kế FE",
         "ranges": [
           "A1:H11"
         ]
       },
       {
-        "contextId": "ctx-4e5020602c296fc5c48ec985",
+        "contextId": "ctx-4f6890be438398f20c5f3188",
         "sheet": "Thiết kế API",
         "ranges": [
           "A1:L8"
@@ -61,7 +61,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -81,7 +81,7 @@
           "target": "Khởi tạo app shell",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -99,7 +99,7 @@
           "state": "App sẵn sàng → BF-002",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -117,7 +117,7 @@
           "description": "App sẵn sàng → BF-002",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -134,7 +134,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -168,7 +168,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -188,7 +188,7 @@
           "target": "Hiển thị Dashboard",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -206,7 +206,7 @@
           "state": "Chọn feature card → BF-003 / BF-009 / BF-012",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -224,7 +224,7 @@
           "description": "Chọn feature card → BF-003 / BF-009 / BF-012",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -241,7 +241,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -275,7 +275,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -295,7 +295,7 @@
           "target": "Điều hướng module",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -313,7 +313,7 @@
           "state": "Todos → BF-004; Posts → BF-009; Users → BF-012",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -331,7 +331,7 @@
           "description": "Todos → BF-004; Posts → BF-009; Users → BF-012",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -348,7 +348,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -382,7 +382,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -401,7 +401,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -420,7 +420,7 @@
           "target": "Tải danh sách Todos",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -438,7 +438,7 @@
           "state": "200 → hiển thị list; lỗi → thông báo Failed to load todos; rỗng → No todos found",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -456,7 +456,7 @@
           "description": "200 → hiển thị list; lỗi → thông báo Failed to load todos; rỗng → No todos found",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -474,7 +474,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -508,7 +508,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -528,7 +528,7 @@
           "target": "Kiểm tra form Add Todo",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -546,7 +546,7 @@
           "state": "Rỗng / chỉ khoảng trắng → Title is required; hợp lệ → BF-006",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -564,7 +564,7 @@
           "description": "Rỗng / chỉ khoảng trắng → Title is required; hợp lệ → BF-006",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -581,7 +581,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -615,7 +615,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -634,7 +634,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -653,7 +653,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -672,7 +672,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -691,7 +691,7 @@
           "target": "Thêm Todo",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -709,7 +709,7 @@
           "state": "API lỗi → rollback cache; thành công → giữ optimistic item",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -727,7 +727,7 @@
           "description": "API lỗi → rollback cache; thành công → giữ optimistic item",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -745,7 +745,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -779,7 +779,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -798,7 +798,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -818,7 +818,7 @@
           "target": "Lọc và tìm kiếm Todos",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -836,7 +836,7 @@
           "state": "Không có kết quả → No todos found",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -854,7 +854,7 @@
           "description": "Không có kết quả → No todos found",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -871,7 +871,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -905,7 +905,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -924,7 +924,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -943,7 +943,7 @@
           "target": "Đổi trạng thái Todo",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -961,7 +961,7 @@
           "state": "API lỗi → rollback trạng thái trước đó",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -979,7 +979,7 @@
           "description": "API lỗi → rollback trạng thái trước đó",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -997,7 +997,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -1031,7 +1031,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1050,7 +1050,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1069,7 +1069,7 @@
           "target": "Xóa Todo",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1087,7 +1087,7 @@
           "state": "API lỗi → rollback item",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1105,7 +1105,7 @@
           "description": "API lỗi → rollback item",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1123,7 +1123,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -1157,7 +1157,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1176,7 +1176,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1195,7 +1195,7 @@
           "target": "Tải danh sách Posts",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1213,7 +1213,7 @@
           "state": "200 → BF-011; loading → Loading posts...",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1231,7 +1231,7 @@
           "description": "200 → BF-011; loading → Loading posts...",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1249,7 +1249,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -1283,7 +1283,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1302,7 +1302,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1322,7 +1322,7 @@
           "target": "Thao tác Posts table",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1340,7 +1340,7 @@
           "state": "Không có kết quả → bảng rỗng; page boundary → disable Prev / Next",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1358,7 +1358,7 @@
           "description": "Không có kết quả → bảng rỗng; page boundary → disable Prev / Next",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1375,7 +1375,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -1409,7 +1409,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1429,7 +1429,7 @@
           "target": "Chuyển Posts sang Virtual List",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1447,7 +1447,7 @@
           "state": "Virtual → chỉ render row visible + overscan; Table → quay lại bảng",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1465,7 +1465,7 @@
           "description": "Virtual → chỉ render row visible + overscan; Table → quay lại bảng",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1482,7 +1482,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -1516,7 +1516,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1535,7 +1535,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1554,7 +1554,7 @@
           "target": "Tải danh sách Users",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1572,7 +1572,7 @@
           "state": "200 → BF-014; loading → Loading users...",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1590,7 +1590,7 @@
           "description": "200 → BF-014; loading → Loading users...",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1608,7 +1608,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -1642,7 +1642,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1661,7 +1661,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1680,7 +1680,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1700,7 +1700,7 @@
           "target": "Thao tác Users table",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1718,7 +1718,7 @@
           "state": "Filter không khớp → không còn row; cột City/Company ẩn trên màn hình nhỏ",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1736,7 +1736,7 @@
           "description": "Filter không khớp → không còn row; cột City/Company ẩn trên màn hình nhỏ",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1753,7 +1753,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -1787,7 +1787,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1807,7 +1807,7 @@
           "target": "Mở Edit User dialog",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1825,7 +1825,7 @@
           "state": "Dialog mở → BF-016; Cancel → đóng dialog, không đổi data",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1843,7 +1843,7 @@
           "description": "Dialog mở → BF-016; Cancel → đóng dialog, không đổi data",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1860,7 +1860,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -1894,7 +1894,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1913,7 +1913,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1932,7 +1932,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1951,7 +1951,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1971,7 +1971,7 @@
           "target": "Kiểm tra form Edit User",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -1989,7 +1989,7 @@
           "state": "Trường rỗng → <field> is required; hợp lệ → BF-017",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -2007,7 +2007,7 @@
           "description": "Trường rỗng → <field> is required; hợp lệ → BF-017",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -2024,7 +2024,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"
@@ -2058,7 +2058,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -2077,7 +2077,7 @@
           "constraints": [],
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -2096,7 +2096,7 @@
           "target": "Lưu User",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -2114,7 +2114,7 @@
           "state": "API lỗi → rollback cache; success → đóng dialog",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -2132,7 +2132,7 @@
           "description": "API lỗi → rollback cache; success → đóng dialog",
           "provenance": [
             {
-              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "contextId": "ctx-72bf0e82f91621cacf990d81",
               "sheet": "Luồng nghiệp vụ",
               "ranges": [
                 "A1:I18"
@@ -2150,7 +2150,7 @@
       ],
       "provenance": [
         {
-          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "contextId": "ctx-72bf0e82f91621cacf990d81",
           "sheet": "Luồng nghiệp vụ",
           "ranges": [
             "A1:I18"

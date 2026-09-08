@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-4d877c923edeef7963e04256",
+  "type": "tabular",
+  "content": "Sheet: Thiết kế DB\nRange: A1:N23\n\nColumns:\nA: STT\nB: Tên bảng / entity\nC: Tên thuộc tính\nD: Kiểu dữ liệu\nE: Độ dài\nF: Cho phép NULL\nG: PK\nH: FK\nI: UNIQUE\nJ: Giá trị mặc định\nK: Mô tả\nL: \nM: Phạm vi\nN: Mô hình API + client state\n\nRows:\n2 | 1 | todos | id | number | - | KHÔNG | - | - | - | - | ID todo từ JSONPlaceholder; dùng làm React key |  | Lưu ý | Example React không có backend/DB riêng.\n3 | 2 | todos | userId | number | - | KHÔNG | - | - | - | 1 khi tạo mới | ID user sở hữu todo |  | Nguồn API | https://jsonplaceholder.typicode.com\n4 | 3 | todos | title | string | - | KHÔNG | - | - | - | - | Tiêu đề todo; form không cho phép rỗng |  | Cách dùng | Dùng cùng .tirai/specs và Playwright smoke tests.\n5 | 4 | todos | completed | boolean | - | KHÔNG | - | - | - | false khi tạo mới | Trạng thái hoàn thành; checkbox toggle |  |  | \n6 | 5 | posts | id | number | - | KHÔNG | - | - | - | - | ID bài viết |  |  | \n7 | 6 | posts | userId | number | - | KHÔNG | - | - | - | - | ID user tạo bài viết |  |  | \n8 | 7 | posts | title | string | - | KHÔNG | - | - | - | - | Tiêu đề bài viết; hiển thị ở table và virtual list |  |  | \n9 | 8 | posts | body | string | - | KHÔNG | - | - | - | - | Nội dung bài viết; không sort trong table |  |  | \n10 | 9 | users | id | number | - | KHÔNG | - | - | - | - | ID user |  |  | \n11 | 10 | users | name | string | - | KHÔNG | - | - | - | - | Tên hiển thị; editable |  |  | \n12 | 11 | users | username | string | - | KHÔNG | - | - | - | - | Login/display handle từ API; chỉ đọc trong UI hiện tại |  |  | \n13 | 12 | users | email | string | - | KHÔNG | - | - | - | - | Email; editable và required |  |  | \n14 | 13 | users | phone | string | - | KHÔNG | - | - | - | - | Số điện thoại; editable và required |  |  | \n15 | 14 | users | website | string | - | KHÔNG | - | - | - | - | Website; editable và required |  |  | \n16 | 15 | users | address.city | string | - | CÓ | - | - | - | - | Thành phố lồng trong address; hiển thị badge City |  |  | \n17 | 16 | users | company.name | string | - | CÓ | - | - | - | - | Tên công ty lồng trong company; hiển thị cột Company |  |  | \n18 | 17 | appStore | activeTab | 'todos'|'posts'|'users' | - | KHÔNG | - | - | - | 'todos' | Tab đang active trong state dùng chung |  |  | \n19 | 18 | appStore | searchQuery | string | - | KHÔNG | - | - | - | '' | Global search cho Todos; quản lý bằng @tanstack/store |  |  | \n20 | 19 | appStore | viewMode | 'table'|'virtual' | - | KHÔNG | - | - | - | 'table' | Chế độ hiển thị Posts |  |  | \n21 | 20 | queryCache | queryKey | array | - | KHÔNG | - | - | - | - | Key ['todos'], ['posts'], ['users'] của @tanstack/react-query |  |  | \n22 | 21 | queryCache | data | Todo[]|Post[]|User[] | - | CÓ | - | - | - | - | Cache phía client; optimistic update có rollback khi lỗi |  |  | \n23 | 22 | queryCache | staleTime | number (ms) | - | KHÔNG | - | - | - | 300000 / 600000 | Todos 5 phút; Posts/Users 10 phút |  |  | ",
+  "contentHash": "2722ba5660922b67feeeaef0113238868cd1aa9964acb7adde1979af7e0f46f9",
+  "provenance": {
+    "sourceId": "src-7eb0e04e4687d2708a9c3839",
+    "revisionId": "rev-a9e808a3a828375ea4d289bb",
+    "artifactId": "artifact-d3a78649a9140d792944b409",
+    "location": {
+      "segments": [
+        {
+          "kind": "workbook",
+          "value": "example-react-detail-design.xlsx"
+        },
+        {
+          "kind": "sheet",
+          "value": "Thiết kế DB"
+        },
+        {
+          "kind": "range",
+          "value": "A1:N23"
+        }
+      ]
+    }
+  },
+  "relations": [
+    {
+      "type": "continuation-previous",
+      "targetContextId": "ctx-36b9d89f6ff95d5eb16a8905"
+    },
+    {
+      "type": "continuation-next",
+      "targetContextId": "ctx-1b90520e9df52d96ecfd06b1"
+    }
+  ],
+  "metadata": {
+    "sheetName": "Thiết kế DB",
+    "sheetIndex": 2,
+    "range": "A1:N23",
+    "chunkType": "tabular"
+  }
+}

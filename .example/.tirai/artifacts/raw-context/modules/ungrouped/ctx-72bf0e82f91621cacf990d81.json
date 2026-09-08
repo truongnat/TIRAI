@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-72bf0e82f91621cacf990d81",
+  "type": "tabular",
+  "content": "Sheet: Luồng nghiệp vụ\nRange: A1:I18\n\nColumns:\nA: STT\nB: Mã xử lý\nC: Tên xử lý\nD: Nội dung xử lý\nE: Đầu vào\nF: Đầu ra\nG: API sử dụng\nH: Điều kiện rẽ nhánh\nI: Ghi chú\n\nRows:\n2 | 1 | BF-001 | Khởi tạo app shell | Người dùng truy cập ứng dụng và hệ thống dựng layout gốc. | URL / | Header, main outlet, query client | - | App sẵn sàng → BF-002 | Nguồn: src/routes/__root.tsx\n3 | 2 | BF-002 | Hiển thị Dashboard | Hiển thị hero, 3 feature card Todos / Posts / Users và danh sách thư viện TanStack. | App shell | Dashboard tại / | - | Chọn feature card → BF-003 / BF-009 / BF-012 | Nguồn: src/routes/index.tsx\n4 | 3 | BF-003 | Điều hướng module | Người dùng chọn tab trên header hoặc feature card để chuyển trang. | Click Todos / Posts / Users | Route tương ứng; active tab đổi màu | - | Todos → BF-004; Posts → BF-009; Users → BF-012 | TanStack Router + TanStack Store\n5 | 4 | BF-004 | Tải danh sách Todos | Gọi API lấy tối đa 20 todo, hiển thị loading trong thời gian chờ. | GET /todos?_limit=20 | Todo list, active/done counters | GET /todos?_limit=20 | 200 → hiển thị list; lỗi → thông báo Failed to load todos; rỗng → No todos found | Nguồn: src/routes/todos.tsx\n6 | 5 | BF-005 | Kiểm tra form Add Todo | Kiểm tra title bắt buộc khi người dùng nhập hoặc submit form. | Title từ input Add a new task... | Validation message hoặc dữ liệu hợp lệ | - | Rỗng / chỉ khoảng trắng → Title is required; hợp lệ → BF-006 | Frontend validation bằng TanStack Form\n7 | 6 | BF-006 | Thêm Todo | Gửi todo mới, cập nhật optimistic vào đầu danh sách và reset form. | title, completed=false, userId=1 | Todo mới hiển thị; input rỗng | POST /todos | API lỗi → rollback cache; thành công → giữ optimistic item | JSONPlaceholder mô phỏng write, không persistence\n8 | 7 | BF-007 | Lọc và tìm kiếm Todos | Kết hợp filter trạng thái với ô tìm kiếm global để lọc theo title. | Filter all / active / completed; searchQuery | Danh sách filtered; counters giữ theo tổng list | - | Không có kết quả → No todos found | Search state dùng appStore\n9 | 8 | BF-008 | Đổi trạng thái Todo | Click checkbox để đảo completed và phản ánh ngay trên UI. | Todo id, trạng thái hiện tại | Checkbox, line-through, completed counter | PATCH /todos/{id} | API lỗi → rollback trạng thái trước đó | Optimistic update\n10 | 9 | BF-009 | Xóa Todo | Click nút delete trên todo row để xóa khỏi danh sách. | Todo id | Todo biến mất khỏi list; progress cập nhật | DELETE /todos/{id} | API lỗi → rollback item | Nút delete hiện khi hover row\n11 | 10 | BF-010 | Tải danh sách Posts | Gọi API lấy 100 posts và hiển thị badge số lượng. | GET /posts | Posts page; badge 100 posts | GET /posts | 200 → BF-011; loading → Loading posts... | staleTime 10 phút\n12 | 11 | BF-011 | Thao tác Posts table | Hiển thị bảng 10 dòng mỗi trang, hỗ trợ sort, global filter và Prev / Next. | Sort ID/User/Title; Filter posts... | Bảng, page indicator, số kết quả | - | Không có kết quả → bảng rỗng; page boundary → disable Prev / Next | TanStack Table; Body không sort\n13 | 12 | BF-012 | Chuyển Posts sang Virtual List | Đổi view mode để render danh sách virtual với vùng cuộn 500px. | Click Table / Virtual List | Danh sách virtual; số row DOM đang hiển thị | - | Virtual → chỉ render row visible + overscan; Table → quay lại bảng | TanStack Virtual, estimate row 72px\n14 | 13 | BF-013 | Tải danh sách Users | Gọi API lấy 10 users và hiển thị bảng users. | GET /users | Users page; badge số lượng | GET /users | 200 → BF-014; loading → Loading users... | staleTime 10 phút\n15 | 14 | BF-014 | Thao tác Users table | Hiển thị cột ID, Name, Email, City, Company; hỗ trợ sort và filter. | Sort ID/Name/Email; Filter users... | Bảng users đã lọc/sắp xếp | - | Filter không khớp → không còn row; cột City/Company ẩn trên màn hình nhỏ | TanStack Table responsive\n16 | 15 | BF-015 | Mở Edit User dialog | Click icon bút chì trên row để mở dialog và nạp dữ liệu user hiện tại. | User row | Dialog với name/email/phone/website | - | Dialog mở → BF-016; Cancel → đóng dialog, không đổi data | Nguồn: src/routes/users.tsx\n17 | 16 | BF-016 | Kiểm tra form Edit User | Validate 4 trường trước khi submit thay đổi user. | name, email, phone, website | Validation message hoặc form hợp lệ | - | Trường rỗng → <field> is required; hợp lệ → BF-017 | Frontend validation bằng TanStack Form\n18 | 17 | BF-017 | Lưu User | PATCH dữ liệu user, cập nhật optimistic vào table và đóng dialog khi thành công. | User id + partial user payload | Row user được cập nhật; dialog đóng | PATCH /users/{id} | API lỗi → rollback cache; success → đóng dialog | JSONPlaceholder mô phỏng write, không persistence",
+  "contentHash": "82477cf15b3e01d7f598c6e0474a9dad707536cda8ddff7db745abaa863fb1c2",
+  "provenance": {
+    "sourceId": "src-7eb0e04e4687d2708a9c3839",
+    "revisionId": "rev-a9e808a3a828375ea4d289bb",
+    "artifactId": "artifact-eebc24529ab07d6d2089231f",
+    "location": {
+      "segments": [
+        {
+          "kind": "workbook",
+          "value": "example-react-detail-design.xlsx"
+        },
+        {
+          "kind": "sheet",
+          "value": "Luồng nghiệp vụ"
+        },
+        {
+          "kind": "range",
+          "value": "A1:I18"
+        }
+      ]
+    }
+  },
+  "relations": [
+    {
+      "type": "continuation-next",
+      "targetContextId": "ctx-36b9d89f6ff95d5eb16a8905"
+    }
+  ],
+  "metadata": {
+    "sheetName": "Luồng nghiệp vụ",
+    "sheetIndex": 0,
+    "range": "A1:I18",
+    "chunkType": "tabular"
+  }
+}

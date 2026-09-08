@@ -5,9 +5,9 @@
 // guessed 0 selectors. This file is independently executable via:
 //   npx playwright test <this-file>
 // testCaseId: TC-BF-003
-// artifactId: tirai-gen-696beaf83986fb63
-// generationFingerprint: fc888341350f9ab0900f9fa89d52e2fb76747dd68f6e3c381de8716e53b806a2
-// sourceFingerprint: 781abbc4e226d9ee7c3fd430ae7045d3d2e810266891a452294752b0f6cc1f18
+// artifactId: tirai-gen-41e15519de22d3dc
+// generationFingerprint: f585880884ad7e4f09105781f98e219ec221b9f85c6ab2c7283bf88e8e5d06d2
+// sourceFingerprint: 2793bb9f19a49dcb8bdb5d250cdbb57d375dad5b62b94a9cc76ad6f0f97c4b32
 // ---------------------------------------------------------------------------
 import { test, expect } from "@playwright/test";
 
