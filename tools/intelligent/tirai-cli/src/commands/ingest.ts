@@ -86,6 +86,7 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     else if (ext === '.csv') sourceKind = 'csv';
     else if (ext === '.json') sourceKind = 'json';
     else if (ext === '.md' || ext === '.markdown') sourceKind = 'markdown';
+    else if (ext === '.html' || ext === '.htm') sourceKind = 'html';
     else if (ext === '.xlsx' || ext === '.xlsm') sourceKind = 'excel';
   }
 
