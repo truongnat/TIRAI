@@ -61,6 +61,19 @@ export class ExcelExporter implements TestOutputExporter {
       });
     }
 
+    const checks = (name: string, types: string[]) => {
+      const sheet = workbook.addWorksheet(name);
+      sheet.columns = [{ header: 'TestCase ID', key: 'tcId', width: 20 }, { header: 'Description', key: 'description', width: 65 }, { header: 'Target', key: 'target', width: 30 }, { header: 'Expected', key: 'expected', width: 40 }];
+      for (const tc of testCases) for (const assertion of tc.expectedResults) if (types.includes(assertion.verificationType)) sheet.addRow({ tcId: tc.id, description: assertion.description, target: assertion.target ?? '', expected: assertion.verificationIntent?.expectedValue ?? '' });
+    };
+    checks('UI Checks', ['ui', 'visual']);
+    checks('API Checks', ['api', 'response']);
+    checks('State Checks', ['state', 'database']);
+
+    const traceSheet = workbook.addWorksheet('Traceability');
+    traceSheet.columns = [{ header: 'TestCase ID', key: 'tcId', width: 20 }, { header: 'Requirement IDs', key: 'requirements', width: 35 }, { header: 'Scenario ID', key: 'scenario', width: 25 }, { header: 'Provenance', key: 'provenance', width: 50 }];
+    for (const tc of testCases) traceSheet.addRow({ tcId: tc.id, requirements: tc.requirementIds.join(', '), scenario: tc.scenarioId, provenance: tc.provenance.map((item) => item.contextId ?? '').filter(Boolean).join(', ') });
+
     // Steps sheet
     const stepsSheet = workbook.addWorksheet('Steps');
     stepsSheet.columns = [
