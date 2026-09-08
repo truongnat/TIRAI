@@ -1,0 +1,80 @@
+name: Bug report
+description: Report a reproducible TIRAI defect
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve TIRAI. Please provide a minimal, sanitized reproduction and never include secrets or private specifications.
+
+  - type: input
+    id: version
+    attributes:
+      label: TIRAI version / commit
+      placeholder: v1.0.0 or commit SHA
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI / installation
+        - Source ingestion
+        - Semantic / TestCase generation
+        - E2E mapping / Playwright generation
+        - Unit mapping / Vitest generation
+        - Execution / result mapping
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the defect and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal commands, inputs, or repository steps needed to reproduce the issue.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        OS: Ubuntu 24.04
+        Node: 20.x
+        npm: 10.x
+        Browser: Chromium ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Sanitized logs only. Remove tokens, credentials, customer data, and private URLs.
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues first.
+          required: true
+        - label: I removed secrets and private/customer data from this report.
+          required: true
