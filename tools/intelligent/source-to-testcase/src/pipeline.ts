@@ -36,6 +36,12 @@ export class SourceToTestCaseError extends Error {
   }
 }
 
+function writeStageCheckpoint(outputDir: string, stage: PipelineStage, status: 'completed' | 'failed', details: Record<string, unknown> = {}): void {
+  const checkpointDir = path.join(outputDir, 'checkpoints');
+  fs.mkdirSync(checkpointDir, { recursive: true });
+  fs.writeFileSync(path.join(checkpointDir, `${stage.toLowerCase()}.json`), JSON.stringify({ schemaVersion: '1.0', stage, status, ...details }, null, 2), 'utf8');
+}
+
 export interface SourceToTestCaseOptions {
   sourcePath: string;
   provider: AIProvider;
@@ -253,7 +259,9 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       outputDir: path.join(outputDir, 'semantic'),
       promptVersion: opts.promptVersion,
     });
+    writeStageCheckpoint(outputDir, stage, 'completed', { artifact: 'semantic/semantic-ir.json', aiCalls: aiCalls.SEMANTIC_ANALYSIS });
   } catch (err) {
+    writeStageCheckpoint(outputDir, stage, 'failed', { error: err instanceof Error ? err.message : String(err) });
     throw new SourceToTestCaseError('SEMANTIC_ANALYSIS', `Semantic analysis failed: ${err instanceof Error ? err.message : String(err)}`, err);
   }
 
@@ -264,7 +272,9 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
     requirementIR = await buildRequirementsFromSemanticIR(semanticIR as unknown as SemanticIRInput, providerProxy, {
       outputDir: path.join(outputDir, 'requirements'),
     }, sourcePath);
+    writeStageCheckpoint(outputDir, stage, 'completed', { artifact: 'requirements/requirements.json', aiCalls: aiCalls.REQUIREMENT_BUILD });
   } catch (err) {
+    writeStageCheckpoint(outputDir, stage, 'failed', { error: err instanceof Error ? err.message : String(err) });
     throw new SourceToTestCaseError('REQUIREMENT_BUILD', `Requirement building failed: ${err instanceof Error ? err.message : String(err)}`, err);
   }
 
@@ -275,7 +285,9 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
     testPlanIR = await buildTestPlanFromRequirementIR(requirementIR as unknown as RequirementIRInput, providerProxy, {
       outputDir: path.join(outputDir, 'testplan'),
     }, sourcePath);
+    writeStageCheckpoint(outputDir, stage, 'completed', { artifact: 'testplan/test-plan.json', aiCalls: aiCalls.TEST_PLANNING });
   } catch (err) {
+    writeStageCheckpoint(outputDir, stage, 'failed', { error: err instanceof Error ? err.message : String(err) });
     throw new SourceToTestCaseError('TEST_PLANNING', `Test planning failed: ${err instanceof Error ? err.message : String(err)}`, err);
   }
 
