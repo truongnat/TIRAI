@@ -442,7 +442,7 @@ function buildTestPlanIR(
       requirementIds,
       objective: `Generate UI test cases for ${flows.length} business flows described by the detailed-design workbook.`,
       assumptions: ['The source code is the implementation authority for concrete UI mappings.'],
-      exclusions: ['Backend persistence is not available in example-react; mutation cases remain manual-only until an API fixture mapping is supplied.'],
+      exclusions: ['Backend persistence is not available in .example; mutation cases remain manual-only until an API fixture mapping is supplied.'],
     },
     requirementCoverage: coverage,
     scenarios,
