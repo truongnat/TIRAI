@@ -141,7 +141,10 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   // Structured detailed-design workbooks already carry explicit row-level
   // requirements. Compile that contract deterministically before the AI path
   // so offline/example runs never substitute unrelated generic fake data.
-  const structuredCompilation = compileStructuredDesignDocument(doc);
+  // Deterministic structured compilation is retained only for offline fake mode.
+  // Real/CLI providers must analyze the complete semantic context so they can
+  // expand behavior dimensions instead of applying one-case-per-flow policy.
+  const structuredCompilation = provider.name === 'fake' ? compileStructuredDesignDocument(doc) : null;
   if (structuredCompilation) {
     const { semanticIR, requirementIR, testPlanIR } = structuredCompilation;
     const contextPath = path.join(outputDir, 'context.json');
