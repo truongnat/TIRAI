@@ -122,6 +122,8 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     if (sourceMapping) {
       ensureDir(paths.mappingsDir);
       fs.writeFileSync(paths.e2eMappingPath, JSON.stringify(sourceMapping.mapping, null, 2), 'utf8');
+      const mappingData = sourceMapping.mapping as { testMappings: unknown[]; unresolved: unknown[] };
+      fs.writeFileSync(path.join(paths.artifactsDir, 'source-intelligence.json'), JSON.stringify({ schemaVersion: '1.0', sourceFiles: sourceMapping.sourceFiles, mappingCount: mappingData.testMappings.length, unresolvedCount: mappingData.unresolved.length, generatedAt: new Date().toISOString() }, null, 2), 'utf8');
       mappingNotice = `\nE2E mapping: ${path.relative(paths.root, paths.e2eMappingPath)} (${sourceMapping.sourceFiles.length} source files scanned)`;
     }
   } catch (error) {
