@@ -63,7 +63,7 @@ export interface GenerationDiagnostic {
 
 // ---- Per-test-case generation result --------------------------------------
 
-export type TestCaseGenerationStatus = 'generated' | 'blocked';
+export type TestCaseGenerationStatus = 'generated' | 'blocked' | 'preview';
 
 export interface TestCaseGenerationResult {
   testCaseId: string;

@@ -167,7 +167,7 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     }
 
     if (unitMappings.length === 0) {
-      console.log('Unit: no source mappings; generating standalone spec-unit tests from TestCase JSON inputs.');
+      console.log('Unit: no source mappings; generating spec preview artifacts (not tests) from TestCase JSON.');
     }
 
     const unitProfile = {
