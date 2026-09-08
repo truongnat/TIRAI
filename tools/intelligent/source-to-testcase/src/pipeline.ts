@@ -420,9 +420,9 @@ function buildTestDesignSummary(plan: TestPlanIR): { schemaVersion: '1.0'; testC
   return { schemaVersion: '1.0', testCases: plan.testCases.length, byCategory, byAutomation, requirementsCovered: plan.quality.requirementsCovered, behaviorPaths: plan.scenarios.length };
 }
 
-function collectSourceCode(root?: string): { root?: string; files: Array<{ path: string; content: string; contentHash: string }> } {
+function collectSourceCode(root?: string): { root?: string; files: Array<{ path: string; content: string; contentHash: string; truncated?: boolean }> } {
   if (!root || !fs.existsSync(root)) return { root, files: [] };
-  const files: Array<{ path: string; content: string; contentHash: string }> = [];
+  const files: Array<{ path: string; content: string; contentHash: string; truncated?: boolean }> = [];
   const visit = (dir: string): void => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (['node_modules', '.git', '.tirai', '.vercel', 'dist', 'build', 'coverage', '.next', 'out'].includes(entry.name)) continue;
@@ -430,7 +430,8 @@ function collectSourceCode(root?: string): { root?: string; files: Array<{ path:
       if (entry.isDirectory()) visit(absolute);
       else if (/\.(ts|tsx|js|jsx|vue|svelte|py|java|go|rb|cs)$/.test(entry.name)) {
         const content = fs.readFileSync(absolute, 'utf8');
-        files.push({ path: path.relative(root, absolute), content, contentHash: createHash('sha256').update(content).digest('hex') });
+        const maxChars = 200_000;
+        files.push({ path: path.relative(root, absolute), content: content.slice(0, maxChars), contentHash: createHash('sha256').update(content).digest('hex'), ...(content.length > maxChars ? { truncated: true } : {}) });
       }
     }
   };
