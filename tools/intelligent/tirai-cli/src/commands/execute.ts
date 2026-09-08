@@ -63,6 +63,11 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
       throw new CliError('INVALID_PLATFORM', `Unsupported platform: ${platform}`);
   }
 
+  const resultDir = taskRoot?.results ?? paths.resultsDir;
+  fs.mkdirSync(resultDir, { recursive: true });
+  const resultPath = `${resultDir}/execute-${platform}-${environment}.json`;
+  fs.writeFileSync(resultPath, JSON.stringify({ schemaVersion: '1.0', platform, environment, ...result }, null, 2), 'utf8');
+
   // Update state
   updateState(paths, (s) => ({
     ...s,
@@ -75,7 +80,7 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
   if (task) updateTask(basePaths, task.id, { status: result.status === 'ready' ? 'executed' : 'blocked' });
 
   if (opts.json) {
-    console.log(JSON.stringify(result, null, 2));
+    console.log(JSON.stringify({ ...result, resultPath }, null, 2));
   } else {
     console.log(`TIRAI execute complete: ${result.status}`);
     console.log(`  Platform: ${platform}`);
