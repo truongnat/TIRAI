@@ -5,15 +5,21 @@ import { loadConfig } from '../config.js';
 import { loadState } from '../state.js';
 import { CliError } from '../errors.js';
 import { writeSummary } from 'test-code-generator';
+import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
 
 export interface ReportOptions {
   cwd: string;
   json?: boolean;
+  taskId?: string;
 }
 
 export async function runReport(opts: ReportOptions): Promise<void> {
-  const paths = requireWorkspace(opts.cwd);
-  loadConfig(paths); // validates
+  const basePaths = requireWorkspace(opts.cwd);
+  const task = opts.taskId ? resolveActiveTask(basePaths, opts.taskId) : undefined;
+  if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
+  const taskRoot = task ? taskPaths(basePaths, task.id) : undefined;
+  const paths = taskRoot ? { ...basePaths, e2eResultPath: path.join(taskRoot.results, 'e2e-run-result-ir.json'), unitResultPath: path.join(taskRoot.results, 'unit-run-result-ir.json'), reportsDir: taskRoot.reports, latestReportPath: path.join(taskRoot.reports, 'latest-summary.md') } : basePaths;
+  loadConfig(basePaths); // validates
 
   const hasE2e = fs.existsSync(paths.e2eResultPath);
   const hasUnit = fs.existsSync(paths.unitResultPath);
@@ -111,6 +117,7 @@ export async function runReport(opts: ReportOptions): Promise<void> {
     '> Generated from canonical TestRunResultIR. Not the source of truth.',
   ];
   fs.writeFileSync(latestPath, lines.join('\n'), 'utf8');
+  if (task) updateTask(basePaths, task.id, { status: 'reported' });
 
   if (opts.json) {
     console.log(JSON.stringify({ e2eStatus, unitStatus, overall, e2eSummary, unitSummary, source: sourcePath, testCases: testCasesCount }, null, 2));
