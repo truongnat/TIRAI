@@ -129,13 +129,19 @@ async function executeDatabase(
   envConfig: { type: string; readOnly?: boolean },
   environment: string,
 ): Promise<Record<string, unknown>> {
+  const queryCount = testCases.filter((testCase) => {
+    const value = testCase as { databaseChecks?: unknown[]; sql?: unknown; assertions?: unknown[] };
+    return (Array.isArray(value.databaseChecks) && value.databaseChecks.length > 0) || Boolean(value.sql) || (value.assertions ?? []).some((assertion) => String(assertion).toLowerCase().includes('database'));
+  }).length;
   return {
     status: 'ready',
+    adapter: 'database-executor',
     platform: 'database',
     environment,
     type: envConfig.type,
     readOnly: envConfig.readOnly ?? true,
     testCases: testCases.length,
+    databaseChecks: queryCount,
     note: 'Database execution wired to database-executor package.',
   };
 }
