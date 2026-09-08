@@ -132,7 +132,7 @@ async function main(): Promise<void> {
           throw new CliError('SOURCE_INPUT_ERROR', 'Missing source path. Usage: tirai ingest <spec.xlsx>');
         }
         const json = Boolean(flags.json);
-        await runIngest({ cwd, sourcePath, sourceCodePath: flags['source-code'] as string, json });
+        await runIngest({ cwd, sourcePath, sourceCodePath: flags['source-code'] as string, taskId: flags.task as string, json });
         break;
       }
       case 'generate': {
