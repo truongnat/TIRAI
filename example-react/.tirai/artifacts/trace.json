@@ -1,0 +1,231 @@
+{
+  "generatedAt": "2026-09-08T16:05:18.865Z",
+  "source": {
+    "sourceId": "src-1f30d02dd15122ef3e43ad26",
+    "displayName": "example-react-detail-design.xlsx",
+    "contentHash": "ced80a0112265711567946b26910c9a5699ee1155f3385f0c5e1eaa4d944404f"
+  },
+  "links": [
+    {
+      "testCaseId": "TC-BF-001",
+      "title": "App shell loads at the root route",
+      "requirementIds": [
+        "REQ-BF-001"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-002",
+      "title": "Dashboard is visible",
+      "requirementIds": [
+        "REQ-BF-002"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-003",
+      "title": "Navigation opens the Todos module",
+      "requirementIds": [
+        "REQ-BF-003"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-004",
+      "title": "Todos page loads",
+      "requirementIds": [
+        "REQ-BF-004"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-005",
+      "title": "Add Todo rejects an empty title",
+      "requirementIds": [
+        "REQ-BF-005"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-006",
+      "title": "Add Todo submits a valid title",
+      "requirementIds": [
+        "REQ-BF-006"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-007",
+      "title": "Todos search input accepts a query",
+      "requirementIds": [
+        "REQ-BF-007"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-008",
+      "title": "Todo status can be toggled",
+      "requirementIds": [
+        "REQ-BF-008"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-009",
+      "title": "Todo can be deleted",
+      "requirementIds": [
+        "REQ-BF-009"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-010",
+      "title": "Posts page loads",
+      "requirementIds": [
+        "REQ-BF-010"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-011",
+      "title": "Posts filter input accepts a query",
+      "requirementIds": [
+        "REQ-BF-011"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-012",
+      "title": "Posts view mode control is usable",
+      "requirementIds": [
+        "REQ-BF-012"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-013",
+      "title": "Users page loads",
+      "requirementIds": [
+        "REQ-BF-013"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-014",
+      "title": "Users filter input accepts a query",
+      "requirementIds": [
+        "REQ-BF-014"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-015",
+      "title": "Edit User dialog opens",
+      "requirementIds": [
+        "REQ-BF-015"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-016",
+      "title": "Edit User validates required fields",
+      "requirementIds": [
+        "REQ-BF-016"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-017",
+      "title": "User changes can be saved",
+      "requirementIds": [
+        "REQ-BF-017"
+      ],
+      "sourceContextIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ],
+      "sourceArtifactIds": [
+        "ctx-d932a365baed433cf3ccc051"
+      ]
+    }
+  ]
+}

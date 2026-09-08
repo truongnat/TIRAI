@@ -18,7 +18,9 @@ export type CliErrorCode =
   | 'EXECUTION_ERROR'
   | 'INVALID_PLATFORM'
   | 'INVALID_TARGET'
-  | 'NO_PLATFORMS';
+  | 'NO_PLATFORMS'
+  | 'TASK_INVALID'
+  | 'TASK_NOT_FOUND';
 
 export class CliError extends Error {
   constructor(

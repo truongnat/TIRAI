@@ -90,6 +90,11 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
       baseUrl: config.e2e.baseUrl,
     };
 
+    // Generation is a reproducible materialization step. Remove stale files
+    // from a previous contract before writing the current set of cases.
+    fs.rmSync(paths.generatedE2eDir, { recursive: true, force: true });
+    fs.mkdirSync(paths.generatedE2eDir, { recursive: true });
+
     let e2eResult: unknown;
     try {
       const input = {
@@ -180,6 +185,9 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
       testRoots: ['.'],
       testCommand: 'npx vitest run',
     };
+
+    fs.rmSync(paths.generatedUnitDir, { recursive: true, force: true });
+    fs.mkdirSync(paths.generatedUnitDir, { recursive: true });
 
     const unitInput = {
       testCases: tcs,

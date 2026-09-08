@@ -1,0 +1,5 @@
+# TIRAI workspace — volatile results ignored, config/mappings/generated/runtime are tracked/executable
+results/
+reports/
+artifacts/semantic-context/
+*.log

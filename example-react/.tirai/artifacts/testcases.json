@@ -1,0 +1,1105 @@
+[
+  {
+    "id": "TC-BF-001",
+    "scenarioId": "SC-BF-001",
+    "requirementIds": [
+      "REQ-BF-001"
+    ],
+    "title": "App shell loads at the root route",
+    "objective": "Verify the application shell opens at /.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/",
+        "input": "/"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The browser title is TanStack Full Demo.",
+        "verificationType": "ui",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "expectedValue": "TanStack Full Demo",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-001",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A2"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-002",
+    "scenarioId": "SC-BF-002",
+    "requirementIds": [
+      "REQ-BF-002"
+    ],
+    "title": "Dashboard is visible",
+    "objective": "Verify the root route renders the dashboard hero.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/",
+        "input": "/"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The dashboard heading is visible.",
+        "verificationType": "ui",
+        "target": "dashboard-heading",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "dashboard-heading",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-002",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A3"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-003",
+    "scenarioId": "SC-BF-003",
+    "requirementIds": [
+      "REQ-BF-003"
+    ],
+    "title": "Navigation opens the Todos module",
+    "objective": "Verify the Todos navigation tab changes the route.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/",
+        "input": "/"
+      },
+      {
+        "order": 2,
+        "action": "click",
+        "target": "nav-todos"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The browser navigates to the Todos route.",
+        "verificationType": "ui",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "expectedValue": "/todos",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-003",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A4"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-004",
+    "scenarioId": "SC-BF-004",
+    "requirementIds": [
+      "REQ-BF-004"
+    ],
+    "title": "Todos page loads",
+    "objective": "Verify the Todos module renders its page header.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/todos",
+        "input": "/todos"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The Todos page heading is visible.",
+        "verificationType": "ui",
+        "target": "todos-heading",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "todos-heading",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-004",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A5"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-005",
+    "scenarioId": "SC-BF-005",
+    "requirementIds": [
+      "REQ-BF-005"
+    ],
+    "title": "Add Todo rejects an empty title",
+    "objective": "Verify the required-title validation is shown for whitespace input.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "title",
+        "valueStrategy": "invalid",
+        "value": "   ",
+        "description": "Whitespace-only todo title"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/todos",
+        "input": "/todos"
+      },
+      {
+        "order": 2,
+        "action": "fill",
+        "target": "add-todo-input",
+        "input": "   "
+      },
+      {
+        "order": 3,
+        "action": "blur",
+        "target": "add-todo-input"
+      },
+      {
+        "order": 4,
+        "action": "click",
+        "target": "add-todo-button"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The title validation message is shown.",
+        "verificationType": "ui",
+        "target": "add-todo-validation",
+        "verificationIntent": {
+          "kind": "semantic",
+          "subject": "add-todo-validation",
+          "expectedValue": "Title is required",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-005",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A6"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-006",
+    "scenarioId": "SC-BF-006",
+    "requirementIds": [
+      "REQ-BF-006"
+    ],
+    "title": "Add Todo submits a valid title",
+    "objective": "Verify a valid todo can be submitted and the form reset behavior is observed.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "title",
+        "valueStrategy": "valid",
+        "value": "TIRAI generated todo",
+        "description": "Valid todo title"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/todos",
+        "input": "/todos"
+      },
+      {
+        "order": 2,
+        "action": "fill",
+        "target": "add-todo-input",
+        "input": "TIRAI generated todo"
+      },
+      {
+        "order": 3,
+        "action": "click",
+        "target": "add-todo-button"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The Add Todo form remains available after submit.",
+        "verificationType": "ui",
+        "target": "add-todo-input",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "add-todo-input",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "manual-only",
+      "suggestedExecutor": "ui",
+      "reasons": [
+        "Requires a trusted API fixture and optimistic-cache assertion for the created row."
+      ]
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-006",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A7"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-007",
+    "scenarioId": "SC-BF-007",
+    "requirementIds": [
+      "REQ-BF-007"
+    ],
+    "title": "Todos search input accepts a query",
+    "objective": "Verify the global Todos search control accepts a query.",
+    "type": "ui",
+    "priority": "medium",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "searchQuery",
+        "valueStrategy": "valid",
+        "value": "buy milk",
+        "description": "Global todo search query"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/todos",
+        "input": "/todos"
+      },
+      {
+        "order": 2,
+        "action": "fill",
+        "target": "todo-search",
+        "input": "buy milk"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The search control contains the entered query.",
+        "verificationType": "ui",
+        "target": "todo-search",
+        "verificationIntent": {
+          "kind": "value-equals",
+          "subject": "todo-search",
+          "expectedValue": "buy milk",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-007",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A8"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-008",
+    "scenarioId": "SC-BF-008",
+    "requirementIds": [
+      "REQ-BF-008"
+    ],
+    "title": "Todo status can be toggled",
+    "objective": "Verify a selected todo changes its completed state and progress.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "todoId",
+        "valueStrategy": "existing-data",
+        "description": "Existing todo row identity"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/todos",
+        "input": "/todos"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "A Todo row is available for status transition.",
+        "verificationType": "ui",
+        "target": "todo-row",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "todo-row",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "manual-only",
+      "suggestedExecutor": "ui",
+      "reasons": [
+        "Requires a stable row identity or API fixture binding for the dynamic todo list."
+      ]
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-008",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A9"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-009",
+    "scenarioId": "SC-BF-009",
+    "requirementIds": [
+      "REQ-BF-009"
+    ],
+    "title": "Todo can be deleted",
+    "objective": "Verify a selected todo is removed from the list.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "todoId",
+        "valueStrategy": "existing-data",
+        "description": "Existing todo row identity"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/todos",
+        "input": "/todos"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "A Todo row is available for deletion.",
+        "verificationType": "ui",
+        "target": "todo-row",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "todo-row",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "manual-only",
+      "suggestedExecutor": "ui",
+      "reasons": [
+        "Requires a stable row identity or API fixture binding for the dynamic todo list."
+      ]
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-009",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A10"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-010",
+    "scenarioId": "SC-BF-010",
+    "requirementIds": [
+      "REQ-BF-010"
+    ],
+    "title": "Posts page loads",
+    "objective": "Verify the Posts module renders its page header.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/posts",
+        "input": "/posts"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The Posts page heading is visible.",
+        "verificationType": "ui",
+        "target": "posts-heading",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "posts-heading",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-010",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A11"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-011",
+    "scenarioId": "SC-BF-011",
+    "requirementIds": [
+      "REQ-BF-011"
+    ],
+    "title": "Posts filter input accepts a query",
+    "objective": "Verify the Posts table filter control accepts a query.",
+    "type": "ui",
+    "priority": "medium",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "postFilter",
+        "valueStrategy": "valid",
+        "value": "tanstack",
+        "description": "Posts table filter query"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/posts",
+        "input": "/posts"
+      },
+      {
+        "order": 2,
+        "action": "fill",
+        "target": "posts-filter",
+        "input": "tanstack"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The Posts filter contains the entered query.",
+        "verificationType": "ui",
+        "target": "posts-filter",
+        "verificationIntent": {
+          "kind": "value-equals",
+          "subject": "posts-filter",
+          "expectedValue": "tanstack",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-011",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A12"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-012",
+    "scenarioId": "SC-BF-012",
+    "requirementIds": [
+      "REQ-BF-012"
+    ],
+    "title": "Posts view mode control is usable",
+    "objective": "Verify the Posts view-mode control can be activated.",
+    "type": "ui",
+    "priority": "medium",
+    "preconditions": [],
+    "inputs": [],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/posts",
+        "input": "/posts"
+      },
+      {
+        "order": 2,
+        "action": "click",
+        "target": "posts-virtual-view"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The virtual-list view control remains enabled.",
+        "verificationType": "ui",
+        "target": "posts-virtual-view",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "posts-virtual-view",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-012",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A13"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-013",
+    "scenarioId": "SC-BF-013",
+    "requirementIds": [
+      "REQ-BF-013"
+    ],
+    "title": "Users page loads",
+    "objective": "Verify the Users module renders its page header.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/users",
+        "input": "/users"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The Users page heading is visible.",
+        "verificationType": "ui",
+        "target": "users-heading",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "users-heading",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-013",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A14"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-014",
+    "scenarioId": "SC-BF-014",
+    "requirementIds": [
+      "REQ-BF-014"
+    ],
+    "title": "Users filter input accepts a query",
+    "objective": "Verify the Users table filter control accepts a query.",
+    "type": "ui",
+    "priority": "medium",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "userFilter",
+        "valueStrategy": "valid",
+        "value": "Leanne",
+        "description": "Users table filter query"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/users",
+        "input": "/users"
+      },
+      {
+        "order": 2,
+        "action": "fill",
+        "target": "users-filter",
+        "input": "Leanne"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The Users filter contains the entered query.",
+        "verificationType": "ui",
+        "target": "users-filter",
+        "verificationIntent": {
+          "kind": "value-equals",
+          "subject": "users-filter",
+          "expectedValue": "Leanne",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "ready",
+      "suggestedExecutor": "ui",
+      "reasons": []
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-014",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A15"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-015",
+    "scenarioId": "SC-BF-015",
+    "requirementIds": [
+      "REQ-BF-015"
+    ],
+    "title": "Edit User dialog opens",
+    "objective": "Verify the edit dialog opens for a selected user.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "userId",
+        "valueStrategy": "existing-data",
+        "description": "Existing user row identity"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/users",
+        "input": "/users"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "A user row is available for editing.",
+        "verificationType": "ui",
+        "target": "user-row",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "user-row",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "manual-only",
+      "suggestedExecutor": "ui",
+      "reasons": [
+        "Requires a stable user-row action locator or API fixture binding."
+      ]
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-015",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A16"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-016",
+    "scenarioId": "SC-BF-016",
+    "requirementIds": [
+      "REQ-BF-016"
+    ],
+    "title": "Edit User validates required fields",
+    "objective": "Verify required-field validation for the edit form.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "userId",
+        "valueStrategy": "existing-data",
+        "description": "Existing user row identity"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/users",
+        "input": "/users"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The edit dialog form is available for validation.",
+        "verificationType": "ui",
+        "target": "edit-user-dialog",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "edit-user-dialog",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "manual-only",
+      "suggestedExecutor": "ui",
+      "reasons": [
+        "Requires a stable user-row action locator and dialog fixture."
+      ]
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-016",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A17"
+        ]
+      }
+    ],
+    "confidence": 1
+  },
+  {
+    "id": "TC-BF-017",
+    "scenarioId": "SC-BF-017",
+    "requirementIds": [
+      "REQ-BF-017"
+    ],
+    "title": "User changes can be saved",
+    "objective": "Verify a valid user update closes the dialog after save.",
+    "type": "ui",
+    "priority": "high",
+    "preconditions": [],
+    "inputs": [
+      {
+        "name": "userId",
+        "valueStrategy": "existing-data",
+        "description": "Existing user row identity"
+      }
+    ],
+    "dataNeeds": [],
+    "steps": [
+      {
+        "order": 1,
+        "action": "navigate",
+        "target": "/users",
+        "input": "/users"
+      }
+    ],
+    "expectedResults": [
+      {
+        "description": "The Users page remains available for update.",
+        "verificationType": "ui",
+        "target": "users-heading",
+        "verificationIntent": {
+          "kind": "visible-ui-state",
+          "subject": "users-heading",
+          "authority": "VISIBLE_UI_STATE",
+          "requiredSources": [
+            "UI"
+          ]
+        }
+      }
+    ],
+    "cleanup": [],
+    "automation": {
+      "status": "manual-only",
+      "suggestedExecutor": "ui",
+      "reasons": [
+        "Requires a stable user-row action locator and trusted PATCH fixture."
+      ]
+    },
+    "provenance": [
+      {
+        "requirementId": "REQ-BF-017",
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ],
+        "cells": [
+          "A18"
+        ]
+      }
+    ],
+    "confidence": 1
+  }
+]

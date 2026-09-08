@@ -20,6 +20,7 @@ import type {
   Warning,
 } from './models.js';
 import { WarningCode, createWarning } from './warnings.js';
+import { loadExcelJsCompatibleBuffer } from './exceljs-compat.js';
 
 // ---- Public API -----------------------------------------------------------
 
@@ -76,8 +77,8 @@ export async function inspectWorkbook(filePath: string): Promise<WorkbookMetadat
   let workbookXml: string | null = null;
 
   try {
-    await workbook.xlsx.readFile(resolvedPath);
-    const buf = fs.readFileSync(resolvedPath);
+    const buf = await loadExcelJsCompatibleBuffer(resolvedPath);
+    await workbook.xlsx.load(buf as unknown as Parameters<typeof workbook.xlsx.load>[0]);
     zip = await JSZip.loadAsync(buf);
     // Pre-read the workbook XML for raw parsing.
     if (zip) {

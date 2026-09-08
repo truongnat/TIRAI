@@ -42,6 +42,7 @@ export async function runInit(opts: InitOptions): Promise<void> {
   ensureDir(paths.sourcesDir);
   // New directories for Phase 2
   ensureDir(paths.specsDir);
+  ensureDir(paths.tasksDir);
   ensureDir(paths.outputsDir);
   ensureDir(paths.outputsJsonDir);
   ensureDir(paths.outputsExcelDir);
@@ -55,6 +56,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
   // Build config
   const config = defaultConfig(projectRoot);
   config.project.defaultLanguage = detection.language || 'en';
+  config.project.name = detection.projectName;
+  config.project.type = detection.playwrightDetected ? 'web' : 'unknown';
 
   // Write config.json
   atomicWriteJson(paths.configPath, config);
@@ -109,6 +112,9 @@ artifacts/semantic-context/
   // Initialize specs index
   if (!fs.existsSync(paths.specsIndexPath)) {
     atomicWriteJson(paths.specsIndexPath, { specs: [] });
+  }
+  if (!fs.existsSync(paths.tasksIndexPath)) {
+    atomicWriteJson(paths.tasksIndexPath, { schemaVersion: '1.0', tasks: [] });
   }
 
   console.log('TIRAI workspace initialized');

@@ -11,6 +11,7 @@ import { runSpecAdd, runSpecList, runSpecInspect } from './commands/spec.js';
 import { runPlan } from './commands/plan.js';
 import { runExport } from './commands/export.js';
 import { runExecute } from './commands/execute.js';
+import { runTaskCreate, runTaskList, runTaskShow } from './commands/task.js';
 import { CliError } from './errors.js';
 
 const VERSION = '1.0.0';
@@ -24,7 +25,8 @@ Usage:
 
 Commands:
   init                    Initialize TIRAI workspace (.tirai/)
-  ingest <spec>           Ingest Excel/Markdown spec → canonical TestCases
+  ingest <spec>           Ingest spec + source code → contract JSON/TestCases
+    --source-code <dir>   Source-code root for trusted UI mapping (default: project root)
   generate                Generate tests (requires --target)
     --target playwright   Generate Playwright E2E (requires E2E mapping)
     --target vitest       Generate Vitest unit (requires source mapping)
@@ -38,6 +40,9 @@ Commands:
   spec add                Add a specification to the registry
   spec list               List registered specifications
   spec inspect            Inspect a specification
+  task create             Create an isolated task workspace
+  task list               List task workspaces
+  task show <task-id>     Show a task workspace
   plan                    Generate canonical test plan from specs + targets
   export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
   execute                 Execute tests against configured platform
@@ -54,6 +59,8 @@ Examples:
   tirai target add web --environment staging --url https://staging.example.com
   tirai target list
   tirai spec add ./spec.xlsx
+  tirai task create "Test Todo feature"
+  tirai task list
   tirai spec list
   tirai plan
   tirai export --format all
@@ -125,7 +132,7 @@ async function main(): Promise<void> {
           throw new CliError('SOURCE_INPUT_ERROR', 'Missing source path. Usage: tirai ingest <spec.xlsx>');
         }
         const json = Boolean(flags.json);
-        await runIngest({ cwd, sourcePath, json });
+        await runIngest({ cwd, sourcePath, sourceCodePath: flags['source-code'] as string, json });
         break;
       }
       case 'generate': {
@@ -197,6 +204,22 @@ async function main(): Promise<void> {
           await runSpecInspect({ cwd, specId, json: Boolean(flags.json) });
         } else {
           throw new CliError('SOURCE_INPUT_ERROR', `Unknown spec subcommand: ${subcmd}. Use add, list, or inspect.`);
+        }
+        break;
+      }
+      case 'task': {
+        const subcmd = args[0];
+        if (subcmd === 'create') {
+          const name = (flags.name as string) || args.slice(1).join(' ');
+          await runTaskCreate({ cwd, name, sourceCodePath: flags['source-code'] as string, json: Boolean(flags.json) });
+        } else if (subcmd === 'list') {
+          await runTaskList({ cwd, json: Boolean(flags.json) });
+        } else if (subcmd === 'show') {
+          const taskId = args[1] || (flags.id as string);
+          if (!taskId) throw new CliError('TASK_INVALID', 'Usage: tirai task show <task-id>');
+          await runTaskShow({ cwd, taskId, json: Boolean(flags.json) });
+        } else {
+          throw new CliError('TASK_INVALID', 'Unknown task subcommand. Use create, list, or show.');
         }
         break;
       }

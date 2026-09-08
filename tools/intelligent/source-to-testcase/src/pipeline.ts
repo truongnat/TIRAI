@@ -21,6 +21,8 @@ import { buildTestPlanFromRequirementIR, type TestPlanIR, type RequirementIRInpu
 import type { AIProvider } from 'ai-provider';
 import { writeSemanticContextPackage } from './bridge.js';
 import { scanSecrets } from './secret-scan.js';
+import { compileStructuredDesignDocument } from './structured-design-compiler.js';
+import { buildContractIR } from './contract-builder.js';
 
 export type PipelineStage = 'SOURCE_INGESTION' | 'SEMANTIC_ANALYSIS' | 'REQUIREMENT_BUILD' | 'TEST_PLANNING';
 
@@ -66,6 +68,7 @@ export interface SourceToTestCaseResult {
     testCaseRoundTripFailures: number;
   };
   artifacts: {
+    contract: string;
     context: string;
     semanticContextDir: string;
     semanticIr: string;
@@ -124,6 +127,71 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   const semanticContextDir = path.join(outputDir, 'semantic-context');
   const writeResult = writeSemanticContextPackage(doc, semanticContextDir);
 
+  // Structured detailed-design workbooks already carry explicit row-level
+  // requirements. Compile that contract deterministically before the AI path
+  // so offline/example runs never substitute unrelated generic fake data.
+  const structuredCompilation = compileStructuredDesignDocument(doc);
+  if (structuredCompilation) {
+    const { semanticIR, requirementIR, testPlanIR } = structuredCompilation;
+    const contextPath = path.join(outputDir, 'context.json');
+    const contractPath = path.join(outputDir, 'contract.json');
+    const semanticIrPath = path.join(outputDir, 'semantic-ir.json');
+    const requirementsPath = path.join(outputDir, 'requirements.json');
+    const testPlanPath = path.join(outputDir, 'test-plan.json');
+    const testCasesPath = path.join(outputDir, 'testcases.json');
+    const tracePath = path.join(outputDir, 'trace.json');
+
+    fs.writeFileSync(contextPath, JSON.stringify(doc, null, 2), 'utf8');
+    const contract = buildContractIR({ document: doc, semanticIR, requirementIR, testPlanIR });
+    fs.writeFileSync(contractPath, JSON.stringify(contract, null, 2), 'utf8');
+    fs.writeFileSync(semanticIrPath, JSON.stringify(semanticIR, null, 2), 'utf8');
+    fs.writeFileSync(requirementsPath, JSON.stringify(requirementIR, null, 2), 'utf8');
+    fs.writeFileSync(testPlanPath, JSON.stringify(testPlanIR, null, 2), 'utf8');
+    fs.writeFileSync(testCasesPath, JSON.stringify(testPlanIR.testCases, null, 2), 'utf8');
+    fs.writeFileSync(tracePath, JSON.stringify(buildTrace(doc, requirementIR, testPlanIR), null, 2), 'utf8');
+
+    const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath]);
+    const semanticProvider = 'structured-design-compiler';
+    const semanticModel = 'deterministic';
+    return {
+      source,
+      semantic: { status: semanticIR.status, chunkCount: writeResult.chunkCount, aiCalls: 0, provider: semanticProvider, model: semanticModel },
+      requirements: { requirementCount: requirementIR.requirements.length, aiCalls: 0, provider: semanticProvider, model: semanticModel },
+      testPlan: {
+        scenarioCount: testPlanIR.scenarios.length,
+        testCaseCount: testPlanIR.testCases.length,
+        aiCalls: 0,
+        provider: semanticProvider,
+        model: semanticModel,
+      },
+      metrics: {
+        sourceIngestionAiCalls: 0,
+        semanticAiCalls: 0,
+        requirementBuilderAiCalls: 0,
+        testPlannerAiCalls: 0,
+        secretLeakCount,
+        sourceMutations: 0,
+        manualArtifactSubstitutions: 0,
+        sourceSpecificBranchesAfterIngestion: 0,
+        testCaseRoundTripFailures: 0,
+      },
+      artifacts: {
+        contract: contractPath,
+        context: contextPath,
+        semanticContextDir,
+        semanticIr: semanticIrPath,
+        requirements: requirementsPath,
+        testPlan: testPlanPath,
+        testCases: testCasesPath,
+        trace: tracePath,
+      },
+      document: doc,
+      semanticIR,
+      requirementIR,
+      testPlanIR,
+    };
+  }
+
   // -- Count AI calls per stage via a transparent proxy (no behavior change)
   let stage: PipelineStage = 'SEMANTIC_ANALYSIS';
   const aiCalls: Record<PipelineStage, number> = {
@@ -180,6 +248,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
 
   // -- Persist artifacts (exact pipeline output; no hand editing) ---------
   const contextPath = path.join(outputDir, 'context.json');
+  const contractPath = path.join(outputDir, 'contract.json');
   const semanticIrPath = path.join(outputDir, 'semantic-ir.json');
   const requirementsPath = path.join(outputDir, 'requirements.json');
   const testPlanPath = path.join(outputDir, 'test-plan.json');
@@ -187,6 +256,8 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   const tracePath = path.join(outputDir, 'trace.json');
 
   fs.writeFileSync(contextPath, JSON.stringify(doc, null, 2), 'utf8');
+  const contract = buildContractIR({ document: doc, semanticIR, requirementIR, testPlanIR });
+  fs.writeFileSync(contractPath, JSON.stringify(contract, null, 2), 'utf8');
   fs.writeFileSync(semanticIrPath, JSON.stringify(semanticIR, null, 2), 'utf8');
   fs.writeFileSync(requirementsPath, JSON.stringify(requirementIR, null, 2), 'utf8');
   fs.writeFileSync(testPlanPath, JSON.stringify(testPlanIR, null, 2), 'utf8');
@@ -194,7 +265,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   fs.writeFileSync(tracePath, JSON.stringify(buildTrace(doc, requirementIR, testPlanIR), null, 2), 'utf8');
 
   // -- Metrics -------------------------------------------------------------
-  const secretLeakCount = scanSecrets([contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath]);
+  const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath]);
 
   const semInfo = analysisInfo((semanticIR as unknown as { analysis?: unknown }).analysis);
   const reqInfo = { aiCalls: aiCalls.REQUIREMENT_BUILD, provider: provider.name, model: provider.name };
@@ -223,6 +294,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       testCaseRoundTripFailures: 0,
     },
     artifacts: {
+      contract: contractPath,
       context: contextPath,
       semanticContextDir,
       semanticIr: semanticIrPath,

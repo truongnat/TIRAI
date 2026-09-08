@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "ai-provider": "file:../ai-provider",
+    "contract-ir": "file:../contract-ir",
     "requirement-builder": "file:../requirement-builder",
     "semantic-analyzer": "file:../semantic-analyzer",
     "source-ingestion": "file:../source-ingestion",

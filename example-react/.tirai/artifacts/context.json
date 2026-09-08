@@ -1,0 +1,549 @@
+{
+  "schemaVersion": "1.0",
+  "source": {
+    "id": "src-1f30d02dd15122ef3e43ad26",
+    "kind": "excel",
+    "displayName": "example-react-detail-design.xlsx",
+    "connectorId": "local-excel-connector",
+    "connectorVersion": "1.0.0"
+  },
+  "revision": {
+    "id": "rev-8f3842fad04a3d4a39272057",
+    "contentHash": "ced80a0112265711567946b26910c9a5699ee1155f3385f0c5e1eaa4d944404f",
+    "version": "ced80a0112265711567946b26910c9a5699ee1155f3385f0c5e1eaa4d944404f"
+  },
+  "artifacts": [
+    {
+      "id": "artifact-4dfb13d33c4a65bb94b1c65c",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "kind": "workbook",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          }
+        ]
+      },
+      "mediaType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "content": "",
+      "contentHash": "ced80a0112265711567946b26910c9a5699ee1155f3385f0c5e1eaa4d944404f",
+      "metadata": {
+        "displayName": "example-react-detail-design.xlsx",
+        "extension": ".xlsx",
+        "mediaType": ".xlsx",
+        "byteLength": 21989
+      }
+    },
+    {
+      "id": "artifact-44c9d038d62a06cc21a5cb7c",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-4dfb13d33c4a65bb94b1c65c",
+      "kind": "sheet",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Luồng nghiệp vụ"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "",
+      "contentHash": "715b73f57fd1e17fa175a51e41127ffc900ce5dda27b91fb729f18f8a2d55f24",
+      "metadata": {
+        "sheetName": "Luồng nghiệp vụ",
+        "sheetIndex": 0,
+        "range": "A1:I18"
+      }
+    },
+    {
+      "id": "artifact-c55dd25ef095a5a23443beeb",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-4dfb13d33c4a65bb94b1c65c",
+      "kind": "sheet",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Thiết kế UI"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "",
+      "contentHash": "66a0d9b75740aa3c468d3723c6a65a853c9a7be15b879ed9739de6c43ac7c3dc",
+      "metadata": {
+        "sheetName": "Thiết kế UI",
+        "sheetIndex": 1,
+        "range": "A1:I20"
+      }
+    },
+    {
+      "id": "artifact-483e3ac9df385cb3828c09df",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-4dfb13d33c4a65bb94b1c65c",
+      "kind": "sheet",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Thiết kế DB"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "",
+      "contentHash": "51540ce62d3a915383ed57b470b77a096d985e7314b0dd41b3149b3e26a8fef0",
+      "metadata": {
+        "sheetName": "Thiết kế DB",
+        "sheetIndex": 2,
+        "range": "A1:N23"
+      }
+    },
+    {
+      "id": "artifact-7ad61fa15cd01813938d752e",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-4dfb13d33c4a65bb94b1c65c",
+      "kind": "sheet",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Thiết kế FE"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "",
+      "contentHash": "bd63a7abb5360bafe2e16b416ba454d08c4e3787a4ca1202ee0185309d017fc7",
+      "metadata": {
+        "sheetName": "Thiết kế FE",
+        "sheetIndex": 3,
+        "range": "A1:H11"
+      }
+    },
+    {
+      "id": "artifact-881c1a6d9d30639f48685cbd",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-4dfb13d33c4a65bb94b1c65c",
+      "kind": "sheet",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Thiết kế API"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "",
+      "contentHash": "d63ede6663018aa801b9aa0219d1754733fa3d02e618f3de2f5a60ccf639e485",
+      "metadata": {
+        "sheetName": "Thiết kế API",
+        "sheetIndex": 4,
+        "range": "A1:L8"
+      }
+    },
+    {
+      "id": "artifact-6814fe5690499bec03a33586",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-44c9d038d62a06cc21a5cb7c",
+      "kind": "context-chunk",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Luồng nghiệp vụ"
+          },
+          {
+            "kind": "range",
+            "value": "A1:I18"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "Sheet: Luồng nghiệp vụ\nRange: A1:I18\n\nColumns:\nA: STT\nB: Mã xử lý\nC: Tên xử lý\nD: Nội dung xử lý\nE: Đầu vào\nF: Đầu ra\nG: API sử dụng\nH: Điều kiện rẽ nhánh\nI: Ghi chú\n\nRows:\n2 | 1 | BF-001 | Khởi tạo app shell | Người dùng truy cập ứng dụng và hệ thống dựng layout gốc. | URL / | Header, main outlet, query client | - | App sẵn sàng → BF-002 | Nguồn: src/routes/__root.tsx\n3 | 2 | BF-002 | Hiển thị Dashboard | Hiển thị hero, 3 feature card Todos / Posts / Users và danh sách thư viện TanStack. | App shell | Dashboard tại / | - | Chọn feature card → BF-003 / BF-009 / BF-012 | Nguồn: src/routes/index.tsx\n4 | 3 | BF-003 | Điều hướng module | Người dùng chọn tab trên header hoặc feature card để chuyển trang. | Click Todos / Posts / Users | Route tương ứng; active tab đổi màu | - | Todos → BF-004; Posts → BF-009; Users → BF-012 | TanStack Router + TanStack Store\n5 | 4 | BF-004 | Tải danh sách Todos | Gọi API lấy tối đa 20 todo, hiển thị loading trong thời gian chờ. | GET /todos?_limit=20 | Todo list, active/done counters | GET /todos?_limit=20 | 200 → hiển thị list; lỗi → thông báo Failed to load todos; rỗng → No todos found | Nguồn: src/routes/todos.tsx\n6 | 5 | BF-005 | Kiểm tra form Add Todo | Kiểm tra title bắt buộc khi người dùng nhập hoặc submit form. | Title từ input Add a new task... | Validation message hoặc dữ liệu hợp lệ | - | Rỗng / chỉ khoảng trắng → Title is required; hợp lệ → BF-006 | Frontend validation bằng TanStack Form\n7 | 6 | BF-006 | Thêm Todo | Gửi todo mới, cập nhật optimistic vào đầu danh sách và reset form. | title, completed=false, userId=1 | Todo mới hiển thị; input rỗng | POST /todos | API lỗi → rollback cache; thành công → giữ optimistic item | JSONPlaceholder mô phỏng write, không persistence\n8 | 7 | BF-007 | Lọc và tìm kiếm Todos | Kết hợp filter trạng thái với ô tìm kiếm global để lọc theo title. | Filter all / active / completed; searchQuery | Danh sách filtered; counters giữ theo tổng list | - | Không có kết quả → No todos found | Search state dùng appStore\n9 | 8 | BF-008 | Đổi trạng thái Todo | Click checkbox để đảo completed và phản ánh ngay trên UI. | Todo id, trạng thái hiện tại | Checkbox, line-through, completed counter | PATCH /todos/{id} | API lỗi → rollback trạng thái trước đó | Optimistic update\n10 | 9 | BF-009 | Xóa Todo | Click nút delete trên todo row để xóa khỏi danh sách. | Todo id | Todo biến mất khỏi list; progress cập nhật | DELETE /todos/{id} | API lỗi → rollback item | Nút delete hiện khi hover row\n11 | 10 | BF-010 | Tải danh sách Posts | Gọi API lấy 100 posts và hiển thị badge số lượng. | GET /posts | Posts page; badge 100 posts | GET /posts | 200 → BF-011; loading → Loading posts... | staleTime 10 phút\n12 | 11 | BF-011 | Thao tác Posts table | Hiển thị bảng 10 dòng mỗi trang, hỗ trợ sort, global filter và Prev / Next. | Sort ID/User/Title; Filter posts... | Bảng, page indicator, số kết quả | - | Không có kết quả → bảng rỗng; page boundary → disable Prev / Next | TanStack Table; Body không sort\n13 | 12 | BF-012 | Chuyển Posts sang Virtual List | Đổi view mode để render danh sách virtual với vùng cuộn 500px. | Click Table / Virtual List | Danh sách virtual; số row DOM đang hiển thị | - | Virtual → chỉ render row visible + overscan; Table → quay lại bảng | TanStack Virtual, estimate row 72px\n14 | 13 | BF-013 | Tải danh sách Users | Gọi API lấy 10 users và hiển thị bảng users. | GET /users | Users page; badge số lượng | GET /users | 200 → BF-014; loading → Loading users... | staleTime 10 phút\n15 | 14 | BF-014 | Thao tác Users table | Hiển thị cột ID, Name, Email, City, Company; hỗ trợ sort và filter. | Sort ID/Name/Email; Filter users... | Bảng users đã lọc/sắp xếp | - | Filter không khớp → không còn row; cột City/Company ẩn trên màn hình nhỏ | TanStack Table responsive\n16 | 15 | BF-015 | Mở Edit User dialog | Click icon bút chì trên row để mở dialog và nạp dữ liệu user hiện tại. | User row | Dialog với name/email/phone/website | - | Dialog mở → BF-016; Cancel → đóng dialog, không đổi data | Nguồn: src/routes/users.tsx\n17 | 16 | BF-016 | Kiểm tra form Edit User | Validate 4 trường trước khi submit thay đổi user. | name, email, phone, website | Validation message hoặc form hợp lệ | - | Trường rỗng → <field> is required; hợp lệ → BF-017 | Frontend validation bằng TanStack Form\n18 | 17 | BF-017 | Lưu User | PATCH dữ liệu user, cập nhật optimistic vào table và đóng dialog khi thành công. | User id + partial user payload | Row user được cập nhật; dialog đóng | PATCH /users/{id} | API lỗi → rollback cache; success → đóng dialog | JSONPlaceholder mô phỏng write, không persistence",
+      "contentHash": "82477cf15b3e01d7f598c6e0474a9dad707536cda8ddff7db745abaa863fb1c2",
+      "metadata": {
+        "sheetName": "Luồng nghiệp vụ",
+        "sheetIndex": 0,
+        "range": "A1:I18",
+        "chunkType": "tabular"
+      }
+    },
+    {
+      "id": "artifact-2947be5f11c1b8acfb675d04",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-c55dd25ef095a5a23443beeb",
+      "kind": "context-chunk",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Thiết kế UI"
+          },
+          {
+            "kind": "range",
+            "value": "A1:I20"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "Sheet: Thiết kế UI\nRange: A1:I20\n\nColumns:\nA: STT\nB: Mã thành phần\nC: Tên thành phần\nD: Loại\nE: Vị trí\nF: Thuộc tính\nG: Sự kiện\nH: Kiểu dáng\nI: Ghi chú\n\nRows:\n2 | 1 | UI-001 | App Header | Layout | Đầu trang, sticky | Brand: TanStack Demo; subtitle: Query · Table · Virtual · Form · Store | Click brand → /; click nav tab → route + setTab | border-b; bg-white/80; backdrop-blur; sticky top-0; z-40 | src/routes/__root.tsx\n3 | 2 | UI-002 | Navigation tabs | Link / Nav | Bên phải Header | Todos, Posts, Users; icon tương ứng; label ẩn trên màn hình nhỏ | Click đổi activeTab và điều hướng | active: bg-primary + primary-foreground; inactive: muted + hover accent | src/routes/__root.tsx\n4 | 3 | UI-003 | Dashboard hero | Section | Đầu trang / | Badge Beginner-friendly demo; h1 TanStack Full Demo; mô tả tổng quan | - | center; py-8; title responsive 2xl → 4xl | src/routes/index.tsx\n5 | 4 | UI-004 | Feature card | Card + Link | Grid giữa Dashboard | 3 card: Todos, Posts, Users; icon; mô tả; badge thư viện | Click card → module route | grid 1 cột → 3 cột; hover translate-y; shadow/border transition | src/routes/index.tsx\n6 | 5 | UI-005 | Libraries Used list | List | Cuối Dashboard | 6 thư viện: Query, Table, Virtual, Form, Store, Router | - | grid 2 → 3 cột; border; bg-white; icon primary | src/routes/index.tsx\n7 | 6 | UI-006 | Todos page header | Section + Badge | Đầu /todos | Title Todos; badge active; badge done | - | flex wrap; icon primary; badge secondary/success | src/routes/todos.tsx\n8 | 7 | UI-007 | Add Todo form | Card + Form | Dưới page header | CardTitle Add Todo; CardDescription; input placeholder Add a new task...; button Add | input/change/blur; submit | flex row; input flex-1; button shrink-0; lỗi border-destructive | TanStack Form; title bắt buộc\n9 | 8 | UI-008 | Todo filter controls | Button group + Input | Todo List header | Buttons all / active / completed; search placeholder Search todos... (TanStack Store) | Click filter; input search | selected button default; others ghost; input h-8 text-xs | src/routes/todos.tsx\n10 | 9 | UI-009 | Todo row | List item | Trong Todo List | Checkbox; title; delete icon button hover | Toggle checkbox; click delete | flex; px-4 py-3; hover bg; completed line-through | Delete control opacity 0 → 100 khi hover\n11 | 10 | UI-010 | Todo progress footer | Footer + Progress | Cuối Todo List | completedCount/total; thanh progress theo % completed | - | separator; h-1.5 rounded; transition-all duration-500 | src/routes/todos.tsx\n12 | 11 | UI-011 | Posts page controls | Section + Toggle | Đầu /posts | Badge số posts; Table button; Virtual List button | Click đổi viewMode | border rounded-md; button selected default; icon-only controls | src/routes/posts.tsx\n13 | 12 | UI-012 | Posts table | Table | Posts table view | Cột ID, User, Title, Body; badge và sort indicator | Click header để sort; nhập Filter posts... | w-full; header muted; body hover; body ẩn trên md nhỏ | TanStack Table; pageSize=10\n14 | 13 | UI-013 | Posts pagination | Footer + Button | Cuối Posts table | Page x of y · n results; Prev; Next | Click Prev / Next | flex justify-between; outline buttons; disable tại boundary | src/routes/posts.tsx\n15 | 14 | UI-014 | Posts virtual list | Scrollable list | Virtual view | Card title Virtual List; vùng scroll 500px; post id/title/body/user | Scroll list | h-[500px]; overflow-auto; absolute virtual rows | Chỉ row visible + overscan render DOM\n16 | 15 | UI-015 | Users table | Table | Users page | Cột ID, Name, Email, City, Company, edit action | Click header để sort; nhập Filter users... | w-full; responsive ẩn City/Company trên màn hình nhỏ | TanStack Table\n17 | 16 | UI-016 | Edit user action | Icon button | Cột Actions của Users table | Pencil icon; không có label hiển thị | Click mở Edit User dialog | ghost; h-7 w-7; hover text-primary | src/routes/users.tsx\n18 | 17 | UI-017 | Edit User dialog | Dialog + Form | Overlay giữa màn hình | Fields name, email, phone, website; label + input; required errors | Input/change/blur; submit | DialogContent; space-y-4; lỗi text-destructive | TanStack Form; dữ liệu nạp từ row\n19 | 18 | UI-018 | Dialog actions | Button group | Cuối Edit User dialog | Cancel + Save; icon X / Check; Save loading khi mutation pending | Click Cancel; click Save | justify-end; outline Cancel; Save disabled khi pending | Cancel không gọi API\n20 | 19 | UI-019 | Loading / empty / error states | Feedback | Theo từng module | Loading todos/posts/users; Failed to load todos; No todos found | - | center; muted text; loader icon animate-spin; error destructive | Posts/Users có loading; Todos có loading/error/empty",
+      "contentHash": "26df0c81654b181eb429291b0aef0cb051c1cdadc498f7c83f829f973d88d32f",
+      "metadata": {
+        "sheetName": "Thiết kế UI",
+        "sheetIndex": 1,
+        "range": "A1:I20",
+        "chunkType": "tabular"
+      }
+    },
+    {
+      "id": "artifact-c938b7091ef80865a451de3e",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-483e3ac9df385cb3828c09df",
+      "kind": "context-chunk",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Thiết kế DB"
+          },
+          {
+            "kind": "range",
+            "value": "A1:N23"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "Sheet: Thiết kế DB\nRange: A1:N23\n\nColumns:\nA: STT\nB: Tên bảng / entity\nC: Tên thuộc tính\nD: Kiểu dữ liệu\nE: Độ dài\nF: Cho phép NULL\nG: PK\nH: FK\nI: UNIQUE\nJ: Giá trị mặc định\nK: Mô tả\nL: \nM: Phạm vi\nN: Mô hình API + client state\n\nRows:\n2 | 1 | todos | id | number | - | KHÔNG | - | - | - | - | ID todo từ JSONPlaceholder; dùng làm React key |  | Lưu ý | Example React không có backend/DB riêng.\n3 | 2 | todos | userId | number | - | KHÔNG | - | - | - | 1 khi tạo mới | ID user sở hữu todo |  | Nguồn API | https://jsonplaceholder.typicode.com\n4 | 3 | todos | title | string | - | KHÔNG | - | - | - | - | Tiêu đề todo; form không cho phép rỗng |  | Cách dùng | Dùng cùng .tirai/specs và Playwright smoke tests.\n5 | 4 | todos | completed | boolean | - | KHÔNG | - | - | - | false khi tạo mới | Trạng thái hoàn thành; checkbox toggle |  |  | \n6 | 5 | posts | id | number | - | KHÔNG | - | - | - | - | ID bài viết |  |  | \n7 | 6 | posts | userId | number | - | KHÔNG | - | - | - | - | ID user tạo bài viết |  |  | \n8 | 7 | posts | title | string | - | KHÔNG | - | - | - | - | Tiêu đề bài viết; hiển thị ở table và virtual list |  |  | \n9 | 8 | posts | body | string | - | KHÔNG | - | - | - | - | Nội dung bài viết; không sort trong table |  |  | \n10 | 9 | users | id | number | - | KHÔNG | - | - | - | - | ID user |  |  | \n11 | 10 | users | name | string | - | KHÔNG | - | - | - | - | Tên hiển thị; editable |  |  | \n12 | 11 | users | username | string | - | KHÔNG | - | - | - | - | Login/display handle từ API; chỉ đọc trong UI hiện tại |  |  | \n13 | 12 | users | email | string | - | KHÔNG | - | - | - | - | Email; editable và required |  |  | \n14 | 13 | users | phone | string | - | KHÔNG | - | - | - | - | Số điện thoại; editable và required |  |  | \n15 | 14 | users | website | string | - | KHÔNG | - | - | - | - | Website; editable và required |  |  | \n16 | 15 | users | address.city | string | - | CÓ | - | - | - | - | Thành phố lồng trong address; hiển thị badge City |  |  | \n17 | 16 | users | company.name | string | - | CÓ | - | - | - | - | Tên công ty lồng trong company; hiển thị cột Company |  |  | \n18 | 17 | appStore | activeTab | 'todos'|'posts'|'users' | - | KHÔNG | - | - | - | 'todos' | Tab đang active trong state dùng chung |  |  | \n19 | 18 | appStore | searchQuery | string | - | KHÔNG | - | - | - | '' | Global search cho Todos; quản lý bằng @tanstack/store |  |  | \n20 | 19 | appStore | viewMode | 'table'|'virtual' | - | KHÔNG | - | - | - | 'table' | Chế độ hiển thị Posts |  |  | \n21 | 20 | queryCache | queryKey | array | - | KHÔNG | - | - | - | - | Key ['todos'], ['posts'], ['users'] của @tanstack/react-query |  |  | \n22 | 21 | queryCache | data | Todo[]|Post[]|User[] | - | CÓ | - | - | - | - | Cache phía client; optimistic update có rollback khi lỗi |  |  | \n23 | 22 | queryCache | staleTime | number (ms) | - | KHÔNG | - | - | - | 300000 / 600000 | Todos 5 phút; Posts/Users 10 phút |  |  | ",
+      "contentHash": "2722ba5660922b67feeeaef0113238868cd1aa9964acb7adde1979af7e0f46f9",
+      "metadata": {
+        "sheetName": "Thiết kế DB",
+        "sheetIndex": 2,
+        "range": "A1:N23",
+        "chunkType": "tabular"
+      }
+    },
+    {
+      "id": "artifact-5206641371d3a87129b3d621",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-7ad61fa15cd01813938d752e",
+      "kind": "context-chunk",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Thiết kế FE"
+          },
+          {
+            "kind": "range",
+            "value": "A1:H11"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "Sheet: Thiết kế FE\nRange: A1:H11\n\nColumns:\nA: STT\nB: Tên module\nC: Đường dẫn file\nD: Trách nhiệm\nE: Phụ thuộc\nF: Interface công khai\nG: Quản lý trạng thái\nH: Ghi chú\n\nRows:\n2 | 1 | RootLayout | src/routes/__root.tsx | Dựng HTML shell, header, outlet, QueryClientProvider và devtools. | TanStack Router; React Query; Store | Route; getQueryClient(); Header() | QueryClient singleton phía browser; activeTab từ appStore | SSR-safe query client\n3 | 2 | HomePage | src/routes/index.tsx | Dashboard giới thiệu 3 module và 6 TanStack libraries. | TanStack Router; Card; Badge; Link | Route; HomePage() | Static feature metadata; setTab khi click | Route /\n4 | 3 | TodosPage | src/routes/todos.tsx | Fetch list, add/toggle/delete todo, filter và hiển thị progress. | React Query; React Form; Store; UI primitives | Route; TodosPage(); todosQuery | Query cache ['todos']; filter local; searchQuery global; mutation rollback | API write là mock JSONPlaceholder\n5 | 4 | PostsPage | src/routes/posts.tsx | Fetch posts, table sort/filter/page và virtual list. | React Query; React Table; React Virtual; Store | Route; PostsPage(); columns | Query cache ['posts']; sorting/globalFilter local; viewMode global | 100 rows từ API demo\n6 | 5 | UsersPage | src/routes/users.tsx | Fetch users, table sort/filter, mở dialog và edit user. | React Query; React Table; React Form; Dialog | Route; UsersPage(); columns; openEdit() | Query cache ['users']; sorting/globalFilter; editingUser/dialogOpen | PATCH optimistic + rollback\n7 | 6 | UI Primitives | src/components/ui/*.tsx | Cung cấp Button, Input, Card, Badge, Checkbox, Dialog, Label, Separator. | React; class-variance-authority; Radix primitives | Component props theo từng primitive | Controlled state từ route components | Dùng chung cho các trang\n8 | 7 | Global Store | src/store/index.ts | Quản lý active tab, search query và view mode dùng chung. | @tanstack/store | appStore; setTab(); setSearchQuery(); setViewMode() | State in-memory phía client | Todos search và Posts view mode dùng state này\n9 | 8 | Router | src/router.tsx; src/routeTree.gen.ts | Khởi tạo router và map route file-based. | @tanstack/react-router | createRouter(); router | Route state trong URL; activeTab sync qua click | Routes: /, /todos, /posts, /users\n10 | 9 | Playwright Test Harness | playwright.config.ts; tests/tirai-smoke.spec.ts | Smoke test navigation, add todo và filter todos; start dev server. | @playwright/test; npm dev | test:e2e; webServer; baseURL | Fixture state trong browser context; API route mock trong test | QA example được thêm cho dự án này\n11 | 10 | TIRAI Test Integration | .tirai/config.json; .tirai/specs; .tirai/mappings; .tirai/generated | Sinh và chạy Playwright test từ canonical spec/mapping. | TIRAI CLI; Playwright | npm run tirai:generate; npm run tirai:run; npm run tirai:example | Runtime/query state quản lý bởi TIRAI | Input spec hiện tại tập trung Todos",
+      "contentHash": "91a3705adb0c1f7af0780c8cf4d16572002aef62cb20e6c4a98d541c5dd09848",
+      "metadata": {
+        "sheetName": "Thiết kế FE",
+        "sheetIndex": 3,
+        "range": "A1:H11",
+        "chunkType": "tabular"
+      }
+    },
+    {
+      "id": "artifact-0a8e328d9eb4d8925db542dd",
+      "sourceId": "src-1f30d02dd15122ef3e43ad26",
+      "revisionId": "rev-8f3842fad04a3d4a39272057",
+      "parentArtifactId": "artifact-881c1a6d9d30639f48685cbd",
+      "kind": "context-chunk",
+      "location": {
+        "segments": [
+          {
+            "kind": "workbook",
+            "value": "example-react-detail-design.xlsx"
+          },
+          {
+            "kind": "sheet",
+            "value": "Thiết kế API"
+          },
+          {
+            "kind": "range",
+            "value": "A1:L8"
+          }
+        ]
+      },
+      "mediaType": "text/plain",
+      "content": "Sheet: Thiết kế API\nRange: A1:L8\n\nColumns:\nA: STT\nB: Mã API\nC: Endpoint\nD: Phương thức HTTP\nE: Mô tả\nF: Header yêu cầu\nG: Body yêu cầu\nH: Response (Thành công)\nI: Response (Thất bại)\nJ: Mã trạng thái\nK: Xác thực\nL: Ghi chú\n\nRows:\n2 | 1 | API-001 | /todos?_limit=20 | GET | Lấy tối đa 20 todos cho Todos page | - | - | Todo[] gồm id, userId, title, completed | Network error / 5xx → isError | 200 | Không cần | Nguồn: src/routes/todos.tsx; external JSONPlaceholder\n3 | 2 | API-002 | /todos | POST | Tạo todo mới | Content-Type: application/json | {\"title\":\"string\",\"completed\":false,\"userId\":1} | Todo object hoặc payload được echo | 400/5xx → rollback optimistic item | 201 (demo) | Không cần | JSONPlaceholder mô phỏng, không đảm bảo persistence\n4 | 3 | API-003 | /todos/{id} | PATCH | Đổi trạng thái completed | Content-Type: application/json | {\"completed\":true|false} | Todo object / todo đã update | 404/5xx → rollback cache | 200 (demo) | Không cần | Nguồn: src/routes/todos.tsx\n5 | 4 | API-004 | /todos/{id} | DELETE | Xóa todo | - | - | Object rỗng hoặc response xác nhận | 404/5xx → rollback item | 200 (demo) | Không cần | Optimistic remove phía client\n6 | 5 | API-005 | /posts | GET | Lấy toàn bộ posts cho table/virtual list | - | - | Post[] gồm id, userId, title, body; thường 100 record | Network error / 5xx → loading không thành công | 200 | Không cần | staleTime 10 phút; nguồn: src/routes/posts.tsx\n7 | 6 | API-006 | /users | GET | Lấy toàn bộ users cho Users page | - | - | User[] gồm profile, address, company; thường 10 record | Network error / 5xx → giữ loading/error theo Query | 200 | Không cần | staleTime 10 phút; nguồn: src/routes/users.tsx\n8 | 7 | API-007 | /users/{id} | PATCH | Cập nhật name/email/phone/website | Content-Type: application/json | {\"name\":\"string\",\"email\":\"string\",\"phone\":\"string\",\"website\":\"string\"} | User object / user đã update | 400/404/5xx → rollback cache; dialog giữ trạng thái | 200 (demo) | Không cần | onSuccess đóng dialog; JSONPlaceholder không persistence",
+      "contentHash": "3330b443eeb833855afeed00c2b383ffd53ff7d7a6285dfe385ccaa26b26f0f3",
+      "metadata": {
+        "sheetName": "Thiết kế API",
+        "sheetIndex": 4,
+        "range": "A1:L8",
+        "chunkType": "tabular"
+      }
+    }
+  ],
+  "contexts": [
+    {
+      "schemaVersion": "1.0",
+      "id": "ctx-d932a365baed433cf3ccc051",
+      "type": "tabular",
+      "content": "Sheet: Luồng nghiệp vụ\nRange: A1:I18\n\nColumns:\nA: STT\nB: Mã xử lý\nC: Tên xử lý\nD: Nội dung xử lý\nE: Đầu vào\nF: Đầu ra\nG: API sử dụng\nH: Điều kiện rẽ nhánh\nI: Ghi chú\n\nRows:\n2 | 1 | BF-001 | Khởi tạo app shell | Người dùng truy cập ứng dụng và hệ thống dựng layout gốc. | URL / | Header, main outlet, query client | - | App sẵn sàng → BF-002 | Nguồn: src/routes/__root.tsx\n3 | 2 | BF-002 | Hiển thị Dashboard | Hiển thị hero, 3 feature card Todos / Posts / Users và danh sách thư viện TanStack. | App shell | Dashboard tại / | - | Chọn feature card → BF-003 / BF-009 / BF-012 | Nguồn: src/routes/index.tsx\n4 | 3 | BF-003 | Điều hướng module | Người dùng chọn tab trên header hoặc feature card để chuyển trang. | Click Todos / Posts / Users | Route tương ứng; active tab đổi màu | - | Todos → BF-004; Posts → BF-009; Users → BF-012 | TanStack Router + TanStack Store\n5 | 4 | BF-004 | Tải danh sách Todos | Gọi API lấy tối đa 20 todo, hiển thị loading trong thời gian chờ. | GET /todos?_limit=20 | Todo list, active/done counters | GET /todos?_limit=20 | 200 → hiển thị list; lỗi → thông báo Failed to load todos; rỗng → No todos found | Nguồn: src/routes/todos.tsx\n6 | 5 | BF-005 | Kiểm tra form Add Todo | Kiểm tra title bắt buộc khi người dùng nhập hoặc submit form. | Title từ input Add a new task... | Validation message hoặc dữ liệu hợp lệ | - | Rỗng / chỉ khoảng trắng → Title is required; hợp lệ → BF-006 | Frontend validation bằng TanStack Form\n7 | 6 | BF-006 | Thêm Todo | Gửi todo mới, cập nhật optimistic vào đầu danh sách và reset form. | title, completed=false, userId=1 | Todo mới hiển thị; input rỗng | POST /todos | API lỗi → rollback cache; thành công → giữ optimistic item | JSONPlaceholder mô phỏng write, không persistence\n8 | 7 | BF-007 | Lọc và tìm kiếm Todos | Kết hợp filter trạng thái với ô tìm kiếm global để lọc theo title. | Filter all / active / completed; searchQuery | Danh sách filtered; counters giữ theo tổng list | - | Không có kết quả → No todos found | Search state dùng appStore\n9 | 8 | BF-008 | Đổi trạng thái Todo | Click checkbox để đảo completed và phản ánh ngay trên UI. | Todo id, trạng thái hiện tại | Checkbox, line-through, completed counter | PATCH /todos/{id} | API lỗi → rollback trạng thái trước đó | Optimistic update\n10 | 9 | BF-009 | Xóa Todo | Click nút delete trên todo row để xóa khỏi danh sách. | Todo id | Todo biến mất khỏi list; progress cập nhật | DELETE /todos/{id} | API lỗi → rollback item | Nút delete hiện khi hover row\n11 | 10 | BF-010 | Tải danh sách Posts | Gọi API lấy 100 posts và hiển thị badge số lượng. | GET /posts | Posts page; badge 100 posts | GET /posts | 200 → BF-011; loading → Loading posts... | staleTime 10 phút\n12 | 11 | BF-011 | Thao tác Posts table | Hiển thị bảng 10 dòng mỗi trang, hỗ trợ sort, global filter và Prev / Next. | Sort ID/User/Title; Filter posts... | Bảng, page indicator, số kết quả | - | Không có kết quả → bảng rỗng; page boundary → disable Prev / Next | TanStack Table; Body không sort\n13 | 12 | BF-012 | Chuyển Posts sang Virtual List | Đổi view mode để render danh sách virtual với vùng cuộn 500px. | Click Table / Virtual List | Danh sách virtual; số row DOM đang hiển thị | - | Virtual → chỉ render row visible + overscan; Table → quay lại bảng | TanStack Virtual, estimate row 72px\n14 | 13 | BF-013 | Tải danh sách Users | Gọi API lấy 10 users và hiển thị bảng users. | GET /users | Users page; badge số lượng | GET /users | 200 → BF-014; loading → Loading users... | staleTime 10 phút\n15 | 14 | BF-014 | Thao tác Users table | Hiển thị cột ID, Name, Email, City, Company; hỗ trợ sort và filter. | Sort ID/Name/Email; Filter users... | Bảng users đã lọc/sắp xếp | - | Filter không khớp → không còn row; cột City/Company ẩn trên màn hình nhỏ | TanStack Table responsive\n16 | 15 | BF-015 | Mở Edit User dialog | Click icon bút chì trên row để mở dialog và nạp dữ liệu user hiện tại. | User row | Dialog với name/email/phone/website | - | Dialog mở → BF-016; Cancel → đóng dialog, không đổi data | Nguồn: src/routes/users.tsx\n17 | 16 | BF-016 | Kiểm tra form Edit User | Validate 4 trường trước khi submit thay đổi user. | name, email, phone, website | Validation message hoặc form hợp lệ | - | Trường rỗng → <field> is required; hợp lệ → BF-017 | Frontend validation bằng TanStack Form\n18 | 17 | BF-017 | Lưu User | PATCH dữ liệu user, cập nhật optimistic vào table và đóng dialog khi thành công. | User id + partial user payload | Row user được cập nhật; dialog đóng | PATCH /users/{id} | API lỗi → rollback cache; success → đóng dialog | JSONPlaceholder mô phỏng write, không persistence",
+      "contentHash": "82477cf15b3e01d7f598c6e0474a9dad707536cda8ddff7db745abaa863fb1c2",
+      "provenance": {
+        "sourceId": "src-1f30d02dd15122ef3e43ad26",
+        "revisionId": "rev-8f3842fad04a3d4a39272057",
+        "artifactId": "artifact-6814fe5690499bec03a33586",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Luồng nghiệp vụ"
+            },
+            {
+              "kind": "range",
+              "value": "A1:I18"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-next",
+          "targetContextId": "ctx-474611b444f9250eae2af657"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Luồng nghiệp vụ",
+        "sheetIndex": 0,
+        "range": "A1:I18",
+        "chunkType": "tabular"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "id": "ctx-474611b444f9250eae2af657",
+      "type": "tabular",
+      "content": "Sheet: Thiết kế UI\nRange: A1:I20\n\nColumns:\nA: STT\nB: Mã thành phần\nC: Tên thành phần\nD: Loại\nE: Vị trí\nF: Thuộc tính\nG: Sự kiện\nH: Kiểu dáng\nI: Ghi chú\n\nRows:\n2 | 1 | UI-001 | App Header | Layout | Đầu trang, sticky | Brand: TanStack Demo; subtitle: Query · Table · Virtual · Form · Store | Click brand → /; click nav tab → route + setTab | border-b; bg-white/80; backdrop-blur; sticky top-0; z-40 | src/routes/__root.tsx\n3 | 2 | UI-002 | Navigation tabs | Link / Nav | Bên phải Header | Todos, Posts, Users; icon tương ứng; label ẩn trên màn hình nhỏ | Click đổi activeTab và điều hướng | active: bg-primary + primary-foreground; inactive: muted + hover accent | src/routes/__root.tsx\n4 | 3 | UI-003 | Dashboard hero | Section | Đầu trang / | Badge Beginner-friendly demo; h1 TanStack Full Demo; mô tả tổng quan | - | center; py-8; title responsive 2xl → 4xl | src/routes/index.tsx\n5 | 4 | UI-004 | Feature card | Card + Link | Grid giữa Dashboard | 3 card: Todos, Posts, Users; icon; mô tả; badge thư viện | Click card → module route | grid 1 cột → 3 cột; hover translate-y; shadow/border transition | src/routes/index.tsx\n6 | 5 | UI-005 | Libraries Used list | List | Cuối Dashboard | 6 thư viện: Query, Table, Virtual, Form, Store, Router | - | grid 2 → 3 cột; border; bg-white; icon primary | src/routes/index.tsx\n7 | 6 | UI-006 | Todos page header | Section + Badge | Đầu /todos | Title Todos; badge active; badge done | - | flex wrap; icon primary; badge secondary/success | src/routes/todos.tsx\n8 | 7 | UI-007 | Add Todo form | Card + Form | Dưới page header | CardTitle Add Todo; CardDescription; input placeholder Add a new task...; button Add | input/change/blur; submit | flex row; input flex-1; button shrink-0; lỗi border-destructive | TanStack Form; title bắt buộc\n9 | 8 | UI-008 | Todo filter controls | Button group + Input | Todo List header | Buttons all / active / completed; search placeholder Search todos... (TanStack Store) | Click filter; input search | selected button default; others ghost; input h-8 text-xs | src/routes/todos.tsx\n10 | 9 | UI-009 | Todo row | List item | Trong Todo List | Checkbox; title; delete icon button hover | Toggle checkbox; click delete | flex; px-4 py-3; hover bg; completed line-through | Delete control opacity 0 → 100 khi hover\n11 | 10 | UI-010 | Todo progress footer | Footer + Progress | Cuối Todo List | completedCount/total; thanh progress theo % completed | - | separator; h-1.5 rounded; transition-all duration-500 | src/routes/todos.tsx\n12 | 11 | UI-011 | Posts page controls | Section + Toggle | Đầu /posts | Badge số posts; Table button; Virtual List button | Click đổi viewMode | border rounded-md; button selected default; icon-only controls | src/routes/posts.tsx\n13 | 12 | UI-012 | Posts table | Table | Posts table view | Cột ID, User, Title, Body; badge và sort indicator | Click header để sort; nhập Filter posts... | w-full; header muted; body hover; body ẩn trên md nhỏ | TanStack Table; pageSize=10\n14 | 13 | UI-013 | Posts pagination | Footer + Button | Cuối Posts table | Page x of y · n results; Prev; Next | Click Prev / Next | flex justify-between; outline buttons; disable tại boundary | src/routes/posts.tsx\n15 | 14 | UI-014 | Posts virtual list | Scrollable list | Virtual view | Card title Virtual List; vùng scroll 500px; post id/title/body/user | Scroll list | h-[500px]; overflow-auto; absolute virtual rows | Chỉ row visible + overscan render DOM\n16 | 15 | UI-015 | Users table | Table | Users page | Cột ID, Name, Email, City, Company, edit action | Click header để sort; nhập Filter users... | w-full; responsive ẩn City/Company trên màn hình nhỏ | TanStack Table\n17 | 16 | UI-016 | Edit user action | Icon button | Cột Actions của Users table | Pencil icon; không có label hiển thị | Click mở Edit User dialog | ghost; h-7 w-7; hover text-primary | src/routes/users.tsx\n18 | 17 | UI-017 | Edit User dialog | Dialog + Form | Overlay giữa màn hình | Fields name, email, phone, website; label + input; required errors | Input/change/blur; submit | DialogContent; space-y-4; lỗi text-destructive | TanStack Form; dữ liệu nạp từ row\n19 | 18 | UI-018 | Dialog actions | Button group | Cuối Edit User dialog | Cancel + Save; icon X / Check; Save loading khi mutation pending | Click Cancel; click Save | justify-end; outline Cancel; Save disabled khi pending | Cancel không gọi API\n20 | 19 | UI-019 | Loading / empty / error states | Feedback | Theo từng module | Loading todos/posts/users; Failed to load todos; No todos found | - | center; muted text; loader icon animate-spin; error destructive | Posts/Users có loading; Todos có loading/error/empty",
+      "contentHash": "26df0c81654b181eb429291b0aef0cb051c1cdadc498f7c83f829f973d88d32f",
+      "provenance": {
+        "sourceId": "src-1f30d02dd15122ef3e43ad26",
+        "revisionId": "rev-8f3842fad04a3d4a39272057",
+        "artifactId": "artifact-2947be5f11c1b8acfb675d04",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Thiết kế UI"
+            },
+            {
+              "kind": "range",
+              "value": "A1:I20"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-previous",
+          "targetContextId": "ctx-d932a365baed433cf3ccc051"
+        },
+        {
+          "type": "continuation-next",
+          "targetContextId": "ctx-758ba1e7576744f574808ff6"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Thiết kế UI",
+        "sheetIndex": 1,
+        "range": "A1:I20",
+        "chunkType": "tabular"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "id": "ctx-758ba1e7576744f574808ff6",
+      "type": "tabular",
+      "content": "Sheet: Thiết kế DB\nRange: A1:N23\n\nColumns:\nA: STT\nB: Tên bảng / entity\nC: Tên thuộc tính\nD: Kiểu dữ liệu\nE: Độ dài\nF: Cho phép NULL\nG: PK\nH: FK\nI: UNIQUE\nJ: Giá trị mặc định\nK: Mô tả\nL: \nM: Phạm vi\nN: Mô hình API + client state\n\nRows:\n2 | 1 | todos | id | number | - | KHÔNG | - | - | - | - | ID todo từ JSONPlaceholder; dùng làm React key |  | Lưu ý | Example React không có backend/DB riêng.\n3 | 2 | todos | userId | number | - | KHÔNG | - | - | - | 1 khi tạo mới | ID user sở hữu todo |  | Nguồn API | https://jsonplaceholder.typicode.com\n4 | 3 | todos | title | string | - | KHÔNG | - | - | - | - | Tiêu đề todo; form không cho phép rỗng |  | Cách dùng | Dùng cùng .tirai/specs và Playwright smoke tests.\n5 | 4 | todos | completed | boolean | - | KHÔNG | - | - | - | false khi tạo mới | Trạng thái hoàn thành; checkbox toggle |  |  | \n6 | 5 | posts | id | number | - | KHÔNG | - | - | - | - | ID bài viết |  |  | \n7 | 6 | posts | userId | number | - | KHÔNG | - | - | - | - | ID user tạo bài viết |  |  | \n8 | 7 | posts | title | string | - | KHÔNG | - | - | - | - | Tiêu đề bài viết; hiển thị ở table và virtual list |  |  | \n9 | 8 | posts | body | string | - | KHÔNG | - | - | - | - | Nội dung bài viết; không sort trong table |  |  | \n10 | 9 | users | id | number | - | KHÔNG | - | - | - | - | ID user |  |  | \n11 | 10 | users | name | string | - | KHÔNG | - | - | - | - | Tên hiển thị; editable |  |  | \n12 | 11 | users | username | string | - | KHÔNG | - | - | - | - | Login/display handle từ API; chỉ đọc trong UI hiện tại |  |  | \n13 | 12 | users | email | string | - | KHÔNG | - | - | - | - | Email; editable và required |  |  | \n14 | 13 | users | phone | string | - | KHÔNG | - | - | - | - | Số điện thoại; editable và required |  |  | \n15 | 14 | users | website | string | - | KHÔNG | - | - | - | - | Website; editable và required |  |  | \n16 | 15 | users | address.city | string | - | CÓ | - | - | - | - | Thành phố lồng trong address; hiển thị badge City |  |  | \n17 | 16 | users | company.name | string | - | CÓ | - | - | - | - | Tên công ty lồng trong company; hiển thị cột Company |  |  | \n18 | 17 | appStore | activeTab | 'todos'|'posts'|'users' | - | KHÔNG | - | - | - | 'todos' | Tab đang active trong state dùng chung |  |  | \n19 | 18 | appStore | searchQuery | string | - | KHÔNG | - | - | - | '' | Global search cho Todos; quản lý bằng @tanstack/store |  |  | \n20 | 19 | appStore | viewMode | 'table'|'virtual' | - | KHÔNG | - | - | - | 'table' | Chế độ hiển thị Posts |  |  | \n21 | 20 | queryCache | queryKey | array | - | KHÔNG | - | - | - | - | Key ['todos'], ['posts'], ['users'] của @tanstack/react-query |  |  | \n22 | 21 | queryCache | data | Todo[]|Post[]|User[] | - | CÓ | - | - | - | - | Cache phía client; optimistic update có rollback khi lỗi |  |  | \n23 | 22 | queryCache | staleTime | number (ms) | - | KHÔNG | - | - | - | 300000 / 600000 | Todos 5 phút; Posts/Users 10 phút |  |  | ",
+      "contentHash": "2722ba5660922b67feeeaef0113238868cd1aa9964acb7adde1979af7e0f46f9",
+      "provenance": {
+        "sourceId": "src-1f30d02dd15122ef3e43ad26",
+        "revisionId": "rev-8f3842fad04a3d4a39272057",
+        "artifactId": "artifact-c938b7091ef80865a451de3e",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Thiết kế DB"
+            },
+            {
+              "kind": "range",
+              "value": "A1:N23"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-previous",
+          "targetContextId": "ctx-474611b444f9250eae2af657"
+        },
+        {
+          "type": "continuation-next",
+          "targetContextId": "ctx-a97ccf3de95cd13ec62b411e"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Thiết kế DB",
+        "sheetIndex": 2,
+        "range": "A1:N23",
+        "chunkType": "tabular"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "id": "ctx-a97ccf3de95cd13ec62b411e",
+      "type": "tabular",
+      "content": "Sheet: Thiết kế FE\nRange: A1:H11\n\nColumns:\nA: STT\nB: Tên module\nC: Đường dẫn file\nD: Trách nhiệm\nE: Phụ thuộc\nF: Interface công khai\nG: Quản lý trạng thái\nH: Ghi chú\n\nRows:\n2 | 1 | RootLayout | src/routes/__root.tsx | Dựng HTML shell, header, outlet, QueryClientProvider và devtools. | TanStack Router; React Query; Store | Route; getQueryClient(); Header() | QueryClient singleton phía browser; activeTab từ appStore | SSR-safe query client\n3 | 2 | HomePage | src/routes/index.tsx | Dashboard giới thiệu 3 module và 6 TanStack libraries. | TanStack Router; Card; Badge; Link | Route; HomePage() | Static feature metadata; setTab khi click | Route /\n4 | 3 | TodosPage | src/routes/todos.tsx | Fetch list, add/toggle/delete todo, filter và hiển thị progress. | React Query; React Form; Store; UI primitives | Route; TodosPage(); todosQuery | Query cache ['todos']; filter local; searchQuery global; mutation rollback | API write là mock JSONPlaceholder\n5 | 4 | PostsPage | src/routes/posts.tsx | Fetch posts, table sort/filter/page và virtual list. | React Query; React Table; React Virtual; Store | Route; PostsPage(); columns | Query cache ['posts']; sorting/globalFilter local; viewMode global | 100 rows từ API demo\n6 | 5 | UsersPage | src/routes/users.tsx | Fetch users, table sort/filter, mở dialog và edit user. | React Query; React Table; React Form; Dialog | Route; UsersPage(); columns; openEdit() | Query cache ['users']; sorting/globalFilter; editingUser/dialogOpen | PATCH optimistic + rollback\n7 | 6 | UI Primitives | src/components/ui/*.tsx | Cung cấp Button, Input, Card, Badge, Checkbox, Dialog, Label, Separator. | React; class-variance-authority; Radix primitives | Component props theo từng primitive | Controlled state từ route components | Dùng chung cho các trang\n8 | 7 | Global Store | src/store/index.ts | Quản lý active tab, search query và view mode dùng chung. | @tanstack/store | appStore; setTab(); setSearchQuery(); setViewMode() | State in-memory phía client | Todos search và Posts view mode dùng state này\n9 | 8 | Router | src/router.tsx; src/routeTree.gen.ts | Khởi tạo router và map route file-based. | @tanstack/react-router | createRouter(); router | Route state trong URL; activeTab sync qua click | Routes: /, /todos, /posts, /users\n10 | 9 | Playwright Test Harness | playwright.config.ts; tests/tirai-smoke.spec.ts | Smoke test navigation, add todo và filter todos; start dev server. | @playwright/test; npm dev | test:e2e; webServer; baseURL | Fixture state trong browser context; API route mock trong test | QA example được thêm cho dự án này\n11 | 10 | TIRAI Test Integration | .tirai/config.json; .tirai/specs; .tirai/mappings; .tirai/generated | Sinh và chạy Playwright test từ canonical spec/mapping. | TIRAI CLI; Playwright | npm run tirai:generate; npm run tirai:run; npm run tirai:example | Runtime/query state quản lý bởi TIRAI | Input spec hiện tại tập trung Todos",
+      "contentHash": "91a3705adb0c1f7af0780c8cf4d16572002aef62cb20e6c4a98d541c5dd09848",
+      "provenance": {
+        "sourceId": "src-1f30d02dd15122ef3e43ad26",
+        "revisionId": "rev-8f3842fad04a3d4a39272057",
+        "artifactId": "artifact-5206641371d3a87129b3d621",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Thiết kế FE"
+            },
+            {
+              "kind": "range",
+              "value": "A1:H11"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-previous",
+          "targetContextId": "ctx-758ba1e7576744f574808ff6"
+        },
+        {
+          "type": "continuation-next",
+          "targetContextId": "ctx-4e5020602c296fc5c48ec985"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Thiết kế FE",
+        "sheetIndex": 3,
+        "range": "A1:H11",
+        "chunkType": "tabular"
+      }
+    },
+    {
+      "schemaVersion": "1.0",
+      "id": "ctx-4e5020602c296fc5c48ec985",
+      "type": "tabular",
+      "content": "Sheet: Thiết kế API\nRange: A1:L8\n\nColumns:\nA: STT\nB: Mã API\nC: Endpoint\nD: Phương thức HTTP\nE: Mô tả\nF: Header yêu cầu\nG: Body yêu cầu\nH: Response (Thành công)\nI: Response (Thất bại)\nJ: Mã trạng thái\nK: Xác thực\nL: Ghi chú\n\nRows:\n2 | 1 | API-001 | /todos?_limit=20 | GET | Lấy tối đa 20 todos cho Todos page | - | - | Todo[] gồm id, userId, title, completed | Network error / 5xx → isError | 200 | Không cần | Nguồn: src/routes/todos.tsx; external JSONPlaceholder\n3 | 2 | API-002 | /todos | POST | Tạo todo mới | Content-Type: application/json | {\"title\":\"string\",\"completed\":false,\"userId\":1} | Todo object hoặc payload được echo | 400/5xx → rollback optimistic item | 201 (demo) | Không cần | JSONPlaceholder mô phỏng, không đảm bảo persistence\n4 | 3 | API-003 | /todos/{id} | PATCH | Đổi trạng thái completed | Content-Type: application/json | {\"completed\":true|false} | Todo object / todo đã update | 404/5xx → rollback cache | 200 (demo) | Không cần | Nguồn: src/routes/todos.tsx\n5 | 4 | API-004 | /todos/{id} | DELETE | Xóa todo | - | - | Object rỗng hoặc response xác nhận | 404/5xx → rollback item | 200 (demo) | Không cần | Optimistic remove phía client\n6 | 5 | API-005 | /posts | GET | Lấy toàn bộ posts cho table/virtual list | - | - | Post[] gồm id, userId, title, body; thường 100 record | Network error / 5xx → loading không thành công | 200 | Không cần | staleTime 10 phút; nguồn: src/routes/posts.tsx\n7 | 6 | API-006 | /users | GET | Lấy toàn bộ users cho Users page | - | - | User[] gồm profile, address, company; thường 10 record | Network error / 5xx → giữ loading/error theo Query | 200 | Không cần | staleTime 10 phút; nguồn: src/routes/users.tsx\n8 | 7 | API-007 | /users/{id} | PATCH | Cập nhật name/email/phone/website | Content-Type: application/json | {\"name\":\"string\",\"email\":\"string\",\"phone\":\"string\",\"website\":\"string\"} | User object / user đã update | 400/404/5xx → rollback cache; dialog giữ trạng thái | 200 (demo) | Không cần | onSuccess đóng dialog; JSONPlaceholder không persistence",
+      "contentHash": "3330b443eeb833855afeed00c2b383ffd53ff7d7a6285dfe385ccaa26b26f0f3",
+      "provenance": {
+        "sourceId": "src-1f30d02dd15122ef3e43ad26",
+        "revisionId": "rev-8f3842fad04a3d4a39272057",
+        "artifactId": "artifact-0a8e328d9eb4d8925db542dd",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Thiết kế API"
+            },
+            {
+              "kind": "range",
+              "value": "A1:L8"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-previous",
+          "targetContextId": "ctx-a97ccf3de95cd13ec62b411e"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Thiết kế API",
+        "sheetIndex": 4,
+        "range": "A1:L8",
+        "chunkType": "tabular"
+      }
+    }
+  ]
+}

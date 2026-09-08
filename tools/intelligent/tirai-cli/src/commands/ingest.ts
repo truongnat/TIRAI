@@ -6,10 +6,12 @@ import { updateState } from '../state.js';
 import { CliError } from '../errors.js';
 import { createAIProvider, type FakeAIProvider } from 'ai-provider';
 import { runSourceToTestCasePipeline } from 'source-to-testcase';
+import { buildSourceDerivedE2EMapping } from '../source-derived-mapping.js';
 
 export interface IngestOptions {
   cwd: string;
   sourcePath: string;
+  sourceCodePath?: string;
   json?: boolean;
 }
 
@@ -102,6 +104,26 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
   // Ensure testcases.json at expected location
   // Pipeline writes to artifactsDir/context.json etc. Already done.
 
+  // Build the optional white-box bridge from the implementation source. The
+  // canonical contract remains source-independent; only the execution mapping
+  // knows concrete selectors and deliberately fails closed when they are not
+  // present.
+  let mappingNotice = '';
+  try {
+    const sourceCodeRoot = path.resolve(opts.cwd, opts.sourceCodePath ?? '.');
+    const sourceMapping = buildSourceDerivedE2EMapping(sourceCodeRoot, result.testPlanIR.testCases);
+    if (sourceMapping) {
+      ensureDir(paths.mappingsDir);
+      fs.writeFileSync(paths.e2eMappingPath, JSON.stringify(sourceMapping.mapping, null, 2), 'utf8');
+      mappingNotice = `\nE2E mapping: ${path.relative(paths.root, paths.e2eMappingPath)} (${sourceMapping.sourceFiles.length} source files scanned)`;
+    }
+  } catch (error) {
+    if (opts.sourceCodePath) {
+      throw new CliError('MAPPING_MISSING', `Source-derived mapping failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    mappingNotice = `\nE2E mapping: not generated (${error instanceof Error ? error.message : String(error)})`;
+  }
+
   // Update workspace state
   updateState(paths, (s) => ({
     ...s,
@@ -159,6 +181,7 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     console.log('');
     console.log(`Artifacts:`);
     console.log(`  ${path.relative(paths.root, paths.artifactsDir)}/`);
+    if (mappingNotice) console.log(mappingNotice);
   }
 }
 

@@ -30,6 +30,7 @@ import { columnToLetter } from './utils.js';
 import { WarningCode, createWarning } from './warnings.js';
 import { classifyCells, collectGarbage, createProfile, memorySnapshot, now, rssBytes } from './performance.js';
 import { WorkbookOOXMLContext } from './ooxml-context.js';
+import { loadExcelJsCompatibleBuffer } from './exceljs-compat.js';
 
 // ---- Public API -----------------------------------------------------------
 
@@ -90,9 +91,10 @@ export async function extractWorkbook(
   let ooxmlContext: WorkbookOOXMLContext | undefined;
   try {
     const loadStart = profile ? now() : 0;
-    await workbook.xlsx.readFile(resolvedPath);
+    const compatibleBuffer = await loadExcelJsCompatibleBuffer(resolvedPath);
+    await workbook.xlsx.load(compatibleBuffer as unknown as Parameters<typeof workbook.xlsx.load>[0]);
     if (profile) captureProfileMemory(profile, 'after-exceljs-load', options.profileForceGc);
-    ooxmlContext = await WorkbookOOXMLContext.fromFile(resolvedPath);
+    ooxmlContext = await WorkbookOOXMLContext.fromBuffer(compatibleBuffer);
     if (profile) {
       captureProfileMemory(profile, 'after-ooxml-context', options.profileForceGc);
       profile.workbookLoadMs = now() - loadStart;
