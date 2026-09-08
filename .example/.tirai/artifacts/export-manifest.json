@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "contractId": "contract-ced80a0112265711",
+  "contractFingerprint": "3a1f964edd3648be2c80947fa190e11f9f2352f71d42eb86a33c71eeacd3e843",
+  "artifacts": [
+    {
+      "format": "xlsx",
+      "path": "/Users/truongdq/tx/GitHub/TIRAI/.example/.tirai/outputs/excel/test-cases.xlsx",
+      "contentHash": "9e9322c5cbb650afcd205c6dbc7825a4c10bffc052cdcc0aeea5e1c09dd92978",
+      "byteLength": 16719
+    }
+  ]
+}
