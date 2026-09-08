@@ -42,4 +42,6 @@ export { resolveDeepSeekConfig } from './providers/deepseek/deepseek-config.js';
 // Utilities
 export { withRetry, DEFAULT_RETRY_OPTIONS } from './utils/retry.js';
 export type { RetryOptions } from './utils/retry.js';
+export { runAIStage } from './stage-runner.js';
+export type { AIStageOptions } from './stage-runner.js';
 export { parseAndValidate } from './utils/json.js';
