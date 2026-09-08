@@ -12,6 +12,7 @@ import { MarkdownExporter } from '../export/markdown-exporter.js';
 import { PDFExporter } from '../export/pdf-exporter.js';
 import { DOCXExporter } from '../export/docx-exporter.js';
 import type { OutputArtifactIR, TestOutputExporter } from '../export/exporter.js';
+import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
 
 export interface ExportCommandOptions {
   cwd: string;
@@ -19,6 +20,7 @@ export interface ExportCommandOptions {
   outDir?: string;
   includeBlocked?: boolean;
   json?: boolean;
+  taskId?: string;
 }
 
 const exporters: Record<string, TestOutputExporter> = {
@@ -38,8 +40,12 @@ const formatDirMap: Record<string, 'outputsJsonDir' | 'outputsExcelDir' | 'outpu
 };
 
 export async function runExport(opts: ExportCommandOptions): Promise<void> {
-  const paths = requireWorkspace(opts.cwd);
-  loadConfig(paths);
+  const basePaths = requireWorkspace(opts.cwd);
+  const task = opts.taskId ? resolveActiveTask(basePaths, opts.taskId) : undefined;
+  if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
+  const taskRoot = task ? taskPaths(basePaths, task.id) : undefined;
+  const paths = taskRoot ? { ...basePaths, testPlanPath: `${taskRoot.artifacts}/test-plan.json`, testCasesPath: `${taskRoot.artifacts}/testcases.json`, outputsJsonDir: `${taskRoot.outputs}/json`, outputsExcelDir: `${taskRoot.outputs}/excel`, outputsPdfDir: `${taskRoot.outputs}/pdf`, outputsDocxDir: `${taskRoot.outputs}/docx`, outputsMarkdownDir: `${taskRoot.outputs}/markdown` } : basePaths;
+  loadConfig(basePaths);
 
   // Load canonical artifacts
   const testPlanPath = paths.testPlanPath;
@@ -63,6 +69,7 @@ export async function runExport(opts: ExportCommandOptions): Promise<void> {
       throw new CliError('INVALID_TARGET', `Unknown format: ${fmt}. Supported: json, xlsx, markdown, pdf, docx, all`);
     }
   }
+  if (task) updateTask(basePaths, task.id, { status: 'reported' });
 
   // Export
   const artifacts: OutputArtifactIR[] = [];

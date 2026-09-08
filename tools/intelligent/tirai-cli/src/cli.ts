@@ -234,6 +234,7 @@ async function main(): Promise<void> {
           cwd,
           format,
           outDir: flags.out as string,
+          taskId: flags.task as string,
           includeBlocked: Boolean(flags['include-blocked']),
           json: Boolean(flags.json),
         });
