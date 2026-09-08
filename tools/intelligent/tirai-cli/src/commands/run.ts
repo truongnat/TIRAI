@@ -5,6 +5,7 @@ import { requireWorkspace, ensureDir } from '../workspace.js';
 import { loadConfig, validateConfigForRun } from '../config.js';
 import { updateState, loadState } from '../state.js';
 import { CliError } from '../errors.js';
+import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
 import {
   mapPlaywrightJsonToRunResult,
   mapVitestJsonToRunResult,
@@ -16,6 +17,7 @@ import {
 export interface RunOptions {
   cwd: string;
   json?: boolean;
+  taskId?: string;
 }
 
 function parseJsonLoose(s: string): unknown | null {
@@ -138,7 +140,11 @@ function killServer(child: ChildProcess | null): void {
 }
 
 export async function runRun(opts: RunOptions): Promise<number> {
-  const paths = requireWorkspace(opts.cwd);
+  const basePaths = requireWorkspace(opts.cwd);
+  const task = opts.taskId ? resolveActiveTask(basePaths, opts.taskId) : undefined;
+  if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
+  const taskRoot = task ? taskPaths(basePaths, task.id) : undefined;
+  const paths = taskRoot ? { ...basePaths, generatedE2eDir: path.join(taskRoot.generated, 'e2e'), generatedUnitDir: path.join(taskRoot.generated, 'unit'), runtimeE2eDir: path.join(taskRoot.root, 'runtime', 'e2e'), runtimeUnitDir: path.join(taskRoot.root, 'runtime', 'unit'), resultsDir: taskRoot.results, e2eResultPath: path.join(taskRoot.results, 'e2e-run-result-ir.json'), unitResultPath: path.join(taskRoot.results, 'unit-run-result-ir.json'), testCasesPath: path.join(taskRoot.artifacts, 'testcases.json') } : basePaths;
   const config = loadConfig(paths);
   validateConfigForRun(config);
 
@@ -429,6 +435,7 @@ export async function runRun(opts: RunOptions): Promise<number> {
     if (hasError || hasBlocked) exitCode = 2;
     else if (hasFail) exitCode = 1;
     else exitCode = 0;
+    if (task) updateTask(basePaths, task.id, { status: exitCode === 0 ? 'executed' : 'blocked' });
 
     // Print summary
     if (!opts.json) {
@@ -445,4 +452,3 @@ export async function runRun(opts: RunOptions): Promise<number> {
     killServer(server);
   }
 }
-
