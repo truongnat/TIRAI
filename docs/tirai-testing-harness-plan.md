@@ -27,6 +27,11 @@ criteria của phase trước chưa đạt.
 
 ### Phase A — Control plane and contracts
 
+**Status: foundation complete.** The CLI now exposes `analyze`, `contract
+validate`, `contract import`, and `artifact plan`. External agents can read
+the generated artifacts, return a contract JSON file, and have TIRAI validate,
+fingerprint, and persist it without spawning an agent process.
+
 - Chốt config schema cho project, task, AI host/provider và output policy.
 - Chốt input/output artifact protocol: raw package, AI input, contract,
   artifact plan, execution result, report.
@@ -36,6 +41,10 @@ criteria của phase trước chưa đạt.
   đọc raw và đưa contract JSON quay lại để validate/fingerprint.
 
 ### Phase B — Ingestion and context quality
+
+**Status: foundation complete.** Excel, PDF, DOCX, Markdown, HTML and source
+context ingestion produce deterministic raw packages with manifests, module
+grouping, provenance, hashes, and bounded source-file context.
 
 - Hoàn thiện connector-neutral ingestion cho Excel/PDF/DOCX/Markdown/CSV/JSON.
 - Chuẩn hóa module, feature, page, sheet, heading và parent-child chunking.
