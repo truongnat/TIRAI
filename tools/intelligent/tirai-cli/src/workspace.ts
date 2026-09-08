@@ -3,11 +3,11 @@ import * as path from 'node:path';
 import { CliError } from './errors.js';
 
 export const WORKSPACE_VERSION = 1;
-export const CONFIG_VERSION = 1;
+export const CONFIG_VERSION = 2;
 
 export interface WorkspacePaths {
-  root: string; // project root (where .tirai lives as child)
-  workspace: string; // .tirai absolute
+  root: string;
+  workspace: string;
   configPath: string;
   projectJsonPath: string;
   statePath: string;
@@ -34,6 +34,15 @@ export interface WorkspacePaths {
   reportsDir: string;
   latestReportPath: string;
   sourcesDir: string;
+  // New paths for Phase 2
+  specsDir: string;
+  specsIndexPath: string;
+  outputsDir: string;
+  outputsJsonDir: string;
+  outputsExcelDir: string;
+  outputsPdfDir: string;
+  outputsDocxDir: string;
+  outputsMarkdownDir: string;
 }
 
 export function findWorkspace(startDir: string): string | null {
@@ -81,6 +90,14 @@ export function getWorkspacePaths(projectRoot: string): WorkspacePaths {
     reportsDir: path.join(workspace, 'reports'),
     latestReportPath: path.join(workspace, 'reports', 'latest-summary.md'),
     sourcesDir: path.join(workspace, 'sources'),
+    specsDir: path.join(workspace, 'specs'),
+    specsIndexPath: path.join(workspace, 'specs', 'index.json'),
+    outputsDir: path.join(workspace, 'outputs'),
+    outputsJsonDir: path.join(workspace, 'outputs', 'json'),
+    outputsExcelDir: path.join(workspace, 'outputs', 'excel'),
+    outputsPdfDir: path.join(workspace, 'outputs', 'pdf'),
+    outputsDocxDir: path.join(workspace, 'outputs', 'docx'),
+    outputsMarkdownDir: path.join(workspace, 'outputs', 'markdown'),
   };
 }
 

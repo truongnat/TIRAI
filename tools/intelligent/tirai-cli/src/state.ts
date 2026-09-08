@@ -34,6 +34,9 @@ export interface WorkspaceState {
     unitStatus?: string;
     overall?: string;
   };
+  platformConfig?: {
+    updatedAt: string;
+  };
 }
 
 export function loadState(paths: WorkspacePaths): WorkspaceState | null {
