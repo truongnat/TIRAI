@@ -79,6 +79,7 @@ export interface SourceToTestCaseResult {
     testPlan: string;
     testCases: string;
     trace: string;
+    aiRun: string;
   };
   document: CanonicalSourceDocument;
   semanticIR: SemanticIR;
@@ -144,6 +145,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
     const testPlanPath = path.join(outputDir, 'test-plan.json');
     const testCasesPath = path.join(outputDir, 'testcases.json');
     const tracePath = path.join(outputDir, 'trace.json');
+    const aiRunPath = path.join(outputDir, 'ai-run.json');
 
     fs.writeFileSync(contextPath, JSON.stringify(doc, null, 2), 'utf8');
     const contract = buildContractIR({ document: doc, semanticIR, requirementIR, testPlanIR });
@@ -153,6 +155,12 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
     fs.writeFileSync(testPlanPath, JSON.stringify(testPlanIR, null, 2), 'utf8');
     fs.writeFileSync(testCasesPath, JSON.stringify(testPlanIR.testCases, null, 2), 'utf8');
     fs.writeFileSync(tracePath, JSON.stringify(buildTrace(doc, requirementIR, testPlanIR), null, 2), 'utf8');
+    fs.writeFileSync(aiRunPath, JSON.stringify({ schemaVersion: '1.0', stages: [
+      { name: 'source-ingestion', mode: 'connector', aiCalls: 0 },
+      { name: 'semantic-analysis', mode: 'deterministic', aiCalls: 0, reason: 'structured design rows are already normalized requirements' },
+      { name: 'requirement-build', mode: 'deterministic', aiCalls: 0, reason: 'requirements are compiled from explicit design rows' },
+      { name: 'test-planning', mode: 'deterministic', aiCalls: 0, reason: 'test scenarios are compiled with source traceability' },
+    ] }, null, 2), 'utf8');
 
     const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath]);
     const semanticProvider = 'structured-design-compiler';
@@ -190,6 +198,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
         testPlan: testPlanPath,
         testCases: testCasesPath,
         trace: tracePath,
+        aiRun: aiRunPath,
       },
       document: doc,
       semanticIR,
@@ -260,6 +269,10 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   const testPlanPath = path.join(outputDir, 'test-plan.json');
   const testCasesPath = path.join(outputDir, 'testcases.json');
   const tracePath = path.join(outputDir, 'trace.json');
+  const aiRunPath = path.join(outputDir, 'ai-run.json');
+  const semInfo = analysisInfo((semanticIR as unknown as { analysis?: unknown }).analysis);
+  const reqInfo = { aiCalls: aiCalls.REQUIREMENT_BUILD, provider: provider.name, model: provider.name };
+  const planInfo = { aiCalls: aiCalls.TEST_PLANNING, provider: provider.name, model: provider.name };
 
   fs.writeFileSync(contextPath, JSON.stringify(doc, null, 2), 'utf8');
   const contract = buildContractIR({ document: doc, semanticIR, requirementIR, testPlanIR });
@@ -269,13 +282,15 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   fs.writeFileSync(testPlanPath, JSON.stringify(testPlanIR, null, 2), 'utf8');
   fs.writeFileSync(testCasesPath, JSON.stringify(testPlanIR.testCases, null, 2), 'utf8');
   fs.writeFileSync(tracePath, JSON.stringify(buildTrace(doc, requirementIR, testPlanIR), null, 2), 'utf8');
+  fs.writeFileSync(aiRunPath, JSON.stringify({ schemaVersion: '1.0', stages: [
+    { name: 'source-ingestion', mode: 'connector', aiCalls: 0 },
+    { name: 'semantic-analysis', mode: 'ai', aiCalls: semInfo.aiCalls, provider: semInfo.provider, model: semInfo.model },
+    { name: 'requirement-build', mode: 'ai', aiCalls: reqInfo.aiCalls, provider: reqInfo.provider, model: reqInfo.model },
+    { name: 'test-planning', mode: 'ai', aiCalls: planInfo.aiCalls, provider: planInfo.provider, model: planInfo.model },
+  ] }, null, 2), 'utf8');
 
   // -- Metrics -------------------------------------------------------------
   const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath]);
-
-  const semInfo = analysisInfo((semanticIR as unknown as { analysis?: unknown }).analysis);
-  const reqInfo = { aiCalls: aiCalls.REQUIREMENT_BUILD, provider: provider.name, model: provider.name };
-  const planInfo = { aiCalls: aiCalls.TEST_PLANNING, provider: provider.name, model: provider.name };
 
   return {
     source,
@@ -310,6 +325,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       testPlan: testPlanPath,
       testCases: testCasesPath,
       trace: tracePath,
+      aiRun: aiRunPath,
     },
     document: doc,
     semanticIR,
