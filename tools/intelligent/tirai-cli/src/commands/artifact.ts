@@ -23,8 +23,9 @@ export async function runArtifactVerify(opts: { cwd: string; json?: boolean }): 
   if (!fs.existsSync(manifestPath)) throw new CliError('CONFIG_INVALID', 'Export manifest not found. Run `tirai export` first.');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as { artifacts?: Array<{ path: string; contentHash: string }> };
   const checks = (manifest.artifacts ?? []).map((artifact) => {
-    const exists = fs.existsSync(artifact.path);
-    const actualHash = exists ? createHash('sha256').update(fs.readFileSync(artifact.path)).digest('hex') : undefined;
+    const absolutePath = path.resolve(paths.root, artifact.path);
+    const exists = fs.existsSync(absolutePath);
+    const actualHash = exists ? createHash('sha256').update(fs.readFileSync(absolutePath)).digest('hex') : undefined;
     return { path: artifact.path, exists, valid: exists && actualHash === artifact.contentHash, expectedHash: artifact.contentHash, actualHash };
   });
   const valid = checks.length > 0 && checks.every((check) => check.valid);
