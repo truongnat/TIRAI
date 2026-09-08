@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-08T16:05:18.865Z",
+  "generatedAt": "2026-09-08T16:23:10.138Z",
   "source": {
-    "sourceId": "src-1f30d02dd15122ef3e43ad26",
+    "sourceId": "src-7eb0e04e4687d2708a9c3839",
     "displayName": "example-react-detail-design.xlsx",
     "contentHash": "ced80a0112265711567946b26910c9a5699ee1155f3385f0c5e1eaa4d944404f"
   },
@@ -13,10 +13,10 @@
         "REQ-BF-001"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -26,10 +26,10 @@
         "REQ-BF-002"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -39,10 +39,10 @@
         "REQ-BF-003"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -52,10 +52,10 @@
         "REQ-BF-004"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -65,10 +65,10 @@
         "REQ-BF-005"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -78,10 +78,10 @@
         "REQ-BF-006"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -91,10 +91,10 @@
         "REQ-BF-007"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -104,10 +104,10 @@
         "REQ-BF-008"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -117,10 +117,10 @@
         "REQ-BF-009"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -130,10 +130,10 @@
         "REQ-BF-010"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -143,10 +143,10 @@
         "REQ-BF-011"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -156,10 +156,10 @@
         "REQ-BF-012"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -169,10 +169,10 @@
         "REQ-BF-013"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -182,10 +182,10 @@
         "REQ-BF-014"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -195,10 +195,10 @@
         "REQ-BF-015"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -208,10 +208,10 @@
         "REQ-BF-016"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     },
     {
@@ -221,10 +221,10 @@
         "REQ-BF-017"
       ],
       "sourceContextIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ],
       "sourceArtifactIds": [
-        "ctx-d932a365baed433cf3ccc051"
+        "ctx-72bf0e82f91621cacf990d81"
       ]
     }
   ]

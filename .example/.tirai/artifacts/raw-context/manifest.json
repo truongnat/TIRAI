@@ -1,0 +1,259 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "tirai-raw-context",
+  "source": {
+    "id": "src-7eb0e04e4687d2708a9c3839",
+    "kind": "excel",
+    "displayName": "example-react-detail-design.xlsx",
+    "connectorId": "local-excel-connector",
+    "connectorVersion": "1.0.0"
+  },
+  "revision": {
+    "id": "rev-a9e808a3a828375ea4d289bb",
+    "contentHash": "ced80a0112265711567946b26910c9a5699ee1155f3385f0c5e1eaa4d944404f",
+    "version": "ced80a0112265711567946b26910c9a5699ee1155f3385f0c5e1eaa4d944404f"
+  },
+  "contexts": [
+    {
+      "id": "ctx-1b90520e9df52d96ecfd06b1",
+      "type": "tabular",
+      "contentHash": "91a3705adb0c1f7af0780c8cf4d16572002aef62cb20e6c4a98d541c5dd09848",
+      "provenance": {
+        "sourceId": "src-7eb0e04e4687d2708a9c3839",
+        "revisionId": "rev-a9e808a3a828375ea4d289bb",
+        "artifactId": "artifact-1fbb8e5abf3ff2bd09398680",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Thiết kế FE"
+            },
+            {
+              "kind": "range",
+              "value": "A1:H11"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-previous",
+          "targetContextId": "ctx-4d877c923edeef7963e04256"
+        },
+        {
+          "type": "continuation-next",
+          "targetContextId": "ctx-4f6890be438398f20c5f3188"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Thiết kế FE",
+        "sheetIndex": 3,
+        "range": "A1:H11",
+        "chunkType": "tabular"
+      },
+      "file": "modules/ungrouped/ctx-1b90520e9df52d96ecfd06b1.json",
+      "module": "ungrouped",
+      "characterCount": 2914,
+      "estimatedTokens": 729
+    },
+    {
+      "id": "ctx-36b9d89f6ff95d5eb16a8905",
+      "type": "tabular",
+      "contentHash": "26df0c81654b181eb429291b0aef0cb051c1cdadc498f7c83f829f973d88d32f",
+      "provenance": {
+        "sourceId": "src-7eb0e04e4687d2708a9c3839",
+        "revisionId": "rev-a9e808a3a828375ea4d289bb",
+        "artifactId": "artifact-580157fbba7b04b18769fcb7",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Thiết kế UI"
+            },
+            {
+              "kind": "range",
+              "value": "A1:I20"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-previous",
+          "targetContextId": "ctx-72bf0e82f91621cacf990d81"
+        },
+        {
+          "type": "continuation-next",
+          "targetContextId": "ctx-4d877c923edeef7963e04256"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Thiết kế UI",
+        "sheetIndex": 1,
+        "range": "A1:I20",
+        "chunkType": "tabular"
+      },
+      "file": "modules/ungrouped/ctx-36b9d89f6ff95d5eb16a8905.json",
+      "module": "ungrouped",
+      "characterCount": 4639,
+      "estimatedTokens": 1160
+    },
+    {
+      "id": "ctx-4d877c923edeef7963e04256",
+      "type": "tabular",
+      "contentHash": "2722ba5660922b67feeeaef0113238868cd1aa9964acb7adde1979af7e0f46f9",
+      "provenance": {
+        "sourceId": "src-7eb0e04e4687d2708a9c3839",
+        "revisionId": "rev-a9e808a3a828375ea4d289bb",
+        "artifactId": "artifact-d3a78649a9140d792944b409",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Thiết kế DB"
+            },
+            {
+              "kind": "range",
+              "value": "A1:N23"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-previous",
+          "targetContextId": "ctx-36b9d89f6ff95d5eb16a8905"
+        },
+        {
+          "type": "continuation-next",
+          "targetContextId": "ctx-1b90520e9df52d96ecfd06b1"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Thiết kế DB",
+        "sheetIndex": 2,
+        "range": "A1:N23",
+        "chunkType": "tabular"
+      },
+      "file": "modules/ungrouped/ctx-4d877c923edeef7963e04256.json",
+      "module": "ungrouped",
+      "characterCount": 2921,
+      "estimatedTokens": 731
+    },
+    {
+      "id": "ctx-4f6890be438398f20c5f3188",
+      "type": "tabular",
+      "contentHash": "3330b443eeb833855afeed00c2b383ffd53ff7d7a6285dfe385ccaa26b26f0f3",
+      "provenance": {
+        "sourceId": "src-7eb0e04e4687d2708a9c3839",
+        "revisionId": "rev-a9e808a3a828375ea4d289bb",
+        "artifactId": "artifact-576bca620a20f244243505cd",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Thiết kế API"
+            },
+            {
+              "kind": "range",
+              "value": "A1:L8"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-previous",
+          "targetContextId": "ctx-1b90520e9df52d96ecfd06b1"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Thiết kế API",
+        "sheetIndex": 4,
+        "range": "A1:L8",
+        "chunkType": "tabular"
+      },
+      "file": "modules/ungrouped/ctx-4f6890be438398f20c5f3188.json",
+      "module": "ungrouped",
+      "characterCount": 2016,
+      "estimatedTokens": 504
+    },
+    {
+      "id": "ctx-72bf0e82f91621cacf990d81",
+      "type": "tabular",
+      "contentHash": "82477cf15b3e01d7f598c6e0474a9dad707536cda8ddff7db745abaa863fb1c2",
+      "provenance": {
+        "sourceId": "src-7eb0e04e4687d2708a9c3839",
+        "revisionId": "rev-a9e808a3a828375ea4d289bb",
+        "artifactId": "artifact-eebc24529ab07d6d2089231f",
+        "location": {
+          "segments": [
+            {
+              "kind": "workbook",
+              "value": "example-react-detail-design.xlsx"
+            },
+            {
+              "kind": "sheet",
+              "value": "Luồng nghiệp vụ"
+            },
+            {
+              "kind": "range",
+              "value": "A1:I18"
+            }
+          ]
+        }
+      },
+      "relations": [
+        {
+          "type": "continuation-next",
+          "targetContextId": "ctx-36b9d89f6ff95d5eb16a8905"
+        }
+      ],
+      "metadata": {
+        "sheetName": "Luồng nghiệp vụ",
+        "sheetIndex": 0,
+        "range": "A1:I18",
+        "chunkType": "tabular"
+      },
+      "file": "modules/ungrouped/ctx-72bf0e82f91621cacf990d81.json",
+      "module": "ungrouped",
+      "characterCount": 4598,
+      "estimatedTokens": 1150
+    }
+  ],
+  "modules": [
+    {
+      "id": "ungrouped",
+      "contextIds": [
+        "ctx-1b90520e9df52d96ecfd06b1",
+        "ctx-36b9d89f6ff95d5eb16a8905",
+        "ctx-4d877c923edeef7963e04256",
+        "ctx-4f6890be438398f20c5f3188",
+        "ctx-72bf0e82f91621cacf990d81"
+      ],
+      "characterCount": 17088,
+      "estimatedTokens": 4274
+    }
+  ],
+  "stats": {
+    "contextCount": 5,
+    "characters": 17088,
+    "estimatedTokens": 4274
+  }
+}

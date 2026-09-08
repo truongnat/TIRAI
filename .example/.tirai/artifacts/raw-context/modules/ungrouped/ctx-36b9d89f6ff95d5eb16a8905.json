@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-36b9d89f6ff95d5eb16a8905",
+  "type": "tabular",
+  "content": "Sheet: Thiết kế UI\nRange: A1:I20\n\nColumns:\nA: STT\nB: Mã thành phần\nC: Tên thành phần\nD: Loại\nE: Vị trí\nF: Thuộc tính\nG: Sự kiện\nH: Kiểu dáng\nI: Ghi chú\n\nRows:\n2 | 1 | UI-001 | App Header | Layout | Đầu trang, sticky | Brand: TanStack Demo; subtitle: Query · Table · Virtual · Form · Store | Click brand → /; click nav tab → route + setTab | border-b; bg-white/80; backdrop-blur; sticky top-0; z-40 | src/routes/__root.tsx\n3 | 2 | UI-002 | Navigation tabs | Link / Nav | Bên phải Header | Todos, Posts, Users; icon tương ứng; label ẩn trên màn hình nhỏ | Click đổi activeTab và điều hướng | active: bg-primary + primary-foreground; inactive: muted + hover accent | src/routes/__root.tsx\n4 | 3 | UI-003 | Dashboard hero | Section | Đầu trang / | Badge Beginner-friendly demo; h1 TanStack Full Demo; mô tả tổng quan | - | center; py-8; title responsive 2xl → 4xl | src/routes/index.tsx\n5 | 4 | UI-004 | Feature card | Card + Link | Grid giữa Dashboard | 3 card: Todos, Posts, Users; icon; mô tả; badge thư viện | Click card → module route | grid 1 cột → 3 cột; hover translate-y; shadow/border transition | src/routes/index.tsx\n6 | 5 | UI-005 | Libraries Used list | List | Cuối Dashboard | 6 thư viện: Query, Table, Virtual, Form, Store, Router | - | grid 2 → 3 cột; border; bg-white; icon primary | src/routes/index.tsx\n7 | 6 | UI-006 | Todos page header | Section + Badge | Đầu /todos | Title Todos; badge active; badge done | - | flex wrap; icon primary; badge secondary/success | src/routes/todos.tsx\n8 | 7 | UI-007 | Add Todo form | Card + Form | Dưới page header | CardTitle Add Todo; CardDescription; input placeholder Add a new task...; button Add | input/change/blur; submit | flex row; input flex-1; button shrink-0; lỗi border-destructive | TanStack Form; title bắt buộc\n9 | 8 | UI-008 | Todo filter controls | Button group + Input | Todo List header | Buttons all / active / completed; search placeholder Search todos... (TanStack Store) | Click filter; input search | selected button default; others ghost; input h-8 text-xs | src/routes/todos.tsx\n10 | 9 | UI-009 | Todo row | List item | Trong Todo List | Checkbox; title; delete icon button hover | Toggle checkbox; click delete | flex; px-4 py-3; hover bg; completed line-through | Delete control opacity 0 → 100 khi hover\n11 | 10 | UI-010 | Todo progress footer | Footer + Progress | Cuối Todo List | completedCount/total; thanh progress theo % completed | - | separator; h-1.5 rounded; transition-all duration-500 | src/routes/todos.tsx\n12 | 11 | UI-011 | Posts page controls | Section + Toggle | Đầu /posts | Badge số posts; Table button; Virtual List button | Click đổi viewMode | border rounded-md; button selected default; icon-only controls | src/routes/posts.tsx\n13 | 12 | UI-012 | Posts table | Table | Posts table view | Cột ID, User, Title, Body; badge và sort indicator | Click header để sort; nhập Filter posts... | w-full; header muted; body hover; body ẩn trên md nhỏ | TanStack Table; pageSize=10\n14 | 13 | UI-013 | Posts pagination | Footer + Button | Cuối Posts table | Page x of y · n results; Prev; Next | Click Prev / Next | flex justify-between; outline buttons; disable tại boundary | src/routes/posts.tsx\n15 | 14 | UI-014 | Posts virtual list | Scrollable list | Virtual view | Card title Virtual List; vùng scroll 500px; post id/title/body/user | Scroll list | h-[500px]; overflow-auto; absolute virtual rows | Chỉ row visible + overscan render DOM\n16 | 15 | UI-015 | Users table | Table | Users page | Cột ID, Name, Email, City, Company, edit action | Click header để sort; nhập Filter users... | w-full; responsive ẩn City/Company trên màn hình nhỏ | TanStack Table\n17 | 16 | UI-016 | Edit user action | Icon button | Cột Actions của Users table | Pencil icon; không có label hiển thị | Click mở Edit User dialog | ghost; h-7 w-7; hover text-primary | src/routes/users.tsx\n18 | 17 | UI-017 | Edit User dialog | Dialog + Form | Overlay giữa màn hình | Fields name, email, phone, website; label + input; required errors | Input/change/blur; submit | DialogContent; space-y-4; lỗi text-destructive | TanStack Form; dữ liệu nạp từ row\n19 | 18 | UI-018 | Dialog actions | Button group | Cuối Edit User dialog | Cancel + Save; icon X / Check; Save loading khi mutation pending | Click Cancel; click Save | justify-end; outline Cancel; Save disabled khi pending | Cancel không gọi API\n20 | 19 | UI-019 | Loading / empty / error states | Feedback | Theo từng module | Loading todos/posts/users; Failed to load todos; No todos found | - | center; muted text; loader icon animate-spin; error destructive | Posts/Users có loading; Todos có loading/error/empty",
+  "contentHash": "26df0c81654b181eb429291b0aef0cb051c1cdadc498f7c83f829f973d88d32f",
+  "provenance": {
+    "sourceId": "src-7eb0e04e4687d2708a9c3839",
+    "revisionId": "rev-a9e808a3a828375ea4d289bb",
+    "artifactId": "artifact-580157fbba7b04b18769fcb7",
+    "location": {
+      "segments": [
+        {
+          "kind": "workbook",
+          "value": "example-react-detail-design.xlsx"
+        },
+        {
+          "kind": "sheet",
+          "value": "Thiết kế UI"
+        },
+        {
+          "kind": "range",
+          "value": "A1:I20"
+        }
+      ]
+    }
+  },
+  "relations": [
+    {
+      "type": "continuation-previous",
+      "targetContextId": "ctx-72bf0e82f91621cacf990d81"
+    },
+    {
+      "type": "continuation-next",
+      "targetContextId": "ctx-4d877c923edeef7963e04256"
+    }
+  ],
+  "metadata": {
+    "sheetName": "Thiết kế UI",
+    "sheetIndex": 1,
+    "range": "A1:I20",
+    "chunkType": "tabular"
+  }
+}

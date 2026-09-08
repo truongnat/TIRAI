@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "stages": [
+    {
+      "name": "source-ingestion",
+      "mode": "connector",
+      "aiCalls": 0
+    },
+    {
+      "name": "semantic-analysis",
+      "mode": "deterministic",
+      "aiCalls": 0,
+      "reason": "structured design rows are already normalized requirements"
+    },
+    {
+      "name": "requirement-build",
+      "mode": "deterministic",
+      "aiCalls": 0,
+      "reason": "requirements are compiled from explicit design rows"
+    },
+    {
+      "name": "test-planning",
+      "mode": "deterministic",
+      "aiCalls": 0,
+      "reason": "test scenarios are compiled with source traceability"
+    }
+  ]
+}

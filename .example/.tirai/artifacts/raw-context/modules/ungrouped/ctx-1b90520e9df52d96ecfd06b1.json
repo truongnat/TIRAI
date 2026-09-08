@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-1b90520e9df52d96ecfd06b1",
+  "type": "tabular",
+  "content": "Sheet: Thiết kế FE\nRange: A1:H11\n\nColumns:\nA: STT\nB: Tên module\nC: Đường dẫn file\nD: Trách nhiệm\nE: Phụ thuộc\nF: Interface công khai\nG: Quản lý trạng thái\nH: Ghi chú\n\nRows:\n2 | 1 | RootLayout | src/routes/__root.tsx | Dựng HTML shell, header, outlet, QueryClientProvider và devtools. | TanStack Router; React Query; Store | Route; getQueryClient(); Header() | QueryClient singleton phía browser; activeTab từ appStore | SSR-safe query client\n3 | 2 | HomePage | src/routes/index.tsx | Dashboard giới thiệu 3 module và 6 TanStack libraries. | TanStack Router; Card; Badge; Link | Route; HomePage() | Static feature metadata; setTab khi click | Route /\n4 | 3 | TodosPage | src/routes/todos.tsx | Fetch list, add/toggle/delete todo, filter và hiển thị progress. | React Query; React Form; Store; UI primitives | Route; TodosPage(); todosQuery | Query cache ['todos']; filter local; searchQuery global; mutation rollback | API write là mock JSONPlaceholder\n5 | 4 | PostsPage | src/routes/posts.tsx | Fetch posts, table sort/filter/page và virtual list. | React Query; React Table; React Virtual; Store | Route; PostsPage(); columns | Query cache ['posts']; sorting/globalFilter local; viewMode global | 100 rows từ API demo\n6 | 5 | UsersPage | src/routes/users.tsx | Fetch users, table sort/filter, mở dialog và edit user. | React Query; React Table; React Form; Dialog | Route; UsersPage(); columns; openEdit() | Query cache ['users']; sorting/globalFilter; editingUser/dialogOpen | PATCH optimistic + rollback\n7 | 6 | UI Primitives | src/components/ui/*.tsx | Cung cấp Button, Input, Card, Badge, Checkbox, Dialog, Label, Separator. | React; class-variance-authority; Radix primitives | Component props theo từng primitive | Controlled state từ route components | Dùng chung cho các trang\n8 | 7 | Global Store | src/store/index.ts | Quản lý active tab, search query và view mode dùng chung. | @tanstack/store | appStore; setTab(); setSearchQuery(); setViewMode() | State in-memory phía client | Todos search và Posts view mode dùng state này\n9 | 8 | Router | src/router.tsx; src/routeTree.gen.ts | Khởi tạo router và map route file-based. | @tanstack/react-router | createRouter(); router | Route state trong URL; activeTab sync qua click | Routes: /, /todos, /posts, /users\n10 | 9 | Playwright Test Harness | playwright.config.ts; tests/tirai-smoke.spec.ts | Smoke test navigation, add todo và filter todos; start dev server. | @playwright/test; npm dev | test:e2e; webServer; baseURL | Fixture state trong browser context; API route mock trong test | QA example được thêm cho dự án này\n11 | 10 | TIRAI Test Integration | .tirai/config.json; .tirai/specs; .tirai/mappings; .tirai/generated | Sinh và chạy Playwright test từ canonical spec/mapping. | TIRAI CLI; Playwright | npm run tirai:generate; npm run tirai:run; npm run tirai:example | Runtime/query state quản lý bởi TIRAI | Input spec hiện tại tập trung Todos",
+  "contentHash": "91a3705adb0c1f7af0780c8cf4d16572002aef62cb20e6c4a98d541c5dd09848",
+  "provenance": {
+    "sourceId": "src-7eb0e04e4687d2708a9c3839",
+    "revisionId": "rev-a9e808a3a828375ea4d289bb",
+    "artifactId": "artifact-1fbb8e5abf3ff2bd09398680",
+    "location": {
+      "segments": [
+        {
+          "kind": "workbook",
+          "value": "example-react-detail-design.xlsx"
+        },
+        {
+          "kind": "sheet",
+          "value": "Thiết kế FE"
+        },
+        {
+          "kind": "range",
+          "value": "A1:H11"
+        }
+      ]
+    }
+  },
+  "relations": [
+    {
+      "type": "continuation-previous",
+      "targetContextId": "ctx-4d877c923edeef7963e04256"
+    },
+    {
+      "type": "continuation-next",
+      "targetContextId": "ctx-4f6890be438398f20c5f3188"
+    }
+  ],
+  "metadata": {
+    "sheetName": "Thiết kế FE",
+    "sheetIndex": 3,
+    "range": "A1:H11",
+    "chunkType": "tabular"
+  }
+}

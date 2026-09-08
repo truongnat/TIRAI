@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ctx-4f6890be438398f20c5f3188",
+  "type": "tabular",
+  "content": "Sheet: Thiết kế API\nRange: A1:L8\n\nColumns:\nA: STT\nB: Mã API\nC: Endpoint\nD: Phương thức HTTP\nE: Mô tả\nF: Header yêu cầu\nG: Body yêu cầu\nH: Response (Thành công)\nI: Response (Thất bại)\nJ: Mã trạng thái\nK: Xác thực\nL: Ghi chú\n\nRows:\n2 | 1 | API-001 | /todos?_limit=20 | GET | Lấy tối đa 20 todos cho Todos page | - | - | Todo[] gồm id, userId, title, completed | Network error / 5xx → isError | 200 | Không cần | Nguồn: src/routes/todos.tsx; external JSONPlaceholder\n3 | 2 | API-002 | /todos | POST | Tạo todo mới | Content-Type: application/json | {\"title\":\"string\",\"completed\":false,\"userId\":1} | Todo object hoặc payload được echo | 400/5xx → rollback optimistic item | 201 (demo) | Không cần | JSONPlaceholder mô phỏng, không đảm bảo persistence\n4 | 3 | API-003 | /todos/{id} | PATCH | Đổi trạng thái completed | Content-Type: application/json | {\"completed\":true|false} | Todo object / todo đã update | 404/5xx → rollback cache | 200 (demo) | Không cần | Nguồn: src/routes/todos.tsx\n5 | 4 | API-004 | /todos/{id} | DELETE | Xóa todo | - | - | Object rỗng hoặc response xác nhận | 404/5xx → rollback item | 200 (demo) | Không cần | Optimistic remove phía client\n6 | 5 | API-005 | /posts | GET | Lấy toàn bộ posts cho table/virtual list | - | - | Post[] gồm id, userId, title, body; thường 100 record | Network error / 5xx → loading không thành công | 200 | Không cần | staleTime 10 phút; nguồn: src/routes/posts.tsx\n7 | 6 | API-006 | /users | GET | Lấy toàn bộ users cho Users page | - | - | User[] gồm profile, address, company; thường 10 record | Network error / 5xx → giữ loading/error theo Query | 200 | Không cần | staleTime 10 phút; nguồn: src/routes/users.tsx\n8 | 7 | API-007 | /users/{id} | PATCH | Cập nhật name/email/phone/website | Content-Type: application/json | {\"name\":\"string\",\"email\":\"string\",\"phone\":\"string\",\"website\":\"string\"} | User object / user đã update | 400/404/5xx → rollback cache; dialog giữ trạng thái | 200 (demo) | Không cần | onSuccess đóng dialog; JSONPlaceholder không persistence",
+  "contentHash": "3330b443eeb833855afeed00c2b383ffd53ff7d7a6285dfe385ccaa26b26f0f3",
+  "provenance": {
+    "sourceId": "src-7eb0e04e4687d2708a9c3839",
+    "revisionId": "rev-a9e808a3a828375ea4d289bb",
+    "artifactId": "artifact-576bca620a20f244243505cd",
+    "location": {
+      "segments": [
+        {
+          "kind": "workbook",
+          "value": "example-react-detail-design.xlsx"
+        },
+        {
+          "kind": "sheet",
+          "value": "Thiết kế API"
+        },
+        {
+          "kind": "range",
+          "value": "A1:L8"
+        }
+      ]
+    }
+  },
+  "relations": [
+    {
+      "type": "continuation-previous",
+      "targetContextId": "ctx-1b90520e9df52d96ecfd06b1"
+    }
+  ],
+  "metadata": {
+    "sheetName": "Thiết kế API",
+    "sheetIndex": 4,
+    "range": "A1:L8",
+    "chunkType": "tabular"
+  }
+}
