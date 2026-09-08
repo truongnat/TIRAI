@@ -15,7 +15,8 @@ describe('raw context package', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-raw-'));
     const result = writeRawContextPackage(doc, dir);
     expect(result.contextCount).toBe(1);
-    expect(JSON.parse(fs.readFileSync(result.manifestPath, 'utf8')).contexts[0].file).toBe('contexts/ctx-1.json');
+    expect(JSON.parse(fs.readFileSync(result.manifestPath, 'utf8')).contexts[0].file).toBe('modules/ungrouped/ctx-1.json');
+    expect(JSON.parse(fs.readFileSync(result.manifestPath, 'utf8')).modules[0].id).toBe('ungrouped');
     expect(verifyRawContextPackage(dir)).toEqual({ valid: true, errors: [] });
   });
 });
