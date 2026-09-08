@@ -22,8 +22,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$repo=$env:REPO; $version=$env:VERSION; $token=$env:TOKEN;" ^
   "$headers=@{Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2022-11-28'}; if($token){$headers.Authorization='Bearer '+$token};" ^
   "$api='https://api.github.com/repos/'+$repo; if($version -eq 'latest'){$url=$api+'/releases/latest'}else{$tag=if($version.StartsWith('v')){$version}else{'v'+$version};$url=$api+'/releases/tags/'+$tag};" ^
-  "try{$r=Invoke-RestMethod -Uri $url -Headers $headers}catch{throw 'Could not read GitHub release. For a private repository, set GITHUB_TOKEN (or GH_TOKEN) with repo read access.'};" ^
-  "$asset=$r.assets|Where-Object{$_.name -match '^tirai-cli-.*\.tgz$'}|Select-Object -First 1; if(!$asset){throw 'No tirai-cli-*.tgz asset found in the selected release.'};" ^
+  "try{$r=Invoke-RestMethod -Uri $url -Headers $headers}catch{$status=$_.Exception.Response.StatusCode.value__;if($status -eq 404){if($version -eq 'latest'){throw ('No GitHub Release exists yet for '+$repo+'. Create and push a version tag such as v1.0.0 so the release workflow can publish the CLI package.')}else{throw ('GitHub Release '+$version+' was not found for '+$repo+'.')}};throw ('Could not read GitHub release: '+$_.Exception.Message)};" ^
+  "$asset=$r.assets|Where-Object{$_.name -match '^tirai-cli-.*\.tgz$'}|Select-Object -First 1; if(!$asset){throw 'The selected release does not contain a tirai-cli-*.tgz asset.'};" ^
   "$tmp=Join-Path ([IO.Path]::GetTempPath()) ('tirai-install-'+[guid]::NewGuid());New-Item -ItemType Directory -Path $tmp|Out-Null;" ^
   "$tgz=Join-Path $tmp $asset.name; $downloadHeaders=@{Accept='application/octet-stream';'X-GitHub-Api-Version'='2022-11-28'};if($token){$downloadHeaders.Authorization='Bearer '+$token};" ^
   "Write-Host ('[tirai] Downloading '+$asset.name+'...');Invoke-WebRequest -Uri $asset.url -Headers $downloadHeaders -OutFile $tgz;" ^
