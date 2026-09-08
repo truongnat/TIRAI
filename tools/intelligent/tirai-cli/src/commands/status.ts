@@ -53,6 +53,8 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
   }
 
   const generatedExists = fs.existsSync(paths.generatedE2eDir) && fs.readdirSync(paths.generatedE2eDir).length > 0;
+  const specCount = state?.specRegistry?.count ?? 0;
+
   const lines = [
     'Workspace:',
     `  ${state ? 'initialized' : 'not initialized'}`,
@@ -60,6 +62,9 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
     'Source:',
     `  ${state?.source ? path.relative(paths.root, state.source.path) : 'none'}`,
     state?.source ? `  revision: ${state.source.contentHash.slice(0, 8)}` : '',
+    '',
+    'Specs:',
+    `  ${specCount} registered`,
     '',
     'TestCases:',
     `  ${state?.testPlan?.testCaseCount ?? 0}`,
