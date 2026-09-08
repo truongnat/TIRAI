@@ -23,6 +23,7 @@ import { writeSemanticContextPackage } from './bridge.js';
 import { scanSecrets } from './secret-scan.js';
 import { compileStructuredDesignDocument } from './structured-design-compiler.js';
 import { buildContractIR } from './contract-builder.js';
+import { writeRawContextPackage } from './raw-context.js';
 
 export type PipelineStage = 'SOURCE_INGESTION' | 'SEMANTIC_ANALYSIS' | 'REQUIREMENT_BUILD' | 'TEST_PLANNING';
 
@@ -71,6 +72,8 @@ export interface SourceToTestCaseResult {
     contract: string;
     context: string;
     semanticContextDir: string;
+    rawContextDir: string;
+    rawContextManifest: string;
     semanticIr: string;
     requirements: string;
     testPlan: string;
@@ -126,6 +129,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   // -- Bridge: canonical document -> semantic context dir ------------------
   const semanticContextDir = path.join(outputDir, 'semantic-context');
   const writeResult = writeSemanticContextPackage(doc, semanticContextDir);
+  const rawContext = writeRawContextPackage(doc, path.join(outputDir, 'raw-context'));
 
   // Structured detailed-design workbooks already carry explicit row-level
   // requirements. Compile that contract deterministically before the AI path
@@ -179,6 +183,8 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
         contract: contractPath,
         context: contextPath,
         semanticContextDir,
+        rawContextDir: rawContext.dir,
+        rawContextManifest: rawContext.manifestPath,
         semanticIr: semanticIrPath,
         requirements: requirementsPath,
         testPlan: testPlanPath,
@@ -297,6 +303,8 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       contract: contractPath,
       context: contextPath,
       semanticContextDir,
+      rawContextDir: rawContext.dir,
+      rawContextManifest: rawContext.manifestPath,
       semanticIr: semanticIrPath,
       requirements: requirementsPath,
       testPlan: testPlanPath,
