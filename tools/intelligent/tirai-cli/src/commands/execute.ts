@@ -9,17 +9,23 @@ import { requireWorkspace } from '../workspace.js';
 import { loadConfig } from '../config.js';
 import { updateState } from '../state.js';
 import { CliError } from '../errors.js';
+import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
 
 export interface ExecuteOptions {
   cwd: string;
   platform?: string;
   environment?: string;
   json?: boolean;
+  taskId?: string;
 }
 
 export async function runExecute(opts: ExecuteOptions): Promise<void> {
-  const paths = requireWorkspace(opts.cwd);
-  const config = loadConfig(paths);
+  const basePaths = requireWorkspace(opts.cwd);
+  const task = opts.taskId ? resolveActiveTask(basePaths, opts.taskId) : undefined;
+  if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
+  const taskRoot = task ? taskPaths(basePaths, task.id) : undefined;
+  const paths = taskRoot ? { ...basePaths, testCasesPath: `${taskRoot.artifacts}/testcases.json` } : basePaths;
+  const config = loadConfig(basePaths);
 
   // Determine platform
   const platform = opts.platform || 'web';
@@ -66,6 +72,7 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
       overall: result.status as string,
     },
   }));
+  if (task) updateTask(basePaths, task.id, { status: result.status === 'ready' ? 'executed' : 'blocked' });
 
   if (opts.json) {
     console.log(JSON.stringify(result, null, 2));

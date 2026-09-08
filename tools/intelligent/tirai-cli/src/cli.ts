@@ -245,6 +245,7 @@ async function main(): Promise<void> {
           cwd,
           platform: flags.platform as string,
           environment: flags.environment as string,
+          taskId: flags.task as string,
           json: Boolean(flags.json),
         });
         break;
