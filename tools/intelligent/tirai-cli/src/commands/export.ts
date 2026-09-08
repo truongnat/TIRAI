@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import * as fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import { requireWorkspace } from '../workspace.js';
 import { loadConfig } from '../config.js';
 import { CliError } from '../errors.js';
@@ -92,6 +93,18 @@ export async function runExport(opts: ExportCommandOptions): Promise<void> {
     });
     artifacts.push(artifact);
   }
+
+  const exportManifest = {
+    schemaVersion: '1.0',
+    contractId: contract.contractId,
+    contractFingerprint: (contract as { metadata?: { contractFingerprint?: string } }).metadata?.contractFingerprint,
+    artifacts: artifacts.map((artifact) => {
+      const content = fs.readFileSync(artifact.path);
+      return { format: artifact.format, path: artifact.path, contentHash: createHash('sha256').update(content).digest('hex'), byteLength: content.byteLength };
+    }),
+  };
+  fs.mkdirSync(paths.artifactsDir, { recursive: true });
+  fs.writeFileSync(`${paths.artifactsDir}/export-manifest.json`, JSON.stringify(exportManifest, null, 2), 'utf8');
 
   if (opts.json) {
     console.log(JSON.stringify({ artifacts }, null, 2));
