@@ -77,7 +77,7 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
       overall: result.status as string,
     },
   }));
-  if (task) updateTask(basePaths, task.id, { status: result.status === 'ready' ? 'executed' : 'blocked' });
+  if (task) updateTask(basePaths, task.id, { status: result.executionStatus === 'manual' ? 'reported' : result.executionStatus === 'passed' ? 'executed' : 'blocked' });
 
   if (opts.json) {
     console.log(JSON.stringify({ ...result, resultPath }, null, 2));
@@ -100,6 +100,8 @@ async function executeWeb(
   // Full integration requires browser session setup
   return {
     status: 'ready',
+    executionStatus: 'manual',
+    evidence: { kind: 'configuration', executable: false, reason: 'Browser session is required; use generated Playwright tests for execution.' },
     platform: 'web',
     environment,
     baseUrl: envConfig.baseUrl,
@@ -119,6 +121,8 @@ async function executeBackend(
   }).length;
   return {
     status: 'ready',
+    executionStatus: operationCount > 0 ? 'blocked' : 'manual',
+    evidence: { kind: 'api-operation-discovery', executable: false, reason: operationCount > 0 ? 'API operations require explicit request mappings and approval.' : 'No API operations were found in the selected test cases.' },
     adapter: 'api-executor',
     platform: 'backend',
     environment,
@@ -140,6 +144,8 @@ async function executeDatabase(
   }).length;
   return {
     status: 'ready',
+    executionStatus: queryCount > 0 ? 'blocked' : 'manual',
+    evidence: { kind: 'database-check-discovery', executable: false, reason: queryCount > 0 ? 'Database checks require an approved read-only query mapping.' : 'No database checks were found in the selected test cases.' },
     adapter: 'database-executor',
     platform: 'database',
     environment,
