@@ -141,6 +141,7 @@ async function main(): Promise<void> {
           cwd,
           target,
           sourceMapping: flags['source-mapping'] as string,
+          taskId: flags.task as string,
         });
         break;
       }
