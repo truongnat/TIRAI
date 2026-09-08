@@ -10,6 +10,7 @@ import { runTargetList, runTargetAdd, runTargetValidate } from './commands/targe
 import { runSpecAdd, runSpecList, runSpecInspect } from './commands/spec.js';
 import { runPlan } from './commands/plan.js';
 import { runExport } from './commands/export.js';
+import { runExecute } from './commands/execute.js';
 import { CliError } from './errors.js';
 
 const VERSION = '1.0.0';
@@ -36,6 +37,7 @@ Commands:
   spec inspect            Inspect a specification
   plan                    Generate canonical test plan from specs + targets
   export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
+  execute                 Execute tests against configured platform
   --help, -h              Show this help
   --version, -v           Show version
 
@@ -51,7 +53,7 @@ Examples:
   tirai spec list
   tirai plan
   tirai export --format all
-  tirai export --format xlsx --out ./artifacts
+  tirai execute --platform web --environment staging
 `);
 }
 
@@ -202,6 +204,15 @@ async function main(): Promise<void> {
           format,
           outDir: flags.out as string,
           includeBlocked: Boolean(flags['include-blocked']),
+          json: Boolean(flags.json),
+        });
+        break;
+      }
+      case 'execute': {
+        await runExecute({
+          cwd,
+          platform: flags.platform as string,
+          environment: flags.environment as string,
           json: Boolean(flags.json),
         });
         break;

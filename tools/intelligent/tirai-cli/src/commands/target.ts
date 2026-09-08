@@ -91,6 +91,12 @@ export async function runTargetAdd(opts: TargetAddOptions): Promise<void> {
     database: { enabled: true, environments: {} },
   };
 
+  // Ensure platform sub-objects exist (handles empty platforms case)
+  if (!platforms.web) platforms.web = { enabled: false, environments: {} };
+  if (!platforms.backend) platforms.backend = { enabled: false, environments: {} };
+  if (!platforms.mobile) platforms.mobile = { enabled: false, targets: [] };
+  if (!platforms.database) platforms.database = { enabled: false, environments: {} };
+
   // Set enabled and add environment/target
   if (platform === 'web' && platforms.web) {
     platforms.web.enabled = true;
