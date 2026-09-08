@@ -1,272 +1,285 @@
-# TIRAI — AI-driven Test Orchestration Platform (MVP)
+# TIRAI — AI-driven Test Orchestration Platform
 
-TIRAI is a TypeScript toolchain that turns a specification (Excel) into canonical test cases, then into executable Playwright (E2E) and Vitest (Unit) tests via **trusted, persisted mappings**, and finally into canonical `TestRunResultIR` results.
+TIRAI turns software specifications into canonical test cases, generates executable Playwright (E2E) and Vitest (Unit) tests through trusted mappings, executes them with real runners, and exports canonical `TestRunResultIR` results.
 
-> **Current status — distributable MVP is complete and frozen.**
->
-> - `ORIGINAL EXCEL PRODUCT CORE = COMPLETE`
-> - `DEVELOPER RUNNABLE MVP = COMPLETE` (Phase 6.0)
-> - `DISTRIBUTABLE MVP = COMPLETE` (Phase 6.1)
->
-> Install the packaged CLI and run the full pipeline outside the monorepo — see **Installation** below.
+## Pipeline
 
----
-
-## Supported pipeline (proven end-to-end)
-
-```
-Excel / Markdown
-      ↓
-Canonical Context (source-ingestion)
-      ↓
-Semantic IR (semantic-analyzer)
-      ↓
-Requirement (requirement-builder)
-      ↓
-Scenario / TestCase (test-planner)
-      ↓
+```text
+Excel / PDF / DOCX / Markdown / CSV / JSON / URL
+        ↓
+Canonical Context
+        ↓
+Semantic Analysis
+        ↓
+Requirement / Scenario / TestCase
+        ↓
 Canonical TestCase JSON
-      ↓
-Trusted Mapping (human-owned, persisted)
-      ├── E2E ExecutionMappingIR + UIElementCatalog
-      └── Unit Target-Code Mapping (symbol + fingerprint)
-      ↓
-Generated Code (deterministic, 0 AI)
-      ├── Playwright *.spec.ts
-      └── Vitest *.spec.ts
-      ↓
-Real Execution
-      ├── Chromium (Playwright)
-      └── Vitest
-      ↓
-TestRunResultIR (canonical)
-      ↓
-JSON + Markdown Report
+        ↓
+Trusted Mapping
+   ┌────────────┴────────────┐
+   ↓                         ↓
+E2E Mapping             Unit Target Mapping
+   ↓                         ↓
+Playwright *.spec.ts     Vitest *.spec.ts
+   ↓                         ↓
+Real Chromium            Real Vitest
+   └────────────┬────────────┘
+                ↓
+        TestRunResultIR
+                ↓
+          JSON + Markdown
 ```
 
-**Trust boundary:** AI/spec determines *what* to test. Trusted mappings determine *where/how* it connects to the project. TIRAI never guesses an unresolved selector, symbol, route, or assertion — it **fails closed** (`BLOCKED` / `STALE_MAPPING`).
+**Trust boundary:** specifications/AI determine **what** to test. Trusted mappings determine **where/how** the test connects to the target project. Generation and execution do not guess unresolved selectors, routes, symbols, or assertions; unresolved mappings fail closed.
 
----
+## Install
 
-## Installation
+Requires **Node.js 20+** and npm.
 
-### From repository (development)
+TIRAI now ships through GitHub Release assets. Each release contains a packaged `tirai-cli-*.tgz` and SHA256 checksum.
+
+### Linux / macOS
 
 ```bash
-npm install
-npm run build:all
-npx tirai --help
+curl -fsSL https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash
 ```
 
-### From distributable tarball (proven outside monorepo)
-
-The distributable is produced via `tirai-cli`:
+For this repository while it is private:
 
 ```bash
-cd tools/intelligent/tirai-cli
-npm pack              # creates tirai-cli-1.0.0.tgz (132K, 58 files)
-# in a clean external TypeScript project:
-npm init -y
-npm install /absolute/path/to/tirai-cli-1.0.0.tgz
-npm install -D @playwright/test vitest typescript  # target project owns frameworks
-npx tirai --help
+export GITHUB_TOKEN=<github-token-with-repo-read-access>
+curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash
 ```
 
-> The published package is self-contained (bundled via esbuild, 466K). No `file:` workspace deps remain. `prepack` strips `file:` deps before `npm pack`.
+The installer also accepts `GH_TOKEN`.
 
-Public registry publication is not yet configured — tarball/local install is the proven path. Do not document `npm install tirai` unless it is published.
+### Windows CMD
 
----
+Download `install.cmd` from the repository, then run:
 
-## Quick Start (external project, 5 commands)
+```cmd
+set GITHUB_TOKEN=<github-token-with-repo-read-access>
+install.cmd
+```
+
+When the repository becomes public, the token is no longer required.
+
+### Install a specific version
+
+Linux/macOS:
 
 ```bash
-# 1. Create/open a TypeScript project
-mkdir my-app && cd my-app
-npm init -y
-npm install -D @playwright/test vitest typescript
-npx playwright install chromium   # required once for E2E
-
-# 2. Install TIRAI and initialize workspace
-npm install /path/to/tirai-cli-1.0.0.tgz
-npx tirai init
-# → creates .tirai/ (config, mappings, artifacts, generated, runtime, results, reports)
-
-# 3. Configure provider (env, never in config)
-export GROQ_API_KEY=...   # or DEEPSEEK_API_KEY, or keep fake for local
-# .tirai/config.json: { "ai": { "provider": "fake" } } is the default
-
-# 4. Ingest a real Excel spec
-npx tirai ingest ./spec.xlsx
-# → .tirai/artifacts/testcases.json  (inspect it)
-
-# 5. Create trusted mappings (human-owned, persisted, diffable)
-# .tirai/mappings/e2e.json  — UIElementCatalog + ExecutionMappingIR
-# .tirai/mappings/unit.json — UnitTargetCodeMapping[]
-
-# 6. Generate
-npx tirai generate
-# → .tirai/generated/e2e/*.spec.ts  +  .tirai/generated/unit/*.spec.ts
-
-# 7. Execute
-npx tirai run
-# → real Chromium + Vitest, .tirai/results/e2e-run-result-ir.json
-
-# 8. Inspect
-npx tirai report
-# → .tirai/reports/latest-summary.md
-npx tirai status
+TIRAI_VERSION=1.0.0 ./install.sh
 ```
 
-**Critical:** `spec.xlsx → TestCase → trusted mapping → generated tests`. Do not expect `spec.xlsx` to become runnable tests without mappings.
+Windows CMD:
 
----
-
-## Minimal end-to-end example
-
-Business rule (Excel):
-
-```
-If quantity > availableStock → valid=false, reason=INSUFFICIENT_STOCK
-Else → valid=true
+```cmd
+set TIRAI_VERSION=1.0.0
+install.cmd
 ```
 
-```ts
-// src/validateOrder.ts (or order-app/order-validation.ts)
-export function validateOrder(quantity: number, availableStock: number): string {
-  return quantity > availableStock ? 'INSUFFICIENT_STOCK' : 'ACCEPTED';
-}
+The installer:
+
+```text
+checks Node.js/npm
+      ↓
+resolves latest or requested GitHub Release
+      ↓
+downloads tirai-cli-*.tgz
+      ↓
+verifies SHA256 when published
+      ↓
+npm install --global
+      ↓
+verifies tirai --version
 ```
 
-**Unit mapping** (`.tirai/mappings/unit.json`):
+> A GitHub Release must exist before the release-based installer can install TIRAI. Releases are produced automatically from `v*` tags by `.github/workflows/release-cli.yml`.
 
-```json
-{
-  "mappings": [{
-    "testCaseId": "TC-0001",
-    "symbolRef": { "sourceFile": "order-validation.ts", "symbolName": "validateOrder" },
-    "argumentInputNames": ["quantity", "availableStock"],
-    "expectedResultIndex": 0,
-    "assertionType": "primitive-equal",
-    "targetFingerprint": "<sha256 of file content>"
-  }]
-}
+Full installation details: [`docs/installation.md`](docs/installation.md).
+
+## Create a release
+
+The CLI package version and Git tag must match.
+
+```bash
+# package.json version example: 1.0.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
-**E2E mapping** (`.tirai/mappings/e2e.json`):
+GitHub Actions then:
 
-```json
-{
-  "schemaVersion": "1.0",
-  "testMappings": [{
-    "testCaseId": "TC-0001",
-    "status": "ready",
-    "ui": {
-      "stepMappings": [
-        { "stepOrder": 1, "action": "navigate", "valueLiteral": "/" },
-        { "stepOrder": 2, "action": "fill", "targetLogicalName": "quantity", "valueLiteral": "10" },
-        { "stepOrder": 3, "action": "fill", "targetLogicalName": "availableStock", "valueLiteral": "5" },
-        { "stepOrder": 4, "action": "click", "targetLogicalName": "submit" }
-      ],
-      "assertionMappings": [
-        { "expectedResultIndex": 0, "assertionType": "text-contains", "targetLogicalName": "result", "expectedValue": "INSUFFICIENT_STOCK" }
-      ]
-    }
-  }],
-  "catalogs": { "uiCatalog": { "environmentId": "order-app", "pages": [{ "id": "order", "route": "/", "elements": [
-    { "logicalName": "quantity", "locator": { "strategy": "test-id", "value": "quantity" } },
-    { "logicalName": "availableStock", "locator": { "strategy": "test-id", "value": "availableStock" } },
-    { "logicalName": "submit", "locator": { "strategy": "test-id", "value": "submit" } },
-    { "logicalName": "result", "locator": { "strategy": "test-id", "value": "result" } }
-  ] }] } }
-}
+```text
+npm ci
+  ↓
+CLI check
+  ↓
+npm pack
+  ↓
+SHA256
+  ↓
+GitHub Release
+  ├── tirai-cli-1.0.0.tgz
+  └── tirai-cli-1.0.0.tgz.sha256
 ```
 
-Stale fingerprint → `tirai generate` fails with `STALE_MAPPING` (never silently uses stale code).
+The workflow can also be triggered manually to build the package as a workflow artifact without creating a release.
 
----
+## Quick start
 
-## Workspace layout
+After installation:
 
-```
-.tirai/
-  config.json          # version:1, workspaceVersion:1, ai.provider, e2e.baseUrl, unit.projectRoot
-  project.json         # detection + project-adapter fingerprint
-  mappings/
-    e2e.json           # commit-friendly
-    unit.json          # commit-friendly
-  artifacts/           # canonical JSON (context, semantic-ir, requirements, test-plan, testcases, trace)
-  generated/
-    e2e/               # TIRAI-owned Playwright source
-    unit/              # TIRAI-owned Vitest source
-  runtime/
-    e2e/               # materialized copy (separated from generated)
-    unit/
-  results/             # TestRunResultIR (e2e-run-result-ir.json, unit-run-result-ir.json)
-  reports/             # latest-summary.md (derived from IR)
-  state/workspace.json # source hash, TestCase counts, generation/run status
-  .gitignore           # ignores results/reports, keeps config/mappings
-```
-
-`tirai-runtime/e2e/` (non-hidden, at project root) is used as the Playwright exec dir to avoid hidden/gitignore discovery issues — see `tirai run` implementation.
-
-Generated tests are **not** written into `tests/` or `src/` unless you configure that in a future phase.
-
----
-
-## CLI reference
-
-```
+```bash
+tirai --version
 tirai --help
-tirai --version        # 1.0.0 from package.json
 
-tirai init [--force]           # create .tirai/, detect project, write config
-tirai ingest <spec> [--json]   # Excel/Markdown → canonical artifacts
-tirai generate [--e2e|--unit]  # TestCase + mapping → generated code (validates)
-tirai run [--json]             # materialize → real Chromium/Vitest → IR (exit 0 pass, 1 fail, 2 blocked/error)
-tirai report [--json]          # summary from IR
-tirai status [--json]          # workspace state
+cd my-project
+tirai init
 ```
 
----
+Configure the AI provider through environment variables when required:
+
+```bash
+export GROQ_API_KEY=...
+# or
+export DEEPSEEK_API_KEY=...
+```
+
+Then ingest a specification:
+
+```bash
+tirai ingest ./spec.xlsx
+# or
+tirai ingest ./spec.pdf
+tirai ingest ./spec.docx
+tirai ingest ./spec.csv
+tirai ingest ./spec.json
+tirai ingest ./spec.md
+```
+
+TIRAI writes its workspace under `.tirai/`.
+
+```text
+.tirai/
+  config.json
+  project.json
+  mappings/
+    e2e.json
+    unit.json
+  artifacts/
+  generated/
+    e2e/
+    unit/
+  runtime/
+    e2e/
+    unit/
+  results/
+  reports/
+  state/
+```
+
+Inspect the generated canonical TestCases before mapping:
+
+```bash
+tirai status
+tirai generate
+tirai run
+tirai report
+```
+
+## Trusted mappings
+
+A specification does **not** automatically become executable code by guessing project details.
+
+TIRAI keeps an explicit mapping boundary:
+
+```text
+Canonical TestCase
+       ↓
+Trusted Mapping
+   ┌───────┴───────┐
+   ↓               ↓
+UI selector      Source symbol
+/ route          + fingerprint
+   ↓               ↓
+Playwright       Vitest
+```
+
+Mappings live in:
+
+```text
+.tirai/mappings/e2e.json
+.tirai/mappings/unit.json
+```
+
+Missing, ambiguous, or stale mappings are blocked rather than guessed.
 
 ## Source support
 
-| Source     | Status                         |
-|------------|--------------------------------|
-| Excel (.xlsx) | **PROVEN** — full pipeline, deterministic, 1 TestCase from order validation |
-| Markdown (.md) | SUPPORTED_BUT_NOT_PRODUCT_ACCEPTED — connector exists, not exercised in acceptance |
-| PDF        | NOT_IMPLEMENTED                |
-| Other      | NOT_IMPLEMENTED                |
+| Source | Current support |
+|---|---|
+| Excel `.xlsx` | Supported; original end-to-end product path proven |
+| Markdown `.md` | Supported |
+| PDF `.pdf` | Supported by local PDF connector |
+| DOCX `.docx` | Supported |
+| CSV `.csv` | Supported |
+| JSON `.json` | Supported |
+| URL / HTML | Supported by URL connector |
 
----
+The additional source connectors extend ingestion; they do not change the canonical TestCase → trusted mapping → generated-code trust boundary.
 
-## Generated test support
+## Generated tests
 
-| Framework | Status | Language | Proven |
-|-----------|--------|----------|--------|
-| Playwright| PROVEN | TypeScript | E2E via ExecutionMappingIR + UIElementCatalog, 0 AI, fail-closed |
-| Vitest    | PROVEN | TypeScript | Unit via AST inspection + fingerprint, 0 AI, fail-closed |
-| Jest/Cypress/Selenium/Python/Java | NOT_IMPLEMENTED | — | — |
+| Framework | Type | Language | Generation |
+|---|---|---|---|
+| Playwright | E2E | TypeScript | deterministic, 0 AI |
+| Vitest | Unit | TypeScript | deterministic, 0 AI |
 
----
+Other test frameworks are not part of the currently proven generated-code path.
+
+## CLI
+
+```text
+tirai --help
+tirai --version
+
+tirai init [--force]
+tirai ingest <spec> [--json]
+tirai generate [--e2e|--unit]
+tirai run [--json]
+tirai report [--json]
+tirai status [--json]
+```
+
+Exit semantics:
+
+```text
+0 = PASS
+1 = business assertion FAIL
+2 = BLOCKED / configuration / validation / infrastructure ERROR
+```
+
+`0 tests discovered` is an error, never a pass.
 
 ## AI boundaries
 
-| Stage                  | AI allowed? | Authoritative? |
-|------------------------|-------------|----------------|
-| Source understanding   | Yes (fake/groq/deepseek) | semantic assistance |
-| Requirement/TestCase planning | Yes | within canonical planning |
-| E2E trusted mapping    | No guessing | **No** — must be human-provided, fail-closed |
-| Unit target mapping    | No AI authority | **No** — exact symbol + fingerprint |
-| Playwright generation  | **No** | deterministic, 0 AI |
-| Vitest generation      | **No** | deterministic, 0 AI |
-| Test execution         | **No** | real runner |
-| Result mapping         | **No** | deterministic |
+| Stage | AI |
+|---|---|
+| Source understanding / semantic analysis | allowed |
+| Requirement / TestCase planning | allowed |
+| Trusted E2E mapping authority | no guessing |
+| Trusted Unit target mapping authority | no guessing |
+| Playwright generation | 0 AI |
+| Vitest generation | 0 AI |
+| Test execution | 0 AI |
+| Result mapping | 0 AI |
 
-Hard invariants (always 0 in acceptance):
+Core generation/execution invariants:
 
-```
+```text
 generationAiCalls = 0
 executionAiCalls = 0
 agenticFallbacks = 0
@@ -274,109 +287,49 @@ guessedMappings = 0
 aiSymbolGuesses = 0
 ```
 
----
+## Security
 
-## Result semantics
+- Provider API keys are environment variables, not workspace configuration.
+- Generated source and canonical results must not contain raw provider secrets.
+- TIRAI-owned artifacts live under `.tirai/` / runtime output rather than mutating application source.
+- Stale target fingerprints fail closed.
+- Release installers verify SHA256 when a checksum asset is present.
+- Private GitHub installation supports `GITHUB_TOKEN` / `GH_TOKEN`; tokens are not persisted by the installer.
 
-```
-PASS    — test executed, assertions passed
-FAIL    — test executed, business assertion mismatch (exit 1)
-ERROR   — infrastructure (browser, network, 0 tests discovered) (exit 2)
-BLOCKED — TIRAI refused: missing/ambiguous/stale mapping, unsupported, invalid config (exit 2)
-```
+## Development
 
-`0 discovered tests != PASS` — empty run is `ERROR`.
-
----
-
-## Security model
-
-- API keys via env only: `GROQ_API_KEY`, `DEEPSEEK_API_KEY` (verify in `ai-provider`).
-- Never persisted in `.tirai/config.json`, mappings, artifacts, generated, results, reports, or tarball.
-- `secretLeakCount = 0`, `packageSecretLeakCount = 0` in acceptance.
-- `applicationSourceMutations = 0` — TIRAI never mutates user source; only `.tirai/` is written.
-
----
-
-## Development commands (inside monorepo)
+Inside the monorepo:
 
 ```bash
+npm install
 npm run build:all
 npm run typecheck:all
 npm run lint:all
 npm test --workspaces --if-present
-
-# specific
-npm run check --workspace=tools/intelligent/tirai-cli
-npm run check --workspace=tools/intelligent/test-code-generator
-npm run check --workspace=tools/intelligent/source-to-testcase
 ```
 
----
+CLI-specific verification:
+
+```bash
+npm run check --workspace=tools/intelligent/tirai-cli
+```
+
+The distributable package remains `tirai-cli`, exposing:
+
+```text
+tirai -> dist/cli.js
+```
 
 ## Product status
 
-```
+```text
 ORIGINAL EXCEL PRODUCT CORE = COMPLETE
-DEVELOPER RUNNABLE MVP      = COMPLETE (Phase 6.0)
-DISTRIBUTABLE MVP           = COMPLETE (Phase 6.1) — tarball installs outside monorepo, full pipeline passes
+DEVELOPER RUNNABLE MVP      = COMPLETE
+DISTRIBUTABLE CLI           = COMPLETE
+GITHUB RELEASE INSTALL PATH = IMPLEMENTED
 ```
 
-**Current MVP scope / limitations (honest):**
-
-- Excel is the proven primary source; Markdown connector exists but not product-accepted; PDF not implemented.
-- Playwright (E2E) and Vitest (Unit) on TypeScript are the only proven generated frameworks.
-- Trusted mappings are **required** — TIRAI does not guess selectors/symbols.
-- Browser binaries must exist (`npx playwright install chromium`) for E2E; missing → `ERROR`.
-- No autonomous mapping, no cloud, no dashboard, no incremental CI — these are future decisions, not MVP blockers.
-
-**Next decisions are product decisions, not required to complete the MVP.**
-
----
-
-## Architecture
-
-```
-Source Connector (Excel/Markdown)
-        ↓
-Canonical Context
-        ↓
-Semantic Analyzer → Semantic IR
-        ↓
-Requirement Builder → Requirement IR
-        ↓
-Test Planner → Scenario / TestCase (Canonical TestCase JSON)
-        ↓
-Mapping Boundary (human-owned, persisted)
-        ├── E2E: ExecutionMappingIR + UIElementCatalog
-        └── Unit: Target-Code Mapping + fingerprint
-        ↓
-Test Code Generator
-        ├── Playwright Adapter (deterministic)
-        └── Vitest Adapter (deterministic, AST + fingerprint)
-        ↓
-Runner (real)
-        ├── Playwright Chromium
-        └── Vitest
-        ↓
-TestRunResultIR (canonical)
-        ↓
-Reporter (JSON + Markdown)
-```
-
-Advanced/experimental modules (`agentic-test-executor`, `e2e-runner`, `execution-engine`, `test-data-planner`, etc.) remain in the repository but are **not** part of the distributable MVP path. Primary docs center the flow above.
-
----
-
-## Package
-
-- **Name:** `tirai-cli`
-- **Version:** `1.0.0`
-- **Bin:** `tirai -> dist/cli.js` (bundled ESM via esbuild, 466K)
-- **Install (proven):** `npm install /path/to/tirai-cli-1.0.0.tgz` (132K packed, 646K unpacked, 58 files)
-- **External acceptance:** `output/phase-6-1-release-readiness/external-project/` (full `tirai init` → `report` via installed tarball, 1 TestCase → 1 Playwright + 1 Vitest → PASS)
-
----
+The original Excel → TestCase → Playwright/Vitest → canonical result pipeline remains the proven core. PDF, DOCX, CSV, JSON, URL, and Markdown ingestion now broaden the supported input surface without replacing that core architecture.
 
 ## License
 
