@@ -40,7 +40,9 @@ function tiraiRoot(): string {
         try {
           const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
           if (pkg.name === 'tirai') return dir;
-        } catch {}
+        } catch {
+          // Ignore malformed package metadata while searching for the TIRAI root.
+        }
       }
       if (fs.existsSync(path.join(dir, '.git'))) return dir;
       const parent = path.dirname(dir);
@@ -58,7 +60,9 @@ function tiraiRoot(): string {
         try {
           const pkg = JSON.parse(fs.readFileSync(path.join(c, 'package.json'), 'utf8'));
           if (pkg.name === 'tirai') return c;
-        } catch {}
+        } catch {
+          // Ignore malformed package metadata while checking the fallback path.
+        }
       }
     }
     return path.resolve(cliDir, '..', '..', '..', '..');
@@ -203,7 +207,9 @@ export async function runRun(opts: RunOptions): Promise<number> {
         if (!fs.existsSync(vitestInProject) && fs.existsSync(vitestInRepo)) {
           try {
             fs.symlinkSync(vitestInRepo, vitestInProject, 'dir');
-          } catch {}
+          } catch {
+            // Ignore symlink failures; the existing project dependency remains usable.
+          }
         }
       }
     } catch {
@@ -439,3 +445,4 @@ export async function runRun(opts: RunOptions): Promise<number> {
     killServer(server);
   }
 }
+
