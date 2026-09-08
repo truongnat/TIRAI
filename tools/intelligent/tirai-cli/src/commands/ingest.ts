@@ -7,18 +7,24 @@ import { CliError } from '../errors.js';
 import { createAIProvider, type FakeAIProvider } from 'ai-provider';
 import { runSourceToTestCasePipeline } from 'source-to-testcase';
 import { buildSourceDerivedE2EMapping } from '../source-derived-mapping.js';
+import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
 
 export interface IngestOptions {
   cwd: string;
   sourcePath: string;
   sourceCodePath?: string;
   json?: boolean;
+  taskId?: string;
 }
 
 export async function runIngest(opts: IngestOptions): Promise<void> {
   const paths = requireWorkspace(opts.cwd);
   const config = loadConfig(paths);
   validateConfigForIngest(config);
+  const task = opts.taskId ? resolveActiveTask(paths, opts.taskId) : undefined;
+  if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
+  const outputDir = task ? taskPaths(paths, task.id).artifacts : paths.artifactsDir;
+  if (task) updateTask(paths, task.id, { status: 'ingesting' });
 
   if (!opts.sourcePath) {
     throw new CliError('SOURCE_INPUT_ERROR', 'Missing source path. Usage: tirai ingest <spec.xlsx>', 'Provide a path to an .xlsx or .md file.');
@@ -88,7 +94,7 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     result = await runSourceToTestCasePipeline({
       sourcePath: absSource,
       provider,
-      outputDir: paths.artifactsDir,
+      outputDir,
       ...(sourceKind ? { sourceKind } : {}),
     });
   } catch (e) {
@@ -99,6 +105,7 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     }
     throw new CliError('PIPELINE_ERROR', `Ingest failed: ${msg}`);
   }
+  if (task) updateTask(paths, task.id, { status: 'contract-ready', contractPath: result.artifacts.contract, artifactManifestPath: result.artifacts.aiRun });
 
   // Also write canonical artifacts to workspace paths (pipeline already wrote to artifactsDir)
   // Ensure testcases.json at expected location
