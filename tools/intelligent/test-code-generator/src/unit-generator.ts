@@ -28,7 +28,7 @@ import type {
 } from './models.js';
 import { inspectTargetProject, resolveUnitMapping, type ResolvedUnitMapping } from './target-inspector.js';
 import { sha256, artifactIdFrom } from './fingerprint.js';
-import { toSpecUnitCase, buildSpecApplySource, buildStandaloneUnitSource, type SpecUnitCase } from './spec-unit.js';
+import { toSpecPreviewCase, buildSpecPreviewTable, buildSpecPreviewSource, type SpecPreviewCase } from './spec-preview.js';
 
 function sanitizeFileName(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -166,7 +166,7 @@ export async function generateUnitTests(
 
   const caseResults: TestCaseGenerationResult[] = [];
   const generatedFiles: string[] = [];
-  const standaloneRows: SpecUnitCase[] = [];
+  const standaloneRows: SpecPreviewCase[] = [];
   let generatedBytes = 0;
 
   const m = (): UnitGenerationMetrics => ({
@@ -199,25 +199,25 @@ export async function generateUnitTests(
       (x) => x.testCaseId === testCase.id,
     );
     if (!mapping) {
-      const spec = toSpecUnitCase(testCase);
+      const spec = toSpecPreviewCase(testCase);
       if (!spec) {
         metrics.testCasesBlocked++;
         metrics.assertionMappingsBlocked++;
         const reason: GenerationBlockReason = {
           code: 'MISSING_VALUE',
-          message: `Test case '${testCase.id}' has no inputs/expected to run as a standalone spec-unit`,
+          message: `Test case '${testCase.id}' has no inputs/expected to generate a preview artifact`,
         };
         caseResults.push(blockedCase(testCase, reason));
         continue;
       }
       standaloneRows.push(spec);
-      const generationFingerprint = sha256({ testCase, mode: 'standalone' });
+      const generationFingerprint = sha256({ testCase, mode: 'preview' });
       const artifactId = artifactIdFrom(`${testCase.id}:${generationFingerprint}`);
-      const rawSource = buildStandaloneUnitSource(spec, artifactId, generationFingerprint);
+      const rawSource = buildSpecPreviewSource(spec, artifactId, generationFingerprint);
       const formatted = await prettier.format(rawSource, { parser: 'typescript' });
       const sourceFingerprint = sha256(formatted);
       const finalSource = formatted.replace('__SOURCE_FINGERPRINT__', sourceFingerprint);
-      const outPath = `${options.outputDir}/${sanitizeFileName(testCase.id)}.spec.ts`;
+      const outPath = `${options.outputDir}/${sanitizeFileName(testCase.id)}.preview.ts`;
       mkdirSync(dirname(outPath), { recursive: true });
       writeFileSync(outPath, finalSource, 'utf8');
       generatedBytes += Buffer.byteLength(finalSource, 'utf8');
@@ -226,7 +226,7 @@ export async function generateUnitTests(
       generatedFiles.push(outPath);
       caseResults.push({
         testCaseId: testCase.id,
-        status: 'generated' as TestCaseGenerationStatus,
+        status: 'preview' as TestCaseGenerationStatus,
         generatedFilePath: outPath,
         artifactId,
         generationFingerprint,
@@ -234,7 +234,7 @@ export async function generateUnitTests(
         diagnostics: [
           {
             severity: 'info',
-            message: `Standalone spec-unit from TestCase inputs (no source mapping)`,
+            message: `Spec preview artifact (not a test) — no source mapping provided`,
           },
         ],
         trustedMappingsUsed: 0,
@@ -299,9 +299,9 @@ export async function generateUnitTests(
   }
 
   if (standaloneRows.length > 0) {
-    const applyPath = `${options.outputDir}/_spec-apply.ts`;
+    const applyPath = `${options.outputDir}/_spec-preview.ts`;
     mkdirSync(dirname(applyPath), { recursive: true });
-    const applySource = await prettier.format(buildSpecApplySource(standaloneRows), { parser: 'typescript' });
+    const applySource = await prettier.format(buildSpecPreviewTable(standaloneRows), { parser: 'typescript' });
     writeFileSync(applyPath, applySource, 'utf8');
   }
 

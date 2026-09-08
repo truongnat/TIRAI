@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { generateUnitTests, validateGeneratedUnitSource } from '../src/index.js';
+import { generateUnitTests } from '../src/index.js';
 import type { TestCase, TargetProjectProfile } from '../src/index.js';
 
 function tc(id: string, title: string, inputs: Array<{ name: string; value: unknown }>, expected: unknown): TestCase {
@@ -32,9 +32,9 @@ function tc(id: string, title: string, inputs: Array<{ name: string; value: unkn
   };
 }
 
-describe('standalone spec-unit generation', () => {
-  it('generates runnable Vitest from TestCase JSON without mappings', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'tirai-standalone-unit-'));
+describe('spec preview generation (NOT A TEST)', () => {
+  it('generates a preview artifact from TestCase JSON without mappings', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'tirai-spec-preview-'));
     const generatedDir = join(dir, 'generated');
     mkdirSync(generatedDir, { recursive: true });
     try {
@@ -57,19 +57,20 @@ describe('standalone spec-unit generation', () => {
         framework: 'vitest',
         options: { outputDir: generatedDir },
       });
-      expect(result.status).toBe('success');
-      expect(result.metrics.testCasesGenerated).toBe(1);
+      // Preview artifacts are NOT counted as generated tests
+      expect(result.metrics.testCasesGenerated).toBe(0);
       expect(result.metrics.testCasesBlocked).toBe(0);
-      expect(result.metrics.generationAiCalls).toBe(0);
-      expect(result.metrics.guessedMappings).toBe(0);
-      expect(result.generatedFiles).toHaveLength(1);
-      const src = readFileSync(result.generatedFiles[0], 'utf8');
-      expect(src).toContain('specApply');
+      expect(result.metrics.generatedUnitFiles).toBe(1);
+      const src = readFileSync(join(generatedDir, 'TC-0001.preview.ts'), 'utf8');
+      // The artifact is explicitly marked as NOT A TEST
+      expect(src).toContain('NOT A TEST');
+      expect(src).toContain('does NOT call application code');
       expect(src).toContain('quantity');
       expect(src).toContain('INSUFFICIENT_STOCK');
-      expect(readFileSync(join(generatedDir, '_spec-apply.ts'), 'utf8')).toContain('specApply');
-      const v = validateGeneratedUnitSource(result.generatedFiles[0], { resolveDir: generatedDir });
-      expect(v.status).toBe('valid');
+      // The shared table file must contain specPreview (not specApply)
+      expect(readFileSync(join(generatedDir, '_spec-preview.ts'), 'utf8')).toContain('specPreview');
+      // The artifact file extension is .preview.ts (not .spec.ts)
+      expect(result.generatedFiles[0]).toContain('.preview.ts');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

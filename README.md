@@ -217,7 +217,7 @@ Mappings are persisted and reviewable:
 .tirai/mappings/unit.json
 ```
 
-Unit tests generate from TestCase JSON without a mapping (spec I/O table, run with those inputs). A trusted `unit.json` mapping, when present, binds the same case to a real source symbol. E2E still requires a trusted mapping; missing, ambiguous, unsupported, or stale E2E/source mappings fail closed instead of inventing selectors or symbols.
+When no trusted mapping exists, TIRAI produces a **spec preview artifact** (not a test) showing inputs/expected values for human review. It does not call application code and cannot verify behavior. It will never be reported as a unit test. A trusted `unit.json` mapping, when present, binds the same case to a real source symbol. E2E still requires a trusted mapping; missing, ambiguous, unsupported, or stale E2E/source mappings fail closed instead of inventing selectors or symbols.
 
 ---
 
