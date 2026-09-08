@@ -1,4 +1,5 @@
-export { buildExcelContext, writeContextPackage } from './builder.js';
+export { buildExcelContext, buildExcelContextFromLoaded, writeContextPackage } from './builder.js';
+export type { LoadedInputs } from './loader.js';
 
 export type {
   ExcelContextPackage,

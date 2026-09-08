@@ -21,7 +21,7 @@ Usage:
 Commands:
   init                    Initialize TIRAI workspace (.tirai/)
   ingest <spec>           Ingest Excel/Markdown spec → canonical TestCases
-  generate [--e2e|--unit] Generate Playwright + Vitest tests from mappings
+  generate [--e2e|--unit] Generate tests from TestCase JSON (unit needs no source mapping)
   run                     Execute generated tests (real Chromium + Vitest)
   report                  Show canonical run summary
   status                  Show workspace status

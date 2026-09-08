@@ -29,7 +29,8 @@ export const DEFAULT_OUTPUT_BUDGET_POLICY: OutputBudgetPolicy = {
  */
 const OUTPUT_BUDGET_TIERS: Array<{ maxInputTokens: number; outputTokens: number }> = [
   { maxInputTokens: 2000, outputTokens: 2048 },
-  { maxInputTokens: Infinity, outputTokens: 4096 },
+  { maxInputTokens: 8000, outputTokens: 4096 },
+  { maxInputTokens: Infinity, outputTokens: 8192 },
 ];
 
 /**
@@ -106,7 +107,15 @@ export function resolveSemanticBudget(overrides?: Partial<SemanticAnalyzerBudget
   if (budget.maxInputTokensPerRequest < 1 || budget.maxConsolidationInputTokens < 1 || budget.maxOutputTokensPerRequest < 1 || budget.maxConsolidationOutputTokens < 1) {
     throw new Error('Semantic analyzer token budgets must be positive.');
   }
-  const policy = budget.outputBudgetPolicy ?? DEFAULT_OUTPUT_BUDGET_POLICY;
+  const policy = { ...(budget.outputBudgetPolicy ?? DEFAULT_OUTPUT_BUDGET_POLICY) };
+  const envCeiling = Number(process.env.TIRAI_OUTPUT_BUDGET_CEILING);
+  if (Number.isFinite(envCeiling) && envCeiling > 0) {
+    policy.maxOutputBudgetCeiling = envCeiling;
+  }
+  const envEscalations = Number(process.env.TIRAI_OUTPUT_BUDGET_ESCALATIONS);
+  if (Number.isFinite(envEscalations) && envEscalations >= 0) {
+    policy.maxOutputEscalations = envEscalations;
+  }
   if (policy.maxOutputBudgetCeiling < 1 || policy.maxOutputEscalations < 0) {
     throw new Error('Output budget policy values must be non-negative.');
   }

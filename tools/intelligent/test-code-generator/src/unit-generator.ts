@@ -28,6 +28,7 @@ import type {
 } from './models.js';
 import { inspectTargetProject, resolveUnitMapping, type ResolvedUnitMapping } from './target-inspector.js';
 import { sha256, artifactIdFrom } from './fingerprint.js';
+import { toSpecUnitCase, buildSpecApplySource, buildStandaloneUnitSource, type SpecUnitCase } from './spec-unit.js';
 
 function sanitizeFileName(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -159,11 +160,13 @@ export async function generateUnitTests(
 ): Promise<UnitGenerationResult> {
   const { testCases, profile, targetMappings, options } = input;
 
-  const index = inspectTargetProject(profile);
+  const hasMappedCases = testCases.some((tc) => targetMappings.some((m) => m.testCaseId === tc.id));
+  const index = hasMappedCases ? inspectTargetProject(profile) : new Map();
   const targetSymbolsScanned = [...index.values()].reduce((a, l) => a + l.length, 0);
 
   const caseResults: TestCaseGenerationResult[] = [];
   const generatedFiles: string[] = [];
+  const standaloneRows: SpecUnitCase[] = [];
   let generatedBytes = 0;
 
   const m = (): UnitGenerationMetrics => ({
@@ -196,12 +199,47 @@ export async function generateUnitTests(
       (x) => x.testCaseId === testCase.id,
     );
     if (!mapping) {
-      metrics.testCasesBlocked++;
-      const reason: GenerationBlockReason = {
-        code: 'MISSING_MAPPING',
-        message: `No trusted UnitTargetCodeMapping for test case '${testCase.id}'`,
-      };
-      caseResults.push(blockedCase(testCase, reason));
+      const spec = toSpecUnitCase(testCase);
+      if (!spec) {
+        metrics.testCasesBlocked++;
+        metrics.assertionMappingsBlocked++;
+        const reason: GenerationBlockReason = {
+          code: 'MISSING_VALUE',
+          message: `Test case '${testCase.id}' has no inputs/expected to run as a standalone spec-unit`,
+        };
+        caseResults.push(blockedCase(testCase, reason));
+        continue;
+      }
+      standaloneRows.push(spec);
+      const generationFingerprint = sha256({ testCase, mode: 'standalone' });
+      const artifactId = artifactIdFrom(`${testCase.id}:${generationFingerprint}`);
+      const rawSource = buildStandaloneUnitSource(spec, artifactId, generationFingerprint);
+      const formatted = await prettier.format(rawSource, { parser: 'typescript' });
+      const sourceFingerprint = sha256(formatted);
+      const finalSource = formatted.replace('__SOURCE_FINGERPRINT__', sourceFingerprint);
+      const outPath = `${options.outputDir}/${sanitizeFileName(testCase.id)}.spec.ts`;
+      mkdirSync(dirname(outPath), { recursive: true });
+      writeFileSync(outPath, finalSource, 'utf8');
+      generatedBytes += Buffer.byteLength(finalSource, 'utf8');
+      metrics.generatedUnitBytes = generatedBytes;
+      metrics.generatedUnitFiles++;
+      generatedFiles.push(outPath);
+      caseResults.push({
+        testCaseId: testCase.id,
+        status: 'generated' as TestCaseGenerationStatus,
+        generatedFilePath: outPath,
+        artifactId,
+        generationFingerprint,
+        sourceFingerprint,
+        diagnostics: [
+          {
+            severity: 'info',
+            message: `Standalone spec-unit from TestCase inputs (no source mapping)`,
+          },
+        ],
+        trustedMappingsUsed: 0,
+        guessedMappings: 0,
+      });
       continue;
     }
 
@@ -258,6 +296,13 @@ export async function generateUnitTests(
       trustedMappingsUsed: 1,
       guessedMappings: 0,
     });
+  }
+
+  if (standaloneRows.length > 0) {
+    const applyPath = `${options.outputDir}/_spec-apply.ts`;
+    mkdirSync(dirname(applyPath), { recursive: true });
+    const applySource = await prettier.format(buildSpecApplySource(standaloneRows), { parser: 'typescript' });
+    writeFileSync(applyPath, applySource, 'utf8');
   }
 
   metrics.testCasesGenerated = caseResults.filter((c) => c.status === 'generated').length;

@@ -100,12 +100,54 @@ export async function generateTestCases(
   usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
   warnings?: TestPlannerWarning[];
 }> {
-  const systemPrompt = TEST_PLANNER_SYSTEM_PROMPT;
-  const userPrompt = buildTestCasePrompt(requirements, scenarios, coverageMode);
   const warnings: TestPlannerWarning[] = [];
-
   const validReqIds = new Set(requirements.map((r) => r.id));
   const validScenarioIds = new Set(scenarios.map((s) => s.temporaryId));
+  const batchSize = Math.max(1, Number(process.env.TIRAI_TESTCASE_BATCH_SIZE) || 4);
+  const allCases: TestCaseCandidate[] = [];
+  const usage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+
+  for (let i = 0; i < scenarios.length; i += batchSize) {
+    const batch = scenarios.slice(i, i + batchSize);
+    const part = await generateTestCasesForBatch(
+      requirements,
+      batch,
+      provider,
+      maxRepairAttempts,
+      coverageMode,
+      validReqIds,
+      validScenarioIds,
+    );
+    allCases.push(...part.result.testCases);
+    usage.inputTokens += part.usage.inputTokens ?? 0;
+    usage.outputTokens += part.usage.outputTokens ?? 0;
+    usage.totalTokens += part.usage.totalTokens ?? 0;
+    if (part.warnings) warnings.push(...part.warnings);
+  }
+
+  return {
+    result: { testCases: allCases, additionalDataNeeds: [] },
+    usage,
+    warnings: warnings.length > 0 ? warnings : undefined,
+  };
+}
+
+async function generateTestCasesForBatch(
+  requirements: RequirementIRInput['requirements'],
+  scenarios: ScenarioCandidate[],
+  provider: AIProvider,
+  maxRepairAttempts: number,
+  coverageMode: 'comprehensive' | 'minimal-sufficient',
+  validReqIds: Set<string>,
+  validScenarioIds: Set<string>,
+): Promise<{
+  result: TestCaseExtractionResult;
+  usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+  warnings?: TestPlannerWarning[];
+}> {
+  const systemPrompt = TEST_PLANNER_SYSTEM_PROMPT;
+  const userPrompt = `${buildTestCasePrompt(requirements, scenarios, coverageMode)}\n\nGenerate at most 2 test cases per scenario in this batch. Prefer concrete input values when the spec states them.`;
+  const warnings: TestPlannerWarning[] = [];
 
   let lastError: unknown;
   for (let attempt = 0; attempt <= maxRepairAttempts; attempt++) {

@@ -1,7 +1,6 @@
-import { mkdtemp, readFile, rm, stat, writeFile, mkdir } from 'node:fs/promises';
-import { basename, extname, join, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
-import { buildExcelContext, type ExcelContextPackage } from 'excel-context-builder';
+import { readFile, stat } from 'node:fs/promises';
+import { basename, extname, resolve } from 'node:path';
+import { buildExcelContextFromLoaded, type ExcelContextPackage } from 'excel-context-builder';
 import { extractWorkbook } from 'cell-layout-extractor';
 import { inspectWorkbook } from 'workbook-inspector';
 import type {
@@ -56,7 +55,16 @@ export class ExcelSourceConnector implements SourceConnector {
         connectorVersion: this.version,
       };
 
-      const contextPackage = await this.buildContextPackage(workbook, layout);
+      const sheetFilter = process.env.TIRAI_EXCEL_SHEETS?.split(',').map((s) => s.trim()).filter(Boolean);
+      const contextPackage = await buildExcelContextFromLoaded(
+        {
+          workbook: workbook as unknown as Parameters<typeof buildExcelContextFromLoaded>[0]['workbook'],
+          layout: layout as unknown as Parameters<typeof buildExcelContextFromLoaded>[0]['layout'],
+          inputDir: '',
+          warnings: [],
+        },
+        sheetFilter && sheetFilter.length > 0 ? { sheets: sheetFilter } : undefined,
+      );
       return buildExcelCanonicalDocument({
         sourceId,
         revisionId,
@@ -78,20 +86,6 @@ export class ExcelSourceConnector implements SourceConnector {
     }
   }
 
-  private async buildContextPackage(
-    workbook: Awaited<ReturnType<typeof inspectWorkbook>>,
-    layout: Awaited<ReturnType<typeof extractWorkbook>>,
-  ): Promise<ExcelContextPackage> {
-    const handoffDir = await mkdtemp(join(tmpdir(), 'tirai-excel-context-'));
-    try {
-      await mkdir(join(handoffDir, 'layout'), { recursive: true });
-      await writeFile(join(handoffDir, 'workbook.json'), JSON.stringify(workbook), 'utf8');
-      await writeFile(join(handoffDir, 'layout', 'full-extract.json'), JSON.stringify(layout), 'utf8');
-      return await buildExcelContext(handoffDir);
-    } finally {
-      await rm(handoffDir, { recursive: true, force: true });
-    }
-  }
 }
 
 interface ExcelCanonicalInput {

@@ -243,15 +243,15 @@ describe('Phase 5.2 — Unit Test Generation vertical slice', () => {
     expect(gm.targetSymbolsAmbiguous).toBe(1);
     expect(gm.staleMappingsDetected).toBe(1);
     expect(gm.inputMappingsBlocked).toBe(1); // only TC-BLOCK-UNRESOLVED-INPUT
-    expect(gm.testCasesGenerated).toBe(6); // 4 pass + fail + error
-    expect(gm.testCasesBlocked).toBe(6); // missing, ambiguous, notfound, unresolved-input, stale, unsupported-assertion
+    expect(gm.testCasesGenerated).toBe(7); // 4 pass + fail + error + standalone (no mapping)
+    expect(gm.testCasesBlocked).toBe(5); // ambiguous, notfound, unresolved-input, stale, unsupported-assertion
 
     const statusById = new Map(genResult.caseResults.map((c) => [c.testCaseId, c.status]));
     expect(statusById.get('TC-PASS-1')).toBe('generated');
     expect(statusById.get('TC-PASS-4')).toBe('generated');
     expect(statusById.get('TC-FAIL-1')).toBe('generated');
     expect(statusById.get('TC-ERROR-1')).toBe('generated');
-    expect(statusById.get('TC-BLOCK-MISSING')).toBe('blocked');
+    expect(statusById.get('TC-BLOCK-MISSING')).toBe('generated');
     expect(statusById.get('TC-BLOCK-AMBIGUOUS')).toBe('blocked');
     expect(statusById.get('TC-BLOCK-NOTFOUND')).toBe('blocked');
     expect(statusById.get('TC-BLOCK-UNRESOLVED-INPUT')).toBe('blocked');
@@ -298,7 +298,7 @@ describe('Phase 5.2 — Unit Test Generation vertical slice', () => {
     expect(byId.get('TC-PASS-4')).toBe('passed');
     expect(byId.get('TC-FAIL-1')).toBe('failed'); // business assertion failure
     expect(byId.get('TC-ERROR-1')).toBe('error'); // infra-style throw
-    expect(byId.get('TC-BLOCK-MISSING')).toBe('blocked');
+    expect(byId.get('TC-BLOCK-MISSING')).toBe('passed');
     expect(byId.get('TC-BLOCK-AMBIGUOUS')).toBe('blocked');
     expect(byId.get('TC-BLOCK-NOTFOUND')).toBe('blocked');
     expect(byId.get('TC-BLOCK-UNRESOLVED-INPUT')).toBe('blocked');

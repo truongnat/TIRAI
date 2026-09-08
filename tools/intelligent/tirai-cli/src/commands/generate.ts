@@ -43,8 +43,10 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
   // Normalize to TestCase[]
   const tcs = testCasesArray as Array<Record<string, unknown>>;
 
-  const wantE2e = opts.e2e || (!opts.e2e && !opts.unit);
-  const wantUnit = opts.unit || (!opts.e2e && !opts.unit);
+  const explicitE2e = Boolean(opts.e2e);
+  const explicitUnit = Boolean(opts.unit);
+  const wantE2e = explicitE2e || (!explicitE2e && !explicitUnit);
+  const wantUnit = explicitUnit || (!explicitE2e && !explicitUnit);
 
   let e2eResult: unknown = null;
   let unitResult: unknown = null;
@@ -52,8 +54,11 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
   // --- E2E ---
   if (wantE2e) {
     if (!fs.existsSync(paths.e2eMappingPath)) {
-      throw new CliError('MAPPING_MISSING', `E2E mapping not found: ${path.relative(paths.root, paths.e2eMappingPath)}`, 'Create a trusted E2E mapping at .tirai/mappings/e2e.json');
-    }
+      if (explicitE2e) {
+        throw new CliError('MAPPING_MISSING', `E2E mapping not found: ${path.relative(paths.root, paths.e2eMappingPath)}`, 'Create a trusted E2E mapping at .tirai/mappings/e2e.json');
+      }
+      console.log('Skipping E2E: no mapping file.');
+    } else {
     let e2eMappingRaw: unknown;
     try {
       e2eMappingRaw = readJson(paths.e2eMappingPath);
@@ -75,18 +80,16 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
       quality: unknown;
     };
 
-    // Check if mapping is placeholder (empty testMappings)
     if (!mapping.testMappings || mapping.testMappings.length === 0) {
-      // Surface as BLOCKED with details
-      console.error(`BLOCKED: ${tcs.length} TestCases need E2E mappings.`);
-      for (const tc of tcs) {
-        const id = (tc.id ?? tc.temporaryId) as string;
-        console.error(`  ${id}: missing E2E mapping entry (status != ready)`);
+      if (explicitE2e) {
+        throw new CliError(
+          'MAPPING_MISSING',
+          `No E2E mapping entries for ${tcs.length} TestCases`,
+          `Edit ${path.relative(paths.root, paths.e2eMappingPath)} or omit --e2e to generate unit tests from JSON.`,
+        );
       }
-      console.error('');
-      console.error(`Run: edit ${path.relative(paths.root, paths.e2eMappingPath)} to add trusted mappings.`);
-      throw new CliError('MAPPING_MISSING', `No E2E mapping entries for ${tcs.length} TestCases`);
-    }
+      console.log('Skipping E2E: no trusted mappings (unit tests still generate from TestCase JSON).');
+    } else {
 
     // Build profile
     const uiCatalog = (mapping.catalogs?.uiCatalog ?? undefined) as unknown;
@@ -137,18 +140,19 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
 
     // Persist metrics are inside result; no extra persistence needed (files already written to generatedE2eDir)
     console.log(`E2E: ${generatedFiles.length} Playwright files generated`);
+    }
+    }
   }
 
   // --- Unit ---
   if (wantUnit) {
-    if (!fs.existsSync(paths.unitMappingPath)) {
-      throw new CliError('MAPPING_MISSING', `Unit mapping not found: ${path.relative(paths.root, paths.unitMappingPath)}`, 'Create a trusted Unit mapping at .tirai/mappings/unit.json');
-    }
-    let unitRaw: unknown;
-    try {
-      unitRaw = readJson(paths.unitMappingPath);
-    } catch (e) {
-      throw new CliError('MAPPING_MISSING', `Failed to read Unit mapping: ${String(e)}`);
+    let unitRaw: unknown = { mappings: [] };
+    if (fs.existsSync(paths.unitMappingPath)) {
+      try {
+        unitRaw = readJson(paths.unitMappingPath);
+      } catch (e) {
+        throw new CliError('MAPPING_MISSING', `Failed to read Unit mapping: ${String(e)}`);
+      }
     }
     let unitMappings: unknown[] = [];
     if (Array.isArray(unitRaw)) {
@@ -163,14 +167,7 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     }
 
     if (unitMappings.length === 0) {
-      console.error(`BLOCKED: ${tcs.length} TestCases need Unit mappings.`);
-      for (const tc of tcs) {
-        const id = (tc.id ?? tc.temporaryId) as string;
-        console.error(`  ${id}: missing UnitTargetCodeMapping`);
-      }
-      console.error('');
-      console.error(`Run: edit ${path.relative(paths.root, paths.unitMappingPath)} to add trusted mappings.`);
-      throw new CliError('MAPPING_MISSING', `No Unit mappings for ${tcs.length} TestCases`);
+      console.log('Unit: no source mappings; generating standalone spec-unit tests from TestCase JSON inputs.');
     }
 
     const unitProfile = {
