@@ -10,6 +10,7 @@ import { requireWorkspace } from '../workspace.js';
 import { loadConfig, validateConfigForGenerate } from '../config.js';
 import { updateState, loadState } from '../state.js';
 import { CliError } from '../errors.js';
+import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
 import {
   generateE2ETests,
   generateUnitTests,
@@ -21,6 +22,7 @@ export interface GenerateOptions {
   cwd: string;
   target?: 'playwright' | 'vitest';
   sourceMapping?: string;
+  taskId?: string;
 }
 
 function readJson(p: string): unknown {
@@ -29,6 +31,10 @@ function readJson(p: string): unknown {
 
 export async function runGenerate(opts: GenerateOptions): Promise<void> {
   const paths = requireWorkspace(opts.cwd);
+  const task = opts.taskId ? resolveActiveTask(paths, opts.taskId) : undefined;
+  if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
+  const taskWorkspace = task ? taskPaths(paths, task.id) : undefined;
+  const runPaths = taskWorkspace ? { ...paths, artifactsDir: taskWorkspace.artifacts, testCasesPath: path.join(taskWorkspace.artifacts, 'testcases.json'), generatedE2eDir: path.join(taskWorkspace.generated, 'e2e'), generatedUnitDir: path.join(taskWorkspace.generated, 'unit') } : paths;
   const config = loadConfig(paths);
   validateConfigForGenerate(config);
 
@@ -38,10 +44,10 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
   }
 
   // Load TestCases
-  if (!fs.existsSync(paths.testCasesPath)) {
+  if (!fs.existsSync(runPaths.testCasesPath)) {
     throw new CliError('CONFIG_INVALID', 'TestCases artifact not found. Run `tirai plan` first.');
   }
-  const testCases = readJson(paths.testCasesPath) as unknown[];
+  const testCases = readJson(runPaths.testCasesPath) as unknown[];
   const testCasesArray = Array.isArray(testCases) ? testCases : (testCases as { testCases: unknown[] }).testCases ?? [];
   if (!Array.isArray(testCasesArray) || testCasesArray.length === 0) {
     throw new CliError('CONFIG_INVALID', 'No TestCases available. Run `tirai plan` first.');
@@ -86,14 +92,14 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
 
     const e2eOptions = {
       framework: 'playwright' as const,
-      outputDir: paths.generatedE2eDir,
+      outputDir: runPaths.generatedE2eDir,
       baseUrl: config.e2e.baseUrl,
     };
 
     // Generation is a reproducible materialization step. Remove stale files
     // from a previous contract before writing the current set of cases.
-    fs.rmSync(paths.generatedE2eDir, { recursive: true, force: true });
-    fs.mkdirSync(paths.generatedE2eDir, { recursive: true });
+    fs.rmSync(runPaths.generatedE2eDir, { recursive: true, force: true });
+    fs.mkdirSync(runPaths.generatedE2eDir, { recursive: true });
 
     let e2eResult: unknown;
     try {
@@ -128,6 +134,7 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     }
 
     console.log(`E2E: ${generatedFiles.length} Playwright files generated`);
+    if (task) updateTask(paths, task.id, { status: 'generated' });
     updateState(paths, (s) => ({
       ...s,
       generation: {
@@ -186,8 +193,8 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
       testCommand: 'npx vitest run',
     };
 
-    fs.rmSync(paths.generatedUnitDir, { recursive: true, force: true });
-    fs.mkdirSync(paths.generatedUnitDir, { recursive: true });
+    fs.rmSync(runPaths.generatedUnitDir, { recursive: true, force: true });
+    fs.mkdirSync(runPaths.generatedUnitDir, { recursive: true });
 
     const unitInput = {
       testCases: tcs,
@@ -196,7 +203,7 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
       framework: 'vitest',
       options: {
         framework: 'vitest' as const,
-        outputDir: paths.generatedUnitDir,
+        outputDir: runPaths.generatedUnitDir,
       },
     } as unknown as Parameters<typeof generateUnitTests>[0];
 
@@ -232,6 +239,7 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     }
 
     console.log(`Unit: ${generatedFiles.length} Vitest files generated`);
+    if (task) updateTask(paths, task.id, { status: 'generated' });
     updateState(paths, (s) => ({
       ...s,
       generation: {
