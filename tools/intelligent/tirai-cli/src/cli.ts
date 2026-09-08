@@ -147,7 +147,7 @@ async function main(): Promise<void> {
       }
       case 'run': {
         const json = Boolean(flags.json);
-        const code = await runRun({ cwd, json });
+        const code = await runRun({ cwd, json, taskId: flags.task as string });
         process.exit(code);
         break;
       }
