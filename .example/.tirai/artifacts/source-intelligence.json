@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "sourceFiles": [
+    "src/routes/__root.tsx",
+    "src/routes/index.tsx",
+    "src/routes/todos.tsx",
+    "src/routes/posts.tsx",
+    "src/routes/users.tsx"
+  ],
+  "mappingCount": 17,
+  "unresolvedCount": 6,
+  "generatedAt": "2026-09-08T17:08:20.867Z"
+}
