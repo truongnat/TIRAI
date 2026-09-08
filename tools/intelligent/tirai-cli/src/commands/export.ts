@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { createHash } from 'node:crypto';
 import { requireWorkspace } from '../workspace.js';
 import { loadConfig } from '../config.js';
@@ -100,7 +101,7 @@ export async function runExport(opts: ExportCommandOptions): Promise<void> {
     contractFingerprint: (contract as { metadata?: { contractFingerprint?: string } }).metadata?.contractFingerprint,
     artifacts: artifacts.map((artifact) => {
       const content = fs.readFileSync(artifact.path);
-      return { format: artifact.format, path: artifact.path, contentHash: createHash('sha256').update(content).digest('hex'), byteLength: content.byteLength };
+      return { format: artifact.format, path: path.relative(paths.root, artifact.path), contentHash: createHash('sha256').update(content).digest('hex'), byteLength: content.byteLength };
     }),
   };
   fs.mkdirSync(paths.artifactsDir, { recursive: true });
