@@ -26,7 +26,7 @@ Run these commands from this directory after building TIRAI once:
 ```bash
 cd ..
 npm run build --workspace=tools/intelligent/tirai-cli
-cd example-react
+cd .example
 npm run tirai:example
 ```
 

@@ -12,5 +12,33 @@
     "manual-only": 6
   },
   "requirementsCovered": 17,
-  "behaviorPaths": 17
+  "behaviorPaths": 17,
+  "requiredDimensions": [
+    "happy-path",
+    "negative",
+    "boundary",
+    "validation",
+    "empty",
+    "loading",
+    "error",
+    "permission",
+    "state-transition",
+    "retry",
+    "rollback"
+  ],
+  "coveredDimensions": [
+    "happy-path",
+    "validation",
+    "state-transition"
+  ],
+  "missingDimensions": [
+    "negative",
+    "boundary",
+    "empty",
+    "loading",
+    "error",
+    "permission",
+    "retry",
+    "rollback"
+  ]
 }
