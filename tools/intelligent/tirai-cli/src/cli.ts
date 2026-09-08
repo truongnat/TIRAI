@@ -25,7 +25,10 @@ Usage:
 Commands:
   init                    Initialize TIRAI workspace (.tirai/)
   ingest <spec>           Ingest Excel/Markdown spec → canonical TestCases
-  generate [--e2e|--unit] Generate tests from TestCase JSON (no mapping → preview artifact only)
+  generate                Generate tests (requires --target)
+    --target playwright   Generate Playwright E2E (requires E2E mapping)
+    --target vitest       Generate Vitest unit (requires source mapping)
+    --source-mapping      Path to unit source mapping
   run                     Execute generated tests (real Chromium + Vitest)
   report                  Show canonical run summary
   status                  Show workspace status
@@ -44,7 +47,8 @@ Commands:
 Examples:
   tirai init
   tirai ingest ./spec.xlsx
-  tirai generate
+  tirai generate --target playwright
+  tirai generate --target vitest --source-mapping ./unit.json
   tirai run
   tirai report
   tirai target add web --environment staging --url https://staging.example.com
@@ -125,9 +129,12 @@ async function main(): Promise<void> {
         break;
       }
       case 'generate': {
-        const e2e = Boolean(flags.e2e);
-        const unit = Boolean(flags.unit);
-        await runGenerate({ cwd, e2e: e2e || undefined, unit: unit || undefined });
+        const target = flags.target as 'playwright' | 'vitest' | undefined;
+        await runGenerate({
+          cwd,
+          target,
+          sourceMapping: flags['source-mapping'] as string,
+        });
         break;
       }
       case 'run': {

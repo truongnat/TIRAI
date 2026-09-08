@@ -1,3 +1,9 @@
+// ---------------------------------------------------------------------------
+// TIRAI — Generate Command (Phase 7: explicit white-box adapters)
+// ---------------------------------------------------------------------------
+// Per TIRAI v1 spec §9.2, §9.3: Playwright/Vitest are optional output adapters,
+// not the default path. Generation requires explicit --target flag.
+
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { requireWorkspace } from '../workspace.js';
@@ -13,8 +19,8 @@ import {
 
 export interface GenerateOptions {
   cwd: string;
-  e2e?: boolean;
-  unit?: boolean;
+  target?: 'playwright' | 'vitest';
+  sourceMapping?: string;
 }
 
 function readJson(p: string): unknown {
@@ -28,52 +34,34 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
 
   const state = loadState(paths);
   if (!state?.testPlan) {
-    throw new CliError('CONFIG_INVALID', 'No TestCases found. Run `tirai ingest <spec>` first.', 'Run `tirai ingest` to generate canonical TestCases.');
+    throw new CliError('CONFIG_INVALID', 'No TestCases found. Run `tirai plan` first.', 'Run `tirai plan` to generate canonical TestCases.');
   }
 
   // Load TestCases
   if (!fs.existsSync(paths.testCasesPath)) {
-    throw new CliError('CONFIG_INVALID', 'TestCases artifact not found. Run `tirai ingest` first.');
+    throw new CliError('CONFIG_INVALID', 'TestCases artifact not found. Run `tirai plan` first.');
   }
   const testCases = readJson(paths.testCasesPath) as unknown[];
   const testCasesArray = Array.isArray(testCases) ? testCases : (testCases as { testCases: unknown[] }).testCases ?? [];
   if (!Array.isArray(testCasesArray) || testCasesArray.length === 0) {
-    throw new CliError('CONFIG_INVALID', 'No TestCases available. Run `tirai ingest` first.');
+    throw new CliError('CONFIG_INVALID', 'No TestCases available. Run `tirai plan` first.');
   }
-  // Normalize to TestCase[]
   const tcs = testCasesArray as Array<Record<string, unknown>>;
 
-  const explicitE2e = Boolean(opts.e2e);
-  const explicitUnit = Boolean(opts.unit);
-  const wantE2e = explicitE2e || (!explicitE2e && !explicitUnit);
-  const wantUnit = explicitUnit || (!explicitE2e && !explicitUnit);
+  const target = opts.target;
 
-  let e2eResult: unknown = null;
-  let unitResult: unknown = null;
-
-  // --- E2E ---
-  if (wantE2e) {
+  // --- Playwright E2E ---
+  if (target === 'playwright') {
     if (!fs.existsSync(paths.e2eMappingPath)) {
-      if (explicitE2e) {
-        throw new CliError('MAPPING_MISSING', `E2E mapping not found: ${path.relative(paths.root, paths.e2eMappingPath)}`, 'Create a trusted E2E mapping at .tirai/mappings/e2e.json');
-      }
-      console.log('Skipping E2E: no mapping file.');
-    } else {
+      throw new CliError('MAPPING_MISSING', `E2E mapping not found: ${path.relative(paths.root, paths.e2eMappingPath)}`, 'Create a trusted E2E mapping at .tirai/mappings/e2e.json');
+    }
     let e2eMappingRaw: unknown;
     try {
       e2eMappingRaw = readJson(paths.e2eMappingPath);
     } catch (e) {
       throw new CliError('MAPPING_MISSING', `Failed to read E2E mapping: ${String(e)}`);
     }
-    // Support both { mappings: [...] } wrapper and direct mapping
-    const e2eMapping: unknown = e2eMappingRaw;
-    if (e2eMappingRaw && typeof e2eMappingRaw === 'object' && 'mappings' in (e2eMappingRaw as Record<string, unknown>)) {
-      // unit wrapper mistaken
-      throw new CliError('MAPPING_MISSING', 'E2E mapping file appears to contain unit mappings. Check .tirai/mappings/e2e.json');
-    }
-    // If file contains _comment + schemaVersion, it's direct
-    // If file was placeholder with empty testMappings, it will be empty -> BLOCKED
-    const mapping = e2eMapping as {
+    const mapping = e2eMappingRaw as {
       testMappings: Array<{ testCaseId: string; status: string; ui?: unknown }>;
       unresolved: unknown[];
       catalogs: { uiCatalog?: unknown };
@@ -81,17 +69,13 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     };
 
     if (!mapping.testMappings || mapping.testMappings.length === 0) {
-      if (explicitE2e) {
-        throw new CliError(
-          'MAPPING_MISSING',
-          `No E2E mapping entries for ${tcs.length} TestCases`,
-          `Edit ${path.relative(paths.root, paths.e2eMappingPath)} or omit --e2e to generate unit tests from JSON.`,
-        );
-      }
-      console.log('Skipping E2E: no trusted mappings (unit tests still generate from TestCase JSON).');
-    } else {
+      throw new CliError(
+        'MAPPING_MISSING',
+        `No E2E mapping entries for ${tcs.length} TestCases`,
+        `Edit ${path.relative(paths.root, paths.e2eMappingPath)} to add mappings.`,
+      );
+    }
 
-    // Build profile
     const uiCatalog = (mapping.catalogs?.uiCatalog ?? undefined) as unknown;
     const profile = {
       ui: {
@@ -106,6 +90,7 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
       baseUrl: config.e2e.baseUrl,
     };
 
+    let e2eResult: unknown;
     try {
       const input = {
         testCases: tcs,
@@ -129,7 +114,6 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
       throw new CliError('GENERATION_BLOCKED', 'E2E generation blocked (missing/untrusted mappings).');
     }
 
-    // Validation
     const generatedFiles = (e2eResult as { generatedFiles: string[] }).generatedFiles;
     for (const file of generatedFiles) {
       const validation = await validateGeneratedSource(file, {});
@@ -138,21 +122,38 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
       }
     }
 
-    // Persist metrics are inside result; no extra persistence needed (files already written to generatedE2eDir)
     console.log(`E2E: ${generatedFiles.length} Playwright files generated`);
-    }
-    }
+    updateState(paths, (s) => ({
+      ...s,
+      generation: {
+        at: new Date().toISOString(),
+        e2eFiles: generatedFiles,
+        unitFiles: s.generation?.unitFiles ?? [],
+        generationAiCalls: 0,
+        guessedMappings: 0,
+        aiSymbolGuesses: 0,
+      },
+    }));
+    return;
   }
 
-  // --- Unit ---
-  if (wantUnit) {
-    let unitRaw: unknown = { mappings: [] };
-    if (fs.existsSync(paths.unitMappingPath)) {
-      try {
-        unitRaw = readJson(paths.unitMappingPath);
-      } catch (e) {
-        throw new CliError('MAPPING_MISSING', `Failed to read Unit mapping: ${String(e)}`);
-      }
+  // --- Vitest Unit ---
+  if (target === 'vitest') {
+    // Vitest requires a real source mapping
+    const mappingPath = opts.sourceMapping || paths.unitMappingPath;
+    if (!fs.existsSync(mappingPath)) {
+      throw new CliError(
+        'MAPPING_MISSING',
+        'Vitest generation requires a trusted source mapping.',
+        'Provide --source-mapping <path> or create .tirai/mappings/unit.json',
+      );
+    }
+
+    let unitRaw: unknown;
+    try {
+      unitRaw = readJson(mappingPath);
+    } catch (e) {
+      throw new CliError('MAPPING_MISSING', `Failed to read Unit mapping: ${String(e)}`);
     }
     let unitMappings: unknown[] = [];
     if (Array.isArray(unitRaw)) {
@@ -160,14 +161,14 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     } else if (unitRaw && typeof unitRaw === 'object' && 'mappings' in (unitRaw as Record<string, unknown>)) {
       const m = (unitRaw as Record<string, unknown>).mappings;
       if (Array.isArray(m)) unitMappings = m;
-    } else if (unitRaw && typeof unitRaw === 'object' && 'testCaseId' in (unitRaw as Record<string, unknown>)) {
-      unitMappings = [unitRaw];
-    } else {
-      unitMappings = [];
     }
 
     if (unitMappings.length === 0) {
-      console.log('Unit: no source mappings; generating spec preview artifacts (not tests) from TestCase JSON.');
+      throw new CliError(
+        'MAPPING_MISSING',
+        'Vitest generation blocked: no source mappings provided.',
+        'Add trusted UnitTargetCodeMapping entries to .tirai/mappings/unit.json',
+      );
     }
 
     const unitProfile = {
@@ -191,6 +192,7 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
       },
     } as unknown as Parameters<typeof generateUnitTests>[0];
 
+    let unitResult: unknown;
     try {
       unitResult = await generateUnitTests(unitInput);
     } catch (e) {
@@ -198,7 +200,6 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     }
 
     const uRes = unitResult as { status: string; caseResults: Array<{ status: string; blockingReason?: { code?: string; message?: string } }>; metrics: { aiSymbolGuesses: number; staleMappingsDetected?: number } };
-    // Check for stale
     const stale = uRes.caseResults.find((cr) => (cr.blockingReason as unknown as { code?: string })?.code === 'STALE_MAPPING' || (cr.blockingReason as unknown as { message?: string })?.message?.includes('STALE'));
     if (stale) {
       console.error(`BLOCKED: Unit mapping stale for ${(stale as unknown as { testCaseId: string }).testCaseId}`);
@@ -221,24 +222,28 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
         throw new CliError('VALIDATION_ERROR', `Unit validation failed for ${path.relative(paths.root, file)}: ${JSON.stringify(v)}`);
       }
     }
+
     console.log(`Unit: ${generatedFiles.length} Vitest files generated`);
+    updateState(paths, (s) => ({
+      ...s,
+      generation: {
+        at: new Date().toISOString(),
+        e2eFiles: s.generation?.e2eFiles ?? [],
+        unitFiles: generatedFiles,
+        generationAiCalls: 0,
+        guessedMappings: 0,
+        aiSymbolGuesses: 0,
+      },
+    }));
+    return;
   }
 
-  // Update state
-  const e2eMetrics = (e2eResult as { metrics?: { generationAiCalls: number; guessedMappings: number } } | null)?.metrics;
-  const unitMetrics = (unitResult as { metrics?: { generationAiCalls: number; aiSymbolGuesses: number } } | null)?.metrics;
-  updateState(paths, (s) => ({
-    ...s,
-    generation: {
-      at: new Date().toISOString(),
-      e2eFiles: (e2eResult as { generatedFiles?: string[] } | null)?.generatedFiles ?? s.generation?.e2eFiles ?? [],
-      unitFiles: (unitResult as { generatedFiles?: string[] } | null)?.generatedFiles ?? s.generation?.unitFiles ?? [],
-      generationAiCalls: (e2eMetrics?.generationAiCalls ?? 0) + (unitMetrics?.generationAiCalls ?? 0),
-      guessedMappings: (e2eMetrics?.guessedMappings ?? 0),
-      aiSymbolGuesses: (unitMetrics?.aiSymbolGuesses ?? 0),
-    },
-  }));
-
-  console.log('TIRAI generate complete');
-  // Gate checks: generationAiCalls, guessedMappings, aiSymbolGuesses are 0 (enforced by generators)
+  // No target specified — show help
+  console.log('Usage: tirai generate --target playwright|vitest');
+  console.log('');
+  console.log('Options:');
+  console.log('  --target playwright   Generate Playwright E2E tests (requires E2E mapping)');
+  console.log('  --target vitest       Generate Vitest unit tests (requires source mapping)');
+  console.log('  --source-mapping      Path to unit source mapping (for --target vitest)');
+  throw new CliError('INVALID_TARGET', 'Missing --target. Use playwright or vitest.');
 }
