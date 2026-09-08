@@ -51,6 +51,9 @@ export async function runReport(opts: ReportOptions): Promise<void> {
   // Derive summary from canonical results, not raw
   const e2eSummary = (e2eResult as { summary?: { passed: number; failed: number; errors: number; blocked: number; testsTotal: number } } | null)?.summary;
   const unitSummary = (unitResult as { summary?: { passed: number; failed: number; errors: number; blocked: number; testsTotal: number } } | null)?.summary;
+  const adapterResults = fs.existsSync(paths.resultsDir) ? fs.readdirSync(paths.resultsDir).filter((name) => name.startsWith('execute-') && name.endsWith('.json')).map((name) => {
+    try { return JSON.parse(fs.readFileSync(path.join(paths.resultsDir, name), 'utf8')) as { platform?: string; environment?: string; status?: string; adapter?: string; testCases?: number; apiOperations?: number; databaseChecks?: number }; } catch { return null; }
+  }).filter(Boolean) : [];
   const e2eStatus = (e2eResult as { status?: string } | null)?.status ?? 'unknown';
   const unitStatus = (unitResult as { status?: string } | null)?.status ?? 'unknown';
   const overall = hasE2e && hasUnit
@@ -107,6 +110,9 @@ export async function runReport(opts: ReportOptions): Promise<void> {
     '',
     `Unit:`,
     `  ${unitSummary ? `${unitSummary.passed} passed, ${unitSummary.failed} failed, ${unitSummary.errors} errors, ${unitSummary.blocked} blocked (${unitStatus})` : 'no result'}`,
+    '',
+    `Adapter execution:`,
+    ...(adapterResults.length ? adapterResults.map((r) => `  ${r?.platform ?? 'unknown'} / ${r?.environment ?? 'unknown'}: ${r?.status ?? 'unknown'} (${r?.adapter ?? 'adapter'})`) : ['  no result']),
     '',
     `Result:`,
     `  ${overall}`,
