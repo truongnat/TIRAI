@@ -1,6 +1,7 @@
 {
   "schemaVersion": "1.0",
   "contractId": "contract-ced80a0112265711",
+  "contractFingerprint": "3a1f964edd3648be2c80947fa190e11f9f2352f71d42eb86a33c71eeacd3e843",
   "strategy": "by-module",
   "artifacts": [
     {

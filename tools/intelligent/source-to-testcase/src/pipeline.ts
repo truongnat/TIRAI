@@ -83,6 +83,7 @@ export interface SourceToTestCaseResult {
     aiRun: string;
     artifactPlan: string;
     testDesignSummary: string;
+    aiInput: string;
   };
   document: CanonicalSourceDocument;
   semanticIR: SemanticIR;
@@ -134,6 +135,8 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   const semanticContextDir = path.join(outputDir, 'semantic-context');
   const writeResult = writeSemanticContextPackage(doc, semanticContextDir);
   const rawContext = writeRawContextPackage(doc, path.join(outputDir, 'raw-context'));
+  const aiInputPath = path.join(outputDir, 'ai-input.json');
+  fs.writeFileSync(aiInputPath, JSON.stringify({ schemaVersion: '1.0', purpose: 'unified-ai-test-design-input', source: doc.source, revision: doc.revision, artifacts: doc.artifacts, contexts: doc.contexts, sourcePath, policy: { requireDimensions: ['happy-path', 'negative', 'boundary', 'validation', 'empty', 'loading', 'error', 'state-transition', 'security'], requireAssertions: true, requireProvenance: true } }, null, 2), 'utf8');
 
   // Structured detailed-design workbooks already carry explicit row-level
   // requirements. Compile that contract deterministically before the AI path
@@ -169,7 +172,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       { name: 'test-planning', mode: 'deterministic', aiCalls: 0, reason: 'test scenarios are compiled with source traceability' },
     ] }, null, 2), 'utf8');
 
-    const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath, aiRunPath, artifactPlanPath, ...rawContext.files]);
+    const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath, aiRunPath, artifactPlanPath, aiInputPath, ...rawContext.files]);
     const semanticProvider = 'structured-design-compiler';
     const semanticModel = 'deterministic';
     return {
@@ -208,6 +211,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
         aiRun: aiRunPath,
         artifactPlan: artifactPlanPath,
         testDesignSummary: testDesignSummaryPath,
+        aiInput: aiInputPath,
       },
       document: doc,
       semanticIR,
@@ -303,7 +307,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   ] }, null, 2), 'utf8');
 
   // -- Metrics -------------------------------------------------------------
-  const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath, aiRunPath, artifactPlanPath, ...rawContext.files]);
+  const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath, aiRunPath, artifactPlanPath, aiInputPath, ...rawContext.files]);
 
   return {
     source,
@@ -341,6 +345,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       aiRun: aiRunPath,
       artifactPlan: artifactPlanPath,
       testDesignSummary: testDesignSummaryPath,
+      aiInput: aiInputPath,
     },
     document: doc,
     semanticIR,
