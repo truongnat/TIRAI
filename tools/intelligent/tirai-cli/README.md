@@ -28,13 +28,10 @@ export GROQ_API_KEY=...   # or DEEPSEEK_API_KEY, or use fake for local
 tirai ingest ./spec.xlsx
 # → canonical TestCases in .tirai/artifacts/
 
-# 4. Configure trusted mappings (human-readable, persisted, reusable)
-# Edit .tirai/mappings/e2e.json and .tirai/mappings/unit.json
-# See .tirai/mappings/e2e.json and unit.json created by `tirai init` for structure.
-
-# 5. Generate Playwright + Vitest tests
-tirai generate
-# or tirai generate --e2e / --unit
+# 4. Generate unit tests from TestCase JSON (no source mapping required)
+tirai generate --unit
+# Optional: edit .tirai/mappings/unit.json to bind cases to real source symbols
+# Optional: edit .tirai/mappings/e2e.json then `tirai generate --e2e`
 
 # 6. Execute (real Chromium + Vitest)
 tirai run

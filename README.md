@@ -155,10 +155,8 @@ tirai ingest ./spec.xlsx
 # inspect generated canonical test cases
 tirai status
 
-# configure trusted mappings under .tirai/mappings/
-
-# generate Playwright + Vitest test code
-tirai generate
+# generate unit tests from TestCase JSON (source mapping optional)
+tirai generate --unit
 
 # execute real tests
 tirai run
@@ -219,7 +217,7 @@ Mappings are persisted and reviewable:
 .tirai/mappings/unit.json
 ```
 
-If a mapping is missing, ambiguous, unsupported, or stale, TIRAI fails closed instead of inventing authority.
+Unit tests generate from TestCase JSON without a mapping (spec I/O table, run with those inputs). A trusted `unit.json` mapping, when present, binds the same case to a real source symbol. E2E still requires a trusted mapping; missing, ambiguous, unsupported, or stale E2E/source mappings fail closed instead of inventing selectors or symbols.
 
 ---
 

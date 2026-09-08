@@ -4,7 +4,7 @@
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { loadInputs } from './loader.js';
+import { loadInputs, type LoadedInputs } from './loader.js';
 import { planChunks, generateChunkContent } from './chunker.js';
 import { buildProvenance, generateChunkId } from './provenance.js';
 import { detectCrossSheetReferences, buildContinuationRelations } from './relations.js';
@@ -30,10 +30,18 @@ export async function buildExcelContext(
   inputPath: string,
   options?: ContextBuilderOptions,
 ): Promise<ExcelContextPackage> {
+  return buildExcelContextFromLoaded(loadInputs(inputPath), options);
+}
+
+/** In-memory path — skip writing/parsing a giant full-extract.json. */
+export async function buildExcelContextFromLoaded(
+  loaded: LoadedInputs,
+  options?: ContextBuilderOptions,
+): Promise<ExcelContextPackage> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  // Phase 1: Load + validate
-  const { workbook, layout, warnings: loadWarnings } = loadInputs(inputPath);
+  // Phase 1: already loaded
+  const { workbook, layout, warnings: loadWarnings } = loaded;
 
   const allWarnings: ContextWarning[] = [...loadWarnings];
   const allSheetNames = layout.sheets.map((s) => s.name);
@@ -49,12 +57,15 @@ export async function buildExcelContext(
     : layout.sheets;
 
   for (const sheet of sheetsToProcess) {
+    const contentCells = sheet.cells.filter(isContentCell);
+    if (contentCells.length === 0) continue;
+    const sheetForChunk = { ...sheet, cells: contentCells };
     // Plan chunks for this sheet
-    const { plans, warnings: chunkWarnings } = planChunks(sheet, opts);
+    const { plans, warnings: chunkWarnings } = planChunks(sheetForChunk, opts);
     allWarnings.push(...chunkWarnings);
 
     // Detect cross-sheet references
-    const crossRefs = detectCrossSheetReferences(sheet, allSheetNames);
+    const crossRefs = detectCrossSheetReferences(sheetForChunk, allSheetNames);
 
     // Build chunk IDs for continuation relations
     const chunkIds = plans.map((_, ci) => generateChunkId(sheet.index, ci));
@@ -214,4 +225,13 @@ function isTabular(cells: CellInput[]): boolean {
   if (cells.length < 2) return false;
   const cols = new Set(cells.map((c) => c.column));
   return cols.size >= 2;
+}
+
+/** Keep value/formula/comment cells; drop styled-empty grid cells. */
+function isContentCell(cell: CellInput): boolean {
+  if (cell.formula) return true;
+  if (cell.comment) return true;
+  if (cell.displayValue != null && String(cell.displayValue).trim() !== '') return true;
+  if (cell.rawValue != null && String(cell.rawValue).trim() !== '') return true;
+  return false;
 }

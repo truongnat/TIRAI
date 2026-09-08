@@ -124,6 +124,45 @@ export async function analyzeSemanticContext(
         return { ...analysis, reused: false, fingerprint, repairs: analysis.warnings?.length ?? 0 };
       } catch (error) {
         contextsFailed++;
+        if (process.env.TIRAI_SEMANTIC_SKIP_FAILED_CHUNKS === '1') {
+          const skipped: ChunkSemanticResult = {
+            contextId: chunk.id,
+            sections: [],
+            entities: [],
+            flows: [],
+            rules: [],
+            relationships: [],
+            unresolved: [{
+              localId: 'skip-output-limit',
+              type: 'analysis-skipped',
+              description: 'Chunk skipped after semantic analysis failure',
+              provenance: [],
+              reason: error instanceof Error ? error.message : String(error),
+            }],
+          };
+          return {
+            result: skipped,
+            usage: {},
+            reused: false,
+            fingerprint: computeFingerprint(chunk.content, promptVersion, model, undefined, undefined, options?.providerOptions, budget.outputBudgetPolicy),
+            repairs: 0,
+            warnings: [{
+              code: 'CHUNK_ANALYSIS_SKIPPED',
+              message: error instanceof Error ? error.message : String(error),
+              contextId: chunk.id,
+            }],
+            metrics: {
+              requests: 0,
+              schemaRepairs: 0,
+              estimatedInputTokens: 0,
+              maxEstimatedInputTokens: 0,
+              initialOutputBudget: budget.maxOutputTokensPerRequest,
+              finalOutputBudget: budget.maxOutputTokensPerRequest,
+              outputBudgetEscalations: 0,
+              finishReason: 'skipped',
+            },
+          };
+        }
         throw error;
       } finally {
         activeConcurrency--;

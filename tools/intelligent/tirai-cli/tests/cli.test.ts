@@ -307,4 +307,51 @@ describe('tirai CLI', () => {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   }, 60000);
+
+  it('ingest → generate --unit → run from TestCase JSON without source mapping', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-standalone-'));
+    try {
+      const ExcelJS = await import('exceljs');
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Order Validation');
+      ws.getCell('A1').value = 'Order Validation Rule';
+      ws.getCell('A2').value = 'If quantity is greater than availableStock then reject the order.';
+      ws.getCell('A3').value = 'Inputs: quantity, availableStock';
+      ws.getCell('A4').value = 'Expected: valid=false, reason=INSUFFICIENT_STOCK';
+      await wb.xlsx.writeFile(path.join(tmp, 'spec.xlsx'));
+      fs.writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({ name: 'standalone-unit', private: true, type: 'module' }, null, 2));
+
+      let r = await run(['init'], tmp);
+      expect(r.code).toBe(0);
+      r = await run(['ingest', './spec.xlsx'], tmp);
+      expect(r.code).toBe(0);
+      expect(fs.existsSync(path.join(tmp, '.tirai/artifacts/testcases.json'))).toBe(true);
+
+      r = await run(['generate', '--unit'], tmp);
+      expect(r.code).toBe(0);
+      expect(r.out).toContain('Unit:');
+      const unitDir = path.join(tmp, '.tirai/generated/unit');
+      const specs = fs.readdirSync(unitDir).filter((f) => f.endsWith('.spec.ts'));
+      expect(specs.length).toBeGreaterThan(0);
+      expect(fs.existsSync(path.join(unitDir, '_spec-apply.ts'))).toBe(true);
+      expect(fs.existsSync(path.join(tmp, '.tirai/generated/e2e'))).toBe(true);
+      const e2eSpecs = fs.existsSync(path.join(tmp, '.tirai/generated/e2e'))
+        ? fs.readdirSync(path.join(tmp, '.tirai/generated/e2e')).filter((f) => f.endsWith('.spec.ts'))
+        : [];
+      expect(e2eSpecs.length).toBe(0);
+
+      const specSrc = fs.readFileSync(path.join(unitDir, specs[0]), 'utf8');
+      expect(specSrc).toContain('specApply');
+      expect(specSrc).toContain('inputs');
+
+      r = await run(['run'], tmp);
+      expect(r.code).toBe(0);
+      expect(r.out).toContain('Unit:');
+      const unitRes = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/results/unit-run-result-ir.json'), 'utf8'));
+      expect(unitRes.status).toBe('passed');
+      expect(unitRes.summary.testsTotal).toBeGreaterThan(0);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }, 60000);
 });
