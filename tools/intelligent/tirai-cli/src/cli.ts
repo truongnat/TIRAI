@@ -153,7 +153,7 @@ async function main(): Promise<void> {
       }
       case 'report': {
         const json = Boolean(flags.json);
-        await runReport({ cwd, json });
+        await runReport({ cwd, json, taskId: flags.task as string });
         break;
       }
       case 'status': {
