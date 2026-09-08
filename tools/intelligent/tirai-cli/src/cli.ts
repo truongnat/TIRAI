@@ -14,6 +14,7 @@ import { runExecute } from './commands/execute.js';
 import { runTaskCreate, runTaskList, runTaskShow } from './commands/task.js';
 import { runContractValidate } from './commands/contract.js';
 import { runArtifactPlan } from './commands/artifact.js';
+import { runAnalyze } from './commands/analyze.js';
 import { CliError } from './errors.js';
 
 const VERSION = '1.0.0';
@@ -47,6 +48,7 @@ Commands:
   task show <task-id>     Show a task workspace
   contract validate       Validate canonical contract JSON
   artifact plan           Plan outputs from canonical contract
+  analyze                 Inspect AI input and raw context package
   plan                    Generate canonical test plan from specs + targets
   export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
   execute                 Execute tests against configured platform
@@ -133,6 +135,10 @@ async function main(): Promise<void> {
       case 'artifact': {
         if (args[0] !== 'plan') throw new CliError('INVALID_TARGET', 'Usage: tirai artifact plan');
         await runArtifactPlan({ cwd, contractPath: flags.file as string, json: Boolean(flags.json) });
+        break;
+      }
+      case 'analyze': {
+        await runAnalyze({ cwd, json: Boolean(flags.json) });
         break;
       }
       case 'init': {
