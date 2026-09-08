@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { assertValidContract } from 'contract-ir';
+import { assertValidContract, finalizeContract, type ContractIR } from 'contract-ir';
 import { requireWorkspace } from '../workspace.js';
 import { CliError } from '../errors.js';
 
@@ -22,9 +22,10 @@ export async function runContractImport(opts: { cwd: string; inputPath: string; 
   let contract: unknown;
   try { contract = JSON.parse(fs.readFileSync(inputPath, 'utf8')); } catch (error) { throw new CliError('CONFIG_INVALID', `Contract is not valid JSON: ${String(error)}`); }
   try { assertValidContract(contract as Parameters<typeof assertValidContract>[0]); } catch (error) { throw new CliError('CONFIG_INVALID', error instanceof Error ? error.message : String(error)); }
+  const canonicalContract = finalizeContract(contract as ContractIR);
   fs.mkdirSync(paths.artifactsDir, { recursive: true });
   const destination = path.join(paths.artifactsDir, 'contract.json');
-  fs.writeFileSync(destination, `${JSON.stringify(contract, null, 2)}\n`, 'utf8');
-  const result = { imported: true, contractPath: destination, contractId: (contract as { contractId: string }).contractId, fingerprint: (contract as { metadata?: { contractFingerprint?: string } }).metadata?.contractFingerprint };
+  fs.writeFileSync(destination, `${JSON.stringify(canonicalContract, null, 2)}\n`, 'utf8');
+  const result = { imported: true, contractPath: destination, contractId: canonicalContract.contractId, fingerprint: canonicalContract.metadata.contractFingerprint };
   if (opts.json) console.log(JSON.stringify(result, null, 2)); else console.log(`Contract imported: ${result.contractId}`);
 }
