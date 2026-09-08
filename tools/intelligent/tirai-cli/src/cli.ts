@@ -12,6 +12,7 @@ import { runPlan } from './commands/plan.js';
 import { runExport } from './commands/export.js';
 import { runExecute } from './commands/execute.js';
 import { runTaskCreate, runTaskList, runTaskShow } from './commands/task.js';
+import { runContractValidate } from './commands/contract.js';
 import { CliError } from './errors.js';
 
 const VERSION = '1.0.0';
@@ -43,6 +44,7 @@ Commands:
   task create             Create an isolated task workspace
   task list               List task workspaces
   task show <task-id>     Show a task workspace
+  contract validate       Validate canonical contract JSON
   plan                    Generate canonical test plan from specs + targets
   export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
   execute                 Execute tests against configured platform
@@ -121,6 +123,11 @@ async function main(): Promise<void> {
 
   try {
     switch (cmd) {
+      case 'contract': {
+        if (args[0] !== 'validate') throw new CliError('INVALID_TARGET', 'Usage: tirai contract validate');
+        await runContractValidate({ cwd, contractPath: flags.file as string, json: Boolean(flags.json) });
+        break;
+      }
       case 'init': {
         const force = Boolean(flags.force);
         await runInit({ cwd, force });
