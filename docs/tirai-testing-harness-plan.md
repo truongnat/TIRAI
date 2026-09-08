@@ -19,6 +19,87 @@ TIRAI supports two control planes over the same artifact protocol:
 
 CLI is the workflow interface, not an AI provider.
 
+## Incremental execution plan
+
+Mỗi phase phải kết thúc bằng build, test, example smoke test nếu liên quan,
+review artifact, và một commit độc lập. Không chuyển phase khi acceptance
+criteria của phase trước chưa đạt.
+
+### Phase A — Control plane and contracts
+
+- Chốt config schema cho project, task, AI host/provider và output policy.
+- Chốt input/output artifact protocol: raw package, AI input, contract,
+  artifact plan, execution result, report.
+- Thêm CLI commands `analyze`, `contract validate`, `artifact plan` dưới dạng
+  các command đọc/ghi artifact, không tự spawn external agent.
+- Acceptance: standalone CLI chạy được tới raw artifact; external agent có thể
+  đọc raw và đưa contract JSON quay lại để validate/fingerprint.
+
+### Phase B — Ingestion and context quality
+
+- Hoàn thiện connector-neutral ingestion cho Excel/PDF/DOCX/Markdown/CSV/JSON.
+- Chuẩn hóa module, feature, page, sheet, heading và parent-child chunking.
+- Bảo toàn hash, locator, provenance và source metadata.
+- Acceptance: cùng input tạo raw manifest ổn định; spec lớn được chia theo
+  module/context mà không mất traceability.
+
+### Phase C — AI-assisted analysis
+
+- Tạo stage input hợp nhất từ raw context, source intelligence và project
+  profile.
+- Cho phép Codex/Claude host điều khiển stage qua artifact protocol.
+- Cho standalone CLI dùng API-key/local provider nếu người dùng cấu hình.
+- Bắt structured output theo schema, retry, checkpoint và prompt version.
+- Acceptance: AI có thể sinh contract từ toàn bộ input; fake chỉ dùng cho test,
+  không được thay thế semantic stage trong real run.
+
+### Phase D — Contract consolidation
+
+- Join requirement, flow, UI, API, DB, FE module và source evidence bằng ID,
+  route, endpoint, entity và provenance.
+- Tạo unresolved queue, conflict records, confidence và coverage metrics.
+- Validate mọi reference trước khi cho phép generate.
+- Acceptance: một requirement truy được tới source context, module, test case
+  và artifact; conflict không bị nuốt im lặng.
+
+### Phase E — Test design quality
+
+- Sinh test theo behavior dimensions: happy, negative, boundary, validation,
+  empty, loading, error, permission, state transition, retry và rollback.
+- Bắt precondition, data need, cleanup, UI/API/DB/state assertions và manual
+  reason.
+- Dùng toàn bộ context làm input trong cùng stage AI, không dùng one-case-
+  per-flow hard-code policy.
+- Acceptance: coverage tính theo behavior path; mỗi acceptance behavior có
+  test hoặc unresolved reason rõ ràng.
+
+### Phase F — Artifact generation
+
+- Sinh Excel đầy đủ các sheet contract/requirements/flows/scenarios/test
+  cases/steps/assertions/data/checks/traceability/manual gaps/conflicts/results.
+- Sinh Markdown một file hoặc tách theo module/token budget, có index và links.
+- Sinh Playwright/Vitest/API/DB code từ cùng contract fingerprint.
+- Acceptance: không mất field quan trọng và mọi output truy ngược được về
+  contract node.
+
+### Phase G — Execution and feedback
+
+- Hoàn thiện Playwright, Vitest, API và DB adapters với environment profile,
+  fixture, secret reference, timeout, retry và cleanup.
+- Chuẩn hóa result thành passed/failed/blocked/skipped/manual/error.
+- Report JSON/Markdown/HTML/Excel có link từ failure về test, requirement,
+  source và spec.
+- Acceptance: có thể rerun một test case/module mà không đổi contract và
+  report giữ execution evidence đầy đủ.
+
+### Phase H — Hardening and release
+
+- Golden/replay/deterministic tests cho từng connector và adapter.
+- Prompt-injection defense, secret scan, file/token/resource limits.
+- Audit trail, cache, resume, migration và CI checks.
+- Acceptance: cùng input, tool version, model version và config tái tạo được
+  contract/artifact plan; mọi quyết định AI/execution đều audit được.
+
 ```text
 Multi-source spec + project context
   -> raw context and chunks
