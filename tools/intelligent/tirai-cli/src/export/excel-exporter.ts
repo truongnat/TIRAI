@@ -24,6 +24,12 @@ export class ExcelExporter implements TestOutputExporter {
 
     const workbook = new ExcelJS.Workbook();
 
+    const contractSheet = workbook.addWorksheet('Contract Summary');
+    contractSheet.columns = [{ header: 'Field', key: 'field', width: 30 }, { header: 'Value', key: 'value', width: 80 }];
+    contractSheet.addRow({ field: 'Contract Fingerprint', value: options?.contractFingerprint ?? 'not supplied' });
+    contractSheet.addRow({ field: 'Contract Version', value: options?.contractVersion ?? 'unknown' });
+    contractSheet.addRow({ field: 'Test Plan Fingerprint', value: testPlanFingerprint });
+
     // Test Cases sheet
     const tcSheet = workbook.addWorksheet('Test Cases');
     tcSheet.columns = [
