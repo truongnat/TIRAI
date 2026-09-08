@@ -82,6 +82,7 @@ export interface SourceToTestCaseResult {
     trace: string;
     aiRun: string;
     artifactPlan: string;
+    testDesignSummary: string;
   };
   document: CanonicalSourceDocument;
   semanticIR: SemanticIR;
@@ -149,10 +150,12 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
     const tracePath = path.join(outputDir, 'trace.json');
     const aiRunPath = path.join(outputDir, 'ai-run.json');
     const artifactPlanPath = path.join(outputDir, 'artifact-plan.json');
+    const testDesignSummaryPath = path.join(outputDir, 'test-design-summary.json');
 
     fs.writeFileSync(contextPath, JSON.stringify(doc, null, 2), 'utf8');
     const contract = buildContractIR({ document: doc, semanticIR, requirementIR, testPlanIR });
     fs.writeFileSync(artifactPlanPath, JSON.stringify(planArtifacts(contract), null, 2), 'utf8');
+    fs.writeFileSync(testDesignSummaryPath, JSON.stringify(buildTestDesignSummary(testPlanIR), null, 2), 'utf8');
     fs.writeFileSync(contractPath, JSON.stringify(contract, null, 2), 'utf8');
     fs.writeFileSync(semanticIrPath, JSON.stringify(semanticIR, null, 2), 'utf8');
     fs.writeFileSync(requirementsPath, JSON.stringify(requirementIR, null, 2), 'utf8');
@@ -204,6 +207,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
         trace: tracePath,
         aiRun: aiRunPath,
         artifactPlan: artifactPlanPath,
+        testDesignSummary: testDesignSummaryPath,
       },
       document: doc,
       semanticIR,
@@ -276,6 +280,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   const tracePath = path.join(outputDir, 'trace.json');
   const aiRunPath = path.join(outputDir, 'ai-run.json');
   const artifactPlanPath = path.join(outputDir, 'artifact-plan.json');
+  const testDesignSummaryPath = path.join(outputDir, 'test-design-summary.json');
   const semInfo = analysisInfo((semanticIR as unknown as { analysis?: unknown }).analysis);
   const reqInfo = { aiCalls: aiCalls.REQUIREMENT_BUILD, provider: provider.name, model: provider.name };
   const planInfo = { aiCalls: aiCalls.TEST_PLANNING, provider: provider.name, model: provider.name };
@@ -283,6 +288,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   fs.writeFileSync(contextPath, JSON.stringify(doc, null, 2), 'utf8');
   const contract = buildContractIR({ document: doc, semanticIR, requirementIR, testPlanIR });
   fs.writeFileSync(artifactPlanPath, JSON.stringify(planArtifacts(contract), null, 2), 'utf8');
+  fs.writeFileSync(testDesignSummaryPath, JSON.stringify(buildTestDesignSummary(testPlanIR), null, 2), 'utf8');
   fs.writeFileSync(contractPath, JSON.stringify(contract, null, 2), 'utf8');
   fs.writeFileSync(semanticIrPath, JSON.stringify(semanticIR, null, 2), 'utf8');
   fs.writeFileSync(requirementsPath, JSON.stringify(requirementIR, null, 2), 'utf8');
@@ -334,6 +340,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       trace: tracePath,
       aiRun: aiRunPath,
       artifactPlan: artifactPlanPath,
+      testDesignSummary: testDesignSummaryPath,
     },
     document: doc,
     semanticIR,
@@ -393,4 +400,12 @@ interface SourceIdentityLite {
   sourceId: string;
   displayName: string;
   contentHash: string;
+}
+
+function buildTestDesignSummary(plan: TestPlanIR): { schemaVersion: '1.0'; testCases: number; byCategory: Record<string, number>; byAutomation: Record<string, number>; requirementsCovered: number; behaviorPaths: number } {
+  const byCategory: Record<string, number> = {};
+  const byAutomation: Record<string, number> = {};
+  for (const scenario of plan.scenarios) byCategory[scenario.category] = (byCategory[scenario.category] ?? 0) + 1;
+  for (const testCase of plan.testCases) { const status = testCase.automation.status; byAutomation[status] = (byAutomation[status] ?? 0) + 1; }
+  return { schemaVersion: '1.0', testCases: plan.testCases.length, byCategory, byAutomation, requirementsCovered: plan.quality.requirementsCovered, behaviorPaths: plan.scenarios.length };
 }
