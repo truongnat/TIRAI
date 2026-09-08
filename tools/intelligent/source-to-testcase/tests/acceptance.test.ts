@@ -44,6 +44,12 @@ describe('Phase 5.3 source-to-testcase acceptance', () => {
       expect(fs.existsSync(f), `missing artifact ${f}`).toBe(true);
     }
 
+    for (const stage of ['semantic_analysis', 'requirement_build', 'test_planning']) {
+      const checkpoint = JSON.parse(fs.readFileSync(path.join(OUT, 'checkpoints', `${stage}.json`), 'utf8'));
+      expect(checkpoint.status).toBe('completed');
+      expect(checkpoint.artifact).toBeTypeOf('string');
+    }
+
     // Traceability: every test case traces back to a source context chunk.
     const trace = JSON.parse(fs.readFileSync(result.artifacts.trace, 'utf8'));
     expect(trace.links.length).toBe(result.testPlan.testCaseCount);
