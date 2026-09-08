@@ -11,8 +11,11 @@ export interface TiraiConfig {
   version: number;
   workspaceVersion: number;
   ai: {
-    provider: 'fake' | 'groq' | 'deepseek';
+    provider: 'fake' | 'groq' | 'deepseek' | 'cli';
     model?: string;
+    command?: string;
+    timeoutMs?: number;
+    artifactDir?: string;
   };
   project: {
     root: string;
@@ -90,6 +93,9 @@ export function loadConfig(paths: WorkspacePaths): TiraiConfig {
   }
   if (!config.ai || typeof config.ai.provider !== 'string') {
     throw new CliError('CONFIG_INVALID', 'Config missing ai.provider (fake|groq|deepseek)');
+  }
+  if (config.ai.provider === 'cli' && !config.ai.command) {
+    throw new CliError('CONFIG_INVALID', 'CLI AI provider requires ai.command (use {input} and {output} placeholders).');
   }
   if (config.ai.provider === 'groq' || config.ai.provider === 'deepseek') {
     const keyName = config.ai.provider === 'groq' ? 'GROQ_API_KEY' : 'DEEPSEEK_API_KEY';

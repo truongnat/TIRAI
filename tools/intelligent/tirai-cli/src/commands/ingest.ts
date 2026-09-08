@@ -61,7 +61,7 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     provider = createFakeIngestProvider(absSource);
   } else {
     try {
-      provider = createAIProvider({ provider: config.ai.provider as 'groq' | 'deepseek' });
+      provider = createAIProvider({ provider: config.ai.provider, config: { command: config.ai.command, model: config.ai.model, timeoutMs: config.ai.timeoutMs, artifactDir: config.ai.artifactDir ?? path.join(paths.artifactsDir, 'ai') } });
     } catch (e) {
       throw new CliError('CONFIG_INVALID', `Failed to create AI provider: ${String(e)}`);
     }
