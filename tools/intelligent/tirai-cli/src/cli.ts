@@ -53,6 +53,8 @@ Commands:
   plan                    Generate canonical test plan from specs + targets
   export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
   execute                 Execute tests against configured platform
+    --test-case <id>       Execute one canonical test case
+    --module <id>          Execute test cases from one module
   --help, -h              Show this help
   --version, -v           Show version
 
@@ -268,6 +270,8 @@ async function main(): Promise<void> {
           platform: flags.platform as string,
           environment: flags.environment as string,
           taskId: flags.task as string,
+          testCaseId: flags['test-case'] as string,
+          module: flags.module as string,
           json: Boolean(flags.json),
         });
         break;

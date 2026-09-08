@@ -17,6 +17,8 @@ export interface ExecuteOptions {
   environment?: string;
   json?: boolean;
   taskId?: string;
+  testCaseId?: string;
+  module?: string;
 }
 
 export async function runExecute(opts: ExecuteOptions): Promise<void> {
@@ -45,7 +47,13 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
   if (!fs.existsSync(testCasesPath)) {
     throw new CliError('CONFIG_INVALID', 'No test cases found. Run "tirai plan" first.');
   }
-  const testCases = JSON.parse(fs.readFileSync(testCasesPath, 'utf8'));
+  const loaded = JSON.parse(fs.readFileSync(testCasesPath, 'utf8'));
+  const allTestCases = Array.isArray(loaded) ? loaded : (loaded as { testCases?: unknown[] }).testCases ?? [];
+  const testCases = allTestCases.filter((testCase) => {
+    const value = testCase as { id?: string; module?: string; moduleId?: string };
+    return (!opts.testCaseId || value.id === opts.testCaseId) && (!opts.module || value.module === opts.module || value.moduleId === opts.module);
+  });
+  if (testCases.length === 0) throw new CliError('CONFIG_INVALID', 'No test cases match the requested execution filter.');
 
   // Execute based on platform
   let result: Record<string, unknown>;
@@ -66,7 +74,7 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
   const resultDir = taskRoot?.results ?? paths.resultsDir;
   fs.mkdirSync(resultDir, { recursive: true });
   const resultPath = `${resultDir}/execute-${platform}-${environment}.json`;
-  fs.writeFileSync(resultPath, JSON.stringify({ schemaVersion: '1.0', platform, environment, ...result }, null, 2), 'utf8');
+  fs.writeFileSync(resultPath, JSON.stringify({ schemaVersion: '1.0', platform, environment, selection: { testCaseId: opts.testCaseId, module: opts.module, count: testCases.length }, ...result }, null, 2), 'utf8');
 
   // Update state
   updateState(paths, (s) => ({
