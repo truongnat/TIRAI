@@ -15,7 +15,10 @@ export type CliErrorCode =
   | 'GENERATION_BLOCKED'
   | 'NO_TESTS_DISCOVERED'
   | 'INFRA_ERROR'
-  | 'EXECUTION_ERROR';
+  | 'EXECUTION_ERROR'
+  | 'INVALID_PLATFORM'
+  | 'INVALID_TARGET'
+  | 'NO_PLATFORMS';
 
 export class CliError extends Error {
   constructor(

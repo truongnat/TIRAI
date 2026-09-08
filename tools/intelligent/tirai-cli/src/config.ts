@@ -1,6 +1,11 @@
 import * as fs from 'node:fs';
 import { CliError } from './errors.js';
 import { type WorkspacePaths, CONFIG_VERSION } from './workspace.js';
+import {
+  type PlatformConfig,
+  validatePlatformConfig,
+  defaultPlatformConfig,
+} from './platform-config.js';
 
 export interface TiraiConfig {
   version: number;
@@ -9,13 +14,15 @@ export interface TiraiConfig {
     provider: 'fake' | 'groq' | 'deepseek';
     model?: string;
   };
-  source: {
-    defaultPath?: string;
-  };
   project: {
     root: string;
-    language?: string;
-    packageManager?: string;
+    defaultEnvironment?: string;
+    defaultLanguage?: string;
+  };
+  platforms: PlatformConfig;
+  // Legacy fields — kept for backward compatibility but deprecated
+  source: {
+    defaultPath?: string;
   };
   e2e: {
     baseUrl: string;
@@ -25,7 +32,6 @@ export interface TiraiConfig {
     projectRoot: string;
     language?: string;
   };
-  // workspace paths are implicit (.tirai/*)
 }
 
 export function defaultConfig(projectRoot: string): TiraiConfig {
@@ -36,11 +42,13 @@ export function defaultConfig(projectRoot: string): TiraiConfig {
       provider: 'fake',
       model: 'fake-model',
     },
-    source: {},
     project: {
       root: projectRoot,
-      language: 'typescript',
+      defaultEnvironment: 'local',
+      defaultLanguage: 'en',
     },
+    platforms: defaultPlatformConfig(),
+    source: {},
     e2e: {
       baseUrl: 'http://localhost:4173',
     },
@@ -85,14 +93,18 @@ export function loadConfig(paths: WorkspacePaths): TiraiConfig {
       );
     }
   }
-  if (!config.e2e || typeof config.e2e.baseUrl !== 'string') {
-    throw new CliError('CONFIG_INVALID', 'Config missing e2e.baseUrl');
+  // Validate platforms if present
+  if (config.platforms) {
+    const result = validatePlatformConfig(config.platforms);
+    if (!result.valid) {
+      const msgs = result.errors.map((e) => `${e.path}: ${e.message}`).join('; ');
+      throw new CliError('CONFIG_INVALID', `Platform config invalid: ${msgs}`);
+    }
   }
   return config;
 }
 
 export function validateConfigForIngest(config: TiraiConfig): void {
-  // ai provider already validated in loadConfig
   if (!config.ai.provider) throw new CliError('CONFIG_INVALID', 'Missing ai.provider');
 }
 
@@ -107,7 +119,6 @@ export function validateConfigForRun(config: TiraiConfig): void {
 }
 
 export function sanitizeConfigForWrite(config: TiraiConfig): TiraiConfig {
-  // Ensure no secrets leaked: config must not contain raw keys
   const s = JSON.stringify(config);
   if (/sk-(?:proj-)?[A-Za-z0-9_-]{20,}/.test(s) || /AKIA[0-9A-Z]{16}/.test(s)) {
     throw new CliError('CONFIG_INVALID', 'Config appears to contain a raw secret. Use env vars.');

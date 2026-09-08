@@ -7,6 +7,7 @@ import { runGenerate } from './commands/generate.js';
 import { runRun } from './commands/run.js';
 import { runReport } from './commands/report.js';
 import { runStatus } from './commands/status.js';
+import { runTargetList, runTargetAdd, runTargetValidate } from './commands/target.js';
 import { CliError } from './errors.js';
 
 const VERSION = '1.0.0';
@@ -25,6 +26,9 @@ Commands:
   run                     Execute generated tests (real Chromium + Vitest)
   report                  Show canonical run summary
   status                  Show workspace status
+  target list             List configured platform targets
+  target add              Add a target platform environment
+  target validate         Validate platform configuration
   --help, -h              Show this help
   --version, -v           Show version
 
@@ -34,6 +38,9 @@ Examples:
   tirai generate
   tirai run
   tirai report
+  tirai target add web --environment staging --url https://staging.example.com
+  tirai target list
+  tirai target validate
 `);
 }
 
@@ -124,6 +131,24 @@ async function main(): Promise<void> {
       case 'status': {
         const json = Boolean(flags.json);
         await runStatus({ cwd, json });
+        break;
+      }
+      case 'target': {
+        const subcmd = args[0];
+        if (subcmd === 'list') {
+          await runTargetList({ cwd, json: Boolean(flags.json) });
+        } else if (subcmd === 'add') {
+          const platform = args[1] || (flags.platform as string);
+          const environment = args[2] || (flags.environment as string);
+          if (!platform || !environment) {
+            throw new CliError('INVALID_TARGET', 'Usage: tirai target add <platform> <environment> --url <url>');
+          }
+          await runTargetAdd({ cwd, platform, environment, url: flags.url as string, json: Boolean(flags.json) });
+        } else if (subcmd === 'validate') {
+          await runTargetValidate({ cwd });
+        } else {
+          throw new CliError('INVALID_TARGET', `Unknown target subcommand: ${subcmd}. Use list, add, or validate.`);
+        }
         break;
       }
       default:
