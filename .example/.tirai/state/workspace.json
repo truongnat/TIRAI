@@ -6,10 +6,10 @@
     "requirementCount": 17,
     "scenarioCount": 17,
     "testCaseCount": 17,
-    "ingestedAt": "2026-09-08T17:29:39.588Z"
+    "ingestedAt": "2026-09-08T17:38:34.269Z"
   },
   "generation": {
-    "at": "2026-09-08T17:08:21.624Z",
+    "at": "2026-09-08T17:38:34.962Z",
     "e2eFiles": [
       "/Users/truongdq/tx/GitHub/TIRAI/.example/.tirai/generated/e2e/TC-BF-001.spec.ts",
       "/Users/truongdq/tx/GitHub/TIRAI/.example/.tirai/generated/e2e/TC-BF-002.spec.ts",
@@ -29,8 +29,8 @@
     "aiSymbolGuesses": 0
   },
   "run": {
-    "at": "2026-09-08T17:08:37.553Z",
-    "runId": "run-1788887317553",
+    "at": "2026-09-08T17:38:43.783Z",
+    "runId": "run-1788889123783",
     "e2eStatus": "passed",
     "overall": "passed"
   },
@@ -38,7 +38,7 @@
     "path": "/Users/truongdq/tx/GitHub/TIRAI/.example/specs/example-react-detail-design.xlsx",
     "contentHash": "ced80a0112265711567946b26910c9a5699ee1155f3385f0c5e1eaa4d944404f",
     "byteLength": 21989,
-    "ingestedAt": "2026-09-08T17:29:39.588Z",
+    "ingestedAt": "2026-09-08T17:38:34.269Z",
     "artifactCount": 11,
     "contextCount": 5
   }
