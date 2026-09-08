@@ -24,6 +24,7 @@ import { scanSecrets } from './secret-scan.js';
 import { compileStructuredDesignDocument } from './structured-design-compiler.js';
 import { buildContractIR } from './contract-builder.js';
 import { writeRawContextPackage } from './raw-context.js';
+import { planArtifacts } from './artifact-planner.js';
 
 export type PipelineStage = 'SOURCE_INGESTION' | 'SEMANTIC_ANALYSIS' | 'REQUIREMENT_BUILD' | 'TEST_PLANNING';
 
@@ -80,6 +81,7 @@ export interface SourceToTestCaseResult {
     testCases: string;
     trace: string;
     aiRun: string;
+    artifactPlan: string;
   };
   document: CanonicalSourceDocument;
   semanticIR: SemanticIR;
@@ -146,9 +148,11 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
     const testCasesPath = path.join(outputDir, 'testcases.json');
     const tracePath = path.join(outputDir, 'trace.json');
     const aiRunPath = path.join(outputDir, 'ai-run.json');
+    const artifactPlanPath = path.join(outputDir, 'artifact-plan.json');
 
     fs.writeFileSync(contextPath, JSON.stringify(doc, null, 2), 'utf8');
     const contract = buildContractIR({ document: doc, semanticIR, requirementIR, testPlanIR });
+    fs.writeFileSync(artifactPlanPath, JSON.stringify(planArtifacts(contract), null, 2), 'utf8');
     fs.writeFileSync(contractPath, JSON.stringify(contract, null, 2), 'utf8');
     fs.writeFileSync(semanticIrPath, JSON.stringify(semanticIR, null, 2), 'utf8');
     fs.writeFileSync(requirementsPath, JSON.stringify(requirementIR, null, 2), 'utf8');
@@ -199,6 +203,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
         testCases: testCasesPath,
         trace: tracePath,
         aiRun: aiRunPath,
+        artifactPlan: artifactPlanPath,
       },
       document: doc,
       semanticIR,
@@ -270,12 +275,14 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   const testCasesPath = path.join(outputDir, 'testcases.json');
   const tracePath = path.join(outputDir, 'trace.json');
   const aiRunPath = path.join(outputDir, 'ai-run.json');
+  const artifactPlanPath = path.join(outputDir, 'artifact-plan.json');
   const semInfo = analysisInfo((semanticIR as unknown as { analysis?: unknown }).analysis);
   const reqInfo = { aiCalls: aiCalls.REQUIREMENT_BUILD, provider: provider.name, model: provider.name };
   const planInfo = { aiCalls: aiCalls.TEST_PLANNING, provider: provider.name, model: provider.name };
 
   fs.writeFileSync(contextPath, JSON.stringify(doc, null, 2), 'utf8');
   const contract = buildContractIR({ document: doc, semanticIR, requirementIR, testPlanIR });
+  fs.writeFileSync(artifactPlanPath, JSON.stringify(planArtifacts(contract), null, 2), 'utf8');
   fs.writeFileSync(contractPath, JSON.stringify(contract, null, 2), 'utf8');
   fs.writeFileSync(semanticIrPath, JSON.stringify(semanticIR, null, 2), 'utf8');
   fs.writeFileSync(requirementsPath, JSON.stringify(requirementIR, null, 2), 'utf8');
@@ -326,6 +333,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       testCases: testCasesPath,
       trace: tracePath,
       aiRun: aiRunPath,
+      artifactPlan: artifactPlanPath,
     },
     document: doc,
     semanticIR,
