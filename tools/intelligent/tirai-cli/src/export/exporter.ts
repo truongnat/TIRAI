@@ -31,6 +31,8 @@ export interface ExportOptions {
   environment?: string;
   language?: string;
   includeBlocked?: boolean;
+  contractFingerprint?: string;
+  contractVersion?: number;
 }
 
 export interface ExportResult {

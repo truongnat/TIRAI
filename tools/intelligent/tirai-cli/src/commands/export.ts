@@ -88,7 +88,7 @@ export async function runExport(opts: ExportCommandOptions): Promise<void> {
     const artifact = await exporter.export({
       testPlan,
       testCases,
-      options: { outDir },
+      options: { outDir, contractFingerprint: (contract as { metadata?: { contractFingerprint?: string } }).metadata?.contractFingerprint, contractVersion: (contract as { contractVersion?: number }).contractVersion },
     });
     artifacts.push(artifact);
   }
