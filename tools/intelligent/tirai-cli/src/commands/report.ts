@@ -129,6 +129,10 @@ export async function runReport(opts: ReportOptions): Promise<void> {
     '> Generated from canonical TestRunResultIR. Not the source of truth.',
   ];
   fs.writeFileSync(latestPath, lines.join('\n'), 'utf8');
+  const report = { schemaVersion: '1.0', generatedFrom: 'TestRunResultIR', source: sourcePath, testCases: testCasesCount, contract: contract ? { fingerprint: contract.metadata?.contractFingerprint, version: contract.contractVersion, quality: contract.quality } : null, e2e: { status: e2eStatus, summary: e2eSummary }, unit: { status: unitStatus, summary: unitSummary }, adapters: adapterResults, overall };
+  fs.writeFileSync(path.join(paths.reportsDir, 'report.json'), JSON.stringify(report, null, 2), 'utf8');
+  const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
+  fs.writeFileSync(path.join(paths.reportsDir, 'report.html'), `<!doctype html><html><head><meta charset="utf-8"><title>TIRAI report</title></head><body><h1>TIRAI run report</h1><p><strong>Result:</strong> ${escapeHtml(overall)}</p><p><strong>Source:</strong> ${escapeHtml(sourcePath)}</p><pre>${escapeHtml(JSON.stringify(report, null, 2))}</pre></body></html>`, 'utf8');
   if (task) updateTask(basePaths, task.id, { status: 'reported' });
 
   if (opts.json) {
