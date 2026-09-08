@@ -40,6 +40,10 @@ export class ExcelExporter implements TestOutputExporter {
       { header: 'Priority', key: 'priority', width: 10 },
       { header: 'Status', key: 'status', width: 15 },
       { header: 'Requirement IDs', key: 'reqIds', width: 25 },
+      { header: 'Preconditions', key: 'preconditions', width: 45 },
+      { header: 'Test Data', key: 'dataNeeds', width: 45 },
+      { header: 'Cleanup', key: 'cleanup', width: 35 },
+      { header: 'Automation Reason', key: 'automationReason', width: 45 },
     ];
     for (const tc of testCases) {
       tcSheet.addRow({
@@ -50,6 +54,10 @@ export class ExcelExporter implements TestOutputExporter {
         priority: tc.priority,
         status: tc.automation.status,
         reqIds: tc.requirementIds.join(', '),
+        preconditions: tc.preconditions.map((item) => item.description).join('\n'),
+        dataNeeds: tc.dataNeeds.map((item) => item.description).join('\n'),
+        cleanup: tc.cleanup.map((item) => item.description).join('\n'),
+        automationReason: tc.automation.reasons.join('\n'),
       });
     }
 
