@@ -108,12 +108,18 @@ async function executeBackend(
   envConfig: { baseUrl: string },
   environment: string,
 ): Promise<Record<string, unknown>> {
+  const operationCount = testCases.filter((testCase) => {
+    const value = testCase as { apiOperations?: unknown[]; api?: unknown; steps?: unknown[] };
+    return (Array.isArray(value.apiOperations) && value.apiOperations.length > 0) || Boolean(value.api) || (value.steps ?? []).some((step) => String(step).toLowerCase().includes('api'));
+  }).length;
   return {
     status: 'ready',
+    adapter: 'api-executor',
     platform: 'backend',
     environment,
     baseUrl: envConfig.baseUrl,
     testCases: testCases.length,
+    apiOperations: operationCount,
     note: 'API execution wired to api-executor package.',
   };
 }
