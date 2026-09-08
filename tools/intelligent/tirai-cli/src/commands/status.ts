@@ -3,14 +3,19 @@ import * as path from 'node:path';
 import { requireWorkspace } from '../workspace.js';
 import { loadConfig } from '../config.js';
 import { loadState } from '../state.js';
+import { resolveActiveTask, taskPaths } from '../tasks.js';
 
 export interface StatusOptions {
   cwd: string;
   json?: boolean;
+  taskId?: string;
 }
 
 export async function runStatus(opts: StatusOptions): Promise<void> {
   const paths = requireWorkspace(opts.cwd);
+  const task = opts.taskId ? resolveActiveTask(paths, opts.taskId) : undefined;
+  if (opts.taskId && !task) throw new Error(`Task not found: ${opts.taskId}`);
+  const taskRoot = task ? taskPaths(paths, task.id) : undefined;
   try {
     loadConfig(paths);
   } catch {
@@ -56,6 +61,7 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
   const specCount = state?.specRegistry?.count ?? 0;
 
   const lines = [
+    ...(task ? [`Task:`, `  ${task.name}`, `  status: ${task.status}`, `  workspace: ${task.workspacePath}`, ''] : []),
     'Workspace:',
     `  ${state ? 'initialized' : 'not initialized'}`,
     '',
@@ -85,7 +91,7 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
   ].filter(Boolean);
 
   if (opts.json) {
-    console.log(JSON.stringify({ state, e2eMappingsResolved, e2eMappingsMissing, unitMappingsResolved, unitMappingsMissing }, null, 2));
+    console.log(JSON.stringify({ task, state, e2eMappingsResolved, e2eMappingsMissing, unitMappingsResolved, unitMappingsMissing, taskArtifactRoot: taskRoot?.artifacts }, null, 2));
   } else {
     console.log(lines.join('\n'));
   }
