@@ -109,7 +109,8 @@ export function buildContractIR(input: {
   const moduleNames = [...new Set(document.contexts.map((context) => String(context.metadata?.module ?? context.metadata?.feature ?? context.metadata?.sheetName ?? 'ungrouped')))].sort();
   const modules = moduleNames.map((name) => {
     const contextIds = document.contexts.filter((context) => String(context.metadata?.module ?? context.metadata?.feature ?? context.metadata?.sheetName ?? 'ungrouped') === name).map((context) => context.id);
-    return { id: `module-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, kind: 'module' as const, title: name, description: `Module inferred from source context metadata: ${name}`, relatedIds: [], provenance: contextIds.map((contextId) => ({ sourceId, contextId })), confidence: 0.7, sourceFiles: [], dependencies: [], state: [] };
+    const relatedIds = requirements.filter((requirement) => requirement.provenance.some((item) => item.contextId && contextIds.includes(item.contextId))).map((requirement) => requirement.id);
+    return { id: `module-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, kind: 'module' as const, title: name, description: `Module inferred from source context metadata: ${name}`, relatedIds, provenance: contextIds.map((contextId) => ({ sourceId, contextId })), confidence: 0.7, sourceFiles: [], dependencies: [], state: [] };
   });
 
   const contract: ContractIR = {
