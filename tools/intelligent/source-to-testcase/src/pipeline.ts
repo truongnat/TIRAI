@@ -169,7 +169,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       { name: 'test-planning', mode: 'deterministic', aiCalls: 0, reason: 'test scenarios are compiled with source traceability' },
     ] }, null, 2), 'utf8');
 
-    const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath]);
+    const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath, aiRunPath, artifactPlanPath, ...rawContext.files]);
     const semanticProvider = 'structured-design-compiler';
     const semanticModel = 'deterministic';
     return {
@@ -303,7 +303,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   ] }, null, 2), 'utf8');
 
   // -- Metrics -------------------------------------------------------------
-  const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath]);
+  const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath, aiRunPath, artifactPlanPath, ...rawContext.files]);
 
   return {
     source,
