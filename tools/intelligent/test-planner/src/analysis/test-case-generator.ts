@@ -105,10 +105,11 @@ export async function generateTestCases(
   const validScenarioIds = new Set(scenarios.map((s) => s.temporaryId));
   const batchSize = Math.max(1, Number(process.env.TIRAI_TESTCASE_BATCH_SIZE) || 4);
   const allCases: TestCaseCandidate[] = [];
+  const allAdditionalDataNeeds: TestCaseExtractionResult['additionalDataNeeds'] = [];
   const usage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
 
-  for (let i = 0; i < scenarios.length; i += batchSize) {
-    const batch = scenarios.slice(i, i + batchSize);
+  const batches = scenarios.length === 0 ? [[]] : Array.from({ length: Math.ceil(scenarios.length / batchSize) }, (_, index) => scenarios.slice(index * batchSize, (index + 1) * batchSize));
+  for (const batch of batches) {
     const part = await generateTestCasesForBatch(
       requirements,
       batch,
@@ -119,6 +120,7 @@ export async function generateTestCases(
       validScenarioIds,
     );
     allCases.push(...part.result.testCases);
+    allAdditionalDataNeeds.push(...part.result.additionalDataNeeds);
     usage.inputTokens += part.usage.inputTokens ?? 0;
     usage.outputTokens += part.usage.outputTokens ?? 0;
     usage.totalTokens += part.usage.totalTokens ?? 0;
@@ -126,7 +128,7 @@ export async function generateTestCases(
   }
 
   return {
-    result: { testCases: allCases, additionalDataNeeds: [] },
+    result: { testCases: allCases, additionalDataNeeds: allAdditionalDataNeeds },
     usage,
     warnings: warnings.length > 0 ? warnings : undefined,
   };

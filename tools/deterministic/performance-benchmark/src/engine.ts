@@ -10,7 +10,7 @@ export async function runBenchmark(benchmarkId: string, cases: BenchmarkCase[], 
     const fingerprints=await fingerprintInputs(testCase.inputArtifacts); const inputBytes=fingerprints.reduce((n,f)=>n+f.sizeBytes,0); const warmupSamples: BenchmarkSample[]=[]; const samples: BenchmarkSample[]=[];
     for(let i=0;i<config.warmupRuns;i++) warmupSamples.push(await runSample(testCase,i,config,inputBytes));
     for(let i=0;i<config.measurementRuns;i++) samples.push(await runSample(testCase,i,config,inputBytes));
-    const failed=samples.filter(s=>!s.success); const warnings=samples.flatMap(s=>s.warnings); if(samples.some(s=>(s.peakRssBytes??0)>((config.maxPeakRssMB??Infinity)*1024*1024))) warnings.push('PEAK_RSS_BUDGET_EXCEEDED'); if(samples.some(s=>s.wallTimeMs>(config.maxWallTimeMs??Infinity))) warnings.push('WALL_TIME_BUDGET_EXCEEDED');
+    const failed=samples.filter(s=>!s.success); const warnings=samples.flatMap(s=>s.warnings); const peakBudgetBytes=(config.maxPeakRssMB??Infinity)*1024*1024; if((config.maxPeakRssMB??Infinity)<=0 || samples.some(s=>(s.peakRssBytes??0)>peakBudgetBytes)) warnings.push('PEAK_RSS_BUDGET_EXCEEDED'); if(samples.some(s=>s.wallTimeMs>(config.maxWallTimeMs??Infinity))) warnings.push('WALL_TIME_BUDGET_EXCEEDED');
     const status: BenchmarkCaseResult['status'] = failed.length===0 ? 'passed' : failed.length===samples.length ? 'failed' : 'partial';
     results.push({caseId:testCase.id,inputFingerprint:fingerprints,warmupSamples,samples,statistics:calculateStatistics(samples),status,warnings:[...new Set(warnings)]});
   }
