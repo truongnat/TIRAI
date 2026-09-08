@@ -36,7 +36,8 @@ export class CLIProvider implements AIProvider {
         if (settled) return; settled = true; clearTimeout(timeout);
         if (code !== 0) return reject(new AIProviderError({ code: AIProviderErrorCode.PROVIDER_UNAVAILABLE, provider: this.name, message: `AI CLI exited with code ${code}: ${stderr.slice(0, 500)}` }));
         try {
-          const responseText = fs.existsSync(outputFile) ? fs.readFileSync(outputFile, 'utf8') : stdout;
+          if (!fs.existsSync(outputFile)) throw new Error('AI CLI did not write the configured output artifact.');
+          const responseText = fs.readFileSync(outputFile, 'utf8');
           fs.writeFileSync(path.join(artifactDir, 'result.json'), `${responseText}\n`, 'utf8');
           const data = JSON.parse(responseText) as T;
           resolve({ provider: this.name, model: request.model ?? this.config.model ?? 'cli-model', data, rawText: responseText });
