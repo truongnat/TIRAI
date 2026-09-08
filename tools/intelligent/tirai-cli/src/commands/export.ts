@@ -29,6 +29,14 @@ const exporters: Record<string, TestOutputExporter> = {
   docx: new DOCXExporter(),
 };
 
+const formatDirMap: Record<string, 'outputsJsonDir' | 'outputsExcelDir' | 'outputsPdfDir' | 'outputsDocxDir' | 'outputsMarkdownDir'> = {
+  json: 'outputsJsonDir',
+  xlsx: 'outputsExcelDir',
+  pdf: 'outputsPdfDir',
+  docx: 'outputsDocxDir',
+  markdown: 'outputsMarkdownDir',
+};
+
 export async function runExport(opts: ExportCommandOptions): Promise<void> {
   const paths = requireWorkspace(opts.cwd);
   loadConfig(paths);
@@ -60,10 +68,13 @@ export async function runExport(opts: ExportCommandOptions): Promise<void> {
   const artifacts: OutputArtifactIR[] = [];
   for (const fmt of formats) {
     const exporter = exporters[fmt];
+    const outDir = opts.outDir
+      ? `${opts.outDir}/${fmt}`
+      : paths[formatDirMap[fmt]];
     const artifact = await exporter.export({
       testPlan,
       testCases,
-      options: { outDir: opts.outDir ? `${opts.outDir}/${fmt}` : undefined },
+      options: { outDir },
     });
     artifacts.push(artifact);
   }
