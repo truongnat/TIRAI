@@ -39,4 +39,10 @@ describe('Contract IR', () => {
     expect(first.metadata.contractFingerprint).toBe(fingerprintContract(first));
     expect(first.metadata.contractFingerprint).toBe(second.metadata.contractFingerprint);
   });
+
+  it('rejects content modified after fingerprinting', () => {
+    const contract = finalizeContract(minimalContract());
+    contract.document.title = 'Tampered contract';
+    expect(validateContract(contract).errors).toContain('/metadata/contractFingerprint does not match contract content');
+  });
 });
