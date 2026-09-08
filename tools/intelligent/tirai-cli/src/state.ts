@@ -37,6 +37,10 @@ export interface WorkspaceState {
   platformConfig?: {
     updatedAt: string;
   };
+  specRegistry?: {
+    count: number;
+    updatedAt: string;
+  };
 }
 
 export function loadState(paths: WorkspacePaths): WorkspaceState | null {

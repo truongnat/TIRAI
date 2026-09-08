@@ -1,5 +1,4 @@
 // tirai CLI — thin product surface over frozen core capabilities.
-// Composes: source-to-testcase, test-code-generator, project-adapter, execution-mapping-builder, ai-provider.
 
 import { runInit } from './commands/init.js';
 import { runIngest } from './commands/ingest.js';
@@ -8,6 +7,8 @@ import { runRun } from './commands/run.js';
 import { runReport } from './commands/report.js';
 import { runStatus } from './commands/status.js';
 import { runTargetList, runTargetAdd, runTargetValidate } from './commands/target.js';
+import { runSpecAdd, runSpecList, runSpecInspect } from './commands/spec.js';
+import { runPlan } from './commands/plan.js';
 import { CliError } from './errors.js';
 
 const VERSION = '1.0.0';
@@ -29,6 +30,10 @@ Commands:
   target list             List configured platform targets
   target add              Add a target platform environment
   target validate         Validate platform configuration
+  spec add                Add a specification to the registry
+  spec list               List registered specifications
+  spec inspect            Inspect a specification
+  plan                    Generate canonical test plan from specs + targets
   --help, -h              Show this help
   --version, -v           Show version
 
@@ -40,7 +45,9 @@ Examples:
   tirai report
   tirai target add web --environment staging --url https://staging.example.com
   tirai target list
-  tirai target validate
+  tirai spec add ./spec.xlsx
+  tirai spec list
+  tirai plan
 `);
 }
 
@@ -151,6 +158,39 @@ async function main(): Promise<void> {
         }
         break;
       }
+      case 'spec': {
+        const subcmd = args[0];
+        if (subcmd === 'add') {
+          const sourcePath = args[1] || (flags.source as string) || (flags.path as string);
+          if (!sourcePath) {
+            throw new CliError('SOURCE_INPUT_ERROR', 'Usage: tirai spec add <source-path>');
+          }
+          await runSpecAdd({
+            cwd,
+            sourcePath,
+            name: flags.name as string,
+            language: flags.language as string,
+            domain: flags.domain as string,
+            priority: flags.priority as string,
+            json: Boolean(flags.json),
+          });
+        } else if (subcmd === 'list') {
+          await runSpecList({ cwd, json: Boolean(flags.json) });
+        } else if (subcmd === 'inspect') {
+          const specId = args[1] || (flags.id as string);
+          if (!specId) {
+            throw new CliError('SOURCE_INPUT_ERROR', 'Usage: tirai spec inspect <spec-id>');
+          }
+          await runSpecInspect({ cwd, specId, json: Boolean(flags.json) });
+        } else {
+          throw new CliError('SOURCE_INPUT_ERROR', `Unknown spec subcommand: ${subcmd}. Use add, list, or inspect.`);
+        }
+        break;
+      }
+      case 'plan': {
+        await runPlan({ cwd, json: Boolean(flags.json) });
+        break;
+      }
       default:
         console.error(`Unknown command: ${cmd}`);
         printHelp();
@@ -162,7 +202,6 @@ async function main(): Promise<void> {
       if (err.hint) console.error(`Hint: ${err.hint}`);
       process.exit(2);
     }
-    // Unexpected
     console.error(err instanceof Error ? err.message : String(err));
     if (err instanceof Error && err.stack && process.env.DEBUG) console.error(err.stack);
     process.exit(2);
