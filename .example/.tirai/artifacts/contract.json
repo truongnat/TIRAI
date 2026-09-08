@@ -1492,7 +1492,111 @@
       ]
     }
   ],
-  "modules": [],
+  "modules": [
+    {
+      "id": "module-lu-ng-nghi-p-v-",
+      "kind": "module",
+      "title": "Luồng nghiệp vụ",
+      "description": "Module inferred from source context metadata: Luồng nghiệp vụ",
+      "relatedIds": [
+        "REQ-BF-001",
+        "REQ-BF-002",
+        "REQ-BF-003",
+        "REQ-BF-004",
+        "REQ-BF-005",
+        "REQ-BF-006",
+        "REQ-BF-007",
+        "REQ-BF-008",
+        "REQ-BF-009",
+        "REQ-BF-010",
+        "REQ-BF-011",
+        "REQ-BF-012",
+        "REQ-BF-013",
+        "REQ-BF-014",
+        "REQ-BF-015",
+        "REQ-BF-016",
+        "REQ-BF-017"
+      ],
+      "provenance": [
+        {
+          "sourceId": "src-7eb0e04e4687d2708a9c3839",
+          "contextId": "ctx-72bf0e82f91621cacf990d81"
+        }
+      ],
+      "confidence": 0.7,
+      "sourceFiles": [],
+      "dependencies": [],
+      "state": []
+    },
+    {
+      "id": "module-thi-t-k-api",
+      "kind": "module",
+      "title": "Thiết kế API",
+      "description": "Module inferred from source context metadata: Thiết kế API",
+      "relatedIds": [],
+      "provenance": [
+        {
+          "sourceId": "src-7eb0e04e4687d2708a9c3839",
+          "contextId": "ctx-4f6890be438398f20c5f3188"
+        }
+      ],
+      "confidence": 0.7,
+      "sourceFiles": [],
+      "dependencies": [],
+      "state": []
+    },
+    {
+      "id": "module-thi-t-k-db",
+      "kind": "module",
+      "title": "Thiết kế DB",
+      "description": "Module inferred from source context metadata: Thiết kế DB",
+      "relatedIds": [],
+      "provenance": [
+        {
+          "sourceId": "src-7eb0e04e4687d2708a9c3839",
+          "contextId": "ctx-4d877c923edeef7963e04256"
+        }
+      ],
+      "confidence": 0.7,
+      "sourceFiles": [],
+      "dependencies": [],
+      "state": []
+    },
+    {
+      "id": "module-thi-t-k-fe",
+      "kind": "module",
+      "title": "Thiết kế FE",
+      "description": "Module inferred from source context metadata: Thiết kế FE",
+      "relatedIds": [],
+      "provenance": [
+        {
+          "sourceId": "src-7eb0e04e4687d2708a9c3839",
+          "contextId": "ctx-1b90520e9df52d96ecfd06b1"
+        }
+      ],
+      "confidence": 0.7,
+      "sourceFiles": [],
+      "dependencies": [],
+      "state": []
+    },
+    {
+      "id": "module-thi-t-k-ui",
+      "kind": "module",
+      "title": "Thiết kế UI",
+      "description": "Module inferred from source context metadata: Thiết kế UI",
+      "relatedIds": [],
+      "provenance": [
+        {
+          "sourceId": "src-7eb0e04e4687d2708a9c3839",
+          "contextId": "ctx-36b9d89f6ff95d5eb16a8905"
+        }
+      ],
+      "confidence": 0.7,
+      "sourceFiles": [],
+      "dependencies": [],
+      "state": []
+    }
+  ],
   "scenarios": [
     {
       "id": "SC-BF-001",
@@ -2930,8 +3034,8 @@
     "provenanceCoverage": 1
   },
   "metadata": {
-    "contractFingerprint": "d074b90e1891adbc6ecf33b4f1c88c13ecf353509fe9d1f31682bd05269b504e",
-    "generatedAt": "2026-09-08T16:25:40.498Z",
+    "contractFingerprint": "3a1f964edd3648be2c80947fa190e11f9f2352f71d42eb86a33c71eeacd3e843",
+    "generatedAt": "2026-09-08T16:56:33.759Z",
     "generatorVersion": "contract-ir-1.0.0",
     "aiProvider": "structured-design-compiler",
     "aiModel": "deterministic",
