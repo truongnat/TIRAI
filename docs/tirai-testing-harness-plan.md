@@ -7,6 +7,18 @@ project configuration and one or more specifications; TIRAI analyzes them,
 creates a canonical JSON contract, generates selected test artifacts, executes
 them when possible, and produces traceable reports.
 
+### Control-plane architecture
+
+TIRAI supports two control planes over the same artifact protocol:
+
+- Standalone CLI: TIRAI orchestrates stages and uses configured API-key,
+  local-model, or fake providers for model calls.
+- External agent host: Codex, Claude, or another agent orchestrates TIRAI and
+  reads/writes raw context, contract, checkpoints, and reports. TIRAI does not
+  spawn another agent CLI in this mode.
+
+CLI is the workflow interface, not an AI provider.
+
 ```text
 Multi-source spec + project context
   -> raw context and chunks
@@ -31,6 +43,8 @@ Multi-source spec + project context
   `task create`, `task list`, and `task show`.
 - The remaining goals below are roadmap work; the current example still uses
   the legacy stage IRs as the source for the first Contract IR adapter.
+- CLI/API-provider separation is explicit: external agents control TIRAI
+  through artifacts, while model providers are injectable dependencies.
 
 ## Goal 0 — Contract IR as the system of record
 
@@ -89,7 +103,8 @@ stable ID, source location, and content hash.
 
 ### Tasks
 
-- Provide pluggable ChatGPT/OpenAI, API-key, local-model, and fake providers.
+- Provide pluggable API-key, local-model, and fake providers for standalone
+  CLI runs; external agent hosts control TIRAI through the same artifacts.
 - Add stage runners for source understanding, requirement extraction, UI/API/
   data analysis, source analysis, cross-reference, consolidation, test design,
   artifact planning, execution analysis, and reporting.
