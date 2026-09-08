@@ -425,7 +425,7 @@ function collectSourceCode(root?: string): { root?: string; files: Array<{ path:
   const files: Array<{ path: string; content: string; contentHash: string }> = [];
   const visit = (dir: string): void => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === '.tirai') continue;
+      if (['node_modules', '.git', '.tirai', '.vercel', 'dist', 'build', 'coverage', '.next', 'out'].includes(entry.name)) continue;
       const absolute = path.join(dir, entry.name);
       if (entry.isDirectory()) visit(absolute);
       else if (/\.(ts|tsx|js|jsx|vue|svelte|py|java|go|rb|cs)$/.test(entry.name)) {
