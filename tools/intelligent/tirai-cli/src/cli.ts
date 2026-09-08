@@ -251,7 +251,7 @@ async function main(): Promise<void> {
         break;
       }
       case 'plan': {
-        await runPlan({ cwd, json: Boolean(flags.json) });
+        await runPlan({ cwd, json: Boolean(flags.json), taskId: flags.task as string });
         break;
       }
       case 'export': {
