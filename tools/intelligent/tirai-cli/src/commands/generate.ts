@@ -53,6 +53,11 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     throw new CliError('CONFIG_INVALID', 'No TestCases available. Run `tirai plan` first.');
   }
   const tcs = testCasesArray as Array<Record<string, unknown>>;
+  const contractPath = path.join(runPaths.artifactsDir, 'contract.json');
+  if (!fs.existsSync(contractPath)) throw new CliError('CONFIG_INVALID', 'Contract artifact not found. Run `tirai ingest` first.');
+  const contract = readJson(contractPath) as { contractId?: string; testCases?: unknown[] };
+  if (!contract.contractId || !Array.isArray(contract.testCases)) throw new CliError('CONFIG_INVALID', 'Invalid contract artifact. Re-run `tirai ingest`.');
+  if (contract.testCases.length !== tcs.length) throw new CliError('CONFIG_INVALID', 'Contract and TestCases artifacts are out of sync. Re-run `tirai ingest`.');
 
   const target = opts.target;
 
