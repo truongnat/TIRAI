@@ -57,6 +57,13 @@ export async function runExport(opts: ExportCommandOptions): Promise<void> {
 
   const testPlan = JSON.parse(fs.readFileSync(testPlanPath, 'utf8'));
   const testCases = JSON.parse(fs.readFileSync(testCasesPath, 'utf8'));
+  const contractPath = `${paths.artifactsDir}/contract.json`;
+  if (!fs.existsSync(contractPath)) throw new CliError('CONFIG_INVALID', 'Contract artifact not found. Run `tirai ingest` first.');
+  const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8')) as { contractId?: string; testCases?: unknown[] };
+  const exportedCases = Array.isArray(testCases) ? testCases : (testCases as { testCases?: unknown[] }).testCases ?? [];
+  if (!contract.contractId || !Array.isArray(contract.testCases) || contract.testCases.length !== exportedCases.length) {
+    throw new CliError('CONFIG_INVALID', 'Contract and export artifacts are inconsistent. Re-run `tirai ingest`.');
+  }
 
   // Determine formats to export
   const formats = opts.format === 'all'
