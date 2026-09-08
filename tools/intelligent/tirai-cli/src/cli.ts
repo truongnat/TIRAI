@@ -9,6 +9,7 @@ import { runStatus } from './commands/status.js';
 import { runTargetList, runTargetAdd, runTargetValidate } from './commands/target.js';
 import { runSpecAdd, runSpecList, runSpecInspect } from './commands/spec.js';
 import { runPlan } from './commands/plan.js';
+import { runExport } from './commands/export.js';
 import { CliError } from './errors.js';
 
 const VERSION = '1.0.0';
@@ -34,6 +35,7 @@ Commands:
   spec list               List registered specifications
   spec inspect            Inspect a specification
   plan                    Generate canonical test plan from specs + targets
+  export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
   --help, -h              Show this help
   --version, -v           Show version
 
@@ -48,6 +50,8 @@ Examples:
   tirai spec add ./spec.xlsx
   tirai spec list
   tirai plan
+  tirai export --format all
+  tirai export --format xlsx --out ./artifacts
 `);
 }
 
@@ -189,6 +193,17 @@ async function main(): Promise<void> {
       }
       case 'plan': {
         await runPlan({ cwd, json: Boolean(flags.json) });
+        break;
+      }
+      case 'export': {
+        const format = args[0] || (flags.format as string) || 'all';
+        await runExport({
+          cwd,
+          format,
+          outDir: flags.out as string,
+          includeBlocked: Boolean(flags['include-blocked']),
+          json: Boolean(flags.json),
+        });
         break;
       }
       default:
