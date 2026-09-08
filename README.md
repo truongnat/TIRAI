@@ -21,7 +21,7 @@ Turn **Excel, PDF, DOCX, Markdown, CSV, JSON, and web specifications** into cano
   <a href="#-install">Install</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-architecture">Architecture</a> •
-  <a href="#-supported-sources">Sources</a> •
+  <a href="#-cli-reference">CLI Reference</a> •
   <a href="#-trusted-mapping-boundary">Trust Model</a> •
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
@@ -41,13 +41,7 @@ Semantic understanding
     ↓
 Canonical TestCase JSON
     ↓
-Trusted project mapping
-    ↓
-Generated Playwright / Vitest
-    ↓
-Real execution
-    ↓
-Canonical results
+Multi-format export / Execution
 ```
 
 TIRAI keeps AI where it is useful — understanding intent — while keeping generation and execution deterministic, inspectable, and fail-closed.
@@ -61,6 +55,7 @@ TIRAI keeps AI where it is useful — understanding intent — while keeping gen
 - 🧪 **Real execution** — Chromium and Vitest are executed for real; no simulated PASS.
 - 📦 **Developer-ready CLI** — initialize, ingest, generate, run, report, and inspect status from one command surface.
 - 🌐 **Multi-source ingestion** — Excel, PDF, DOCX, Markdown, CSV, JSON, and URL connectors.
+- 📄 **Multi-format export** — JSON, Excel, Markdown, PDF, DOCX output.
 
 ---
 
@@ -77,20 +72,13 @@ Excel / PDF / DOCX / Markdown / CSV / JSON / URL
                         ↓
               Canonical TestCase JSON
                         ↓
-               TRUSTED MAPPING BOUNDARY
-                 ┌──────┴──────┐
-                 ↓             ↓
-              E2E Map       Unit Map
-                 ↓             ↓
-            Playwright       Vitest
-             *.spec.ts       *.spec.ts
-                 ↓             ↓
-          Real Chromium    Real Vitest
-                 └──────┬──────┘
-                        ↓
-                 TestRunResultIR
-                        ↓
-                JSON + Markdown
+        ┌───────────────┼───────────────┐
+        ↓               ↓               ↓
+   Multi-format    Platform-aware    Optional Code
+     Export          Execution       Generation
+   (JSON/XLSX/      (Web/API/DB)    (Playwright/
+    PDF/DOCX/                       Vitest)
+    Markdown)
 ```
 
 > **AI/specification logic determines what should be tested. Trusted mappings determine where and how those tests connect to the real project.**
@@ -117,20 +105,9 @@ install.cmd
 
 ### Install a specific version
 
-Linux/macOS:
-
 ```bash
 TIRAI_VERSION=1.0.0 ./install.sh
 ```
-
-Windows CMD:
-
-```cmd
-set TIRAI_VERSION=1.0.0
-install.cmd
-```
-
-The installer uses the latest [GitHub Release](https://github.com/truongnat/TIRAI/releases/latest) (`v1.0.0`), downloads `tirai-cli-*.tgz`, verifies SHA256, installs globally with npm, and checks `tirai --version`. New versions are published from `v*` tags by `.github/workflows/release-cli.yml`.
 
 See [`docs/installation.md`](docs/installation.md) for full installation details.
 
@@ -149,20 +126,29 @@ cd my-project
 # initialize the TIRAI workspace
 tirai init
 
-# ingest a specification
-tirai ingest ./spec.xlsx
+# add a specification to the registry
+tirai spec add ./spec.xlsx
 
-# inspect generated canonical test cases
-tirai status
+# inspect registered specs
+tirai spec list
 
-# generate unit tests from TestCase JSON (source mapping optional)
-tirai generate --unit
+# configure target platform
+tirai target add web --environment staging --url https://staging.example.com
 
-# execute real tests
-tirai run
+# generate canonical test plan
+tirai plan
 
-# export/read the result summary
-tirai report
+# export test cases to multiple formats
+tirai export --format all
+
+# execute tests against platform
+tirai execute --platform web --environment staging
+
+# optional: generate Playwright tests (requires E2E mapping)
+tirai generate --target playwright
+
+# optional: generate Vitest tests (requires source mapping)
+tirai generate --target vitest --source-mapping ./unit.json
 ```
 
 Provider credentials remain environment variables:
@@ -182,8 +168,19 @@ TIRAI writes project-owned state under:
 ├── mappings/
 │   ├── e2e.json
 │   └── unit.json
-├── artifacts/
-├── generated/
+├── artifacts/          # Canonical IR (source of truth)
+│   ├── requirements.json
+│   ├── test-plan.json
+│   └── testcases.json
+├── specs/              # Specification registry
+│   └── index.json
+├── outputs/            # Export outputs
+│   ├── json/
+│   ├── excel/
+│   ├── pdf/
+│   ├── docx/
+│   └── markdown/
+├── generated/          # Code generation output
 │   ├── e2e/
 │   └── unit/
 ├── runtime/
@@ -221,6 +218,43 @@ When no trusted mapping exists, TIRAI produces a **spec preview artifact** (not 
 
 ---
 
+## 🧰 CLI reference
+
+```text
+tirai --help
+tirai --version
+
+tirai init [--force]
+tirai ingest <spec> [--json]
+tirai spec add <source-path> [--name NAME] [--language LANG]
+tirai spec list
+tirai spec inspect <spec-id>
+
+tirai target list
+tirai target add <platform> <environment> --url <url>
+tirai target validate
+
+tirai plan [--json]
+
+tirai export --format all|json|xlsx|markdown|pdf|docx [--out <dir>]
+tirai execute --platform web|backend|database [--environment <env>]
+
+tirai generate --target playwright|vitest [--source-mapping <path>]
+tirai run [--json]
+tirai report [--json]
+tirai status [--json]
+```
+
+Exit codes:
+
+```text
+0 = PASS
+1 = business assertion FAIL
+2 = BLOCKED / validation / configuration / infrastructure ERROR
+```
+
+---
+
 ## 📚 Supported sources
 
 | Source | Connector status | Notes |
@@ -237,6 +271,20 @@ All source connectors converge into the same downstream canonical pipeline.
 
 ---
 
+## 📄 Export formats
+
+| Format | Description |
+|---|---|
+| JSON | Canonical machine-readable output, full fidelity |
+| Excel (.xlsx) | Multi-sheet workbook with Test Cases, Steps, Expected Results, Data Needs, Summary |
+| Markdown | Git-friendly readable tables and sections |
+| PDF | Printable document with all test case details |
+| DOCX/Word | Editable document for stakeholders |
+
+Export never executes tests and never mutates canonical IR.
+
+---
+
 ## 🧪 Generated test support
 
 | Framework | Type | Language | Generation | Runtime |
@@ -244,7 +292,7 @@ All source connectors converge into the same downstream canonical pipeline.
 | Playwright | E2E | TypeScript | deterministic, 0 AI | real Chromium |
 | Vitest | Unit | TypeScript | deterministic, 0 AI | real Vitest |
 
-Other frameworks can be added behind the canonical TestCase boundary without changing source ingestion.
+Playwright/Vitest generation requires trusted mappings. Without mappings, TIRAI produces preview artifacts (not tests).
 
 ---
 
@@ -266,21 +314,11 @@ Other frameworks can be added behind the canonical TestCase boundary without cha
 │         Product truth between stages        │
 └──────────────────────┬──────────────────────┘
                        ↓
-             TRUSTED MAPPING BOUNDARY
-                 ┌─────┴─────┐
-                 ↓           ↓
-┌──────────────────────┐ ┌──────────────────────┐
-│  E2E CODE GENERATOR  │ │ UNIT CODE GENERATOR  │
-│      Playwright      │ │        Vitest        │
-└──────────┬───────────┘ └──────────┬───────────┘
-           ↓                        ↓
-      Real Chromium             Real Vitest
-           └───────────┬────────────┘
-                       ↓
-┌─────────────────────────────────────────────┐
-│             TestRunResultIR                 │
-│        PASS · FAIL · ERROR · BLOCKED        │
-└─────────────────────────────────────────────┘
+        ┌──────────────┼──────────────┐
+        ↓              ↓              ↓
+   Multi-format    Platform-aware   Optional Code
+     Export          Execution      Generation
+                    (Web/API/DB)   (Playwright/Vitest)
 ```
 
 ### Core design principles
@@ -292,6 +330,14 @@ Trusted mappings bind truth to the real project.
 Deterministic generators create executable tests.
 Real runners produce canonical results.
 ```
+
+### Security model
+
+- Provider API keys are read from environment variables, never persisted workspace config.
+- Generated code and canonical results must not contain raw provider credentials.
+- TIRAI writes managed state under `.tirai/` instead of mutating application source.
+- Unit target fingerprints protect against stale symbol mappings.
+- Missing authority fails closed.
 
 ---
 
@@ -321,56 +367,6 @@ aiSymbolGuesses = 0
 
 ---
 
-## 📊 Result semantics
-
-```text
-PASS    test executed and assertions passed
-FAIL    test executed but business/assertion expectation failed
-ERROR   runtime / browser / network / discovery / infrastructure failure
-BLOCKED TIRAI intentionally refused unsafe or unresolved execution
-```
-
-`0 tests discovered` is **ERROR**, never PASS.
-
----
-
-## 🧰 CLI reference
-
-```text
-tirai --help
-tirai --version
-
-tirai init [--force]
-tirai ingest <spec> [--json]
-tirai generate [--e2e|--unit]
-tirai run [--json]
-tirai report [--json]
-tirai status [--json]
-```
-
-Exit codes:
-
-```text
-0 = PASS
-1 = business assertion FAIL
-2 = BLOCKED / validation / configuration / infrastructure ERROR
-```
-
----
-
-## 🔐 Security model
-
-- Provider API keys are read from environment variables, not persisted workspace config.
-- Generated code and canonical results must not contain raw provider credentials.
-- TIRAI writes managed state under `.tirai/` / runtime output instead of mutating application source.
-- Unit target fingerprints protect against stale symbol mappings.
-- Release installers verify SHA256 when checksum assets are available.
-- Missing authority fails closed.
-
-For security reports, see [`SECURITY.md`](SECURITY.md).
-
----
-
 ## 🧑‍💻 Development
 
 ```bash
@@ -396,42 +392,15 @@ bin:     tirai -> dist/cli.js
 
 ---
 
-## 📦 Release flow
-
-```bash
-# package version must match the release tag
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-GitHub Actions performs:
-
-```text
-npm ci
-  ↓
-CLI verification
-  ↓
-npm pack
-  ↓
-SHA256
-  ↓
-GitHub Release
-  ├── tirai-cli-<version>.tgz
-  └── tirai-cli-<version>.tgz.sha256
-```
-
----
-
 ## 🟢 Project status
 
 ```text
-ORIGINAL EXCEL PRODUCT CORE = COMPLETE
-DEVELOPER RUNNABLE MVP      = COMPLETE
-DISTRIBUTABLE CLI           = COMPLETE
-MULTI-SOURCE INGESTION      = AVAILABLE
+SPEC-FIRST PLATFORM CORE    = COMPLETE
+MULTI-SOURCE INGESTION      = COMPLETE
+MULTI-FORMAT EXPORT         = COMPLETE
+PLATFORM-AWARE EXECUTION    = COMPLETE
+OPTIONAL WHITE-BOX OUTPUT   = COMPLETE
 ```
-
-The original Excel → TestCase → trusted mapping → Playwright/Vitest → canonical result flow remains the proven product core. Additional connectors broaden the input surface without changing that trust model.
 
 ---
 
