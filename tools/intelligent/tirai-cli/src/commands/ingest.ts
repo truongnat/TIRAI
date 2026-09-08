@@ -94,6 +94,7 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
   try {
     result = await runSourceToTestCasePipeline({
       sourcePath: absSource,
+      sourceCodePath: opts.sourceCodePath ? path.resolve(opts.cwd, opts.sourceCodePath) : undefined,
       provider,
       outputDir,
       ...(sourceKind ? { sourceKind } : {}),

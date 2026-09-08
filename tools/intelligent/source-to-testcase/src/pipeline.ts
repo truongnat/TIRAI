@@ -10,6 +10,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { createHash } from 'node:crypto';
 import {
   createDefaultSourceConnectorRegistry,
   type CanonicalSourceDocument,
@@ -41,6 +42,7 @@ export interface SourceToTestCaseOptions {
   outputDir: string;
   sourceKind?: string;
   promptVersion?: string;
+  sourceCodePath?: string;
 }
 
 export interface SourceIdentity {
@@ -136,7 +138,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   const writeResult = writeSemanticContextPackage(doc, semanticContextDir);
   const rawContext = writeRawContextPackage(doc, path.join(outputDir, 'raw-context'));
   const aiInputPath = path.join(outputDir, 'ai-input.json');
-  fs.writeFileSync(aiInputPath, JSON.stringify({ schemaVersion: '1.0', purpose: 'unified-ai-test-design-input', source: doc.source, revision: doc.revision, artifacts: doc.artifacts, contexts: doc.contexts, sourcePath, policy: { requireDimensions: ['happy-path', 'negative', 'boundary', 'validation', 'empty', 'loading', 'error', 'state-transition', 'security'], requireAssertions: true, requireProvenance: true } }, null, 2), 'utf8');
+  fs.writeFileSync(aiInputPath, JSON.stringify({ schemaVersion: '1.0', purpose: 'unified-ai-test-design-input', source: doc.source, revision: doc.revision, artifacts: doc.artifacts, contexts: doc.contexts, sourcePath, sourceCode: collectSourceCode(opts.sourceCodePath), policy: { requireDimensions: ['happy-path', 'negative', 'boundary', 'validation', 'empty', 'loading', 'error', 'state-transition', 'security'], requireAssertions: true, requireProvenance: true } }, null, 2), 'utf8');
 
   // Structured detailed-design workbooks already carry explicit row-level
   // requirements. Compile that contract deterministically before the AI path
@@ -416,4 +418,21 @@ function buildTestDesignSummary(plan: TestPlanIR): { schemaVersion: '1.0'; testC
   for (const scenario of plan.scenarios) byCategory[scenario.category] = (byCategory[scenario.category] ?? 0) + 1;
   for (const testCase of plan.testCases) { const status = testCase.automation.status; byAutomation[status] = (byAutomation[status] ?? 0) + 1; }
   return { schemaVersion: '1.0', testCases: plan.testCases.length, byCategory, byAutomation, requirementsCovered: plan.quality.requirementsCovered, behaviorPaths: plan.scenarios.length };
+}
+
+function collectSourceCode(root?: string): { root?: string; files: Array<{ path: string; content: string; contentHash: string }> } {
+  if (!root || !fs.existsSync(root)) return { root, files: [] };
+  const files: Array<{ path: string; content: string; contentHash: string }> = [];
+  const visit = (dir: string): void => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === '.tirai') continue;
+      const absolute = path.join(dir, entry.name);
+      if (entry.isDirectory()) visit(absolute);
+      else if (/\.(ts|tsx|js|jsx|vue|svelte|py|java|go|rb|cs)$/.test(entry.name)) {
+        const content = fs.readFileSync(absolute, 'utf8');
+        files.push({ path: path.relative(root, absolute), content, contentHash: createHash('sha256').update(content).digest('hex') });
+      }
+    }
+  };
+  visit(root); files.sort((a, b) => a.path.localeCompare(b.path)); return { root, files };
 }
