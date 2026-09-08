@@ -6,7 +6,7 @@
     "requirementCount": 17,
     "scenarioCount": 17,
     "testCaseCount": 17,
-    "ingestedAt": "2026-09-08T16:25:40.510Z"
+    "ingestedAt": "2026-09-08T16:56:33.774Z"
   },
   "generation": {
     "at": "2026-09-08T16:23:10.858Z",
@@ -38,7 +38,7 @@
     "path": "/Users/truongdq/tx/GitHub/TIRAI/.example/specs/example-react-detail-design.xlsx",
     "contentHash": "ced80a0112265711567946b26910c9a5699ee1155f3385f0c5e1eaa4d944404f",
     "byteLength": 21989,
-    "ingestedAt": "2026-09-08T16:25:40.510Z",
+    "ingestedAt": "2026-09-08T16:56:33.774Z",
     "artifactCount": 11,
     "contextCount": 5
   }
