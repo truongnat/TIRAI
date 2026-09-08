@@ -130,9 +130,7 @@ set TIRAI_VERSION=1.0.0
 install.cmd
 ```
 
-The release installer resolves a GitHub Release, downloads the packaged `tirai-cli-*.tgz`, verifies SHA256 when available, installs globally with npm, and checks `tirai --version`.
-
-> A GitHub Release must exist before release-based installation is available. Releases are produced from `v*` tags by `.github/workflows/release-cli.yml`.
+The installer uses the latest [GitHub Release](https://github.com/truongnat/TIRAI/releases/latest) (`v1.0.0`), downloads `tirai-cli-*.tgz`, verifies SHA256, installs globally with npm, and checks `tirai --version`. New versions are published from `v*` tags by `.github/workflows/release-cli.yml`.
 
 See [`docs/installation.md`](docs/installation.md) for full installation details.
 
@@ -433,7 +431,6 @@ ORIGINAL EXCEL PRODUCT CORE = COMPLETE
 DEVELOPER RUNNABLE MVP      = COMPLETE
 DISTRIBUTABLE CLI           = COMPLETE
 MULTI-SOURCE INGESTION      = AVAILABLE
-GITHUB RELEASE INSTALL PATH = IMPLEMENTED
 ```
 
 The original Excel → TestCase → trusted mapping → Playwright/Vitest → canonical result flow remains the proven product core. Additional connectors broaden the input surface without changing that trust model.
