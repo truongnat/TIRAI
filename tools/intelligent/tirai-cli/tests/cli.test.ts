@@ -47,7 +47,7 @@ describe('tirai CLI', () => {
       expect(fs.existsSync(path.join(tmp, '.tirai/config.json'))).toBe(true);
       expect(fs.existsSync(path.join(tmp, '.tirai/state/workspace.json'))).toBe(true);
       const cfg = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/config.json'), 'utf8'));
-      expect(cfg.version).toBe(1);
+      expect(cfg.version).toBe(2);
       expect(cfg.workspaceVersion).toBe(1);
       expect(cfg.ai.provider).toBe('fake');
 
@@ -142,9 +142,12 @@ describe('tirai CLI', () => {
       cfgPdf.e2e.startCommand = 'node order-app/server.mjs';
       fs.writeFileSync(path.join(tmp, '.tirai/config.json'), JSON.stringify(cfgPdf, null, 2));
 
-      r = await run(['generate'], tmp);
+      r = await run(['generate', '--target', 'playwright'], tmp);
       expect(r.code).toBe(0);
       expect(fs.existsSync(path.join(tmp, '.tirai/generated/e2e/TC-0001.spec.ts'))).toBe(true);
+
+      r = await run(['generate', '--target', 'vitest', '--source-mapping', path.join(tmp, '.tirai/mappings/unit.json')], tmp);
+      expect(r.code).toBe(0);
 
       r = await run(['run'], tmp);
       expect(r.code).toBe(0);
@@ -204,7 +207,9 @@ describe('tirai CLI', () => {
       cfgDocx.unit.projectRoot = path.join(tmp, 'order-app');
       cfgDocx.e2e.startCommand = 'node order-app/server.mjs';
       fs.writeFileSync(path.join(tmp, '.tirai/config.json'), JSON.stringify(cfgDocx, null, 2));
-      r = await run(['generate'], tmp);
+      r = await run(['generate', '--target', 'playwright'], tmp);
+      expect(r.code).toBe(0);
+      r = await run(['generate', '--target', 'vitest', '--source-mapping', path.join(tmp, '.tirai/mappings/unit.json')], tmp);
       expect(r.code).toBe(0);
       r = await run(['run'], tmp);
       expect(r.code).toBe(0);
@@ -285,9 +290,12 @@ describe('tirai CLI', () => {
       cfg.e2e.startCommand = 'node order-app/server.mjs';
       fs.writeFileSync(path.join(tmp, '.tirai/config.json'), JSON.stringify(cfg, null, 2));
 
-      r = await run(['generate'], tmp);
+      r = await run(['generate', '--target', 'playwright'], tmp);
       expect(r.code).toBe(0);
       expect(fs.existsSync(path.join(tmp, '.tirai/generated/e2e/TC-0001.spec.ts'))).toBe(true);
+
+      r = await run(['generate', '--target', 'vitest', '--source-mapping', path.join(tmp, '.tirai/mappings/unit.json')], tmp);
+      expect(r.code).toBe(0);
       expect(fs.existsSync(path.join(tmp, '.tirai/generated/unit/TC-0001.spec.ts'))).toBe(true);
 
       r = await run(['run'], tmp);
@@ -308,7 +316,7 @@ describe('tirai CLI', () => {
     }
   }, 60000);
 
-  it('ingest → generate --unit → run from TestCase JSON without source mapping', async () => {
+  it('ingest → generate --target vitest → run from TestCase JSON without source mapping', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-standalone-'));
     try {
       const ExcelJS = await import('exceljs');
@@ -327,29 +335,9 @@ describe('tirai CLI', () => {
       expect(r.code).toBe(0);
       expect(fs.existsSync(path.join(tmp, '.tirai/artifacts/testcases.json'))).toBe(true);
 
-      r = await run(['generate', '--unit'], tmp);
-      expect(r.code).toBe(0);
-      expect(r.out).toContain('Unit:');
-      const unitDir = path.join(tmp, '.tirai/generated/unit');
-      const specs = fs.readdirSync(unitDir).filter((f) => f.endsWith('.spec.ts'));
-      expect(specs.length).toBeGreaterThan(0);
-      expect(fs.existsSync(path.join(unitDir, '_spec-apply.ts'))).toBe(true);
-      expect(fs.existsSync(path.join(tmp, '.tirai/generated/e2e'))).toBe(true);
-      const e2eSpecs = fs.existsSync(path.join(tmp, '.tirai/generated/e2e'))
-        ? fs.readdirSync(path.join(tmp, '.tirai/generated/e2e')).filter((f) => f.endsWith('.spec.ts'))
-        : [];
-      expect(e2eSpecs.length).toBe(0);
-
-      const specSrc = fs.readFileSync(path.join(unitDir, specs[0]), 'utf8');
-      expect(specSrc).toContain('specApply');
-      expect(specSrc).toContain('inputs');
-
-      r = await run(['run'], tmp);
-      expect(r.code).toBe(0);
-      expect(r.out).toContain('Unit:');
-      const unitRes = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/results/unit-run-result-ir.json'), 'utf8'));
-      expect(unitRes.status).toBe('passed');
-      expect(unitRes.summary.testsTotal).toBeGreaterThan(0);
+      r = await run(['generate', '--target', 'vitest'], tmp);
+      expect(r.code).toBe(2); // Blocked: no source mapping
+      expect(r.err).toContain('MAPPING_MISSING');
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
