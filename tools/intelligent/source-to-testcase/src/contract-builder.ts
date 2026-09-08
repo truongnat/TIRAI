@@ -112,6 +112,10 @@ export function buildContractIR(input: {
     const relatedIds = requirements.filter((requirement) => requirement.provenance.some((item) => item.contextId && contextIds.includes(item.contextId))).map((requirement) => requirement.id);
     return { id: `module-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, kind: 'module' as const, title: name, description: `Module inferred from source context metadata: ${name}`, relatedIds, provenance: contextIds.map((contextId) => ({ sourceId, contextId })), confidence: 0.7, sourceFiles: [], dependencies: [], state: [] };
   });
+  const traceableNodes = [...requirements, ...scenarios, ...testCases];
+  const provenanceCoverage = traceableNodes.length === 0
+    ? 0
+    : traceableNodes.filter((node) => node.provenance.length > 0).length / traceableNodes.length;
 
   const contract: ContractIR = {
     schemaVersion: '1.0',
@@ -140,7 +144,7 @@ export function buildContractIR(input: {
       automationReady: testCases.filter((item) => item.automation === 'ready').length,
       unresolved: 0,
       conflicts: 0,
-      provenanceCoverage: 1,
+      provenanceCoverage,
     },
     metadata: {
       contractFingerprint: 'pending',
