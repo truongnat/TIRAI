@@ -13,7 +13,7 @@ import { runExport } from './commands/export.js';
 import { runExecute } from './commands/execute.js';
 import { runTaskCreate, runTaskList, runTaskShow } from './commands/task.js';
 import { runContractValidate, runContractImport } from './commands/contract.js';
-import { runArtifactPlan } from './commands/artifact.js';
+import { runArtifactPlan, runArtifactVerify } from './commands/artifact.js';
 import { runAnalyze } from './commands/analyze.js';
 import { CliError } from './errors.js';
 
@@ -49,6 +49,7 @@ Commands:
   contract validate       Validate canonical contract JSON
   contract import <file>  Import an externally generated contract
   artifact plan           Plan outputs from canonical contract
+  artifact verify         Verify exported artifact checksums
   analyze                 Inspect AI input and raw context package
   plan                    Generate canonical test plan from specs + targets
   export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
@@ -137,8 +138,9 @@ async function main(): Promise<void> {
         break;
       }
       case 'artifact': {
-        if (args[0] !== 'plan') throw new CliError('INVALID_TARGET', 'Usage: tirai artifact plan');
-        await runArtifactPlan({ cwd, contractPath: flags.file as string, json: Boolean(flags.json) });
+        if (args[0] === 'plan') await runArtifactPlan({ cwd, contractPath: flags.file as string, json: Boolean(flags.json) });
+        else if (args[0] === 'verify') await runArtifactVerify({ cwd, json: Boolean(flags.json) });
+        else throw new CliError('INVALID_TARGET', 'Usage: tirai artifact plan | tirai artifact verify');
         break;
       }
       case 'analyze': {
