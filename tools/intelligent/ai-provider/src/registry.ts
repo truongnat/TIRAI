@@ -10,18 +10,20 @@ import { GroqProvider } from './providers/groq/groq-provider.js';
 import type { GroqProviderConfig } from './providers/groq/groq-config.js';
 import { DeepSeekProvider } from './providers/deepseek/deepseek-provider.js';
 import type { DeepSeekProviderConfig } from './providers/deepseek/deepseek-config.js';
+import { CLIProvider } from './providers/cli-provider.js';
 
 /** Factory function that creates an AIProvider instance. */
 export type ProviderFactory = (config?: Record<string, unknown>) => AIProvider;
 
 /** Known provider identifiers. */
-export type KnownProvider = 'groq' | 'deepseek';
+export type KnownProvider = 'groq' | 'deepseek' | 'cli';
 
 const registry = new Map<string, ProviderFactory>();
 
 // Register built-in providers
 registry.set('groq', (config) => new GroqProvider(config as Partial<GroqProviderConfig>));
 registry.set('deepseek', (config) => new DeepSeekProvider(config as Partial<DeepSeekProviderConfig>));
+registry.set('cli', (config) => new CLIProvider(config as { command: string; model?: string; timeoutMs?: number }));
 
 /**
  * Create an AI provider by name.

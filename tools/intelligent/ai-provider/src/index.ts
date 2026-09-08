@@ -36,6 +36,8 @@ export { resolveGroqConfig } from './providers/groq/groq-config.js';
 
 // DeepSeek provider
 export { DeepSeekProvider } from './providers/deepseek/deepseek-provider.js';
+export { CLIProvider } from './providers/cli-provider.js';
+export type { CLIProviderConfig } from './providers/cli-provider.js';
 export type { DeepSeekProviderConfig } from './providers/deepseek/deepseek-config.js';
 export { resolveDeepSeekConfig } from './providers/deepseek/deepseek-config.js';
 
