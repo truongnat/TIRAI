@@ -30,11 +30,28 @@ else
 fi
 
 log "Resolving TIRAI release from ${REPO} (${VERSION})..."
-RELEASE_JSON="$(curl -fsSL "${HEADERS[@]}" "$RELEASE_URL")" || die "Could not read GitHub release. For a private repository, set GITHUB_TOKEN (or GH_TOKEN) with repo read access."
+HTTP_FILE="$(mktemp)"
+if ! RELEASE_JSON="$(curl -sS -L "${HEADERS[@]}" -w '%{http_code}' -o "$HTTP_FILE" "$RELEASE_URL")"; then
+  rm -f "$HTTP_FILE"
+  die "Could not reach GitHub. Check your network connection and try again."
+fi
+HTTP_STATUS="$RELEASE_JSON"
+RELEASE_JSON="$(cat "$HTTP_FILE")"
+rm -f "$HTTP_FILE"
+
+if [ "$HTTP_STATUS" = "404" ]; then
+  if [ "$VERSION" = "latest" ]; then
+    die "No GitHub Release exists yet for ${REPO}. Create and push a version tag (for example v1.0.0) so the release workflow can publish the CLI package."
+  else
+    die "GitHub Release ${VERSION} was not found for ${REPO}. Check the requested TIRAI_VERSION."
+  fi
+elif [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+  die "GitHub API returned HTTP ${HTTP_STATUS} while resolving the release."
+fi
 
 ASSET_API_URL="$(printf '%s' "$RELEASE_JSON" | node -e '
 let s=""; process.stdin.on("data",d=>s+=d); process.stdin.on("end",()=>{const r=JSON.parse(s); const a=(r.assets||[]).find(x=>/^tirai-cli-.*\.tgz$/.test(x.name)); if(!a) process.exit(2); process.stdout.write(a.url);});
-')" || die "No tirai-cli-*.tgz asset found in the selected release."
+')" || die "The selected release does not contain a tirai-cli-*.tgz asset."
 
 ASSET_NAME="$(printf '%s' "$RELEASE_JSON" | node -e '
 let s=""; process.stdin.on("data",d=>s+=d); process.stdin.on("end",()=>{const r=JSON.parse(s); const a=(r.assets||[]).find(x=>/^tirai-cli-.*\.tgz$/.test(x.name)); if(!a) process.exit(2); process.stdout.write(a.name);});
