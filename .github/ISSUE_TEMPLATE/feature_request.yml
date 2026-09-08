@@ -1,0 +1,68 @@
+name: Feature request
+description: Propose a focused product or architecture improvement
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        TIRAI is specification-first and canonical-IR-driven. Strong proposals explain the user problem, expected workflow, and how the change preserves or intentionally evolves the trust boundary.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or product problem are you trying to solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the desired user-facing behavior and architecture at a high level.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary area
+      options:
+        - Source connector
+        - Semantic / AI intelligence
+        - Trusted mapping UX
+        - Test generator / framework adapter
+        - Execution / results
+        - CLI / installation / release
+        - Documentation / developer experience
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Desired workflow
+      description: Show the command flow or before/after experience if possible.
+      placeholder: |
+        tirai ...
+          ↓
+        ...
+
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Trust / compatibility impact
+      description: Does this affect canonical IR, mapping authority, deterministic generation, execution semantics, or backward compatibility?
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and roadmap discussions first.
+          required: true
+        - label: This proposal describes a concrete user benefit rather than only internal refactoring.
+          required: true
