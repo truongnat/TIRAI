@@ -12,7 +12,7 @@ import { runPlan } from './commands/plan.js';
 import { runExport } from './commands/export.js';
 import { runExecute } from './commands/execute.js';
 import { runTaskCreate, runTaskList, runTaskShow } from './commands/task.js';
-import { runContractValidate } from './commands/contract.js';
+import { runContractValidate, runContractImport } from './commands/contract.js';
 import { runArtifactPlan } from './commands/artifact.js';
 import { runAnalyze } from './commands/analyze.js';
 import { CliError } from './errors.js';
@@ -47,6 +47,7 @@ Commands:
   task list               List task workspaces
   task show <task-id>     Show a task workspace
   contract validate       Validate canonical contract JSON
+  contract import <file>  Import an externally generated contract
   artifact plan           Plan outputs from canonical contract
   analyze                 Inspect AI input and raw context package
   plan                    Generate canonical test plan from specs + targets
@@ -128,8 +129,9 @@ async function main(): Promise<void> {
   try {
     switch (cmd) {
       case 'contract': {
-        if (args[0] !== 'validate') throw new CliError('INVALID_TARGET', 'Usage: tirai contract validate');
-        await runContractValidate({ cwd, contractPath: flags.file as string, json: Boolean(flags.json) });
+        if (args[0] === 'validate') await runContractValidate({ cwd, contractPath: flags.file as string, json: Boolean(flags.json) });
+        else if (args[0] === 'import' && args[1]) await runContractImport({ cwd, inputPath: args[1], json: Boolean(flags.json) });
+        else throw new CliError('INVALID_TARGET', 'Usage: tirai contract validate | tirai contract import <file>');
         break;
       }
       case 'artifact': {
