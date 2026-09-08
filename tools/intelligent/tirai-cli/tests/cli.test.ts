@@ -64,6 +64,23 @@ describe('tirai CLI', () => {
     }
   });
 
+  it('reads canonical test plan and writes a summary', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-plan-'));
+    try {
+      expect((await run(['init'], tmp)).code).toBe(0);
+      const artifacts = path.join(tmp, '.tirai', 'artifacts');
+      fs.writeFileSync(path.join(artifacts, 'test-plan.json'), JSON.stringify({
+        scenarios: [{ id: 'SCN-1' }], testCases: [{ id: 'TC-1' }], quality: { coverageRate: 1 }, metadata: { promptVersion: 'test' },
+      }));
+      const result = await run(['plan', '--json'], tmp);
+      expect(result.code).toBe(0);
+      expect(JSON.parse(result.out).testCases).toBe(1);
+      expect(fs.existsSync(path.join(artifacts, 'plan-summary.json'))).toBe(true);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
   it('exit code mapping for missing source', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-test-'));
     try {
