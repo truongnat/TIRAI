@@ -19,6 +19,7 @@
     "tools/deterministic/excel/officecli-adapter",
     "tools/deterministic/performance-benchmark",
     "tools/intelligent/ai-provider",
+    "tools/intelligent/contract-ir",
     "tools/intelligent/source-ingestion",
     "tools/intelligent/excel/context-builder",
     "tools/intelligent/excel/analyzer",

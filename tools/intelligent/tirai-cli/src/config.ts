@@ -16,6 +16,12 @@ export interface TiraiConfig {
   };
   project: {
     root: string;
+    name?: string;
+    type?: 'web' | 'backend' | 'fullstack' | 'library' | 'mobile' | 'unknown';
+    frontend?: string;
+    backend?: string;
+    database?: string;
+    sourceCodePath?: string;
     defaultEnvironment?: string;
     defaultLanguage?: string;
   };
@@ -44,6 +50,8 @@ export function defaultConfig(projectRoot: string): TiraiConfig {
     },
     project: {
       root: projectRoot,
+      name: undefined,
+      type: 'unknown',
       defaultEnvironment: 'local',
       defaultLanguage: 'en',
     },

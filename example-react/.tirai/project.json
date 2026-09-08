@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "workspaceVersion": 1,
+  "project": {
+    "root": "/Users/truongdq/tx/GitHub/TIRAI/example-react",
+    "detection": {
+      "projectName": "example-react-tanstack-demo",
+      "language": "typescript",
+      "packageManager": "npm",
+      "playwrightDetected": true,
+      "vitestDetected": false,
+      "tsconfigDetected": true
+    }
+  },
+  "createdAt": "2026-09-08T14:10:13.078Z"
+}

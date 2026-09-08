@@ -1,0 +1,2185 @@
+{
+  "schemaVersion": "1.0",
+  "document": {
+    "title": "example-react-detail-design.xlsx",
+    "summary": "Requirements compiled from 17 explicit business-flow rows.",
+    "sourceSemanticIR": "semantic-ir.json",
+    "provenance": [
+      {
+        "contextId": "ctx-d932a365baed433cf3ccc051",
+        "sheet": "Luồng nghiệp vụ",
+        "ranges": [
+          "A1:I18"
+        ]
+      },
+      {
+        "contextId": "ctx-474611b444f9250eae2af657",
+        "sheet": "Thiết kế UI",
+        "ranges": [
+          "A1:I20"
+        ]
+      },
+      {
+        "contextId": "ctx-758ba1e7576744f574808ff6",
+        "sheet": "Thiết kế DB",
+        "ranges": [
+          "A1:N23"
+        ]
+      },
+      {
+        "contextId": "ctx-a97ccf3de95cd13ec62b411e",
+        "sheet": "Thiết kế FE",
+        "ranges": [
+          "A1:H11"
+        ]
+      },
+      {
+        "contextId": "ctx-4e5020602c296fc5c48ec985",
+        "sheet": "Thiết kế API",
+        "ranges": [
+          "A1:L8"
+        ]
+      }
+    ]
+  },
+  "requirements": [
+    {
+      "id": "REQ-BF-001",
+      "title": "Khởi tạo app shell",
+      "type": "functional",
+      "statement": "Người dùng truy cập ứng dụng và hệ thống dựng layout gốc. Đầu vào: URL /. Đầu ra: Header, main outlet, query client. Điều kiện: App sẵn sàng → BF-002.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "URL /",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "businessInput",
+          "description": "URL /",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A2"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Header, main outlet, query client",
+          "condition": "App sẵn sàng → BF-002",
+          "target": "Khởi tạo app shell",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A2"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Header, main outlet, query client",
+          "state": "App sẵn sàng → BF-002",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A2"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "App sẵn sàng → BF-002",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A2"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-001"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A2"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-002",
+      "title": "Hiển thị Dashboard",
+      "type": "interface",
+      "statement": "Hiển thị hero, 3 feature card Todos / Posts / Users và danh sách thư viện TanStack. Đầu vào: App shell. Đầu ra: Dashboard tại /. Điều kiện: Chọn feature card → BF-003 / BF-009 / BF-012.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "App shell",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "businessInput",
+          "description": "App shell",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A3"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Dashboard tại /",
+          "condition": "Chọn feature card → BF-003 / BF-009 / BF-012",
+          "target": "Hiển thị Dashboard",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A3"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Dashboard tại /",
+          "state": "Chọn feature card → BF-003 / BF-009 / BF-012",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A3"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "Chọn feature card → BF-003 / BF-009 / BF-012",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A3"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-002"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A3"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-003",
+      "title": "Điều hướng module",
+      "type": "interface",
+      "statement": "Người dùng chọn tab trên header hoặc feature card để chuyển trang. Đầu vào: Click Todos / Posts / Users. Đầu ra: Route tương ứng; active tab đổi màu. Điều kiện: Todos → BF-004; Posts → BF-009; Users → BF-012.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "Click Todos / Posts / Users",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "businessInput",
+          "description": "Click Todos / Posts / Users",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A4"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Route tương ứng; active tab đổi màu",
+          "condition": "Todos → BF-004; Posts → BF-009; Users → BF-012",
+          "target": "Điều hướng module",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A4"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Route tương ứng; active tab đổi màu",
+          "state": "Todos → BF-004; Posts → BF-009; Users → BF-012",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A4"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "Todos → BF-004; Posts → BF-009; Users → BF-012",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A4"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-003"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A4"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-004",
+      "title": "Tải danh sách Todos",
+      "type": "interface",
+      "statement": "Gọi API lấy tối đa 20 todo, hiển thị loading trong thời gian chờ. Đầu vào: GET /todos?_limit=20. Đầu ra: Todo list, active/done counters. Điều kiện: 200 → hiển thị list; lỗi → thông báo Failed to load todos; rỗng → No todos found.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "GET /todos?_limit=20",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "businessInput",
+          "description": "GET /todos?_limit=20",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A5"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [
+        {
+          "description": "GET /todos?_limit=20",
+          "type": "external-api",
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A5"
+              ]
+            }
+          ]
+        }
+      ],
+      "expectedBehaviors": [
+        {
+          "description": "Todo list, active/done counters",
+          "condition": "200 → hiển thị list; lỗi → thông báo Failed to load todos; rỗng → No todos found",
+          "target": "Tải danh sách Todos",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A5"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Todo list, active/done counters",
+          "state": "200 → hiển thị list; lỗi → thông báo Failed to load todos; rỗng → No todos found",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A5"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "200 → hiển thị list; lỗi → thông báo Failed to load todos; rỗng → No todos found",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A5"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-004",
+        "RULE-BF-004"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A5"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-005",
+      "title": "Kiểm tra form Add Todo",
+      "type": "validation",
+      "statement": "Kiểm tra title bắt buộc khi người dùng nhập hoặc submit form. Đầu vào: Title từ input Add a new task.... Đầu ra: Validation message hoặc dữ liệu hợp lệ. Điều kiện: Rỗng / chỉ khoảng trắng → Title is required; hợp lệ → BF-006.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "Title từ input Add a new task...",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "title",
+          "description": "Title từ input Add a new task...",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A6"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Validation message hoặc dữ liệu hợp lệ",
+          "condition": "Rỗng / chỉ khoảng trắng → Title is required; hợp lệ → BF-006",
+          "target": "Kiểm tra form Add Todo",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A6"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Validation message hoặc dữ liệu hợp lệ",
+          "state": "Rỗng / chỉ khoảng trắng → Title is required; hợp lệ → BF-006",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A6"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "Rỗng / chỉ khoảng trắng → Title is required; hợp lệ → BF-006",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A6"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-005"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A6"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-006",
+      "title": "Thêm Todo",
+      "type": "state-transition",
+      "statement": "Gửi todo mới, cập nhật optimistic vào đầu danh sách và reset form. Đầu vào: title, completed=false, userId=1. Đầu ra: Todo mới hiển thị; input rỗng. Điều kiện: API lỗi → rollback cache; thành công → giữ optimistic item.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "title, completed=false, userId=1",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "title",
+          "description": "title, completed=false, userId=1",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A7"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "completed",
+          "description": "title, completed=false, userId=1",
+          "dataType": "boolean",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A7"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "userId",
+          "description": "title, completed=false, userId=1",
+          "dataType": "number",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A7"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [
+        {
+          "description": "POST /todos",
+          "type": "external-api",
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A7"
+              ]
+            }
+          ]
+        }
+      ],
+      "expectedBehaviors": [
+        {
+          "description": "Todo mới hiển thị; input rỗng",
+          "condition": "API lỗi → rollback cache; thành công → giữ optimistic item",
+          "target": "Thêm Todo",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A7"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Todo mới hiển thị; input rỗng",
+          "state": "API lỗi → rollback cache; thành công → giữ optimistic item",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A7"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "API lỗi → rollback cache; thành công → giữ optimistic item",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A7"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-006",
+        "RULE-BF-006"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A7"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-007",
+      "title": "Lọc và tìm kiếm Todos",
+      "type": "functional",
+      "statement": "Kết hợp filter trạng thái với ô tìm kiếm global để lọc theo title. Đầu vào: Filter all / active / completed; searchQuery. Đầu ra: Danh sách filtered; counters giữ theo tổng list. Điều kiện: Không có kết quả → No todos found.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "Filter all / active / completed; searchQuery",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "completed",
+          "description": "Filter all / active / completed; searchQuery",
+          "dataType": "boolean",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A8"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "searchQuery",
+          "description": "Filter all / active / completed; searchQuery",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A8"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Danh sách filtered; counters giữ theo tổng list",
+          "condition": "Không có kết quả → No todos found",
+          "target": "Lọc và tìm kiếm Todos",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A8"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Danh sách filtered; counters giữ theo tổng list",
+          "state": "Không có kết quả → No todos found",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A8"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "Không có kết quả → No todos found",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A8"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-007"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A8"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-008",
+      "title": "Đổi trạng thái Todo",
+      "type": "state-transition",
+      "statement": "Click checkbox để đảo completed và phản ánh ngay trên UI. Đầu vào: Todo id, trạng thái hiện tại. Đầu ra: Checkbox, line-through, completed counter. Điều kiện: API lỗi → rollback trạng thái trước đó.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "Todo id, trạng thái hiện tại",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "id",
+          "description": "Todo id, trạng thái hiện tại",
+          "dataType": "number",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A9"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [
+        {
+          "description": "PATCH /todos/{id}",
+          "type": "external-api",
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A9"
+              ]
+            }
+          ]
+        }
+      ],
+      "expectedBehaviors": [
+        {
+          "description": "Checkbox, line-through, completed counter",
+          "condition": "API lỗi → rollback trạng thái trước đó",
+          "target": "Đổi trạng thái Todo",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A9"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Checkbox, line-through, completed counter",
+          "state": "API lỗi → rollback trạng thái trước đó",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A9"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "API lỗi → rollback trạng thái trước đó",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A9"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-008",
+        "RULE-BF-008"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A9"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-009",
+      "title": "Xóa Todo",
+      "type": "state-transition",
+      "statement": "Click nút delete trên todo row để xóa khỏi danh sách. Đầu vào: Todo id. Đầu ra: Todo biến mất khỏi list; progress cập nhật. Điều kiện: API lỗi → rollback item.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "Todo id",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "id",
+          "description": "Todo id",
+          "dataType": "number",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A10"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [
+        {
+          "description": "DELETE /todos/{id}",
+          "type": "external-api",
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A10"
+              ]
+            }
+          ]
+        }
+      ],
+      "expectedBehaviors": [
+        {
+          "description": "Todo biến mất khỏi list; progress cập nhật",
+          "condition": "API lỗi → rollback item",
+          "target": "Xóa Todo",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A10"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Todo biến mất khỏi list; progress cập nhật",
+          "state": "API lỗi → rollback item",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A10"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "API lỗi → rollback item",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A10"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-009",
+        "RULE-BF-009"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A10"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-010",
+      "title": "Tải danh sách Posts",
+      "type": "interface",
+      "statement": "Gọi API lấy 100 posts và hiển thị badge số lượng. Đầu vào: GET /posts. Đầu ra: Posts page; badge 100 posts. Điều kiện: 200 → BF-011; loading → Loading posts....",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "GET /posts",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "businessInput",
+          "description": "GET /posts",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A11"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [
+        {
+          "description": "GET /posts",
+          "type": "external-api",
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A11"
+              ]
+            }
+          ]
+        }
+      ],
+      "expectedBehaviors": [
+        {
+          "description": "Posts page; badge 100 posts",
+          "condition": "200 → BF-011; loading → Loading posts...",
+          "target": "Tải danh sách Posts",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A11"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Posts page; badge 100 posts",
+          "state": "200 → BF-011; loading → Loading posts...",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A11"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "200 → BF-011; loading → Loading posts...",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A11"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-010",
+        "RULE-BF-010"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A11"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-011",
+      "title": "Thao tác Posts table",
+      "type": "interface",
+      "statement": "Hiển thị bảng 10 dòng mỗi trang, hỗ trợ sort, global filter và Prev / Next. Đầu vào: Sort ID/User/Title; Filter posts.... Đầu ra: Bảng, page indicator, số kết quả. Điều kiện: Không có kết quả → bảng rỗng; page boundary → disable Prev / Next.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "Sort ID/User/Title; Filter posts...",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "title",
+          "description": "Sort ID/User/Title; Filter posts...",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A12"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "id",
+          "description": "Sort ID/User/Title; Filter posts...",
+          "dataType": "number",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A12"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Bảng, page indicator, số kết quả",
+          "condition": "Không có kết quả → bảng rỗng; page boundary → disable Prev / Next",
+          "target": "Thao tác Posts table",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A12"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Bảng, page indicator, số kết quả",
+          "state": "Không có kết quả → bảng rỗng; page boundary → disable Prev / Next",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A12"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "Không có kết quả → bảng rỗng; page boundary → disable Prev / Next",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A12"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-011"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A12"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-012",
+      "title": "Chuyển Posts sang Virtual List",
+      "type": "interface",
+      "statement": "Đổi view mode để render danh sách virtual với vùng cuộn 500px. Đầu vào: Click Table / Virtual List. Đầu ra: Danh sách virtual; số row DOM đang hiển thị. Điều kiện: Virtual → chỉ render row visible + overscan; Table → quay lại bảng.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "Click Table / Virtual List",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "businessInput",
+          "description": "Click Table / Virtual List",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A13"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Danh sách virtual; số row DOM đang hiển thị",
+          "condition": "Virtual → chỉ render row visible + overscan; Table → quay lại bảng",
+          "target": "Chuyển Posts sang Virtual List",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A13"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Danh sách virtual; số row DOM đang hiển thị",
+          "state": "Virtual → chỉ render row visible + overscan; Table → quay lại bảng",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A13"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "Virtual → chỉ render row visible + overscan; Table → quay lại bảng",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A13"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-012"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A13"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-013",
+      "title": "Tải danh sách Users",
+      "type": "interface",
+      "statement": "Gọi API lấy 10 users và hiển thị bảng users. Đầu vào: GET /users. Đầu ra: Users page; badge số lượng. Điều kiện: 200 → BF-014; loading → Loading users....",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "GET /users",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "businessInput",
+          "description": "GET /users",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A14"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [
+        {
+          "description": "GET /users",
+          "type": "external-api",
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A14"
+              ]
+            }
+          ]
+        }
+      ],
+      "expectedBehaviors": [
+        {
+          "description": "Users page; badge số lượng",
+          "condition": "200 → BF-014; loading → Loading users...",
+          "target": "Tải danh sách Users",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A14"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Users page; badge số lượng",
+          "state": "200 → BF-014; loading → Loading users...",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A14"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "200 → BF-014; loading → Loading users...",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A14"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-013",
+        "RULE-BF-013"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A14"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-014",
+      "title": "Thao tác Users table",
+      "type": "interface",
+      "statement": "Hiển thị cột ID, Name, Email, City, Company; hỗ trợ sort và filter. Đầu vào: Sort ID/Name/Email; Filter users.... Đầu ra: Bảng users đã lọc/sắp xếp. Điều kiện: Filter không khớp → không còn row; cột City/Company ẩn trên màn hình nhỏ.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "Sort ID/Name/Email; Filter users...",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "id",
+          "description": "Sort ID/Name/Email; Filter users...",
+          "dataType": "number",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A15"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "description": "Sort ID/Name/Email; Filter users...",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A15"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "email",
+          "description": "Sort ID/Name/Email; Filter users...",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A15"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Bảng users đã lọc/sắp xếp",
+          "condition": "Filter không khớp → không còn row; cột City/Company ẩn trên màn hình nhỏ",
+          "target": "Thao tác Users table",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A15"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Bảng users đã lọc/sắp xếp",
+          "state": "Filter không khớp → không còn row; cột City/Company ẩn trên màn hình nhỏ",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A15"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "Filter không khớp → không còn row; cột City/Company ẩn trên màn hình nhỏ",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A15"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-014"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A15"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-015",
+      "title": "Mở Edit User dialog",
+      "type": "functional",
+      "statement": "Click icon bút chì trên row để mở dialog và nạp dữ liệu user hiện tại. Đầu vào: User row. Đầu ra: Dialog với name/email/phone/website. Điều kiện: Dialog mở → BF-016; Cancel → đóng dialog, không đổi data.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "User row",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "businessInput",
+          "description": "User row",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A16"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Dialog với name/email/phone/website",
+          "condition": "Dialog mở → BF-016; Cancel → đóng dialog, không đổi data",
+          "target": "Mở Edit User dialog",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A16"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Dialog với name/email/phone/website",
+          "state": "Dialog mở → BF-016; Cancel → đóng dialog, không đổi data",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A16"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "Dialog mở → BF-016; Cancel → đóng dialog, không đổi data",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A16"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-015"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A16"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-016",
+      "title": "Kiểm tra form Edit User",
+      "type": "validation",
+      "statement": "Validate 4 trường trước khi submit thay đổi user. Đầu vào: name, email, phone, website. Đầu ra: Validation message hoặc form hợp lệ. Điều kiện: Trường rỗng → <field> is required; hợp lệ → BF-017.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "name, email, phone, website",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "name",
+          "description": "name, email, phone, website",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A17"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "email",
+          "description": "name, email, phone, website",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A17"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "phone",
+          "description": "name, email, phone, website",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A17"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "website",
+          "description": "name, email, phone, website",
+          "dataType": "string",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A17"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [],
+      "expectedBehaviors": [
+        {
+          "description": "Validation message hoặc form hợp lệ",
+          "condition": "Trường rỗng → <field> is required; hợp lệ → BF-017",
+          "target": "Kiểm tra form Edit User",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A17"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Validation message hoặc form hợp lệ",
+          "state": "Trường rỗng → <field> is required; hợp lệ → BF-017",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A17"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "Trường rỗng → <field> is required; hợp lệ → BF-017",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A17"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-016"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A17"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    },
+    {
+      "id": "REQ-BF-017",
+      "title": "Lưu User",
+      "type": "state-transition",
+      "statement": "PATCH dữ liệu user, cập nhật optimistic vào table và đóng dialog khi thành công. Đầu vào: User id + partial user payload. Đầu ra: Row user được cập nhật; dialog đóng. Điều kiện: API lỗi → rollback cache; success → đóng dialog.",
+      "sourceNature": "explicit",
+      "actor": "Người dùng",
+      "trigger": "User id + partial user payload",
+      "preconditions": [],
+      "inputs": [
+        {
+          "name": "id",
+          "description": "User id + partial user payload",
+          "dataType": "number",
+          "required": true,
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A18"
+              ]
+            }
+          ]
+        }
+      ],
+      "dataNeeds": [
+        {
+          "description": "PATCH /users/{id}",
+          "type": "external-api",
+          "constraints": [],
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A18"
+              ]
+            }
+          ]
+        }
+      ],
+      "expectedBehaviors": [
+        {
+          "description": "Row user được cập nhật; dialog đóng",
+          "condition": "API lỗi → rollback cache; success → đóng dialog",
+          "target": "Lưu User",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A18"
+              ]
+            }
+          ]
+        }
+      ],
+      "outcomes": [
+        {
+          "description": "Row user được cập nhật; dialog đóng",
+          "state": "API lỗi → rollback cache; success → đóng dialog",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A18"
+              ]
+            }
+          ]
+        }
+      ],
+      "constraints": [
+        {
+          "type": "branch-condition",
+          "description": "API lỗi → rollback cache; success → đóng dialog",
+          "provenance": [
+            {
+              "contextId": "ctx-d932a365baed433cf3ccc051",
+              "sheet": "Luồng nghiệp vụ",
+              "ranges": [
+                "A1:I18"
+              ],
+              "cells": [
+                "A18"
+              ]
+            }
+          ]
+        }
+      ],
+      "relatedSemanticIds": [
+        "FLOW-BF-017",
+        "RULE-BF-017"
+      ],
+      "provenance": [
+        {
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A18"
+          ]
+        }
+      ],
+      "confidence": 1,
+      "testability": {
+        "status": "testable",
+        "reasons": []
+      }
+    }
+  ],
+  "unresolved": [],
+  "conflicts": [],
+  "quality": {
+    "total": 17,
+    "explicit": 17,
+    "derived": 0,
+    "testable": 17,
+    "partiallyTestable": 0,
+    "notTestable": 0,
+    "unknownTestability": 0,
+    "lowConfidence": 0,
+    "unresolved": 0,
+    "conflicts": 0,
+    "provenanceCoverage": 1
+  }
+}

@@ -1,6 +1,6 @@
-import fs from 'node:fs';
 import JSZip from 'jszip';
 import type { OOXMLProfile } from './models.js';
+import { loadExcelJsCompatibleBuffer } from './exceljs-compat.js';
 
 /**
  * Workbook-scoped read-only OOXML access. The archive is decompressed once per
@@ -15,7 +15,12 @@ export class WorkbookOOXMLContext {
   }
 
   static async fromFile(filePath: string): Promise<WorkbookOOXMLContext> {
-    const zip = await JSZip.loadAsync(fs.readFileSync(filePath));
+    const zip = await JSZip.loadAsync(await loadExcelJsCompatibleBuffer(filePath));
+    return new WorkbookOOXMLContext(zip);
+  }
+
+  static async fromBuffer(buffer: Uint8Array): Promise<WorkbookOOXMLContext> {
+    const zip = await JSZip.loadAsync(buffer);
     return new WorkbookOOXMLContext(zip);
   }
 

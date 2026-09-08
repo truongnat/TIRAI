@@ -1,0 +1,963 @@
+{
+  "schemaVersion": "1.0",
+  "testMappings": [
+    {
+      "testCaseId": "TC-BF-001",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/index.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-001",
+        "executorType": "ui",
+        "pageId": "home-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "page-title",
+            "expectedValue": "TanStack Full Demo"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-001",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A2"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-002",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/index.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-002",
+        "executorType": "ui",
+        "pageId": "home-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "visible",
+            "targetLogicalName": "dashboard-heading"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-002",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A3"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-003",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/index.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-003",
+        "executorType": "ui",
+        "pageId": "home-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/"
+          },
+          {
+            "stepOrder": 2,
+            "action": "click",
+            "targetLogicalName": "nav-todos"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "url-contains",
+            "expectedValue": "/todos"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-003",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A4"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-004",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/todos.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-004",
+        "executorType": "ui",
+        "pageId": "todos-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/todos"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "visible",
+            "targetLogicalName": "todos-heading"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-004",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A5"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-005",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/todos.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-005",
+        "executorType": "ui",
+        "pageId": "todos-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/todos"
+          },
+          {
+            "stepOrder": 2,
+            "action": "fill",
+            "targetLogicalName": "add-todo-input"
+          },
+          {
+            "stepOrder": 3,
+            "action": "blur",
+            "targetLogicalName": "add-todo-input"
+          },
+          {
+            "stepOrder": 4,
+            "action": "click",
+            "targetLogicalName": "add-todo-button"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "text-contains",
+            "targetLogicalName": "add-todo-validation",
+            "expectedValue": "Title is required"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-005",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A6"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-006",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "manual-only",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/*.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "unresolvedIds": [
+        "UNRESOLVED-TC-BF-006"
+      ],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-006",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A7"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-007",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/todos.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-007",
+        "executorType": "ui",
+        "pageId": "todos-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/todos"
+          },
+          {
+            "stepOrder": 2,
+            "action": "fill",
+            "targetLogicalName": "todo-search"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "value-equals",
+            "targetLogicalName": "todo-search",
+            "expectedValue": "buy milk"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-007",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A8"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-008",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "manual-only",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/*.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "unresolvedIds": [
+        "UNRESOLVED-TC-BF-008"
+      ],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-008",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A9"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-009",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "manual-only",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/*.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "unresolvedIds": [
+        "UNRESOLVED-TC-BF-009"
+      ],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-009",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A10"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-010",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/posts.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-010",
+        "executorType": "ui",
+        "pageId": "posts-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/posts"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "visible",
+            "targetLogicalName": "posts-heading"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-010",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A11"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-011",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/posts.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-011",
+        "executorType": "ui",
+        "pageId": "posts-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/posts"
+          },
+          {
+            "stepOrder": 2,
+            "action": "fill",
+            "targetLogicalName": "posts-filter"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "value-equals",
+            "targetLogicalName": "posts-filter",
+            "expectedValue": "tanstack"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-011",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A12"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-012",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/posts.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-012",
+        "executorType": "ui",
+        "pageId": "posts-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/posts"
+          },
+          {
+            "stepOrder": 2,
+            "action": "click",
+            "targetLogicalName": "posts-virtual-view"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "enabled",
+            "targetLogicalName": "posts-virtual-view"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-012",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A13"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-013",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/users.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-013",
+        "executorType": "ui",
+        "pageId": "users-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/users"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "visible",
+            "targetLogicalName": "users-heading"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-013",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A14"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-014",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "ready",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/users.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "ui": {
+        "testCaseId": "TC-BF-014",
+        "executorType": "ui",
+        "pageId": "users-page",
+        "stepMappings": [
+          {
+            "stepOrder": 1,
+            "action": "navigate",
+            "valueLiteral": "/users"
+          },
+          {
+            "stepOrder": 2,
+            "action": "fill",
+            "targetLogicalName": "users-filter"
+          }
+        ],
+        "assertionMappings": [
+          {
+            "expectedResultIndex": 0,
+            "assertionType": "value-equals",
+            "targetLogicalName": "users-filter",
+            "expectedValue": "Leanne"
+          }
+        ]
+      },
+      "unresolvedIds": [],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-014",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A15"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-015",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "manual-only",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/*.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "unresolvedIds": [
+        "UNRESOLVED-TC-BF-015"
+      ],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-015",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A16"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-016",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "manual-only",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/*.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "unresolvedIds": [
+        "UNRESOLVED-TC-BF-016"
+      ],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-016",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A17"
+          ]
+        }
+      ]
+    },
+    {
+      "testCaseId": "TC-BF-017",
+      "executorType": "ui",
+      "confidence": 1,
+      "status": "manual-only",
+      "source": [
+        {
+          "type": "code-derived",
+          "reference": "src/routes/*.tsx",
+          "fingerprint": "618423939d4005c64b4fd3538a515d3c03b1887829e28e7c735794906c806de5"
+        }
+      ],
+      "unresolvedIds": [
+        "UNRESOLVED-TC-BF-017"
+      ],
+      "provenance": [
+        {
+          "requirementId": "REQ-BF-017",
+          "contextId": "ctx-d932a365baed433cf3ccc051",
+          "sheet": "Luồng nghiệp vụ",
+          "ranges": [
+            "A1:I18"
+          ],
+          "cells": [
+            "A18"
+          ]
+        }
+      ]
+    }
+  ],
+  "unresolved": [
+    {
+      "id": "UNRESOLVED-TC-BF-006",
+      "testCaseId": "TC-BF-006",
+      "stage": "mapping",
+      "reason": "missing-binding",
+      "description": "Dynamic row/API fixture binding is not available in the source-derived mapping."
+    },
+    {
+      "id": "UNRESOLVED-TC-BF-008",
+      "testCaseId": "TC-BF-008",
+      "stage": "mapping",
+      "reason": "missing-binding",
+      "description": "Dynamic row/API fixture binding is not available in the source-derived mapping."
+    },
+    {
+      "id": "UNRESOLVED-TC-BF-009",
+      "testCaseId": "TC-BF-009",
+      "stage": "mapping",
+      "reason": "missing-binding",
+      "description": "Dynamic row/API fixture binding is not available in the source-derived mapping."
+    },
+    {
+      "id": "UNRESOLVED-TC-BF-015",
+      "testCaseId": "TC-BF-015",
+      "stage": "mapping",
+      "reason": "missing-binding",
+      "description": "Dynamic row/API fixture binding is not available in the source-derived mapping."
+    },
+    {
+      "id": "UNRESOLVED-TC-BF-016",
+      "testCaseId": "TC-BF-016",
+      "stage": "mapping",
+      "reason": "missing-binding",
+      "description": "Dynamic row/API fixture binding is not available in the source-derived mapping."
+    },
+    {
+      "id": "UNRESOLVED-TC-BF-017",
+      "testCaseId": "TC-BF-017",
+      "stage": "mapping",
+      "reason": "missing-binding",
+      "description": "Dynamic row/API fixture binding is not available in the source-derived mapping."
+    }
+  ],
+  "catalogs": {
+    "uiCatalog": {
+      "environmentId": "example-react-local",
+      "pages": [
+        {
+          "id": "home-page",
+          "route": "/",
+          "elements": [
+            {
+              "logicalName": "app-ready",
+              "locator": {
+                "strategy": "test-id",
+                "value": "app-ready"
+              }
+            },
+            {
+              "logicalName": "brand-link",
+              "locator": {
+                "strategy": "test-id",
+                "value": "brand-link"
+              }
+            },
+            {
+              "logicalName": "dashboard-heading",
+              "locator": {
+                "strategy": "test-id",
+                "value": "dashboard-heading"
+              }
+            },
+            {
+              "logicalName": "nav-todos",
+              "locator": {
+                "strategy": "test-id",
+                "value": "nav-todos"
+              }
+            },
+            {
+              "logicalName": "nav-posts",
+              "locator": {
+                "strategy": "test-id",
+                "value": "nav-posts"
+              }
+            },
+            {
+              "logicalName": "nav-users",
+              "locator": {
+                "strategy": "test-id",
+                "value": "nav-users"
+              }
+            }
+          ]
+        },
+        {
+          "id": "todos-page",
+          "route": "/todos",
+          "elements": [
+            {
+              "logicalName": "app-ready",
+              "locator": {
+                "strategy": "test-id",
+                "value": "app-ready"
+              }
+            },
+            {
+              "logicalName": "todos-heading",
+              "locator": {
+                "strategy": "test-id",
+                "value": "todos-heading"
+              }
+            },
+            {
+              "logicalName": "add-todo-input",
+              "locator": {
+                "strategy": "test-id",
+                "value": "add-todo-input"
+              }
+            },
+            {
+              "logicalName": "add-todo-button",
+              "locator": {
+                "strategy": "test-id",
+                "value": "add-todo-button"
+              }
+            },
+            {
+              "logicalName": "add-todo-validation",
+              "locator": {
+                "strategy": "test-id",
+                "value": "add-todo-validation"
+              }
+            },
+            {
+              "logicalName": "todo-search",
+              "locator": {
+                "strategy": "test-id",
+                "value": "todo-search"
+              }
+            }
+          ]
+        },
+        {
+          "id": "posts-page",
+          "route": "/posts",
+          "elements": [
+            {
+              "logicalName": "app-ready",
+              "locator": {
+                "strategy": "test-id",
+                "value": "app-ready"
+              }
+            },
+            {
+              "logicalName": "posts-heading",
+              "locator": {
+                "strategy": "test-id",
+                "value": "posts-heading"
+              }
+            },
+            {
+              "logicalName": "posts-table-view",
+              "locator": {
+                "strategy": "test-id",
+                "value": "posts-table-view"
+              }
+            },
+            {
+              "logicalName": "posts-virtual-view",
+              "locator": {
+                "strategy": "test-id",
+                "value": "posts-virtual-view"
+              }
+            },
+            {
+              "logicalName": "posts-filter",
+              "locator": {
+                "strategy": "test-id",
+                "value": "posts-filter"
+              }
+            }
+          ]
+        },
+        {
+          "id": "users-page",
+          "route": "/users",
+          "elements": [
+            {
+              "logicalName": "app-ready",
+              "locator": {
+                "strategy": "test-id",
+                "value": "app-ready"
+              }
+            },
+            {
+              "logicalName": "users-heading",
+              "locator": {
+                "strategy": "test-id",
+                "value": "users-heading"
+              }
+            },
+            {
+              "logicalName": "users-filter",
+              "locator": {
+                "strategy": "test-id",
+                "value": "users-filter"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "quality": {
+    "testCasesTotal": 17,
+    "ready": 11,
+    "partial": 0,
+    "manual": 6,
+    "unresolved": 6,
+    "uiMappings": 11,
+    "apiMappings": 0,
+    "databaseMappings": 0,
+    "integrationMappings": 0,
+    "stepsTotal": 27,
+    "stepsMapped": 19,
+    "assertionsTotal": 17,
+    "assertionsMapped": 11,
+    "bindingsRequired": 6,
+    "bindingsResolved": 0,
+    "catalogReferenceValidity": 1,
+    "provenanceCoverage": 1
+  }
+}

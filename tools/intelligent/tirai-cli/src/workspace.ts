@@ -37,6 +37,8 @@ export interface WorkspacePaths {
   // New paths for Phase 2
   specsDir: string;
   specsIndexPath: string;
+  tasksDir: string;
+  tasksIndexPath: string;
   outputsDir: string;
   outputsJsonDir: string;
   outputsExcelDir: string;
@@ -92,6 +94,8 @@ export function getWorkspacePaths(projectRoot: string): WorkspacePaths {
     sourcesDir: path.join(workspace, 'sources'),
     specsDir: path.join(workspace, 'specs'),
     specsIndexPath: path.join(workspace, 'specs', 'index.json'),
+    tasksDir: path.join(workspace, 'tasks'),
+    tasksIndexPath: path.join(workspace, 'tasks', 'index.json'),
     outputsDir: path.join(workspace, 'outputs'),
     outputsJsonDir: path.join(workspace, 'outputs', 'json'),
     outputsExcelDir: path.join(workspace, 'outputs', 'excel'),

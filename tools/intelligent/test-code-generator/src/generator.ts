@@ -46,6 +46,7 @@ const SUPPORTED_GENERATOR_ACTIONS = new Set([
   'select',
   'check',
   'uncheck',
+  'blur',
 ]);
 
 const VALUE_REQUIRED_ACTIONS = new Set(['fill', 'type', 'select']);
@@ -88,7 +89,7 @@ function joinBaseUrl(baseUrl: string, target: string): string {
 }
 
 function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\//g, '\\/');
 }
 
 function sanitizeFileName(id: string): string {
@@ -256,6 +257,11 @@ function buildStatements(ctx: CaseContext): string[] {
         continue;
       }
       statements.push(`await page.goto(${JSON.stringify(url)});`);
+      const readyElement = ctx.catalog.elements.get('app-ready')?.element;
+      if (readyElement) {
+        ctx.trustedMappingsUsed++;
+        statements.push(`await expect(${locatorExpression(readyElement.locator)}).toHaveText("ready");`);
+      }
       continue;
     }
 
@@ -285,6 +291,8 @@ function buildStatements(ctx: CaseContext): string[] {
       statements.push(`await ${loc}.check();`);
     } else if (step.action === 'uncheck') {
       statements.push(`await ${loc}.uncheck();`);
+    } else if (step.action === 'blur') {
+      statements.push(`await ${loc}.blur();`);
     }
   }
 
