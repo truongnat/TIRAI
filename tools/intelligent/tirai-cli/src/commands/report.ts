@@ -45,6 +45,8 @@ export async function runReport(opts: ReportOptions): Promise<void> {
   }
 
   const state = loadState(paths);
+  const contractPath = path.join(paths.artifactsDir, 'contract.json');
+  const contract = fs.existsSync(contractPath) ? JSON.parse(fs.readFileSync(contractPath, 'utf8')) as { contractVersion?: number; metadata?: { contractFingerprint?: string }; quality?: { requirements?: number; scenarios?: number; testCases?: number; unresolved?: number; conflicts?: number; provenanceCoverage?: number } } : null;
   const sourcePath = state?.source?.path ? path.relative(paths.root, state.source.path) : 'unknown';
   const testCasesCount = state?.testPlan?.testCaseCount ?? (e2eResult || unitResult ? 1 : 0);
 
@@ -104,6 +106,10 @@ export async function runReport(opts: ReportOptions): Promise<void> {
     '',
     `TestCases:`,
     `  ${testCasesCount}`,
+    '',
+    `Contract:`,
+    `  ${contract?.metadata?.contractFingerprint ?? 'unknown'} (version ${contract?.contractVersion ?? 'unknown'})`,
+    `  Requirements ${contract?.quality?.requirements ?? 'unknown'}, scenarios ${contract?.quality?.scenarios ?? 'unknown'}, unresolved ${contract?.quality?.unresolved ?? 'unknown'}, conflicts ${contract?.quality?.conflicts ?? 'unknown'}`,
     '',
     `E2E:`,
     `  ${e2eSummary ? `${e2eSummary.passed} passed, ${e2eSummary.failed} failed, ${e2eSummary.errors} errors, ${e2eSummary.blocked} blocked (${e2eStatus})` : 'no result'}`,
