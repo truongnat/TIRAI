@@ -218,9 +218,16 @@ describe('tirai CLI', () => {
   it('ingest + generate + run happy path via CLI (no custom orchestration)', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-e2e-'));
     try {
-      // Copy fixture
       fs.cpSync(path.join(REPO, 'tools/intelligent/source-to-testcase/fixtures/order-app'), path.join(tmp, 'order-app'), { recursive: true });
-      fs.copyFileSync(path.join(REPO, 'output/phase-5-4-full-core/source/acceptance.xlsx'), path.join(tmp, 'spec.xlsx'));
+      const ExcelJS = await import('exceljs');
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet('Order Validation');
+      ws.getCell('A1').value = 'Order Validation Rule';
+      ws.getCell('A2').value = 'If quantity is greater than availableStock then reject the order.';
+      ws.getCell('A3').value = 'Inputs: quantity, availableStock';
+      ws.getCell('A4').value = 'Expected: valid=false, reason=INSUFFICIENT_STOCK';
+      ws.getCell('A5').value = 'Otherwise the order is accepted with valid=true.';
+      await wb.xlsx.writeFile(path.join(tmp, 'spec.xlsx'));
       fs.writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({ name: 'test', private: true, type: 'module' }, null, 2));
 
       let r = await run(['init'], tmp);
