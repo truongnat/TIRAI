@@ -21,6 +21,10 @@ export function validateContract(input: unknown): ContractValidationResult {
     errors.push(...validateUniqueIds(contract));
     errors.push(...validateReferences(contract));
     errors.push(...validateQuality(contract));
+    if (typeof contract.metadata?.contractFingerprint === 'string' && contract.metadata.contractFingerprint !== 'pending') {
+      const expected = fingerprintContract(contract as ContractIR);
+      if (contract.metadata.contractFingerprint !== expected) errors.push('/metadata/contractFingerprint does not match contract content');
+    }
   }
   return { valid: errors.length === 0, errors };
 }
