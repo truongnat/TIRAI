@@ -18,7 +18,7 @@ import {
 import { analyzeSemanticContext, type SemanticIR } from 'semantic-analyzer';
 import { buildRequirementsFromSemanticIR, type RequirementIR, type SemanticIRInput } from 'requirement-builder';
 import { buildTestPlanFromRequirementIR, type TestPlanIR, type RequirementIRInput } from 'test-planner';
-import type { AIProvider } from 'ai-provider';
+import { runAIStage, type AIProvider } from 'ai-provider';
 import { writeSemanticContextPackage } from './bridge.js';
 import { scanSecrets } from './secret-scan.js';
 import { compileStructuredDesignDocument } from './structured-design-compiler.js';
@@ -225,7 +225,7 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       if (prop === 'generate') {
         return async (...args: unknown[]) => {
           aiCalls[stage]++;
-          return (target as { generate: (...a: unknown[]) => unknown }).generate(...args);
+          return runAIStage(target, args[0] as Parameters<AIProvider['generate']>[0], { stage, promptVersion: opts.promptVersion });
         };
       }
       return Reflect.get(target, prop, receiver);
