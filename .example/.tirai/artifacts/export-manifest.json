@@ -4,10 +4,34 @@
   "contractFingerprint": "5fe9c028c39bc6e13f9af41864ba278aac80abd1989bfd88073e6b092e0aae9c",
   "artifacts": [
     {
-      "format": "xlsx",
-      "path": ".tirai/outputs/excel/test-cases.xlsx",
-      "contentHash": "ee795ae90785cc17a87f223120b5800c9d60243284a3f78efb3ce32eed3b97a7",
-      "byteLength": 16720
+      "format": "markdown",
+      "path": ".tirai/outputs/markdown/module-lu-ng-nghi-p-v-/test-cases.md",
+      "contentHash": "c196940bfe4dd8d2b49d5499038e914caf7041431a2c0ccf67a0dd61a5fc406c",
+      "byteLength": 302
+    },
+    {
+      "format": "markdown",
+      "path": ".tirai/outputs/markdown/module-thi-t-k-api/test-cases.md",
+      "contentHash": "c196940bfe4dd8d2b49d5499038e914caf7041431a2c0ccf67a0dd61a5fc406c",
+      "byteLength": 302
+    },
+    {
+      "format": "markdown",
+      "path": ".tirai/outputs/markdown/module-thi-t-k-db/test-cases.md",
+      "contentHash": "c196940bfe4dd8d2b49d5499038e914caf7041431a2c0ccf67a0dd61a5fc406c",
+      "byteLength": 302
+    },
+    {
+      "format": "markdown",
+      "path": ".tirai/outputs/markdown/module-thi-t-k-fe/test-cases.md",
+      "contentHash": "4f9159043ab2379a6a9002af4dda9fce43ebaf4e0913b3aca8873d579ce83ee7",
+      "byteLength": 302
+    },
+    {
+      "format": "markdown",
+      "path": ".tirai/outputs/markdown/module-thi-t-k-ui/test-cases.md",
+      "contentHash": "4f9159043ab2379a6a9002af4dda9fce43ebaf4e0913b3aca8873d579ce83ee7",
+      "byteLength": 302
     }
   ]
 }
