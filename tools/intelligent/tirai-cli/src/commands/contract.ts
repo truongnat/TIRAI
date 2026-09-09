@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { createHash } from 'node:crypto';
 import { assertValidContract, finalizeContract, type ContractIR } from 'contract-ir';
 import { requireWorkspace } from '../workspace.js';
 import { CliError } from '../errors.js';
@@ -26,6 +27,17 @@ export async function runContractImport(opts: { cwd: string; inputPath: string; 
   fs.mkdirSync(paths.artifactsDir, { recursive: true });
   const destination = path.join(paths.artifactsDir, 'contract.json');
   fs.writeFileSync(destination, `${JSON.stringify(canonicalContract, null, 2)}\n`, 'utf8');
-  const result = { imported: true, contractPath: destination, contractId: canonicalContract.contractId, fingerprint: canonicalContract.metadata.contractFingerprint };
+  const importAudit = {
+    schemaVersion: '1.0',
+    inputPath,
+    inputSha256: createHash('sha256').update(fs.readFileSync(inputPath)).digest('hex'),
+    importedAt: new Date().toISOString(),
+    contractId: canonicalContract.contractId,
+    inputFingerprint: (contract as { metadata?: { contractFingerprint?: string } }).metadata?.contractFingerprint ?? null,
+    canonicalFingerprint: canonicalContract.metadata.contractFingerprint,
+  };
+  const auditPath = path.join(paths.artifactsDir, 'contract-import.json');
+  fs.writeFileSync(auditPath, `${JSON.stringify(importAudit, null, 2)}\n`, 'utf8');
+  const result = { imported: true, contractPath: destination, auditPath, contractId: canonicalContract.contractId, fingerprint: canonicalContract.metadata.contractFingerprint };
   if (opts.json) console.log(JSON.stringify(result, null, 2)); else console.log(`Contract imported: ${result.contractId}`);
 }
