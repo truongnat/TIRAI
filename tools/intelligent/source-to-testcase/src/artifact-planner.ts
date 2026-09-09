@@ -13,10 +13,14 @@ export function planArtifacts(contract: ContractIR): ArtifactPlan {
     ...contract.testCases.map((node) => node.id),
   ];
   const sourceProvenance = contract.sources.map((source) => ({ sourceId: source.id }));
-  const artifacts = types.map((artifactType) => ({
-    id: `artifact-${artifactType}`, kind: 'artifact' as const, name: `${artifactType} output`, title: `${artifactType} output`, artifactType,
-    path: `outputs/${strategy === 'by-module' ? '{module}/' : ''}${artifactType}`, module: strategy === 'by-module' ? '{module}' : undefined,
-    dependsOn: artifactType === 'report' ? ['artifact-json'] : [], contractIds: contractNodeIds, relatedIds: contractNodeIds, provenance: sourceProvenance, confidence: 1, status: 'planned' as const,
+  const plannedModules = strategy === 'by-module' ? modules : [undefined];
+  const artifacts = plannedModules.flatMap((module) => types.map((artifactType) => {
+    const suffix = module ? `-${module}` : '';
+    return {
+      id: `artifact-${artifactType}${suffix}`, kind: 'artifact' as const, name: `${artifactType} output${module ? ` (${module})` : ''}`, title: `${artifactType} output${module ? ` (${module})` : ''}`, artifactType,
+      path: `outputs/${module ? `${module}/` : ''}${artifactType}`, ...(module ? { module } : {}),
+      dependsOn: artifactType === 'report' ? [`artifact-json${suffix}`] : [], contractIds: contractNodeIds, relatedIds: contractNodeIds, provenance: sourceProvenance, confidence: 1, status: 'planned' as const,
+    };
   }));
   return { schemaVersion: '1.0', contractId: contract.contractId, contractFingerprint: contract.metadata.contractFingerprint, strategy, artifacts };
 }
