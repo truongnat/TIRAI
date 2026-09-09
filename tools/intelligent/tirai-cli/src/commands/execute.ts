@@ -66,8 +66,12 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
   }
   const contractNodes = contract as { apis?: Array<{ id?: string; method?: string; endpoint?: string; relatedIds?: string[] }>; entities?: Array<{ id?: string; title?: string }> } | undefined;
   let executionMapping: { path: string; count: number } | undefined;
-  if (opts.mappingPath) {
-    const mappingPath = path.resolve(opts.cwd, opts.mappingPath);
+  const configuredMappingPath = platform === 'backend'
+    ? platforms.backend!.environments[environment].mappingPath
+    : platform === 'database' ? platforms.database!.environments[environment].mappingPath : undefined;
+  const effectiveMappingPath = opts.mappingPath ?? configuredMappingPath;
+  if (effectiveMappingPath) {
+    const mappingPath = path.resolve(opts.cwd, effectiveMappingPath);
     if (!fs.existsSync(mappingPath)) throw new CliError('CONFIG_INVALID', `Execution mapping not found: ${mappingPath}`);
     let mappingRaw: unknown;
     try { mappingRaw = JSON.parse(fs.readFileSync(mappingPath, 'utf8')); } catch (error) { throw new CliError('CONFIG_INVALID', `Execution mapping is not valid JSON: ${String(error)}`); }

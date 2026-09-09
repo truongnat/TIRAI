@@ -52,6 +52,7 @@ export interface BackendAuthConfig {
 
 export interface BackendEnvironmentConfig {
   baseUrl: string;
+  mappingPath?: string;
   auth?: BackendAuthConfig;
   headers?: Record<string, string>;
   rateLimitPolicy?: { maxRequestsPerMinute: number };
@@ -88,6 +89,7 @@ export interface DatabaseEnvironmentConfig {
   schema?: string;
   readOnly?: boolean;
   allowedTables?: string[];
+  mappingPath?: string;
 }
 
 export interface DatabaseConfig {
