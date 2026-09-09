@@ -1255,8 +1255,8 @@ describe('Fingerprint', () => {
 // ===========================================================================
 
 describe('Prompts', () => {
-  it('59. system prompt version is 1.0', () => {
-    expect(TEST_PLANNER_PROMPT_VERSION).toBe('1.0');
+  it('59. system prompt version is 1.1', () => {
+    expect(TEST_PLANNER_PROMPT_VERSION).toBe('1.1');
   });
 
   it('60. system prompt contains core principles', () => {
@@ -1383,7 +1383,7 @@ describe('Planner – end-to-end pipeline', () => {
 
     const manifest = JSON.parse(fs.readFileSync(path.join(tmpOutput, 'manifest.json'), 'utf-8'));
     expect(manifest.schemaVersion).toBe('1.0');
-    expect(manifest.promptVersion).toBe('1.0');
+    expect(manifest.promptVersion).toBe(TEST_PLANNER_PROMPT_VERSION);
     expect(manifest.stats.requirements).toBe(3);
     expect(manifest.stats.scenarios).toBe(1);
     expect(manifest.stats.testCases).toBe(1);

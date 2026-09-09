@@ -21,6 +21,7 @@ import { buildTestPlan } from '../src/planner.js';
 import { writeStageCheckpoint, writeCheckpointMeta } from '../src/persistence/checkpoint.js';
 import { computeFingerprint } from '../src/fingerprint.js';
 import { loadRequirementIRContent } from '../src/persistence/loader.js';
+import { TEST_PLANNER_PROMPT_VERSION } from '../src/prompts/system.js';
 
 /**
  * Helper: pre-populate checkpoints + write matching fingerprint meta
@@ -37,7 +38,7 @@ function seedCheckpoints(
   },
 ): void {
   const content = loadRequirementIRContent(inputDir);
-  const fp = computeFingerprint(content, '1.0', providerName);
+  const fp = computeFingerprint(content, TEST_PLANNER_PROMPT_VERSION, providerName);
   writeCheckpointMeta(outputDir, fp);
 
   if (opts.coverage) writeStageCheckpoint(outputDir, 'coverage', opts.coverage);

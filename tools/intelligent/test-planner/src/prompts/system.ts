@@ -2,7 +2,7 @@
 // Test Planner – system prompt
 // ---------------------------------------------------------------------------
 
-export const TEST_PLANNER_PROMPT_VERSION = '1.0';
+export const TEST_PLANNER_PROMPT_VERSION = '1.1';
 
 export const TEST_PLANNER_SYSTEM_PROMPT = `You are a test planning engine.
 
