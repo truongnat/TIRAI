@@ -16,6 +16,7 @@ import { runContractValidate, runContractImport } from './commands/contract.js';
 import { runArtifactPlan, runArtifactVerify } from './commands/artifact.js';
 import { runAnalyze } from './commands/analyze.js';
 import { CliError } from './errors.js';
+import { runMappingValidate } from './commands/mapping.js';
 
 const VERSION = '1.0.0';
 
@@ -50,6 +51,7 @@ Commands:
   contract import <file>  Import an externally generated contract (--task <id> supported)
   artifact plan           Plan outputs from canonical contract
   artifact verify         Verify exported artifact checksums
+  mapping validate <file> Validate explicit API/DB execution mapping
   analyze                 Inspect AI input and raw context package
   plan                    Generate canonical test plan from specs + targets
   export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
@@ -145,6 +147,11 @@ async function main(): Promise<void> {
       }
       case 'analyze': {
         await runAnalyze({ cwd, taskId: flags.task as string, json: Boolean(flags.json) });
+        break;
+      }
+      case 'mapping': {
+        if (args[0] === 'validate' && args[1]) await runMappingValidate({ cwd, inputPath: args[1], platform: flags.platform as string, json: Boolean(flags.json) });
+        else throw new CliError('INVALID_TARGET', 'Usage: tirai mapping validate <file> --platform api|database');
         break;
       }
       case 'init': {
