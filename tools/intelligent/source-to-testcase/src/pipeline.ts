@@ -424,14 +424,15 @@ interface SourceIdentityLite {
   contentHash: string;
 }
 
-function buildTestDesignSummary(plan: TestPlanIR): { schemaVersion: '1.0'; testCases: number; byCategory: Record<string, number>; byAutomation: Record<string, number>; requirementsCovered: number; behaviorPaths: number; requiredDimensions: string[]; coveredDimensions: string[]; missingDimensions: string[] } {
+function buildTestDesignSummary(plan: TestPlanIR): { schemaVersion: '1.0'; testCases: number; byCategory: Record<string, number>; byAutomation: Record<string, number>; requirementsCovered: number; behaviorPaths: number; requiredDimensions: string[]; coveredDimensions: string[]; missingDimensions: string[]; dimensionGaps: Array<{ dimension: string; status: 'unresolved'; reason: string }> } {
   const requiredDimensions = ['happy-path', 'negative', 'boundary', 'validation', 'empty', 'loading', 'error', 'permission', 'state-transition', 'retry', 'rollback'];
   const byCategory: Record<string, number> = {};
   const byAutomation: Record<string, number> = {};
   for (const scenario of plan.scenarios) byCategory[scenario.category] = (byCategory[scenario.category] ?? 0) + 1;
   for (const testCase of plan.testCases) { const status = testCase.automation.status; byAutomation[status] = (byAutomation[status] ?? 0) + 1; }
   const coveredDimensions = requiredDimensions.filter((dimension) => (byCategory[dimension] ?? 0) > 0);
-  return { schemaVersion: '1.0', testCases: plan.testCases.length, byCategory, byAutomation, requirementsCovered: plan.quality.requirementsCovered, behaviorPaths: plan.scenarios.length, requiredDimensions, coveredDimensions, missingDimensions: requiredDimensions.filter((dimension) => !coveredDimensions.includes(dimension)) };
+  const missingDimensions = requiredDimensions.filter((dimension) => !coveredDimensions.includes(dimension));
+  return { schemaVersion: '1.0', testCases: plan.testCases.length, byCategory, byAutomation, requirementsCovered: plan.quality.requirementsCovered, behaviorPaths: plan.scenarios.length, requiredDimensions, coveredDimensions, missingDimensions, dimensionGaps: missingDimensions.map((dimension) => ({ dimension, status: 'unresolved' as const, reason: `No ${dimension} scenario was established from the supplied requirements and source evidence.` })) };
 }
 
 function collectSourceCode(root?: string): { root?: string; files: Array<{ path: string; content: string; contentHash: string; truncated?: boolean }> } {

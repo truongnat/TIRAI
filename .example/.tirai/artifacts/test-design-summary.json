@@ -40,5 +40,47 @@
     "permission",
     "retry",
     "rollback"
+  ],
+  "dimensionGaps": [
+    {
+      "dimension": "negative",
+      "status": "unresolved",
+      "reason": "No negative scenario was established from the supplied requirements and source evidence."
+    },
+    {
+      "dimension": "boundary",
+      "status": "unresolved",
+      "reason": "No boundary scenario was established from the supplied requirements and source evidence."
+    },
+    {
+      "dimension": "empty",
+      "status": "unresolved",
+      "reason": "No empty scenario was established from the supplied requirements and source evidence."
+    },
+    {
+      "dimension": "loading",
+      "status": "unresolved",
+      "reason": "No loading scenario was established from the supplied requirements and source evidence."
+    },
+    {
+      "dimension": "error",
+      "status": "unresolved",
+      "reason": "No error scenario was established from the supplied requirements and source evidence."
+    },
+    {
+      "dimension": "permission",
+      "status": "unresolved",
+      "reason": "No permission scenario was established from the supplied requirements and source evidence."
+    },
+    {
+      "dimension": "retry",
+      "status": "unresolved",
+      "reason": "No retry scenario was established from the supplied requirements and source evidence."
+    },
+    {
+      "dimension": "rollback",
+      "status": "unresolved",
+      "reason": "No rollback scenario was established from the supplied requirements and source evidence."
+    }
   ]
 }
