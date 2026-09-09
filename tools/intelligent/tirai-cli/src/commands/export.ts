@@ -61,7 +61,7 @@ export async function runExport(opts: ExportCommandOptions): Promise<void> {
   const testCases = JSON.parse(fs.readFileSync(testCasesPath, 'utf8'));
   const contractPath = `${paths.artifactsDir}/contract.json`;
   if (!fs.existsSync(contractPath)) throw new CliError('CONFIG_INVALID', 'Contract artifact not found. Run `tirai ingest` first.');
-  const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8')) as { contractId?: string; testCases?: unknown[] };
+  const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8')) as { contractId?: string; testCases?: unknown[]; modules?: Array<{ id: string; title?: string; relatedIds?: string[] }> };
   const exportedCases = Array.isArray(testCases) ? testCases : (testCases as { testCases?: unknown[] }).testCases ?? [];
   if (!contract.contractId || !Array.isArray(contract.testCases) || contract.testCases.length !== exportedCases.length) {
     throw new CliError('CONFIG_INVALID', 'Contract and export artifacts are inconsistent. Re-run `tirai ingest`.');
@@ -87,12 +87,16 @@ export async function runExport(opts: ExportCommandOptions): Promise<void> {
     const outDir = opts.outDir
       ? `${opts.outDir}/${fmt}`
       : paths[formatDirMap[fmt]];
-    const artifact = await exporter.export({
-      testPlan,
-      testCases,
-      options: { outDir, contractFingerprint: (contract as { metadata?: { contractFingerprint?: string } }).metadata?.contractFingerprint, contractVersion: (contract as { contractVersion?: number }).contractVersion },
-    });
-    artifacts.push(artifact);
+    const modules: Array<{ id: string; title?: string; relatedIds?: string[] } | undefined> = fmt === 'markdown' && (contract.modules?.length ?? 0) > 1 ? (contract.modules ?? []) : [undefined];
+    for (const module of modules) {
+      const selected = module ? exportedCases.filter((testCase) => (module.relatedIds ?? []).includes((testCase as { id?: string }).id ?? '')) : exportedCases;
+      const moduleDir = module ? `${outDir}/${module.id}` : outDir;
+      artifacts.push(await exporter.export({
+        testPlan,
+        testCases: selected as typeof testCases,
+        options: { outDir: moduleDir, contractFingerprint: (contract as { metadata?: { contractFingerprint?: string } }).metadata?.contractFingerprint, contractVersion: (contract as { contractVersion?: number }).contractVersion },
+      }));
+    }
   }
 
   const exportManifest = {
