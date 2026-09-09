@@ -144,7 +144,7 @@ async function main(): Promise<void> {
         break;
       }
       case 'analyze': {
-        await runAnalyze({ cwd, json: Boolean(flags.json) });
+        await runAnalyze({ cwd, taskId: flags.task as string, json: Boolean(flags.json) });
         break;
       }
       case 'init': {
