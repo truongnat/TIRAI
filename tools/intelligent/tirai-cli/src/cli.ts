@@ -281,6 +281,7 @@ async function main(): Promise<void> {
           taskId: flags.task as string,
           testCaseId: flags['test-case'] as string,
           module: flags.module as string,
+          mappingPath: flags.mapping as string,
           json: Boolean(flags.json),
         });
         break;
