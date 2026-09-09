@@ -105,7 +105,16 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
       ? (contractNodes?.apis ?? []).map((api) => ({ id: api.id, kind: 'api', method: api.method, endpoint: api.endpoint, relatedIds: api.relatedIds ?? [], status: api.method && api.endpoint ? 'ready' : 'blocked', reason: api.method && api.endpoint ? undefined : 'Contract API node is missing method or endpoint.' }))
       : (contractNodes?.entities ?? []).map((entity) => ({ id: entity.id, kind: 'database', entity: entity.title, status: 'blocked', reason: 'Database query mapping and read-only approval are required.' }));
     const planPath = path.join(resultDir, `${platform}-preparation-plan.json`);
-    fs.writeFileSync(planPath, JSON.stringify({ schemaVersion: '1.0', contract: contract ? { id: contract.contractId, fingerprint: contract.metadata?.contractFingerprint } : null, platform, environment, operations: plan }, null, 2), 'utf8');
+    fs.writeFileSync(planPath, JSON.stringify({
+      schemaVersion: '1.0',
+      contract: contract ? { id: contract.contractId, fingerprint: contract.metadata?.contractFingerprint } : null,
+      platform,
+      environment,
+      context: contract && (contract as { executionContext?: unknown }).executionContext
+        ? (contract as { executionContext: unknown }).executionContext
+        : { status: 'missing', reason: 'Contract has no executionContext; external mapping and approval are required.' },
+      operations: plan,
+    }, null, 2), 'utf8');
   }
   const resultPath = `${resultDir}/execute-${platform}-${environment}.json`;
   fs.writeFileSync(resultPath, JSON.stringify({
