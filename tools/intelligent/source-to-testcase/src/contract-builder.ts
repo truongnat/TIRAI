@@ -99,6 +99,7 @@ export function buildContractIR(input: {
     .map((need) => ({ testCase, need })));
   const apis = [...new Map(apiNeeds.map(({ testCase, need }, index) => {
     const key = need.description.trim().toLowerCase();
+    const parsedApi = parseApiDescription(need.description);
     return [`api-${key || index}`, {
       id: `api-${key ? key.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) : index}`,
       kind: 'api' as const,
@@ -107,8 +108,8 @@ export function buildContractIR(input: {
       relatedIds: [testCase.id, ...testCase.requirementIds],
       provenance: nodeProvenance(need.provenance),
       confidence: 0.5,
-      method: 'UNKNOWN',
-      endpoint: need.description,
+      method: parsedApi?.method ?? 'UNKNOWN',
+      endpoint: parsedApi?.endpoint ?? need.description,
       errorResponses: [],
     }];
   })).values()];
@@ -187,6 +188,11 @@ export function buildContractIR(input: {
   const finalized = finalizeContract(contract);
   assertValidContract(finalized);
   return finalized;
+}
+
+function parseApiDescription(description: string): { method: string; endpoint: string } | undefined {
+  const match = description.trim().match(/^(GET|POST|PUT|PATCH|DELETE)\s+(https?:\/\/[^\s]+|\/[^\s]+)/i);
+  return match ? { method: match[1].toUpperCase(), endpoint: match[2] } : undefined;
 }
 
 function sourceKind(kind: string): ContractIR['sources'][number]['kind'] {
