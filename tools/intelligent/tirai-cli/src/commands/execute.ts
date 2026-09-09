@@ -5,6 +5,7 @@
 // Wires platform config to the appropriate executor.
 
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { requireWorkspace } from '../workspace.js';
 import { loadConfig } from '../config.js';
 import { updateState } from '../state.js';
@@ -54,6 +55,13 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
     return (!opts.testCaseId || value.id === opts.testCaseId) && (!opts.module || value.module === opts.module || value.moduleId === opts.module);
   });
   if (testCases.length === 0) throw new CliError('CONFIG_INVALID', 'No test cases match the requested execution filter.');
+  const contractPath = path.join(paths.artifactsDir, 'contract.json');
+  const contract = fs.existsSync(contractPath)
+    ? JSON.parse(fs.readFileSync(contractPath, 'utf8')) as { contractId?: string; contractVersion?: number; metadata?: { contractFingerprint?: string } }
+    : undefined;
+  if (contract && (!contract.contractId || !contract.metadata?.contractFingerprint)) {
+    throw new CliError('CONFIG_INVALID', 'Canonical contract is missing contract ID or fingerprint. Re-run `tirai ingest`.');
+  }
 
   // Execute based on platform
   let result: Record<string, unknown>;
@@ -74,7 +82,14 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
   const resultDir = taskRoot?.results ?? paths.resultsDir;
   fs.mkdirSync(resultDir, { recursive: true });
   const resultPath = `${resultDir}/execute-${platform}-${environment}.json`;
-  fs.writeFileSync(resultPath, JSON.stringify({ schemaVersion: '1.0', platform, environment, selection: { testCaseId: opts.testCaseId, module: opts.module, count: testCases.length }, ...result }, null, 2), 'utf8');
+  fs.writeFileSync(resultPath, JSON.stringify({
+    schemaVersion: '1.0',
+    platform,
+    environment,
+    contract: contract ? { id: contract.contractId, version: contract.contractVersion, fingerprint: contract.metadata?.contractFingerprint } : null,
+    selection: { testCaseId: opts.testCaseId, module: opts.module, count: testCases.length, testCaseIds: testCases.map((testCase) => (testCase as { id?: string }).id).filter(Boolean) },
+    ...result,
+  }, null, 2), 'utf8');
 
   // Update state
   updateState(paths, (s) => ({
