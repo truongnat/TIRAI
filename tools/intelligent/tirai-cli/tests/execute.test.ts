@@ -89,4 +89,14 @@ describe('execute command', () => {
     }
     expect(error).toBeNull();
   });
+
+  it('reruns only the selected canonical test case', async () => {
+    await runTargetAdd({ cwd: tmp, platform: 'web', environment: 'staging', url: 'https://staging.example.com' });
+    const paths = getWorkspacePaths(tmp);
+    fs.writeFileSync(paths.testCasesPath, JSON.stringify([{ id: 'TC-001' }, { id: 'TC-002' }]), 'utf8');
+    await runExecute({ cwd: tmp, platform: 'web', environment: 'staging', testCaseId: 'TC-002' });
+    const result = JSON.parse(fs.readFileSync(path.join(paths.resultsDir, 'execute-web-staging.json'), 'utf8'));
+    expect(result.selection).toMatchObject({ testCaseId: 'TC-002', count: 1 });
+    await expect(runExecute({ cwd: tmp, platform: 'web', environment: 'staging', testCaseId: 'TC-404' })).rejects.toThrow('No test cases match');
+  });
 });
