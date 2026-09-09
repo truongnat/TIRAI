@@ -6,9 +6,12 @@ import { requireWorkspace } from '../workspace.js';
 import { CliError } from '../errors.js';
 import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
 
-export async function runContractValidate(opts: { cwd: string; contractPath?: string; json?: boolean }): Promise<void> {
+export async function runContractValidate(opts: { cwd: string; contractPath?: string; taskId?: string; json?: boolean }): Promise<void> {
   const paths = requireWorkspace(opts.cwd);
-  const contractPath = opts.contractPath ? path.resolve(opts.cwd, opts.contractPath) : path.join(paths.artifactsDir, 'contract.json');
+  const task = opts.taskId ? resolveActiveTask(paths, opts.taskId) : undefined;
+  if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
+  const artifactsDir = task ? taskPaths(paths, task.id).artifacts : paths.artifactsDir;
+  const contractPath = opts.contractPath ? path.resolve(opts.cwd, opts.contractPath) : path.join(artifactsDir, 'contract.json');
   if (!fs.existsSync(contractPath)) throw new CliError('CONFIG_INVALID', `Contract not found: ${contractPath}`, 'Run `tirai ingest` first.');
   let contract: unknown;
   try { contract = JSON.parse(fs.readFileSync(contractPath, 'utf8')); } catch (error) { throw new CliError('CONFIG_INVALID', `Contract is not valid JSON: ${String(error)}`); }
