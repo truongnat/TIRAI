@@ -172,6 +172,18 @@ export interface ContractMetadata {
   promptVersions: string[];
 }
 
+export interface ContractExecutionContext {
+  api?: {
+    resourceMappings: Array<{ id: string; baseUrl?: string; path?: string; approved?: boolean }>;
+    secretRefs?: string[];
+    allowMutations?: boolean;
+  };
+  database?: {
+    queryMappings: Array<{ id: string; query: string; readOnly: boolean; approved: boolean }>;
+    secretRefs?: string[];
+  };
+}
+
 export interface ContractIR {
   schemaVersion: ContractSchemaVersion;
   contractId: string;
@@ -193,4 +205,5 @@ export interface ContractIR {
   conflicts: ContractConflict[];
   quality: ContractQuality;
   metadata: ContractMetadata;
+  executionContext?: ContractExecutionContext;
 }
