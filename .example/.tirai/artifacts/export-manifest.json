@@ -1,36 +1,36 @@
 {
   "schemaVersion": "1.0",
   "contractId": "contract-ced80a0112265711",
-  "contractFingerprint": "5fe9c028c39bc6e13f9af41864ba278aac80abd1989bfd88073e6b092e0aae9c",
+  "contractFingerprint": "22b46c66a9c7eb692e8b577fba382f76130e9b890f2fd0891e184193e00d0880",
   "artifacts": [
     {
       "format": "markdown",
-      "path": ".tirai/outputs/markdown/module-lu-ng-nghi-p-v-/test-cases.md",
-      "contentHash": "c196940bfe4dd8d2b49d5499038e914caf7041431a2c0ccf67a0dd61a5fc406c",
+      "path": ".tirai/outputs/markdown/module-luong-nghiep-vu/test-cases.md",
+      "contentHash": "e26267cb8bc95d8e32d264c47fdb588fbd5fe4265fe72924c58b9f16651ec12b",
       "byteLength": 302
     },
     {
       "format": "markdown",
-      "path": ".tirai/outputs/markdown/module-thi-t-k-api/test-cases.md",
-      "contentHash": "c196940bfe4dd8d2b49d5499038e914caf7041431a2c0ccf67a0dd61a5fc406c",
+      "path": ".tirai/outputs/markdown/module-thiet-ke-api/test-cases.md",
+      "contentHash": "e26267cb8bc95d8e32d264c47fdb588fbd5fe4265fe72924c58b9f16651ec12b",
       "byteLength": 302
     },
     {
       "format": "markdown",
-      "path": ".tirai/outputs/markdown/module-thi-t-k-db/test-cases.md",
-      "contentHash": "c196940bfe4dd8d2b49d5499038e914caf7041431a2c0ccf67a0dd61a5fc406c",
+      "path": ".tirai/outputs/markdown/module-thiet-ke-db/test-cases.md",
+      "contentHash": "7b496dc1fcde622ac98fb7c9f6891288526b31b889caf1051bdc8df3dbe28c23",
       "byteLength": 302
     },
     {
       "format": "markdown",
-      "path": ".tirai/outputs/markdown/module-thi-t-k-fe/test-cases.md",
-      "contentHash": "4f9159043ab2379a6a9002af4dda9fce43ebaf4e0913b3aca8873d579ce83ee7",
+      "path": ".tirai/outputs/markdown/module-thiet-ke-fe/test-cases.md",
+      "contentHash": "7b496dc1fcde622ac98fb7c9f6891288526b31b889caf1051bdc8df3dbe28c23",
       "byteLength": 302
     },
     {
       "format": "markdown",
-      "path": ".tirai/outputs/markdown/module-thi-t-k-ui/test-cases.md",
-      "contentHash": "4f9159043ab2379a6a9002af4dda9fce43ebaf4e0913b3aca8873d579ce83ee7",
+      "path": ".tirai/outputs/markdown/module-thiet-ke-ui/test-cases.md",
+      "contentHash": "7b496dc1fcde622ac98fb7c9f6891288526b31b889caf1051bdc8df3dbe28c23",
       "byteLength": 302
     }
   ]

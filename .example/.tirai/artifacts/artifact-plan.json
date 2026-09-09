@@ -1,17 +1,17 @@
 {
   "schemaVersion": "1.0",
   "contractId": "contract-ced80a0112265711",
-  "contractFingerprint": "5fe9c028c39bc6e13f9af41864ba278aac80abd1989bfd88073e6b092e0aae9c",
+  "contractFingerprint": "22b46c66a9c7eb692e8b577fba382f76130e9b890f2fd0891e184193e00d0880",
   "strategy": "by-module",
   "artifacts": [
     {
-      "id": "artifact-json-module-lu-ng-nghi-p-v-",
+      "id": "artifact-json-module-luong-nghiep-vu",
       "kind": "artifact",
-      "name": "json output (module-lu-ng-nghi-p-v-)",
-      "title": "json output (module-lu-ng-nghi-p-v-)",
+      "name": "json output (module-luong-nghiep-vu)",
+      "title": "json output (module-luong-nghiep-vu)",
       "artifactType": "json",
-      "path": "outputs/module-lu-ng-nghi-p-v-/json",
-      "module": "module-lu-ng-nghi-p-v-",
+      "path": "outputs/module-luong-nghiep-vu/json",
+      "module": "module-luong-nghiep-vu",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -162,13 +162,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-excel-module-lu-ng-nghi-p-v-",
+      "id": "artifact-excel-module-luong-nghiep-vu",
       "kind": "artifact",
-      "name": "excel output (module-lu-ng-nghi-p-v-)",
-      "title": "excel output (module-lu-ng-nghi-p-v-)",
+      "name": "excel output (module-luong-nghiep-vu)",
+      "title": "excel output (module-luong-nghiep-vu)",
       "artifactType": "excel",
-      "path": "outputs/module-lu-ng-nghi-p-v-/excel",
-      "module": "module-lu-ng-nghi-p-v-",
+      "path": "outputs/module-luong-nghiep-vu/excel",
+      "module": "module-luong-nghiep-vu",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -319,13 +319,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-markdown-module-lu-ng-nghi-p-v-",
+      "id": "artifact-markdown-module-luong-nghiep-vu",
       "kind": "artifact",
-      "name": "markdown output (module-lu-ng-nghi-p-v-)",
-      "title": "markdown output (module-lu-ng-nghi-p-v-)",
+      "name": "markdown output (module-luong-nghiep-vu)",
+      "title": "markdown output (module-luong-nghiep-vu)",
       "artifactType": "markdown",
-      "path": "outputs/module-lu-ng-nghi-p-v-/markdown",
-      "module": "module-lu-ng-nghi-p-v-",
+      "path": "outputs/module-luong-nghiep-vu/markdown",
+      "module": "module-luong-nghiep-vu",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -476,13 +476,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-playwright-module-lu-ng-nghi-p-v-",
+      "id": "artifact-playwright-module-luong-nghiep-vu",
       "kind": "artifact",
-      "name": "playwright output (module-lu-ng-nghi-p-v-)",
-      "title": "playwright output (module-lu-ng-nghi-p-v-)",
+      "name": "playwright output (module-luong-nghiep-vu)",
+      "title": "playwright output (module-luong-nghiep-vu)",
       "artifactType": "playwright",
-      "path": "outputs/module-lu-ng-nghi-p-v-/playwright",
-      "module": "module-lu-ng-nghi-p-v-",
+      "path": "outputs/module-luong-nghiep-vu/playwright",
+      "module": "module-luong-nghiep-vu",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -633,13 +633,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-unit-module-lu-ng-nghi-p-v-",
+      "id": "artifact-unit-module-luong-nghiep-vu",
       "kind": "artifact",
-      "name": "unit output (module-lu-ng-nghi-p-v-)",
-      "title": "unit output (module-lu-ng-nghi-p-v-)",
+      "name": "unit output (module-luong-nghiep-vu)",
+      "title": "unit output (module-luong-nghiep-vu)",
       "artifactType": "unit",
-      "path": "outputs/module-lu-ng-nghi-p-v-/unit",
-      "module": "module-lu-ng-nghi-p-v-",
+      "path": "outputs/module-luong-nghiep-vu/unit",
+      "module": "module-luong-nghiep-vu",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -790,13 +790,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-api-module-lu-ng-nghi-p-v-",
+      "id": "artifact-api-module-luong-nghiep-vu",
       "kind": "artifact",
-      "name": "api output (module-lu-ng-nghi-p-v-)",
-      "title": "api output (module-lu-ng-nghi-p-v-)",
+      "name": "api output (module-luong-nghiep-vu)",
+      "title": "api output (module-luong-nghiep-vu)",
       "artifactType": "api",
-      "path": "outputs/module-lu-ng-nghi-p-v-/api",
-      "module": "module-lu-ng-nghi-p-v-",
+      "path": "outputs/module-luong-nghiep-vu/api",
+      "module": "module-luong-nghiep-vu",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -947,13 +947,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-database-module-lu-ng-nghi-p-v-",
+      "id": "artifact-database-module-luong-nghiep-vu",
       "kind": "artifact",
-      "name": "database output (module-lu-ng-nghi-p-v-)",
-      "title": "database output (module-lu-ng-nghi-p-v-)",
+      "name": "database output (module-luong-nghiep-vu)",
+      "title": "database output (module-luong-nghiep-vu)",
       "artifactType": "database",
-      "path": "outputs/module-lu-ng-nghi-p-v-/database",
-      "module": "module-lu-ng-nghi-p-v-",
+      "path": "outputs/module-luong-nghiep-vu/database",
+      "module": "module-luong-nghiep-vu",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -1104,15 +1104,15 @@
       "status": "planned"
     },
     {
-      "id": "artifact-report-module-lu-ng-nghi-p-v-",
+      "id": "artifact-report-module-luong-nghiep-vu",
       "kind": "artifact",
-      "name": "report output (module-lu-ng-nghi-p-v-)",
-      "title": "report output (module-lu-ng-nghi-p-v-)",
+      "name": "report output (module-luong-nghiep-vu)",
+      "title": "report output (module-luong-nghiep-vu)",
       "artifactType": "report",
-      "path": "outputs/module-lu-ng-nghi-p-v-/report",
-      "module": "module-lu-ng-nghi-p-v-",
+      "path": "outputs/module-luong-nghiep-vu/report",
+      "module": "module-luong-nghiep-vu",
       "dependsOn": [
-        "artifact-json-module-lu-ng-nghi-p-v-"
+        "artifact-json-module-luong-nghiep-vu"
       ],
       "contractIds": [
         "REQ-BF-001",
@@ -1263,13 +1263,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-json-module-thi-t-k-api",
+      "id": "artifact-json-module-thiet-ke-api",
       "kind": "artifact",
-      "name": "json output (module-thi-t-k-api)",
-      "title": "json output (module-thi-t-k-api)",
+      "name": "json output (module-thiet-ke-api)",
+      "title": "json output (module-thiet-ke-api)",
       "artifactType": "json",
-      "path": "outputs/module-thi-t-k-api/json",
-      "module": "module-thi-t-k-api",
+      "path": "outputs/module-thiet-ke-api/json",
+      "module": "module-thiet-ke-api",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -1420,13 +1420,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-excel-module-thi-t-k-api",
+      "id": "artifact-excel-module-thiet-ke-api",
       "kind": "artifact",
-      "name": "excel output (module-thi-t-k-api)",
-      "title": "excel output (module-thi-t-k-api)",
+      "name": "excel output (module-thiet-ke-api)",
+      "title": "excel output (module-thiet-ke-api)",
       "artifactType": "excel",
-      "path": "outputs/module-thi-t-k-api/excel",
-      "module": "module-thi-t-k-api",
+      "path": "outputs/module-thiet-ke-api/excel",
+      "module": "module-thiet-ke-api",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -1577,13 +1577,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-markdown-module-thi-t-k-api",
+      "id": "artifact-markdown-module-thiet-ke-api",
       "kind": "artifact",
-      "name": "markdown output (module-thi-t-k-api)",
-      "title": "markdown output (module-thi-t-k-api)",
+      "name": "markdown output (module-thiet-ke-api)",
+      "title": "markdown output (module-thiet-ke-api)",
       "artifactType": "markdown",
-      "path": "outputs/module-thi-t-k-api/markdown",
-      "module": "module-thi-t-k-api",
+      "path": "outputs/module-thiet-ke-api/markdown",
+      "module": "module-thiet-ke-api",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -1734,13 +1734,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-playwright-module-thi-t-k-api",
+      "id": "artifact-playwright-module-thiet-ke-api",
       "kind": "artifact",
-      "name": "playwright output (module-thi-t-k-api)",
-      "title": "playwright output (module-thi-t-k-api)",
+      "name": "playwright output (module-thiet-ke-api)",
+      "title": "playwright output (module-thiet-ke-api)",
       "artifactType": "playwright",
-      "path": "outputs/module-thi-t-k-api/playwright",
-      "module": "module-thi-t-k-api",
+      "path": "outputs/module-thiet-ke-api/playwright",
+      "module": "module-thiet-ke-api",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -1891,13 +1891,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-unit-module-thi-t-k-api",
+      "id": "artifact-unit-module-thiet-ke-api",
       "kind": "artifact",
-      "name": "unit output (module-thi-t-k-api)",
-      "title": "unit output (module-thi-t-k-api)",
+      "name": "unit output (module-thiet-ke-api)",
+      "title": "unit output (module-thiet-ke-api)",
       "artifactType": "unit",
-      "path": "outputs/module-thi-t-k-api/unit",
-      "module": "module-thi-t-k-api",
+      "path": "outputs/module-thiet-ke-api/unit",
+      "module": "module-thiet-ke-api",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -2048,13 +2048,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-api-module-thi-t-k-api",
+      "id": "artifact-api-module-thiet-ke-api",
       "kind": "artifact",
-      "name": "api output (module-thi-t-k-api)",
-      "title": "api output (module-thi-t-k-api)",
+      "name": "api output (module-thiet-ke-api)",
+      "title": "api output (module-thiet-ke-api)",
       "artifactType": "api",
-      "path": "outputs/module-thi-t-k-api/api",
-      "module": "module-thi-t-k-api",
+      "path": "outputs/module-thiet-ke-api/api",
+      "module": "module-thiet-ke-api",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -2205,13 +2205,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-database-module-thi-t-k-api",
+      "id": "artifact-database-module-thiet-ke-api",
       "kind": "artifact",
-      "name": "database output (module-thi-t-k-api)",
-      "title": "database output (module-thi-t-k-api)",
+      "name": "database output (module-thiet-ke-api)",
+      "title": "database output (module-thiet-ke-api)",
       "artifactType": "database",
-      "path": "outputs/module-thi-t-k-api/database",
-      "module": "module-thi-t-k-api",
+      "path": "outputs/module-thiet-ke-api/database",
+      "module": "module-thiet-ke-api",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -2362,15 +2362,15 @@
       "status": "planned"
     },
     {
-      "id": "artifact-report-module-thi-t-k-api",
+      "id": "artifact-report-module-thiet-ke-api",
       "kind": "artifact",
-      "name": "report output (module-thi-t-k-api)",
-      "title": "report output (module-thi-t-k-api)",
+      "name": "report output (module-thiet-ke-api)",
+      "title": "report output (module-thiet-ke-api)",
       "artifactType": "report",
-      "path": "outputs/module-thi-t-k-api/report",
-      "module": "module-thi-t-k-api",
+      "path": "outputs/module-thiet-ke-api/report",
+      "module": "module-thiet-ke-api",
       "dependsOn": [
-        "artifact-json-module-thi-t-k-api"
+        "artifact-json-module-thiet-ke-api"
       ],
       "contractIds": [
         "REQ-BF-001",
@@ -2521,13 +2521,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-json-module-thi-t-k-db",
+      "id": "artifact-json-module-thiet-ke-db",
       "kind": "artifact",
-      "name": "json output (module-thi-t-k-db)",
-      "title": "json output (module-thi-t-k-db)",
+      "name": "json output (module-thiet-ke-db)",
+      "title": "json output (module-thiet-ke-db)",
       "artifactType": "json",
-      "path": "outputs/module-thi-t-k-db/json",
-      "module": "module-thi-t-k-db",
+      "path": "outputs/module-thiet-ke-db/json",
+      "module": "module-thiet-ke-db",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -2678,13 +2678,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-excel-module-thi-t-k-db",
+      "id": "artifact-excel-module-thiet-ke-db",
       "kind": "artifact",
-      "name": "excel output (module-thi-t-k-db)",
-      "title": "excel output (module-thi-t-k-db)",
+      "name": "excel output (module-thiet-ke-db)",
+      "title": "excel output (module-thiet-ke-db)",
       "artifactType": "excel",
-      "path": "outputs/module-thi-t-k-db/excel",
-      "module": "module-thi-t-k-db",
+      "path": "outputs/module-thiet-ke-db/excel",
+      "module": "module-thiet-ke-db",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -2835,13 +2835,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-markdown-module-thi-t-k-db",
+      "id": "artifact-markdown-module-thiet-ke-db",
       "kind": "artifact",
-      "name": "markdown output (module-thi-t-k-db)",
-      "title": "markdown output (module-thi-t-k-db)",
+      "name": "markdown output (module-thiet-ke-db)",
+      "title": "markdown output (module-thiet-ke-db)",
       "artifactType": "markdown",
-      "path": "outputs/module-thi-t-k-db/markdown",
-      "module": "module-thi-t-k-db",
+      "path": "outputs/module-thiet-ke-db/markdown",
+      "module": "module-thiet-ke-db",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -2992,13 +2992,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-playwright-module-thi-t-k-db",
+      "id": "artifact-playwright-module-thiet-ke-db",
       "kind": "artifact",
-      "name": "playwright output (module-thi-t-k-db)",
-      "title": "playwright output (module-thi-t-k-db)",
+      "name": "playwright output (module-thiet-ke-db)",
+      "title": "playwright output (module-thiet-ke-db)",
       "artifactType": "playwright",
-      "path": "outputs/module-thi-t-k-db/playwright",
-      "module": "module-thi-t-k-db",
+      "path": "outputs/module-thiet-ke-db/playwright",
+      "module": "module-thiet-ke-db",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -3149,13 +3149,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-unit-module-thi-t-k-db",
+      "id": "artifact-unit-module-thiet-ke-db",
       "kind": "artifact",
-      "name": "unit output (module-thi-t-k-db)",
-      "title": "unit output (module-thi-t-k-db)",
+      "name": "unit output (module-thiet-ke-db)",
+      "title": "unit output (module-thiet-ke-db)",
       "artifactType": "unit",
-      "path": "outputs/module-thi-t-k-db/unit",
-      "module": "module-thi-t-k-db",
+      "path": "outputs/module-thiet-ke-db/unit",
+      "module": "module-thiet-ke-db",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -3306,13 +3306,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-api-module-thi-t-k-db",
+      "id": "artifact-api-module-thiet-ke-db",
       "kind": "artifact",
-      "name": "api output (module-thi-t-k-db)",
-      "title": "api output (module-thi-t-k-db)",
+      "name": "api output (module-thiet-ke-db)",
+      "title": "api output (module-thiet-ke-db)",
       "artifactType": "api",
-      "path": "outputs/module-thi-t-k-db/api",
-      "module": "module-thi-t-k-db",
+      "path": "outputs/module-thiet-ke-db/api",
+      "module": "module-thiet-ke-db",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -3463,13 +3463,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-database-module-thi-t-k-db",
+      "id": "artifact-database-module-thiet-ke-db",
       "kind": "artifact",
-      "name": "database output (module-thi-t-k-db)",
-      "title": "database output (module-thi-t-k-db)",
+      "name": "database output (module-thiet-ke-db)",
+      "title": "database output (module-thiet-ke-db)",
       "artifactType": "database",
-      "path": "outputs/module-thi-t-k-db/database",
-      "module": "module-thi-t-k-db",
+      "path": "outputs/module-thiet-ke-db/database",
+      "module": "module-thiet-ke-db",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -3620,15 +3620,15 @@
       "status": "planned"
     },
     {
-      "id": "artifact-report-module-thi-t-k-db",
+      "id": "artifact-report-module-thiet-ke-db",
       "kind": "artifact",
-      "name": "report output (module-thi-t-k-db)",
-      "title": "report output (module-thi-t-k-db)",
+      "name": "report output (module-thiet-ke-db)",
+      "title": "report output (module-thiet-ke-db)",
       "artifactType": "report",
-      "path": "outputs/module-thi-t-k-db/report",
-      "module": "module-thi-t-k-db",
+      "path": "outputs/module-thiet-ke-db/report",
+      "module": "module-thiet-ke-db",
       "dependsOn": [
-        "artifact-json-module-thi-t-k-db"
+        "artifact-json-module-thiet-ke-db"
       ],
       "contractIds": [
         "REQ-BF-001",
@@ -3779,13 +3779,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-json-module-thi-t-k-fe",
+      "id": "artifact-json-module-thiet-ke-fe",
       "kind": "artifact",
-      "name": "json output (module-thi-t-k-fe)",
-      "title": "json output (module-thi-t-k-fe)",
+      "name": "json output (module-thiet-ke-fe)",
+      "title": "json output (module-thiet-ke-fe)",
       "artifactType": "json",
-      "path": "outputs/module-thi-t-k-fe/json",
-      "module": "module-thi-t-k-fe",
+      "path": "outputs/module-thiet-ke-fe/json",
+      "module": "module-thiet-ke-fe",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -3936,13 +3936,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-excel-module-thi-t-k-fe",
+      "id": "artifact-excel-module-thiet-ke-fe",
       "kind": "artifact",
-      "name": "excel output (module-thi-t-k-fe)",
-      "title": "excel output (module-thi-t-k-fe)",
+      "name": "excel output (module-thiet-ke-fe)",
+      "title": "excel output (module-thiet-ke-fe)",
       "artifactType": "excel",
-      "path": "outputs/module-thi-t-k-fe/excel",
-      "module": "module-thi-t-k-fe",
+      "path": "outputs/module-thiet-ke-fe/excel",
+      "module": "module-thiet-ke-fe",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -4093,13 +4093,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-markdown-module-thi-t-k-fe",
+      "id": "artifact-markdown-module-thiet-ke-fe",
       "kind": "artifact",
-      "name": "markdown output (module-thi-t-k-fe)",
-      "title": "markdown output (module-thi-t-k-fe)",
+      "name": "markdown output (module-thiet-ke-fe)",
+      "title": "markdown output (module-thiet-ke-fe)",
       "artifactType": "markdown",
-      "path": "outputs/module-thi-t-k-fe/markdown",
-      "module": "module-thi-t-k-fe",
+      "path": "outputs/module-thiet-ke-fe/markdown",
+      "module": "module-thiet-ke-fe",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -4250,13 +4250,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-playwright-module-thi-t-k-fe",
+      "id": "artifact-playwright-module-thiet-ke-fe",
       "kind": "artifact",
-      "name": "playwright output (module-thi-t-k-fe)",
-      "title": "playwright output (module-thi-t-k-fe)",
+      "name": "playwright output (module-thiet-ke-fe)",
+      "title": "playwright output (module-thiet-ke-fe)",
       "artifactType": "playwright",
-      "path": "outputs/module-thi-t-k-fe/playwright",
-      "module": "module-thi-t-k-fe",
+      "path": "outputs/module-thiet-ke-fe/playwright",
+      "module": "module-thiet-ke-fe",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -4407,13 +4407,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-unit-module-thi-t-k-fe",
+      "id": "artifact-unit-module-thiet-ke-fe",
       "kind": "artifact",
-      "name": "unit output (module-thi-t-k-fe)",
-      "title": "unit output (module-thi-t-k-fe)",
+      "name": "unit output (module-thiet-ke-fe)",
+      "title": "unit output (module-thiet-ke-fe)",
       "artifactType": "unit",
-      "path": "outputs/module-thi-t-k-fe/unit",
-      "module": "module-thi-t-k-fe",
+      "path": "outputs/module-thiet-ke-fe/unit",
+      "module": "module-thiet-ke-fe",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -4564,13 +4564,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-api-module-thi-t-k-fe",
+      "id": "artifact-api-module-thiet-ke-fe",
       "kind": "artifact",
-      "name": "api output (module-thi-t-k-fe)",
-      "title": "api output (module-thi-t-k-fe)",
+      "name": "api output (module-thiet-ke-fe)",
+      "title": "api output (module-thiet-ke-fe)",
       "artifactType": "api",
-      "path": "outputs/module-thi-t-k-fe/api",
-      "module": "module-thi-t-k-fe",
+      "path": "outputs/module-thiet-ke-fe/api",
+      "module": "module-thiet-ke-fe",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -4721,13 +4721,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-database-module-thi-t-k-fe",
+      "id": "artifact-database-module-thiet-ke-fe",
       "kind": "artifact",
-      "name": "database output (module-thi-t-k-fe)",
-      "title": "database output (module-thi-t-k-fe)",
+      "name": "database output (module-thiet-ke-fe)",
+      "title": "database output (module-thiet-ke-fe)",
       "artifactType": "database",
-      "path": "outputs/module-thi-t-k-fe/database",
-      "module": "module-thi-t-k-fe",
+      "path": "outputs/module-thiet-ke-fe/database",
+      "module": "module-thiet-ke-fe",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -4878,15 +4878,15 @@
       "status": "planned"
     },
     {
-      "id": "artifact-report-module-thi-t-k-fe",
+      "id": "artifact-report-module-thiet-ke-fe",
       "kind": "artifact",
-      "name": "report output (module-thi-t-k-fe)",
-      "title": "report output (module-thi-t-k-fe)",
+      "name": "report output (module-thiet-ke-fe)",
+      "title": "report output (module-thiet-ke-fe)",
       "artifactType": "report",
-      "path": "outputs/module-thi-t-k-fe/report",
-      "module": "module-thi-t-k-fe",
+      "path": "outputs/module-thiet-ke-fe/report",
+      "module": "module-thiet-ke-fe",
       "dependsOn": [
-        "artifact-json-module-thi-t-k-fe"
+        "artifact-json-module-thiet-ke-fe"
       ],
       "contractIds": [
         "REQ-BF-001",
@@ -5037,13 +5037,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-json-module-thi-t-k-ui",
+      "id": "artifact-json-module-thiet-ke-ui",
       "kind": "artifact",
-      "name": "json output (module-thi-t-k-ui)",
-      "title": "json output (module-thi-t-k-ui)",
+      "name": "json output (module-thiet-ke-ui)",
+      "title": "json output (module-thiet-ke-ui)",
       "artifactType": "json",
-      "path": "outputs/module-thi-t-k-ui/json",
-      "module": "module-thi-t-k-ui",
+      "path": "outputs/module-thiet-ke-ui/json",
+      "module": "module-thiet-ke-ui",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -5194,13 +5194,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-excel-module-thi-t-k-ui",
+      "id": "artifact-excel-module-thiet-ke-ui",
       "kind": "artifact",
-      "name": "excel output (module-thi-t-k-ui)",
-      "title": "excel output (module-thi-t-k-ui)",
+      "name": "excel output (module-thiet-ke-ui)",
+      "title": "excel output (module-thiet-ke-ui)",
       "artifactType": "excel",
-      "path": "outputs/module-thi-t-k-ui/excel",
-      "module": "module-thi-t-k-ui",
+      "path": "outputs/module-thiet-ke-ui/excel",
+      "module": "module-thiet-ke-ui",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -5351,13 +5351,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-markdown-module-thi-t-k-ui",
+      "id": "artifact-markdown-module-thiet-ke-ui",
       "kind": "artifact",
-      "name": "markdown output (module-thi-t-k-ui)",
-      "title": "markdown output (module-thi-t-k-ui)",
+      "name": "markdown output (module-thiet-ke-ui)",
+      "title": "markdown output (module-thiet-ke-ui)",
       "artifactType": "markdown",
-      "path": "outputs/module-thi-t-k-ui/markdown",
-      "module": "module-thi-t-k-ui",
+      "path": "outputs/module-thiet-ke-ui/markdown",
+      "module": "module-thiet-ke-ui",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -5508,13 +5508,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-playwright-module-thi-t-k-ui",
+      "id": "artifact-playwright-module-thiet-ke-ui",
       "kind": "artifact",
-      "name": "playwright output (module-thi-t-k-ui)",
-      "title": "playwright output (module-thi-t-k-ui)",
+      "name": "playwright output (module-thiet-ke-ui)",
+      "title": "playwright output (module-thiet-ke-ui)",
       "artifactType": "playwright",
-      "path": "outputs/module-thi-t-k-ui/playwright",
-      "module": "module-thi-t-k-ui",
+      "path": "outputs/module-thiet-ke-ui/playwright",
+      "module": "module-thiet-ke-ui",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -5665,13 +5665,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-unit-module-thi-t-k-ui",
+      "id": "artifact-unit-module-thiet-ke-ui",
       "kind": "artifact",
-      "name": "unit output (module-thi-t-k-ui)",
-      "title": "unit output (module-thi-t-k-ui)",
+      "name": "unit output (module-thiet-ke-ui)",
+      "title": "unit output (module-thiet-ke-ui)",
       "artifactType": "unit",
-      "path": "outputs/module-thi-t-k-ui/unit",
-      "module": "module-thi-t-k-ui",
+      "path": "outputs/module-thiet-ke-ui/unit",
+      "module": "module-thiet-ke-ui",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -5822,13 +5822,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-api-module-thi-t-k-ui",
+      "id": "artifact-api-module-thiet-ke-ui",
       "kind": "artifact",
-      "name": "api output (module-thi-t-k-ui)",
-      "title": "api output (module-thi-t-k-ui)",
+      "name": "api output (module-thiet-ke-ui)",
+      "title": "api output (module-thiet-ke-ui)",
       "artifactType": "api",
-      "path": "outputs/module-thi-t-k-ui/api",
-      "module": "module-thi-t-k-ui",
+      "path": "outputs/module-thiet-ke-ui/api",
+      "module": "module-thiet-ke-ui",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -5979,13 +5979,13 @@
       "status": "planned"
     },
     {
-      "id": "artifact-database-module-thi-t-k-ui",
+      "id": "artifact-database-module-thiet-ke-ui",
       "kind": "artifact",
-      "name": "database output (module-thi-t-k-ui)",
-      "title": "database output (module-thi-t-k-ui)",
+      "name": "database output (module-thiet-ke-ui)",
+      "title": "database output (module-thiet-ke-ui)",
       "artifactType": "database",
-      "path": "outputs/module-thi-t-k-ui/database",
-      "module": "module-thi-t-k-ui",
+      "path": "outputs/module-thiet-ke-ui/database",
+      "module": "module-thiet-ke-ui",
       "dependsOn": [],
       "contractIds": [
         "REQ-BF-001",
@@ -6136,15 +6136,15 @@
       "status": "planned"
     },
     {
-      "id": "artifact-report-module-thi-t-k-ui",
+      "id": "artifact-report-module-thiet-ke-ui",
       "kind": "artifact",
-      "name": "report output (module-thi-t-k-ui)",
-      "title": "report output (module-thi-t-k-ui)",
+      "name": "report output (module-thiet-ke-ui)",
+      "title": "report output (module-thiet-ke-ui)",
       "artifactType": "report",
-      "path": "outputs/module-thi-t-k-ui/report",
-      "module": "module-thi-t-k-ui",
+      "path": "outputs/module-thiet-ke-ui/report",
+      "module": "module-thiet-ke-ui",
       "dependsOn": [
-        "artifact-json-module-thi-t-k-ui"
+        "artifact-json-module-thiet-ke-ui"
       ],
       "contractIds": [
         "REQ-BF-001",
