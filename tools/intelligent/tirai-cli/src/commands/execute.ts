@@ -11,6 +11,7 @@ import { loadConfig } from '../config.js';
 import { updateState } from '../state.js';
 import { CliError } from '../errors.js';
 import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
+import { validateMappingItems } from './mapping.js';
 
 export interface ExecuteOptions {
   cwd: string;
@@ -72,6 +73,8 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
     try { mappingRaw = JSON.parse(fs.readFileSync(mappingPath, 'utf8')); } catch (error) { throw new CliError('CONFIG_INVALID', `Execution mapping is not valid JSON: ${String(error)}`); }
     const mappings = Array.isArray(mappingRaw) ? mappingRaw : (mappingRaw as { mappings?: unknown[] }).mappings;
     if (!Array.isArray(mappings) || mappings.length === 0) throw new CliError('CONFIG_INVALID', 'Execution mapping must contain a non-empty mappings array.');
+    const mappingErrors = validateMappingItems(mappings, platform === 'backend' ? 'api' : 'database');
+    if (mappingErrors.length > 0) throw new CliError('CONFIG_INVALID', mappingErrors.join('; '));
     executionMapping = { path: path.relative(paths.root, mappingPath), count: mappings.length };
   }
 
