@@ -94,6 +94,24 @@ export function buildContractIR(input: {
     cleanup: testCase.cleanup.map((item) => item.description),
     automation: testCase.automation.status,
   }));
+  const apiNeeds = testPlanIR.testCases.flatMap((testCase) => testCase.dataNeeds
+    .filter((need) => need.type === 'external-response')
+    .map((need) => ({ testCase, need })));
+  const apis = [...new Map(apiNeeds.map(({ testCase, need }, index) => {
+    const key = need.description.trim().toLowerCase();
+    return [`api-${key || index}`, {
+      id: `api-${key ? key.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) : index}`,
+      kind: 'api' as const,
+      title: need.description,
+      description: `API requirement referenced by ${testCase.id}.`,
+      relatedIds: [testCase.id, ...testCase.requirementIds],
+      provenance: nodeProvenance(need.provenance),
+      confidence: 0.5,
+      method: 'UNKNOWN',
+      endpoint: need.description,
+      errorResponses: [],
+    }];
+  })).values()];
 
   const rawContexts = document.contexts.map((context) => ({
     id: context.id,
@@ -132,7 +150,7 @@ export function buildContractIR(input: {
     requirements,
     businessFlows,
     ui: [],
-    apis: [],
+    apis,
     entities: semanticIR.entities.map((entity) => ({ id: entity.id, kind: 'entity' as const, title: entity.name, description: entity.description, relatedIds: [], provenance: nodeProvenance(entity.provenance), confidence: entity.confidence, attributes: (entity.attributes ?? []).map((attribute) => ({ name: attribute.name, ...(attribute.dataType ? { dataType: attribute.dataType } : {}), constraints: [] })) })),
     modules,
     scenarios,
