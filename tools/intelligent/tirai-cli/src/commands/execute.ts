@@ -20,6 +20,7 @@ export interface ExecuteOptions {
   taskId?: string;
   testCaseId?: string;
   module?: string;
+  mappingPath?: string;
 }
 
 export async function runExecute(opts: ExecuteOptions): Promise<void> {
@@ -63,6 +64,16 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
     throw new CliError('CONFIG_INVALID', 'Canonical contract is missing contract ID or fingerprint. Re-run `tirai ingest`.');
   }
   const contractNodes = contract as { apis?: Array<{ id?: string; method?: string; endpoint?: string; relatedIds?: string[] }>; entities?: Array<{ id?: string; title?: string }> } | undefined;
+  let executionMapping: { path: string; count: number } | undefined;
+  if (opts.mappingPath) {
+    const mappingPath = path.resolve(opts.cwd, opts.mappingPath);
+    if (!fs.existsSync(mappingPath)) throw new CliError('CONFIG_INVALID', `Execution mapping not found: ${mappingPath}`);
+    let mappingRaw: unknown;
+    try { mappingRaw = JSON.parse(fs.readFileSync(mappingPath, 'utf8')); } catch (error) { throw new CliError('CONFIG_INVALID', `Execution mapping is not valid JSON: ${String(error)}`); }
+    const mappings = Array.isArray(mappingRaw) ? mappingRaw : (mappingRaw as { mappings?: unknown[] }).mappings;
+    if (!Array.isArray(mappings) || mappings.length === 0) throw new CliError('CONFIG_INVALID', 'Execution mapping must contain a non-empty mappings array.');
+    executionMapping = { path: path.relative(paths.root, mappingPath), count: mappings.length };
+  }
 
   // Execute based on platform
   let result: Record<string, unknown>;
@@ -96,6 +107,7 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
     environment,
     contract: contract ? { id: contract.contractId, version: contract.contractVersion, fingerprint: contract.metadata?.contractFingerprint } : null,
     selection: { testCaseId: opts.testCaseId, module: opts.module, count: testCases.length, testCaseIds: testCases.map((testCase) => (testCase as { id?: string }).id).filter(Boolean) },
+    executionMapping,
     ...result,
   }, null, 2), 'utf8');
 
