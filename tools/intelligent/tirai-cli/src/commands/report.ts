@@ -46,7 +46,7 @@ export async function runReport(opts: ReportOptions): Promise<void> {
 
   const state = loadState(paths);
   const contractPath = path.join(paths.artifactsDir, 'contract.json');
-  const contract = fs.existsSync(contractPath) ? JSON.parse(fs.readFileSync(contractPath, 'utf8')) as { contractVersion?: number; metadata?: { contractFingerprint?: string }; quality?: { requirements?: number; scenarios?: number; testCases?: number; unresolved?: number; conflicts?: number; provenanceCoverage?: number } } : null;
+  const contract = fs.existsSync(contractPath) ? JSON.parse(fs.readFileSync(contractPath, 'utf8')) as { contractVersion?: number; metadata?: { contractFingerprint?: string }; quality?: { requirements?: number; scenarios?: number; testCases?: number; unresolved?: number; conflicts?: number; provenanceCoverage?: number }; unresolved?: Array<{ id?: string; description?: string; reason?: string }>; conflicts?: Array<{ id?: string; description?: string; type?: string }> } : null;
   const sourcePath = state?.source?.path ? path.relative(paths.root, state.source.path) : 'unknown';
   const testCasesCount = state?.testPlan?.testCaseCount ?? (e2eResult || unitResult ? 1 : 0);
 
@@ -110,6 +110,8 @@ export async function runReport(opts: ReportOptions): Promise<void> {
     `Contract:`,
     `  ${contract?.metadata?.contractFingerprint ?? 'unknown'} (version ${contract?.contractVersion ?? 'unknown'})`,
     `  Requirements ${contract?.quality?.requirements ?? 'unknown'}, scenarios ${contract?.quality?.scenarios ?? 'unknown'}, unresolved ${contract?.quality?.unresolved ?? 'unknown'}, conflicts ${contract?.quality?.conflicts ?? 'unknown'}`,
+    ...(contract?.unresolved?.length ? ['', 'Unresolved gaps:', ...contract.unresolved.map((item) => `  - ${item.id ?? 'unknown'}: ${item.description ?? item.reason ?? 'unspecified'}`)] : []),
+    ...(contract?.conflicts?.length ? ['', 'Conflicts:', ...contract.conflicts.map((item) => `  - ${item.id ?? 'unknown'} [${item.type ?? 'unknown'}]: ${item.description ?? 'unspecified'}`)] : []),
     '',
     `E2E:`,
     `  ${e2eSummary ? `${e2eSummary.passed} passed, ${e2eSummary.failed} failed, ${e2eSummary.errors} errors, ${e2eSummary.blocked} blocked (${e2eStatus})` : 'no result'}`,
@@ -129,7 +131,7 @@ export async function runReport(opts: ReportOptions): Promise<void> {
     '> Generated from canonical TestRunResultIR. Not the source of truth.',
   ];
   fs.writeFileSync(latestPath, lines.join('\n'), 'utf8');
-  const report = { schemaVersion: '1.0', generatedFrom: 'TestRunResultIR', source: sourcePath, testCases: testCasesCount, contract: contract ? { fingerprint: contract.metadata?.contractFingerprint, version: contract.contractVersion, quality: contract.quality } : null, e2e: { status: e2eStatus, summary: e2eSummary }, unit: { status: unitStatus, summary: unitSummary }, adapters: adapterResults, overall };
+  const report = { schemaVersion: '1.0', generatedFrom: 'TestRunResultIR', source: sourcePath, testCases: testCasesCount, contract: contract ? { fingerprint: contract.metadata?.contractFingerprint, version: contract.contractVersion, quality: contract.quality, unresolved: contract.unresolved ?? [], conflicts: contract.conflicts ?? [] } : null, e2e: { status: e2eStatus, summary: e2eSummary }, unit: { status: unitStatus, summary: unitSummary }, adapters: adapterResults, overall };
   fs.writeFileSync(path.join(paths.reportsDir, 'report.json'), JSON.stringify(report, null, 2), 'utf8');
   const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
   fs.writeFileSync(path.join(paths.reportsDir, 'report.html'), `<!doctype html><html><head><meta charset="utf-8"><title>TIRAI report</title></head><body><h1>TIRAI run report</h1><p><strong>Result:</strong> ${escapeHtml(overall)}</p><p><strong>Source:</strong> ${escapeHtml(sourcePath)}</p><pre>${escapeHtml(JSON.stringify(report, null, 2))}</pre></body></html>`, 'utf8');
