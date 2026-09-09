@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "source": "/Users/truongdq/tx/GitHub/TIRAI/.example/.tirai/artifacts/test-plan.json",
+  "scenarios": 17,
+  "testCases": 17,
+  "quality": {
+    "requirementsTotal": 17,
+    "requirementsCovered": 17,
+    "requirementsPartiallyCovered": 0,
+    "requirementsNotCovered": 0,
+    "coverageRate": 1,
+    "scenarios": 17,
+    "testCases": 17,
+    "positiveCases": 6,
+    "negativeCases": 0,
+    "boundaryCases": 0,
+    "validationCases": 2,
+    "automationReady": 11,
+    "unresolved": 0,
+    "provenanceCoverage": 1
+  },
+  "metadata": {}
+}
