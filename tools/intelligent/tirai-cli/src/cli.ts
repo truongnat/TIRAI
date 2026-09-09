@@ -47,7 +47,7 @@ Commands:
   task list               List task workspaces
   task show <task-id>     Show a task workspace
   contract validate       Validate canonical contract JSON
-  contract import <file>  Import an externally generated contract
+  contract import <file>  Import an externally generated contract (--task <id> supported)
   artifact plan           Plan outputs from canonical contract
   artifact verify         Verify exported artifact checksums
   analyze                 Inspect AI input and raw context package
@@ -133,7 +133,7 @@ async function main(): Promise<void> {
     switch (cmd) {
       case 'contract': {
         if (args[0] === 'validate') await runContractValidate({ cwd, contractPath: flags.file as string, json: Boolean(flags.json) });
-        else if (args[0] === 'import' && args[1]) await runContractImport({ cwd, inputPath: args[1], json: Boolean(flags.json) });
+        else if (args[0] === 'import' && args[1]) await runContractImport({ cwd, inputPath: args[1], taskId: flags.task as string, json: Boolean(flags.json) });
         else throw new CliError('INVALID_TARGET', 'Usage: tirai contract validate | tirai contract import <file>');
         break;
       }
