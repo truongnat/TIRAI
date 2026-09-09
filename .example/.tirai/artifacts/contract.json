@@ -3021,7 +3021,72 @@
     }
   ],
   "artifacts": [],
-  "unresolved": [],
+  "unresolved": [
+    {
+      "id": "UNRESOLVED-BEHAVIOR-NEGATIVE",
+      "description": "No negative behavior scenario was generated.",
+      "reason": "The supplied requirements and source evidence did not establish this behavior dimension.",
+      "relatedIds": [],
+      "provenance": [],
+      "confidence": 0
+    },
+    {
+      "id": "UNRESOLVED-BEHAVIOR-BOUNDARY",
+      "description": "No boundary behavior scenario was generated.",
+      "reason": "The supplied requirements and source evidence did not establish this behavior dimension.",
+      "relatedIds": [],
+      "provenance": [],
+      "confidence": 0
+    },
+    {
+      "id": "UNRESOLVED-BEHAVIOR-EMPTY",
+      "description": "No empty behavior scenario was generated.",
+      "reason": "The supplied requirements and source evidence did not establish this behavior dimension.",
+      "relatedIds": [],
+      "provenance": [],
+      "confidence": 0
+    },
+    {
+      "id": "UNRESOLVED-BEHAVIOR-LOADING",
+      "description": "No loading behavior scenario was generated.",
+      "reason": "The supplied requirements and source evidence did not establish this behavior dimension.",
+      "relatedIds": [],
+      "provenance": [],
+      "confidence": 0
+    },
+    {
+      "id": "UNRESOLVED-BEHAVIOR-ERROR",
+      "description": "No error behavior scenario was generated.",
+      "reason": "The supplied requirements and source evidence did not establish this behavior dimension.",
+      "relatedIds": [],
+      "provenance": [],
+      "confidence": 0
+    },
+    {
+      "id": "UNRESOLVED-BEHAVIOR-PERMISSION",
+      "description": "No permission behavior scenario was generated.",
+      "reason": "The supplied requirements and source evidence did not establish this behavior dimension.",
+      "relatedIds": [],
+      "provenance": [],
+      "confidence": 0
+    },
+    {
+      "id": "UNRESOLVED-BEHAVIOR-RETRY",
+      "description": "No retry behavior scenario was generated.",
+      "reason": "The supplied requirements and source evidence did not establish this behavior dimension.",
+      "relatedIds": [],
+      "provenance": [],
+      "confidence": 0
+    },
+    {
+      "id": "UNRESOLVED-BEHAVIOR-ROLLBACK",
+      "description": "No rollback behavior scenario was generated.",
+      "reason": "The supplied requirements and source evidence did not establish this behavior dimension.",
+      "relatedIds": [],
+      "provenance": [],
+      "confidence": 0
+    }
+  ],
   "conflicts": [],
   "quality": {
     "requirements": 17,
@@ -3029,13 +3094,13 @@
     "scenarios": 17,
     "testCases": 17,
     "automationReady": 11,
-    "unresolved": 0,
+    "unresolved": 8,
     "conflicts": 0,
     "provenanceCoverage": 1
   },
   "metadata": {
-    "contractFingerprint": "3a1f964edd3648be2c80947fa190e11f9f2352f71d42eb86a33c71eeacd3e843",
-    "generatedAt": "2026-09-09T11:02:15.453Z",
+    "contractFingerprint": "5fe9c028c39bc6e13f9af41864ba278aac80abd1989bfd88073e6b092e0aae9c",
+    "generatedAt": "2026-09-09T11:02:45.810Z",
     "generatorVersion": "contract-ir-1.0.0",
     "aiProvider": "structured-design-compiler",
     "aiModel": "deterministic",
