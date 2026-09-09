@@ -132,7 +132,7 @@ async function main(): Promise<void> {
   try {
     switch (cmd) {
       case 'contract': {
-        if (args[0] === 'validate') await runContractValidate({ cwd, contractPath: flags.file as string, json: Boolean(flags.json) });
+        if (args[0] === 'validate') await runContractValidate({ cwd, contractPath: flags.file as string, taskId: flags.task as string, json: Boolean(flags.json) });
         else if (args[0] === 'import' && args[1]) await runContractImport({ cwd, inputPath: args[1], taskId: flags.task as string, json: Boolean(flags.json) });
         else throw new CliError('INVALID_TARGET', 'Usage: tirai contract validate | tirai contract import <file>');
         break;
