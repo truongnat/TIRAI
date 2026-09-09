@@ -10,6 +10,7 @@
     "check": "npm run check:deterministic && npm run check:intelligent",
     "build:all": "npm run build --workspaces --if-present",
     "test:all": "npm test --workspaces --if-present",
+    "verify:release": "npm run build:all && npm run test:all",
     "typecheck:all": "npm run typecheck --workspaces --if-present",
     "lint:all": "npm run lint --workspaces --if-present"
   },
