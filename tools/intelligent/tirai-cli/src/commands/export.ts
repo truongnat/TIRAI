@@ -87,6 +87,7 @@ export async function runExport(opts: ExportCommandOptions): Promise<void> {
     const outDir = opts.outDir
       ? `${opts.outDir}/${fmt}`
       : paths[formatDirMap[fmt]];
+    if (fmt === 'markdown') fs.rmSync(outDir, { recursive: true, force: true });
     const modules: Array<{ id: string; title?: string; relatedIds?: string[] } | undefined> = fmt === 'markdown' && (contract.modules?.length ?? 0) > 1 ? (contract.modules ?? []) : [undefined];
     for (const module of modules) {
       const selected = module ? exportedCases.filter((testCase) => (module.relatedIds ?? []).includes((testCase as { id?: string }).id ?? '')) : exportedCases;

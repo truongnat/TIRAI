@@ -1494,7 +1494,7 @@
   ],
   "modules": [
     {
-      "id": "module-lu-ng-nghi-p-v-",
+      "id": "module-luong-nghiep-vu",
       "kind": "module",
       "title": "Luồng nghiệp vụ",
       "description": "Module inferred from source context metadata: Luồng nghiệp vụ",
@@ -1529,7 +1529,7 @@
       "state": []
     },
     {
-      "id": "module-thi-t-k-api",
+      "id": "module-thiet-ke-api",
       "kind": "module",
       "title": "Thiết kế API",
       "description": "Module inferred from source context metadata: Thiết kế API",
@@ -1546,7 +1546,7 @@
       "state": []
     },
     {
-      "id": "module-thi-t-k-db",
+      "id": "module-thiet-ke-db",
       "kind": "module",
       "title": "Thiết kế DB",
       "description": "Module inferred from source context metadata: Thiết kế DB",
@@ -1563,7 +1563,7 @@
       "state": []
     },
     {
-      "id": "module-thi-t-k-fe",
+      "id": "module-thiet-ke-fe",
       "kind": "module",
       "title": "Thiết kế FE",
       "description": "Module inferred from source context metadata: Thiết kế FE",
@@ -1580,7 +1580,7 @@
       "state": []
     },
     {
-      "id": "module-thi-t-k-ui",
+      "id": "module-thiet-ke-ui",
       "kind": "module",
       "title": "Thiết kế UI",
       "description": "Module inferred from source context metadata: Thiết kế UI",
@@ -3099,8 +3099,8 @@
     "provenanceCoverage": 1
   },
   "metadata": {
-    "contractFingerprint": "5fe9c028c39bc6e13f9af41864ba278aac80abd1989bfd88073e6b092e0aae9c",
-    "generatedAt": "2026-09-09T11:02:45.810Z",
+    "contractFingerprint": "22b46c66a9c7eb692e8b577fba382f76130e9b890f2fd0891e184193e00d0880",
+    "generatedAt": "2026-09-09T11:05:51.036Z",
     "generatorVersion": "contract-ir-1.0.0",
     "aiProvider": "structured-design-compiler",
     "aiModel": "deterministic",
