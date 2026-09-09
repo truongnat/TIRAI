@@ -51,7 +51,8 @@ export function buildCoveragePrompt(requirements: RequirementIRInput['requiremen
 
   return `Analyze the following requirements and determine what testing strategies are justified for each.
 
-For each requirement, select ONLY the strategies that are supported by the requirement evidence:
+For each requirement, inspect this behavior-dimension matrix and select ONLY strategies supported by evidence. Record an unresolved candidate for a dimension that is relevant but underspecified:
+- happy-path: expected successful behavior
 - positive: The requirement describes expected behavior that should work
 - negative: The requirement describes invalid/failure behavior that should be tested
 - boundary: The requirement contains a measurable constraint with explicit limits
@@ -61,6 +62,10 @@ For each requirement, select ONLY the strategies that are supported by the requi
 - interface: The requirement describes an API or system interface
 - data: The requirement describes data constraints or integrity
 - security: The requirement describes authentication or authorization
+- empty: empty/null/no-result behavior
+- loading: pending/in-progress behavior
+- retry: retry behavior
+- rollback: compensation or rollback behavior
 
 Do NOT assign strategies that are not justified by the requirement evidence.
 If a requirement is not-testable, explain why and suggest unresolved if appropriate.
