@@ -21,12 +21,17 @@ export async function runArtifactPlan(opts: { cwd: string; contractPath?: string
   if (opts.json) console.log(JSON.stringify({ ...plan, path: outputPath }, null, 2)); else console.log(`Artifact plan written: ${path.relative(paths.root, outputPath)} (${plan.strategy})`);
 }
 
-export async function runArtifactVerify(opts: { cwd: string; json?: boolean }): Promise<void> {
+export async function runArtifactVerify(opts: { cwd: string; taskId?: string; json?: boolean }): Promise<void> {
   const paths = requireWorkspace(opts.cwd);
-  const manifestPath = path.join(paths.artifactsDir, 'export-manifest.json');
+  const task = opts.taskId ? resolveActiveTask(paths, opts.taskId) : undefined;
+  if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
+  const artifactRoot = task ? taskPaths(paths, task.id).artifacts : paths.artifactsDir;
+  const manifestPath = path.join(artifactRoot, 'export-manifest.json');
   if (!fs.existsSync(manifestPath)) throw new CliError('CONFIG_INVALID', 'Export manifest not found. Run `tirai export` first.');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as { artifacts?: Array<{ path: string; contentHash: string }> };
   const checks = (manifest.artifacts ?? []).map((artifact) => {
+    // Export manifests always store paths relative to the project root,
+    // including manifests generated inside an isolated task workspace.
     const absolutePath = path.resolve(paths.root, artifact.path);
     const exists = fs.existsSync(absolutePath);
     const actualHash = exists ? createHash('sha256').update(fs.readFileSync(absolutePath)).digest('hex') : undefined;

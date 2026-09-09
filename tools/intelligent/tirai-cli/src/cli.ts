@@ -139,7 +139,7 @@ async function main(): Promise<void> {
       }
       case 'artifact': {
         if (args[0] === 'plan') await runArtifactPlan({ cwd, contractPath: flags.file as string, taskId: flags.task as string, json: Boolean(flags.json) });
-        else if (args[0] === 'verify') await runArtifactVerify({ cwd, json: Boolean(flags.json) });
+        else if (args[0] === 'verify') await runArtifactVerify({ cwd, taskId: flags.task as string, json: Boolean(flags.json) });
         else throw new CliError('INVALID_TARGET', 'Usage: tirai artifact plan | tirai artifact verify');
         break;
       }
