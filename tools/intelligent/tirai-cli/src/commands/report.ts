@@ -18,7 +18,15 @@ export async function runReport(opts: ReportOptions): Promise<void> {
   const task = opts.taskId ? resolveActiveTask(basePaths, opts.taskId) : undefined;
   if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
   const taskRoot = task ? taskPaths(basePaths, task.id) : undefined;
-  const paths = taskRoot ? { ...basePaths, e2eResultPath: path.join(taskRoot.results, 'e2e-run-result-ir.json'), unitResultPath: path.join(taskRoot.results, 'unit-run-result-ir.json'), reportsDir: taskRoot.reports, latestReportPath: path.join(taskRoot.reports, 'latest-summary.md') } : basePaths;
+  const paths = taskRoot ? {
+    ...basePaths,
+    artifactsDir: taskRoot.artifacts,
+    resultsDir: taskRoot.results,
+    e2eResultPath: path.join(taskRoot.results, 'e2e-run-result-ir.json'),
+    unitResultPath: path.join(taskRoot.results, 'unit-run-result-ir.json'),
+    reportsDir: taskRoot.reports,
+    latestReportPath: path.join(taskRoot.reports, 'latest-summary.md'),
+  } : basePaths;
   loadConfig(basePaths); // validates
 
   const hasE2e = fs.existsSync(paths.e2eResultPath);
