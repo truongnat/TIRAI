@@ -5,7 +5,7 @@ import { planArtifacts } from 'source-to-testcase';
 import type { ContractIR } from 'contract-ir';
 import { requireWorkspace } from '../workspace.js';
 import { CliError } from '../errors.js';
-import { resolveActiveTask, taskPaths } from '../tasks.js';
+import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
 
 export async function runArtifactPlan(opts: { cwd: string; contractPath?: string; taskId?: string; json?: boolean }): Promise<void> {
   const paths = requireWorkspace(opts.cwd);
@@ -18,6 +18,7 @@ export async function runArtifactPlan(opts: { cwd: string; contractPath?: string
   const plan = planArtifacts(contract);
   const outputPath = path.join(artifactsDir, 'artifact-plan.json');
   fs.writeFileSync(outputPath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
+  if (task) updateTask(paths, task.id, { artifactManifestPath: path.relative(paths.root, outputPath) });
   if (opts.json) console.log(JSON.stringify({ ...plan, path: outputPath }, null, 2)); else console.log(`Artifact plan written: ${path.relative(paths.root, outputPath)} (${plan.strategy})`);
 }
 
