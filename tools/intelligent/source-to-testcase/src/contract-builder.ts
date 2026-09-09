@@ -116,6 +116,9 @@ export function buildContractIR(input: {
   const provenanceCoverage = traceableNodes.length === 0
     ? 0
     : traceableNodes.filter((node) => node.provenance.length > 0).length / traceableNodes.length;
+  const requiredBehaviorDimensions = ['happy-path', 'negative', 'boundary', 'validation', 'empty', 'loading', 'error', 'permission', 'state-transition', 'retry', 'rollback'];
+  const coveredBehaviorDimensions = new Set<string>(testPlanIR.scenarios.map((scenario) => scenario.category));
+  const behaviorGaps = requiredBehaviorDimensions.filter((dimension) => !coveredBehaviorDimensions.has(dimension));
 
   const contract: ContractIR = {
     schemaVersion: '1.0',
@@ -134,7 +137,12 @@ export function buildContractIR(input: {
     scenarios,
     testCases,
     artifacts: [],
-    unresolved: [...semanticIR.unresolved, ...requirementIR.unresolved, ...testPlanIR.unresolved].map((item, index) => ({ id: item.id || `UNRESOLVED-${index + 1}`, description: item.description, reason: item.reason, relatedIds: [], provenance: nodeProvenance(item.provenance), confidence: 0 })),
+    unresolved: [
+      ...semanticIR.unresolved,
+      ...requirementIR.unresolved,
+      ...testPlanIR.unresolved,
+      ...behaviorGaps.map((dimension) => ({ id: `UNRESOLVED-BEHAVIOR-${dimension.toUpperCase()}`, description: `No ${dimension} behavior scenario was generated.`, reason: 'The supplied requirements and source evidence did not establish this behavior dimension.', provenance: [] })),
+    ].map((item, index) => ({ id: item.id || `UNRESOLVED-${index + 1}`, description: item.description, reason: item.reason, relatedIds: [], provenance: nodeProvenance(item.provenance), confidence: 0 })),
     conflicts: requirementIR.conflicts.map((item) => ({ id: item.id, description: item.description, type: item.type, relatedIds: item.requirementIds, provenance: nodeProvenance(item.provenance), confidence: item.confidence })),
     quality: {
       requirements: requirements.length,
