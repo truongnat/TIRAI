@@ -91,12 +91,7 @@ export function loadConfig(paths: WorkspacePaths): TiraiConfig {
       'Re-run `tirai init` or migrate config.',
     );
   }
-  if (!config.ai || typeof config.ai.provider !== 'string') {
-    throw new CliError('CONFIG_INVALID', 'Config missing ai.provider (fake|groq|deepseek)');
-  }
-  if (config.ai.provider === 'cli' && !config.ai.command) {
-    throw new CliError('CONFIG_INVALID', 'CLI AI provider requires ai.command (use {input} and {output} placeholders).');
-  }
+  validateAIProviderConfig(config.ai);
   if (config.ai.provider === 'groq' || config.ai.provider === 'deepseek') {
     const keyName = config.ai.provider === 'groq' ? 'GROQ_API_KEY' : 'DEEPSEEK_API_KEY';
     if (!process.env[keyName]) {
@@ -116,6 +111,21 @@ export function loadConfig(paths: WorkspacePaths): TiraiConfig {
     }
   }
   return config;
+}
+
+/** Validate the standalone CLI provider's artifact-first command contract. */
+export function validateAIProviderConfig(ai: TiraiConfig['ai']): void {
+  if (!ai || typeof ai.provider !== 'string') {
+    throw new CliError('CONFIG_INVALID', 'Config missing ai.provider (fake|groq|deepseek|cli)');
+  }
+  if (ai.provider === 'cli') {
+    if (!ai.command) {
+      throw new CliError('CONFIG_INVALID', 'CLI AI provider requires ai.command (use {input} and {output} placeholders).');
+    }
+    if (!ai.command.includes('{input}') || !ai.command.includes('{output}')) {
+      throw new CliError('CONFIG_INVALID', 'CLI AI command must include both {input} and {output} placeholders for artifact protocol.');
+    }
+  }
 }
 
 export function validateConfigForIngest(config: TiraiConfig): void {
