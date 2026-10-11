@@ -19,8 +19,10 @@ node tools/intelligent/tirai-cli/dist/cli.js --help
 # Initialize in the web app project
 tirai init
 
-# Configure ai.provider / ai.model in .tirai/config.json and export the provider key
+# In host AI chat, use the installed Skill to select and configure ai.provider first.
+# For Groq or DeepSeek only, export the matching API key:
 export GROQ_API_KEY=...
+# or export DEEPSEEK_API_KEY=...
 
 # Ingest a local Excel, Markdown, or HTML specification
 tirai ingest ./spec.xlsx
@@ -45,11 +47,18 @@ tirai report --json
 
 The runner is black-box and functional UI only. It accepts local/dev/staging environment labels and blocks production-like hostnames; the tester must still verify the exact URL and dedicated test tenant because arbitrary DNS aliases cannot be classified reliably. Assertion failures create local bug-draft candidates; a tester confirms severity and wording. No tracker integration is included.
 
-Run these commands from the TIRAI checkout root to install the Codex-first Skill:
+Install the portable Skill into the host AI assistant that will operate TIRAI. Run the matching copy command from the TIRAI checkout root:
 
 ```bash
+# Codex
 mkdir -p "$HOME/.agents/skills/tirai-web-testing"
 cp skills/tirai-web-testing/SKILL.md "$HOME/.agents/skills/tirai-web-testing/SKILL.md"
+# Claude Code
+mkdir -p "$HOME/.claude/skills/tirai-web-testing"
+cp skills/tirai-web-testing/SKILL.md "$HOME/.claude/skills/tirai-web-testing/SKILL.md"
+# Antigravity CLI
+mkdir -p "$HOME/.gemini/antigravity-cli/skills/tirai-web-testing"
+cp skills/tirai-web-testing/SKILL.md "$HOME/.gemini/antigravity-cli/skills/tirai-web-testing/SKILL.md"
 ```
 
 ## Workspace Layout
@@ -82,7 +91,7 @@ Reviewed test plans, approvals, clarification records, run snapshots, reports, a
 
 ## Configuration
 
-`tirai init` creates `.tirai/config.json` with config version 2 and `ai.provider: "fake"`. Before web execution, set `ai.provider` to a real supported provider (`groq`, `deepseek`, or `cli`) and configure its model/command. Provider credentials stay in environment variables (`GROQ_API_KEY`, `DEEPSEEK_API_KEY`); raw keys never belong in config or test cases. Web execution rejects `fake`.
+`tirai init` creates `.tirai/config.json` with config version 2 and `ai.provider: "fake"`. Configure a real provider before ingestion or web execution. Subscription-capable CLI adapters (`codex`, `claude`, `antigravity`) use each CLI's active saved authentication; confirm it is the intended subscription/account because TIRAI cannot inspect or enforce vendor billing mode. TIRAI never imports or stores those credentials. Direct API providers (`groq`, `deepseek`) require `GROQ_API_KEY` or `DEEPSEEK_API_KEY` in the process environment. The generic `cli` provider requires a command implementing TIRAI's JSON artifact protocol with `{input}` and `{output}` placeholders; it is not a wrapper for arbitrary chat CLIs. Web execution rejects `fake`.
 
 Configure web targets with `tirai target add web <environment> --url <url>`. Optional username/password/token inputs are `env:NAME` references. `local`, `dev`, `development`, or `staging` are the only accepted web environment names; `local` must use localhost. Every run also requires `--confirm-dedicated-test-tenant`.
 
@@ -109,7 +118,7 @@ Generated-code `tirai run` exit codes: `0` all passed, `1` business assertion fa
 - `tirai report [--json]` — show the latest web report or canonical generated-test summary.
 - `tirai generate [--e2e|--unit]` / `tirai run` — optional developer code-generation path.
 
-The Codex-first Skill coordinates clarification, human review, route/case selection, and bug-draft confirmation. Confluence, API, visual, accessibility, and performance testing are outside web-testing v1.
+The `tirai-web-testing` Skill lets a host AI assistant coordinate clarification, human review, route/case selection, execution, and bug-draft confirmation through chat. Confluence, API, visual, accessibility, and performance testing are outside web-testing v1.
 
 ## Notes
 

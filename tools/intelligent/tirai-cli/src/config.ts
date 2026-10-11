@@ -7,11 +7,14 @@ import {
   defaultPlatformConfig,
 } from './platform-config.js';
 
+const AI_PROVIDER_NAMES = ['fake', 'groq', 'deepseek', 'codex', 'claude', 'antigravity', 'cli'] as const;
+const AI_PROVIDER_SET: ReadonlySet<string> = new Set(AI_PROVIDER_NAMES);
+
 export interface TiraiConfig {
   version: number;
   workspaceVersion: number;
   ai: {
-    provider: 'fake' | 'groq' | 'deepseek' | 'cli';
+    provider: (typeof AI_PROVIDER_NAMES)[number];
     model?: string;
     command?: string;
     timeoutMs?: number;
@@ -116,7 +119,10 @@ export function loadConfig(paths: WorkspacePaths): TiraiConfig {
 /** Validate the standalone CLI provider's artifact-first command contract. */
 export function validateAIProviderConfig(ai: TiraiConfig['ai']): void {
   if (!ai || typeof ai.provider !== 'string') {
-    throw new CliError('CONFIG_INVALID', 'Config missing ai.provider (fake|groq|deepseek|cli)');
+    throw new CliError('CONFIG_INVALID', `Config missing ai.provider (${AI_PROVIDER_NAMES.join('|')})`);
+  }
+  if (!AI_PROVIDER_SET.has(ai.provider)) {
+    throw new CliError('CONFIG_INVALID', `Unsupported ai.provider "${ai.provider}"`);
   }
   if (ai.provider === 'cli') {
     if (!ai.command) {

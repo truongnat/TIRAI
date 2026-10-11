@@ -22,7 +22,7 @@ without custom orchestration code, outside the monorepo source tree.
 
 ## Spec-first Web-Testing Pilot
 
-This pilot is separate from the proven generated-code MVP above. The repository now includes a Codex-first Skill and a CLI workflow for human-reviewed, black-box functional UI testing. It is not release-accepted until exercised against a live non-production app.
+This pilot is separate from the proven generated-code MVP above. The repository includes a host-AI Skill and CLI workflow for human-reviewed, black-box functional UI testing. The Skill is designed for tester chat; TIRAI's separate provider setting supports native subscription CLIs (Codex, Claude Code, Antigravity), API-backed providers, and a generic artifact CLI. It is not release-accepted until exercised against a live non-production app.
 
 - Local specifications: Excel, Markdown, and HTML. Confluence is a future provider; v1 requires a local export.
 - Scope: functional UI only, local/dev/staging only, dedicated test tenant, explicit tester approval of routes/cases, and per-run reconfirmation.
