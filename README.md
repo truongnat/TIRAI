@@ -120,36 +120,45 @@ See [`docs/installation.md`](docs/installation.md) for full installation details
 tirai --version
 tirai --help
 
+# from this TIRAI checkout, install the Codex-first Skill
+mkdir -p "$HOME/.agents/skills/tirai-web-testing"
+cp skills/tirai-web-testing/SKILL.md "$HOME/.agents/skills/tirai-web-testing/SKILL.md"
+
 # open your target project
 cd my-project
 
-# initialize the TIRAI workspace
+# initialize a workspace in the app project
 tirai init
 
-# add a specification to the registry
-tirai spec add ./spec.xlsx
+# edit .tirai/config.json: set ai.provider and ai.model to a real supported provider
+# keep the API key in the matching process environment variable
+export GROQ_API_KEY=...
 
-# inspect registered specs
-tirai spec list
-
-# configure target platform
-tirai target add web --environment staging --url https://staging.example.com
-
-# generate canonical test plan
+# ingest a local Excel, Markdown, or HTML specification
+tirai ingest ./spec.xlsx
 tirai plan
 
-# export test cases to multiple formats
-tirai export --format all
+# configure a non-production app target; auth secrets stay in environment variables
+tirai target add web --environment staging --url https://staging.example.com
 
-# execute tests against platform
-tirai execute --platform web --environment staging
+# Choose one session setup if SSO is required:
+# Temporary manual session, consumed after execution:
+# tirai auth login --environment staging
+# Or import a reusable Playwright storageState JSON:
+# tirai auth import --environment staging --file ./storageState.json
 
-# optional: generate Playwright tests (requires E2E mapping)
+# discover same-origin routes, then let the Skill guide tester review/approval
+tirai web discover --environment staging
+
+# execute only reviewed case IDs, with dedicated test tenant confirmation
+tirai execute --platform web --environment staging --test-case TC-1 --confirm-dedicated-test-tenant
+tirai report --json
+
+# optional developer workflows
 tirai generate --target playwright
-
-# optional: generate Vitest tests (requires source mapping)
 tirai generate --target vitest --source-mapping ./unit.json
 ```
+
 
 Provider credentials remain environment variables:
 
@@ -158,6 +167,17 @@ export GROQ_API_KEY=...
 # or
 export DEEPSEEK_API_KEY=...
 ```
+
+### Human-reviewed web testing
+
+The Codex-first `tirai-web-testing` Skill guides testers through specification review, route selection, approved test cases, execution, and bug-report drafts. TIRAI CLI supplies real Playwright browser execution and local run artifacts.
+
+- Web-testing v1 accepts local `.xlsx`/`.xlsm`, `.md`/`.markdown`, and `.html`/`.htm` specifications; Confluence is a future provider.
+- The runner is black-box by default, functional UI only, and accepts only local/dev/staging labels. It blocks production-like hostnames, but the tester must verify the exact URL and dedicated test tenant every run because arbitrary DNS aliases cannot be classified reliably.
+- Ambiguous requirements remain out of execution until the tester answers and reviews a revised case. The original source file is never edited.
+- Assertion mismatches create local bug-draft candidates with expected/observed behavior and sanitized browser evidence. Severity is an AI proposal; the tester confirms before sharing.
+- `.tirai/workflow/runs/` stores per-run spec/case snapshots, JSON/Markdown reports, and sanitized evidence. `.tirai/workflow/runtime/` holds temporary or imported sessions and AI artifacts and is gitignored. Imported sessions remain until `tirai auth clear`; treat the source file and stored session as credentials.
+
 
 TIRAI writes project-owned state under:
 
@@ -183,6 +203,15 @@ TIRAI writes project-owned state under:
 ├── generated/          # Code generation output
 │   ├── e2e/
 │   └── unit/
+├── workflow/
+│   ├── approvals.json
+│   ├── clarifications.json
+│   ├── pending-clarifications.json # unresolved Skill questions
+│   ├── runtime/          # temporary sessions and AI artifacts; gitignored
+│   └── runs/             # per-run snapshots, reports, sanitized evidence
+├── discovery/
+│   └── routes.json
+├── sources/              # ingested source snapshot
 ├── runtime/
 ├── results/
 ├── reports/
@@ -191,7 +220,7 @@ TIRAI writes project-owned state under:
 
 ---
 
-## 🛡️ Trusted mapping boundary
+## 🛡️ Trusted mapping boundary for code generation
 
 TIRAI intentionally does **not** turn an unresolved TestCase into executable project code by guessing.
 
@@ -214,7 +243,7 @@ Mappings are persisted and reviewable:
 .tirai/mappings/unit.json
 ```
 
-When no trusted mapping exists, TIRAI produces a **spec preview artifact** (not a test) showing inputs/expected values for human review. It does not call application code and cannot verify behavior. It will never be reported as a unit test. A trusted `unit.json` mapping, when present, binds the same case to a real source symbol. E2E still requires a trusted mapping; missing, ambiguous, unsupported, or stale E2E/source mappings fail closed instead of inventing selectors or symbols.
+This rule applies to generated-code workflows: without mappings, TIRAI creates a spec preview rather than executable tests. A trusted `unit.json` mapping binds cases to source symbols; generated Playwright E2E requires reviewed mappings. The separate black-box web-testing runner does not inspect source by default; it uses same-origin route selection, human-approved cases, and runtime UI grounding.
 
 ---
 
@@ -231,14 +260,19 @@ tirai spec list
 tirai spec inspect <spec-id>
 
 tirai target list
-tirai target add <platform> <environment> --url <url>
+tirai target add web <environment> --url <url> [--username-ref env:NAME --password-ref env:NAME]
 tirai target validate
+tirai web discover --environment local|dev|staging
+tirai auth login --environment <env>
+tirai auth import --environment <env> --file <storageState.json>
+tirai auth clear [--environment <env>]
+tirai review clarify --file <json>
+tirai review approve --test-case <id> --route </path> --reviewer <name>
 
 tirai plan [--json]
-
 tirai export --format all|json|xlsx|markdown|pdf|docx [--out <dir>]
-tirai execute --platform web|backend|database [--environment <env>]
-
+tirai execute --platform web --environment <env> --test-case <id> --confirm-dedicated-test-tenant
+tirai execute --platform web --environment <env> --test-cases <id,id> --confirm-dedicated-test-tenant
 tirai generate --target playwright|vitest [--source-mapping <path>]
 tirai run [--json]
 tirai report [--json]

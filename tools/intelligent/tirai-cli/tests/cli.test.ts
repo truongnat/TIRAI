@@ -359,4 +359,36 @@ describe('tirai CLI', () => {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   }, 60000);
+  it('imports a private reusable storageState session through the CLI and clears it', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-auth-import-'));
+    try {
+      expect((await run(['init'], tmp)).code).toBe(0);
+      const configPath = path.join(tmp, '.tirai', 'config.json');
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      config.platforms.web.enabled = true;
+      config.platforms.web.environments.staging = { baseUrl: 'https://staging.example.test' };
+      fs.writeFileSync(configPath, JSON.stringify(config), 'utf8');
+
+      const secret = 'session-token-must-not-print';
+      const statePath = path.join(tmp, 'storageState.json');
+      fs.writeFileSync(statePath, JSON.stringify({
+        cookies: [{ name: 'session', value: secret, domain: 'staging.example.test', path: '/', expires: -1, httpOnly: true, secure: true, sameSite: 'Lax' }],
+        origins: [{ origin: 'https://staging.example.test', localStorage: [] }],
+      }), 'utf8');
+
+      const imported = await run(['auth', 'import', '--environment', 'staging', '--file', statePath, '--json'], tmp);
+      expect(imported.code).toBe(0);
+      expect(imported.out).toContain('"status": "imported"');
+      expect(imported.out).not.toContain(secret);
+      const importedPath = path.join(tmp, '.tirai', 'workflow', 'runtime', 'imported-session-staging.json');
+      expect(fs.existsSync(importedPath)).toBe(true);
+      expect(fs.statSync(importedPath).mode & 0o777).toBe(0o600);
+
+      const cleared = await run(['auth', 'clear', '--environment', 'staging', '--json'], tmp);
+      expect(cleared.code).toBe(0);
+      expect(fs.existsSync(importedPath)).toBe(false);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
 });

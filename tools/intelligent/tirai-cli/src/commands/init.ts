@@ -97,16 +97,34 @@ export async function runInit(opts: InitOptions): Promise<void> {
   // Initialize state
   initState(paths);
 
-  // Safe .gitignore for volatile workspace content
+  // Keep sanitized workflow outputs while excluding temporary credentials and raw logs.
   const gitignorePath = path.join(paths.workspace, '.gitignore');
+  const workflowIgnoreMarker = '# TIRAI web-testing workflow artifacts';
+  const workflowIgnoreRules = `${workflowIgnoreMarker}
+!reports/
+!reports/latest-summary.md
+artifacts/ai/
+artifacts/ai-input.json
+workflow/runtime/
+runtime/manual-session-*.json
+runtime/*.log
+runtime/**/*.log
+runtime/raw-logs/
+`;
   if (!fs.existsSync(gitignorePath)) {
-    const gitignoreContent = `# TIRAI workspace — volatile results ignored, config/mappings/generated/runtime are tracked/executable
+    fs.writeFileSync(gitignorePath, `# TIRAI workspace — volatile results ignored, reviewed artifacts tracked
 results/
 reports/
 artifacts/semantic-context/
 *.log
-`;
-    fs.writeFileSync(gitignorePath, gitignoreContent, 'utf8');
+${workflowIgnoreRules}`, 'utf8');
+  } else {
+    const currentIgnore = fs.readFileSync(gitignorePath, 'utf8');
+    const currentLines = new Set(currentIgnore.split(/\r?\n/));
+    const missingRules = workflowIgnoreRules.split(/\r?\n/).filter((line) => line && !currentLines.has(line));
+    if (missingRules.length > 0) {
+      fs.writeFileSync(gitignorePath, `${currentIgnore.trimEnd()}\n\n${missingRules.join('\n')}\n`, 'utf8');
+    }
   }
 
   // Initialize specs index

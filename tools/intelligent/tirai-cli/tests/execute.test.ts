@@ -31,31 +31,21 @@ describe('execute command', () => {
     fs.rmSync(tmp, { recursive: true, force: true });
   });
 
-  it('requires platform to be configured', async () => {
-    let error: Error | null = null;
-    try {
-      await runExecute({ cwd: tmp, platform: 'web' });
-    } catch (e) {
-      error = e as Error;
-    }
-    expect(error).not.toBeNull();
-    expect(error!.message).toContain('not configured');
+  it('requires an explicit environment on every web run', async () => {
+    await expect(runExecute({ cwd: tmp, platform: 'web' })).rejects.toThrow('explicit --environment');
   });
 
-  it('executes for configured web platform', async () => {
+  it('requires explicit case selection on every web run', async () => {
+    await runTargetAdd({ cwd: tmp, platform: 'web', environment: 'staging', url: 'https://staging.example.com' });
+    await expect(runExecute({ cwd: tmp, platform: 'web', environment: 'staging' })).rejects.toThrow('explicit --test-case or --test-cases selection');
+  });
+
+  it('requires dedicated test-tenant confirmation before web execution', async () => {
     await runTargetAdd({ cwd: tmp, platform: 'web', environment: 'staging', url: 'https://staging.example.com' });
     const paths = getWorkspacePaths(tmp);
-    fs.writeFileSync(paths.testCasesPath, JSON.stringify([
-      { id: 'TC-001', title: 'test' },
-    ]), 'utf8');
-
-    let error: Error | null = null;
-    try {
-      await runExecute({ cwd: tmp, platform: 'web', environment: 'staging' });
-    } catch (e) {
-      error = e as Error;
-    }
-    expect(error).toBeNull();
+    fs.writeFileSync(paths.testCasesPath, JSON.stringify([{ id: 'TC-001', title: 'test' }]), 'utf8');
+    await expect(runExecute({ cwd: tmp, platform: 'web', environment: 'staging', testCaseId: 'TC-001' }))
+      .rejects.toThrow('--confirm-dedicated-test-tenant');
   });
 
   it('executes for configured backend platform', async () => {
@@ -90,13 +80,16 @@ describe('execute command', () => {
     expect(error).toBeNull();
   });
 
-  it('reruns only the selected canonical test case', async () => {
+  it('rejects a selected case ID that is not in the canonical case list', async () => {
     await runTargetAdd({ cwd: tmp, platform: 'web', environment: 'staging', url: 'https://staging.example.com' });
     const paths = getWorkspacePaths(tmp);
     fs.writeFileSync(paths.testCasesPath, JSON.stringify([{ id: 'TC-001' }, { id: 'TC-002' }]), 'utf8');
-    await runExecute({ cwd: tmp, platform: 'web', environment: 'staging', testCaseId: 'TC-002' });
-    const result = JSON.parse(fs.readFileSync(path.join(paths.resultsDir, 'execute-web-staging.json'), 'utf8'));
-    expect(result.selection).toMatchObject({ testCaseId: 'TC-002', count: 1 });
-    await expect(runExecute({ cwd: tmp, platform: 'web', environment: 'staging', testCaseId: 'TC-404' })).rejects.toThrow('No test cases match');
+    await expect(runExecute({
+      cwd: tmp,
+      platform: 'web',
+      environment: 'staging',
+      testCaseId: 'TC-404',
+      confirmDedicatedTestTenant: true,
+    })).rejects.toThrow('No test cases match');
   });
 });

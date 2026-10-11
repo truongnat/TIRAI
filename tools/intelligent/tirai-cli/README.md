@@ -16,95 +16,103 @@ node tools/intelligent/tirai-cli/dist/cli.js --help
 ## Quick Start
 
 ```bash
-# 1. Initialize workspace in your project
+# Initialize in the web app project
 tirai init
-# creates .tirai/, config.json, mappings/, generated/, runtime/, results/, reports/
 
-# 2. Configure AI provider (env var, not config)
-export GROQ_API_KEY=...   # or DEEPSEEK_API_KEY, or use fake for local
-# config provider is `fake` by default; set to groq/deepseek in .tirai/config.json if needed
+# Configure ai.provider / ai.model in .tirai/config.json and export the provider key
+export GROQ_API_KEY=...
 
-# 3. Add spec and ingest
+# Ingest a local Excel, Markdown, or HTML specification
 tirai ingest ./spec.xlsx
-# → canonical TestCases in .tirai/artifacts/
+tirai plan
 
-# 4. Generate unit tests from TestCase JSON (no source mapping required)
-tirai generate --unit
-# Optional: edit .tirai/mappings/unit.json to bind cases to real source symbols
-# Optional: edit .tirai/mappings/e2e.json then `tirai generate --e2e`
+# Configure only a non-production environment
+tirai target add web staging --url https://staging.example.com
+# Optional environment-secret references; never pass raw credentials:
+# tirai target add web staging --url https://staging.example.com --username-ref env:TIRAI_USER --password-ref env:TIRAI_PASSWORD
 
-# 6. Execute (real Chromium + Vitest)
-tirai run
-# exit 0 = all passed, 1 = business FAIL, 2 = blocked/error
+# Choose one session setup if the target requires SSO:
+# Temporary manual session (consumed after execution)
+# tirai auth login --environment staging
+# Or import a reusable Playwright storageState file:
+# tirai auth import --environment staging --file ./storageState.json
+# Discover same-origin routes; the Skill guides route and case review
+tirai web discover --environment staging
+# Execute only tester-approved cases against a dedicated test tenant
+tirai execute --platform web --environment staging --test-case TC-001 --confirm-dedicated-test-tenant
+tirai report --json
+```
 
-# 7. Report (derives from canonical TestRunResultIR)
-tirai report
+The runner is black-box and functional UI only. It accepts local/dev/staging environment labels and blocks production-like hostnames; the tester must still verify the exact URL and dedicated test tenant because arbitrary DNS aliases cannot be classified reliably. Assertion failures create local bug-draft candidates; a tester confirms severity and wording. No tracker integration is included.
 
-# 8. Status
-tirai status
+Run these commands from the TIRAI checkout root to install the Codex-first Skill:
+
+```bash
+mkdir -p "$HOME/.agents/skills/tirai-web-testing"
+cp skills/tirai-web-testing/SKILL.md "$HOME/.agents/skills/tirai-web-testing/SKILL.md"
 ```
 
 ## Workspace Layout
 
-```
+```text
 .tirai/
-  config.json              # versioned, workspaceVersion, ai, e2e.baseUrl, unit.projectRoot
-  project.json             # project detection + adapter fingerprint
-  mappings/
-    e2e.json               # ExecutionMappingIR + UIElementCatalog (commit-friendly)
-    unit.json              # UnitTargetCodeMapping[] (commit-friendly)
-  artifacts/               # canonical context, semantic, requirements, testplan, testcases, trace
-  generated/
-    e2e/                   # canonical generated Playwright *.spec.ts
-    unit/                  # canonical generated Vitest *.spec.ts
-  runtime/
-    e2e/                   # materialized copy for execution (separated from generated)
-    unit/
-  results/                 # canonical TestRunResultIR (e2e-run-result-ir.json, unit-run-result-ir.json)
-  reports/                 # latest-summary.md (human view derived from IR)
-  state/workspace.json     # minimal state
-  .gitignore               # ignores results/reports, keeps config/mappings
+  config.json              # AI provider, platform environments, env-secret references
+  sources/                 # ingested local specification
+  artifacts/               # canonical contract, requirements, test plan, TestCases
+  discovery/routes.json    # same-origin route discovery snapshot
+  workflow/
+    approvals.json         # case fingerprint + approved route + reviewer
+    clarifications.json    # tester answers linked to spec fingerprint
+    pending-clarifications.json # unresolved Skill questions
+    runtime/               # local sessions and AI artifacts; gitignored
+    runs/<run-id>/
+      snapshot/             # spec, contract, plan, selected cases, approvals
+      report.json
+      report.md
+      evidence/             # sanitized screenshots
+  reports/latest-summary.md
+  generated/                # optional generated Playwright/Vitest code
+  runtime/                  # generated-test runtime copies
+  results/                  # generated-test results
+  state/workspace.json
+  .gitignore
 ```
 
-Generated canonical tests are TIRAI-managed artifacts (default `.tirai/generated/`). Runtime copies are materialized to `.tirai/runtime/` (and for Playwright also to non-hidden `tirai-runtime/` to avoid gitignore/hidden discovery issues). Do not write into your own `tests/` unless you configure that later.
+Reviewed test plans, approvals, clarification records, run snapshots, reports, and sanitized evidence are commit-friendly. Browser sessions, AI request artifacts, temporary files, and raw logs are gitignored. Imported sessions remain available until `tirai auth clear`; treat the source file and stored session as credentials.
 
 ## Configuration
 
-`tirai init` creates `.tirai/config.json`:
+`tirai init` creates `.tirai/config.json` with config version 2 and `ai.provider: "fake"`. Before web execution, set `ai.provider` to a real supported provider (`groq`, `deepseek`, or `cli`) and configure its model/command. Provider credentials stay in environment variables (`GROQ_API_KEY`, `DEEPSEEK_API_KEY`); raw keys never belong in config or test cases. Web execution rejects `fake`.
 
-```json
-{
-  "version": 1,
-  "workspaceVersion": 1,
-  "ai": { "provider": "fake", "model": "fake-model" },
-  "project": { "root": "/abs/path", "language": "typescript" },
-  "e2e": { "baseUrl": "http://localhost:4173", "startCommand": "node order-app/server.mjs" },
-  "unit": { "projectRoot": "/abs/path/order-app" }
-}
-```
+Configure web targets with `tirai target add web <environment> --url <url>`. Optional username/password/token inputs are `env:NAME` references. `local`, `dev`, `development`, or `staging` are the only accepted web environment names; `local` must use localhost. Every run also requires `--confirm-dedicated-test-tenant`.
 
-Provider keys are **env vars** (`GROQ_API_KEY`, `DEEPSEEK_API_KEY`), never persisted.
+Source inspection is opt-in: `tirai ingest <spec> --source-code <dir>` reads that application directory without modifying it. Default ingestion is black-box and reads only the specification.
 
-## Exit Codes
+## Run Status
 
-- `0` all tests passed
-- `1` business test failure (assertion mismatch)
-- `2` blocked / configuration / validation / infrastructure error (including 0 tests discovered)
+`tirai execute --platform web` writes per-run `report.json` and `report.md` under `.tirai/workflow/runs/<run-id>/`. Assertion mismatches appear as `failed`/`partial`; infrastructure or safety stops appear as `error`/`blocked`. `tirai report --json` reads the latest web run.
 
-Empty runs are `ERROR` (not PASS).
+Generated-code `tirai run` exit codes: `0` all passed, `1` business assertion failure, `2` blocked/configuration/validation/infrastructure error. Empty runs are errors, not passes.
 
 ## Commands
 
-- `tirai init [--force]` — create workspace, detect project, write config, create mapping placeholders.
-- `tirai ingest <spec>` — run source-to-testcase pipeline, persist artifacts, update state.
-- `tirai generate [--e2e|--unit]` — load TestCases + mappings, generate, validate, persist.
-- `tirai run` — materialize to runtime, start E2E target if configured, execute, persist canonical results.
-- `tirai report` — print human summary from canonical results.
-- `tirai status` — show workspace, source, mappings, generation, latest run.
+- `tirai init [--force]` — create `.tirai/`.
+- `tirai ingest <spec>` — ingest local specs; optional `--source-code <dir>` is a separate, explicit read-only opt-in.
+- `tirai target add web <environment> --url <url> [--username-ref env:NAME --password-ref env:NAME]` — configure a web target.
+- `tirai web discover --environment <name>` — discover same-origin routes and safe menus/tabs without submitting forms.
+- `tirai auth login --environment <name>` — create a temporary headed SSO session, consumed after execution.
+- `tirai auth import --environment <name> --file <storageState.json>` — import the output of Playwright `browserContext.storageState({ path })` for reuse; kept until cleared.
+- `tirai auth clear [--environment <name>]` — remove temporary and imported browser sessions.
+- `tirai review clarify --file <json>` — store a tester answer and a revised case while preserving source requirement links.
+- `tirai review approve --test-case <id> --route </path> --reviewer <name>` — record human approval.
+- `tirai execute --platform web --environment <name> --test-case <id> --confirm-dedicated-test-tenant` — run selected approved cases.
+- `tirai report [--json]` — show the latest web report or canonical generated-test summary.
+- `tirai generate [--e2e|--unit]` / `tirai run` — optional developer code-generation path.
+
+The Codex-first Skill coordinates clarification, human review, route/case selection, and bug-draft confirmation. Confluence, API, visual, accessibility, and performance testing are outside web-testing v1.
 
 ## Notes
 
-- Generation is deterministic, 0 AI calls, fail-closed.
-- `project-adapter` is reused for project detection/fingerprint.
-- `execution-mapping-builder` is available via its own CLI; `tirai generate` loads persisted mappings.
-- No agentic execution, no PDF, no new framework — generated-code Playwright/Vitest is authoritative.
+- Web execution uses real Chromium and an AI provider; assertion mismatches are never retried.
+- A transient browser/network infrastructure failure is retried once. Assertion mismatches do not stop independent cases; unsafe environment or cleanup failures do.
+- `execution-mapping-builder` remains for generated-code workflows; black-box web execution does not require source-derived selectors.

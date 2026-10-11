@@ -20,6 +20,17 @@ tirai init → ingest spec.xlsx → generate → run (Chromium + Vitest) → rep
 
 without custom orchestration code, outside the monorepo source tree.
 
+## Spec-first Web-Testing Pilot
+
+This pilot is separate from the proven generated-code MVP above. The repository now includes a Codex-first Skill and a CLI workflow for human-reviewed, black-box functional UI testing. It is not release-accepted until exercised against a live non-production app.
+
+- Local specifications: Excel, Markdown, and HTML. Confluence is a future provider; v1 requires a local export.
+- Scope: functional UI only, local/dev/staging only, dedicated test tenant, explicit tester approval of routes/cases, and per-run reconfirmation.
+- Ambiguous requirements block affected cases until the tester answers; generated cases retain requirement provenance and approvals are fingerprint-bound.
+- Reports include per-run snapshots, sanitized evidence, and local bug-draft candidates requiring tester confirmation.
+- Requires a configured real AI provider and Chromium. TIRAI does not install browsers automatically.
+- API, visual, accessibility, performance, production, tracker integrations, and CI execution are outside this pilot.
+
 ## Proven Pipeline
 
 ```
@@ -38,7 +49,8 @@ Real Chromium + Real Vitest → TestRunResultIR → JSON + Markdown
 |--------|--------|
 | Excel (.xlsx) | PROVEN (full pipeline) |
 | Markdown (.md) | SUPPORTED_BUT_NOT_PRODUCT_ACCEPTED (connector exists) |
-| PDF | NOT_IMPLEMENTED |
+| HTML (.html) | SUPPORTED_BUT_NOT_PRODUCT_ACCEPTED (connector exists) |
+| PDF | SUPPORTED_BUT_NOT_PRODUCT_ACCEPTED (connector exists) |
 | Other | NOT_IMPLEMENTED |
 
 ## Proven Generated Frameworks

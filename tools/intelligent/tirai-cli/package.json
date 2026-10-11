@@ -55,8 +55,10 @@
     "project-adapter": "file:../project-adapter",
     "source-ingestion": "file:../source-ingestion",
     "source-to-testcase": "file:../source-to-testcase",
-    "test-code-generator": "file:../test-code-generator",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "agentic-test-executor": "file:../agentic-test-executor",
+    "test-execution-orchestrator": "file:../test-execution-orchestrator",
+    "ui-executor": "file:../ui-executor"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

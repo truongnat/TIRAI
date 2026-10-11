@@ -18,28 +18,29 @@ import { runAnalyze } from './commands/analyze.js';
 import { CliError } from './errors.js';
 import { runMappingValidate } from './commands/mapping.js';
 
+import { runWebDiscover, runWebAuthLogin, runWebAuthImport, runWebAuthClear } from './commands/web.js';
+import { runReviewApprove, runReviewClarify } from './commands/review.js';
 const VERSION = '1.0.0';
 
 function printHelp(): void {
   console.log(`
-tirai — TIRAI workspace + CLI (developer-runnable MVP)
+tirai — TIRAI workspace + web testing CLI
 
 Usage:
   tirai <command> [options]
 
 Commands:
   init                    Initialize TIRAI workspace (.tirai/)
-  ingest <spec>           Ingest spec + source code → contract JSON/TestCases
-    --source-code <dir>   Source-code root for trusted UI mapping (default: project root)
+  ingest <spec>           Ingest a local spec into canonical contract/TestCases
+    --source-code <dir>   Explicit read-only source scan; default is black-box
   generate                Generate tests (requires --target)
     --target playwright   Generate Playwright E2E (requires E2E mapping)
     --target vitest       Generate Vitest unit (requires source mapping)
-    --source-mapping      Path to unit source mapping
   run                     Execute generated tests (real Chromium + Vitest)
   report                  Show canonical run summary
   status                  Show workspace status
   target list             List configured platform targets
-  target add              Add a target platform environment
+  target add              Add a target environment; web auth uses env:NAME refs
   target validate         Validate platform configuration
   spec add                Add a specification to the registry
   spec list               List registered specifications
@@ -53,11 +54,28 @@ Commands:
   artifact verify         Verify exported artifact checksums
   mapping validate <file> Validate explicit API/DB execution mapping
   analyze                 Inspect AI input and raw context package
-  plan                    Generate canonical test plan from specs + targets
+  plan                    Inspect canonical test plan and coverage quality
   export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
-  execute                 Execute tests against configured platform
+  execute                 Execute selected approved cases on the configured platform
     --test-case <id>       Execute one canonical test case
-    --module <id>          Execute test cases from one module
+    --test-cases <ids>     Execute comma-separated approved case IDs (web only)
+    --module <id>          Execute test cases from one module (non-web platforms)
+    --environment <name>  Required for every web run
+    --confirm-dedicated-test-tenant
+                            Confirms the tester reviewed the non-production tenant/data
+  web discover            Discover same-origin routes and safe navigation controls
+    --environment <name>  Required non-production web environment
+    --max-routes <1-50>   Maximum routes to inspect (default: 50)
+  auth login              Open a headed browser for temporary manual SSO
+    --environment <name>  Required non-production web environment
+  auth import             Import a Playwright storageState JSON session
+    --environment <name>  Required non-production web environment
+    --file <json>         Existing Playwright storageState JSON file
+  auth clear              Delete TIRAI browser sessions
+  review approve          Approve a case after human review
+    --test-case <id> --route </path> --reviewer <name>
+  review clarify          Resolve one ambiguous case from a reviewed plan
+    --file <json>         JSON with reviewId, testCaseId, questionId, question, answer, resolvedTestCase
   --help, -h              Show this help
   --version, -v           Show version
 
@@ -76,7 +94,11 @@ Examples:
   tirai spec list
   tirai plan
   tirai export --format all
-  tirai execute --platform web --environment staging
+  tirai web discover --environment staging
+  tirai auth login --environment staging
+  tirai auth import --environment staging --file ./storageState.json
+  tirai review approve --test-case TC-1 --route /orders --reviewer "Tester"
+  tirai execute --platform web --environment staging --test-cases TC-1 --confirm-dedicated-test-tenant
 `);
 }
 
@@ -194,6 +216,45 @@ async function main(): Promise<void> {
         await runStatus({ cwd, json, taskId: flags.task as string });
         break;
       }
+      case 'web': {
+        if (args[0] !== 'discover') throw new CliError('INVALID_TARGET', 'Usage: tirai web discover --environment local|dev|staging');
+        if (typeof flags.environment !== 'string') throw new CliError('INVALID_TARGET', 'Web discovery requires --environment.');
+        const maxRoutes = flags['max-routes'] === undefined ? undefined : Number(flags['max-routes']);
+        await runWebDiscover({ cwd, environment: flags.environment, maxRoutes, json: Boolean(flags.json) });
+        break;
+      }
+      case 'auth': {
+        if (args[0] === 'login') {
+          if (typeof flags.environment !== 'string') throw new CliError('INVALID_TARGET', 'Manual sign-in requires --environment.');
+          await runWebAuthLogin({ cwd, environment: flags.environment, json: Boolean(flags.json) });
+        } else if (args[0] === 'import') {
+          if (typeof flags.environment !== 'string' || typeof flags.file !== 'string') {
+            throw new CliError('INVALID_TARGET', 'Usage: tirai auth import --environment <name> --file <storageState.json>');
+          }
+          await runWebAuthImport({ cwd, environment: flags.environment, file: flags.file, json: Boolean(flags.json) });
+        } else if (args[0] === 'clear') {
+          await runWebAuthClear({ cwd, environment: flags.environment as string | undefined, json: Boolean(flags.json) });
+        } else {
+          throw new CliError('INVALID_TARGET', 'Usage: tirai auth login --environment <name> | tirai auth import --environment <name> --file <storageState.json> | tirai auth clear [--environment <name>]');
+        }
+        break;
+      }
+      case 'review': {
+        if (args[0] === 'approve') {
+          const testCaseId = flags['test-case'] as string;
+          const route = flags.route as string;
+          const reviewer = flags.reviewer as string;
+          if (!testCaseId || !route || !reviewer) throw new CliError('INVALID_TARGET', 'Usage: tirai review approve --test-case <id> --route </path> --reviewer <name>');
+          await runReviewApprove({ cwd, testCaseId, route, reviewer, json: Boolean(flags.json) });
+        } else if (args[0] === 'clarify') {
+          const inputPath = flags.file as string;
+          if (!inputPath) throw new CliError('INVALID_TARGET', 'Usage: tirai review clarify --file <json>');
+          await runReviewClarify({ cwd, inputPath, json: Boolean(flags.json) });
+        } else {
+          throw new CliError('INVALID_TARGET', 'Usage: tirai review approve | tirai review clarify');
+        }
+        break;
+      }
       case 'target': {
         const subcmd = args[0];
         if (subcmd === 'list') {
@@ -202,9 +263,19 @@ async function main(): Promise<void> {
           const platform = args[1] || (flags.platform as string);
           const environment = args[2] || (flags.environment as string);
           if (!platform || !environment) {
-            throw new CliError('INVALID_TARGET', 'Usage: tirai target add <platform> <environment> --url <url>');
+            throw new CliError('INVALID_TARGET', 'Usage: tirai target add <platform> <environment> --url <url> [--username-ref env:NAME --password-ref env:NAME]');
           }
-          await runTargetAdd({ cwd, platform, environment, url: flags.url as string, json: Boolean(flags.json) });
+          await runTargetAdd({
+            cwd,
+            platform,
+            environment,
+            url: flags.url as string,
+            authType: flags['auth-type'] as 'basic' | 'bearer' | 'oauth' | 'cookie' | 'none' | undefined,
+            usernameRef: flags['username-ref'] as string | undefined,
+            passwordRef: flags['password-ref'] as string | undefined,
+            tokenRef: flags['token-ref'] as string | undefined,
+            json: Boolean(flags.json),
+          });
         } else if (subcmd === 'validate') {
           await runTargetValidate({ cwd });
         } else {
@@ -280,6 +351,8 @@ async function main(): Promise<void> {
           environment: flags.environment as string,
           taskId: flags.task as string,
           testCaseId: flags['test-case'] as string,
+          testCaseIds: typeof flags['test-cases'] === 'string' ? flags['test-cases'].split(',').map((id) => id.trim()).filter(Boolean) : undefined,
+          confirmDedicatedTestTenant: Boolean(flags['confirm-dedicated-test-tenant']),
           module: flags.module as string,
           mappingPath: flags.mapping as string,
           json: Boolean(flags.json),

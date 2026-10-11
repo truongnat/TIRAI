@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises';
 // UI Executor v1 — Playwright browser session (production).
 //
 // Real Chromium implementation of BrowserSession. Manages Browser →
@@ -34,6 +35,7 @@ async function getPlaywright(): Promise<typeof import('playwright')> {
 export interface PlaywrightSessionOptions {
   headless?: boolean;
   slowMo?: number;
+  storageState?: string;
 }
 
 export class PlaywrightBrowserSession implements BrowserSession {
@@ -53,6 +55,7 @@ export class PlaywrightBrowserSession implements BrowserSession {
     pagesClosed: 0,
   };
   private sessionOptions: PlaywrightSessionOptions;
+  private allowedOrigins = new Set<string>();
 
   constructor(options: PlaywrightSessionOptions = {}) {
     this.sessionOptions = options;
@@ -60,6 +63,7 @@ export class PlaywrightBrowserSession implements BrowserSession {
 
   async start(config: UIEnvironmentConfig): Promise<void> {
     if (this._started && !this._closed) return;
+    this.allowedOrigins = new Set(config.allowedOrigins);
     try {
       const playwright = await getPlaywright();
       this.browser = await playwright.chromium.launch({
@@ -88,7 +92,7 @@ export class PlaywrightBrowserSession implements BrowserSession {
   }
 
   async pageContexts(): Promise<BrowserPageContext[]> {
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await setTimeout(50);
     const contexts: BrowserPageContext[] = [];
     for (const [id, entry] of this.pageEntries) {
       if (entry.page.isClosed()) continue;
@@ -145,7 +149,23 @@ export class PlaywrightBrowserSession implements BrowserSession {
       this.currentPage = null;
       this.pageEntries.clear();
     }
-    const context = await this.browser.newContext();
+    const context = await this.browser.newContext({
+      ...(this.sessionOptions.storageState ? { storageState: this.sessionOptions.storageState } : {}),
+    });
+    if (this.allowedOrigins.size > 0) {
+      const allowedOrigins = new Set(this.allowedOrigins);
+      await context.route('**/*', async (route) => {
+        const request = route.request();
+        if (!request.isNavigationRequest()) return route.continue();
+        let origin: string;
+        try {
+          origin = new URL(request.url()).origin;
+        } catch {
+          return route.abort();
+        }
+        return allowedOrigins.has(origin) ? route.continue() : route.abort();
+      });
+    }
     this._counters.contextsCreated++;
     this.currentContext = context;
 
@@ -162,6 +182,13 @@ export class PlaywrightBrowserSession implements BrowserSession {
     });
 
     return new PlaywrightBrowserPage(page);
+  }
+
+  async saveStorageState(filePath: string): Promise<void> {
+    if (!this.currentContext) {
+      throw new UIExecutorError('UI_BROWSER_SESSION_MISSING', 'No active browser context to save.');
+    }
+    await this.currentContext.storageState({ path: filePath });
   }
 
   async screenshot(): Promise<Buffer> {
@@ -204,6 +231,7 @@ export class PlaywrightBrowserSession implements BrowserSession {
     return { ...this._counters };
   }
 }
+
 
 // ---- PlaywrightBrowserPage: real Playwright page wrapper ------------------
 
