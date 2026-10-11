@@ -28,6 +28,30 @@ export async function runReport(opts: ReportOptions): Promise<void> {
     latestReportPath: path.join(taskRoot.reports, 'latest-summary.md'),
   } : basePaths;
   loadConfig(basePaths); // validates
+  if (!task) {
+    const state = loadState(basePaths);
+    const runId = state?.run?.runId;
+    if (runId && path.basename(runId) === runId) {
+      const webRunDirectory = path.join(basePaths.workspace, 'runs', runId);
+      const webReportPath = path.join(webRunDirectory, 'report.json');
+      if (fs.existsSync(webReportPath)) {
+        let report: unknown;
+        try {
+          report = JSON.parse(fs.readFileSync(webReportPath, 'utf8'));
+        } catch (error) {
+          throw new CliError('CONFIG_INVALID', `Web run report is invalid JSON: ${String(error)}`);
+        }
+        if (report && typeof report === 'object' && 'kind' in report && report.kind === 'tirai-web-test-run') {
+          if (opts.json) console.log(JSON.stringify(report, null, 2));
+          else {
+            const markdownPath = path.join(webRunDirectory, 'report.md');
+            console.log(fs.existsSync(markdownPath) ? fs.readFileSync(markdownPath, 'utf8') : JSON.stringify(report, null, 2));
+          }
+          return;
+        }
+      }
+    }
+  }
 
   const hasE2e = fs.existsSync(paths.e2eResultPath);
   const hasUnit = fs.existsSync(paths.unitResultPath);

@@ -81,18 +81,13 @@ describe('Phase 8: End-to-end acceptance', () => {
     expect(fs.existsSync(path.join(tmp, '.tirai', 'outputs', 'pdf', 'test-cases.pdf'))).toBe(true);
     expect(fs.existsSync(path.join(tmp, '.tirai', 'outputs', 'docx', 'test-cases.docx'))).toBe(true);
 
-    // 8. Execute
-    r = await run(['execute', '--platform', 'web', '--environment', 'staging'], tmp);
-    expect(r.code).toBe(0);
-    expect(r.out).toContain('execute complete');
-
-    // 9. Status
+    // 8. Status
     r = await run(['status'], tmp);
-    expect(r.code).toBe(0);
+    expect(r.code, r.err || r.out).toBe(0);
     expect(r.out).toContain('Specs:');
     expect(r.out).toContain('TestCases:');
 
-    // 10. Help
+    // 9. Help
     r = await run(['--help'], tmp);
     expect(r.code).toBe(0);
     expect(r.out).toContain('tirai');

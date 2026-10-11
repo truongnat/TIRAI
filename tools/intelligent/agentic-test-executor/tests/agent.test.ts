@@ -442,6 +442,7 @@ describe('AgenticTestExecutor', () => {
 
       const result = await executor.execute(tc, makeContext());
       expect(result.status).toBe('failed');
+      expect(result.assertions[0]?.actual).toContain('Observed page text: Login Username Password Login');
     });
 
     it('handles negative login (error message displayed)', async () => {
@@ -492,6 +493,21 @@ describe('AgenticTestExecutor', () => {
       const { executor } = buildExecutor({ ai: createFakeAI(() => ({})) });
       const result = await executor.cleanup(makeTestCase(), makeContext());
       expect(result.status).toBe('succeeded');
+    });
+    it('refuses cleanup without a human-approved target after an isolated test session', async () => {
+      const { executor, session } = buildExecutor({ ai: createFakeAI(() => ({})) });
+      Object.assign(session, { createIsolatedPage: async () => session.page() });
+      const testCase = makeTestCase({
+        steps: [],
+        expectedResults: [],
+        cleanup: [{ description: 'Remove the test-created record' }],
+      });
+
+      await executor.execute(testCase, makeContext());
+      const result = await executor.cleanup(testCase, makeContext());
+
+      expect(result.status).toBe('failed');
+      expect(result.error?.code).toBe('AGENT_CLEANUP_TARGET_MISSING');
     });
   });
 });

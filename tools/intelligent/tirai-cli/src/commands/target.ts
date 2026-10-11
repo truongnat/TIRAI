@@ -23,6 +23,10 @@ export interface TargetAddOptions {
   platform: string;
   environment: string;
   url?: string;
+  authType?: 'basic' | 'bearer' | 'oauth' | 'cookie' | 'none';
+  usernameRef?: string;
+  passwordRef?: string;
+  tokenRef?: string;
   json?: boolean;
 }
 
@@ -83,6 +87,18 @@ export async function runTargetAdd(opts: TargetAddOptions): Promise<void> {
   if (!opts.url) {
     throw new CliError('INVALID_TARGET', 'Missing --url for target environment.');
   }
+  for (const [label, reference] of [
+    ['username-ref', opts.usernameRef],
+    ['password-ref', opts.passwordRef],
+    ['token-ref', opts.tokenRef],
+  ] as const) {
+    if (reference && !reference.startsWith('env:')) {
+      throw new CliError('CONFIG_INVALID', `--${label} must use env:NAME; raw secrets are not accepted.`);
+    }
+  }
+  if (platform !== 'web' && (opts.authType || opts.usernameRef || opts.passwordRef || opts.tokenRef)) {
+    throw new CliError('INVALID_TARGET', 'Web authentication flags can only be used with the web platform.');
+  }
 
   const platforms = config.platforms || {
     web: { enabled: true, environments: {} },
@@ -100,7 +116,17 @@ export async function runTargetAdd(opts: TargetAddOptions): Promise<void> {
   // Set enabled and add environment/target
   if (platform === 'web' && platforms.web) {
     platforms.web.enabled = true;
-    platforms.web.environments[opts.environment] = { baseUrl: opts.url! };
+    const authRefs = {
+      ...(opts.usernameRef ? { usernameRef: opts.usernameRef as `env:${string}` } : {}),
+      ...(opts.passwordRef ? { passwordRef: opts.passwordRef as `env:${string}` } : {}),
+      ...(opts.tokenRef ? { tokenRef: opts.tokenRef as `env:${string}` } : {}),
+    };
+    const hasAuthRefs = Object.keys(authRefs).length > 0;
+    const inferredAuthType = opts.authType ?? (opts.tokenRef ? 'bearer' : hasAuthRefs ? 'basic' : 'none');
+    platforms.web.environments[opts.environment] = {
+      baseUrl: opts.url!,
+      ...(hasAuthRefs || opts.authType ? { auth: { type: inferredAuthType, ...authRefs } } : {}),
+    };
   } else if (platform === 'backend' && platforms.backend) {
     platforms.backend.enabled = true;
     platforms.backend.environments[opts.environment] = { baseUrl: opts.url! };

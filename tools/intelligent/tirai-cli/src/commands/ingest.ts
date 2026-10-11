@@ -8,6 +8,7 @@ import { createAIProvider, type FakeAIProvider } from 'ai-provider';
 import { runSourceToTestCasePipeline } from 'source-to-testcase';
 import { buildSourceDerivedE2EMapping } from '../source-derived-mapping.js';
 import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
+import { ensurePrivateWorkspaceArtifactsIgnored, getWorkflowPaths } from '../workflow.js';
 
 export interface IngestOptions {
   cwd: string;
@@ -27,7 +28,7 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
   if (task) updateTask(paths, task.id, { status: 'ingesting' });
 
   if (!opts.sourcePath) {
-    throw new CliError('SOURCE_INPUT_ERROR', 'Missing source path. Usage: tirai ingest <spec.xlsx>', 'Provide a path to an .xlsx or .md file.');
+    throw new CliError('SOURCE_INPUT_ERROR', 'Missing source path. Usage: tirai ingest <spec.xlsx|spec.md|spec.html>', 'Provide a local Excel, Markdown, or HTML specification file.');
   }
 
   // Handle URL vs file path
@@ -61,7 +62,9 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
     provider = createFakeIngestProvider(absSource);
   } else {
     try {
-      provider = createAIProvider({ provider: config.ai.provider, config: { command: config.ai.command, model: config.ai.model, timeoutMs: config.ai.timeoutMs, artifactDir: config.ai.artifactDir ?? path.join(paths.artifactsDir, 'ai') } });
+      ensurePrivateWorkspaceArtifactsIgnored(paths);
+      const artifactDir = config.ai.artifactDir ?? path.join(getWorkflowPaths(paths).runtime, 'ai');
+      provider = createAIProvider({ provider: config.ai.provider, config: { command: config.ai.command, model: config.ai.model, timeoutMs: config.ai.timeoutMs, artifactDir } });
     } catch (e) {
       throw new CliError('CONFIG_INVALID', `Failed to create AI provider: ${String(e)}`);
     }
@@ -113,26 +116,23 @@ export async function runIngest(opts: IngestOptions): Promise<void> {
   // Ensure testcases.json at expected location
   // Pipeline writes to artifactsDir/context.json etc. Already done.
 
-  // Build the optional white-box bridge from the implementation source. The
-  // canonical contract remains source-independent; only the execution mapping
-  // knows concrete selectors and deliberately fails closed when they are not
-  // present.
-  let mappingNotice = '';
-  try {
-    const sourceCodeRoot = path.resolve(opts.cwd, opts.sourceCodePath ?? '.');
-    const sourceMapping = buildSourceDerivedE2EMapping(sourceCodeRoot, result.testPlanIR.testCases);
-    if (sourceMapping) {
-      ensureDir(paths.mappingsDir);
-      fs.writeFileSync(paths.e2eMappingPath, JSON.stringify(sourceMapping.mapping, null, 2), 'utf8');
-      const mappingData = sourceMapping.mapping as { testMappings: unknown[]; unresolved: unknown[] };
-      fs.writeFileSync(path.join(paths.artifactsDir, 'source-intelligence.json'), JSON.stringify({ schemaVersion: '1.0', sourceFiles: sourceMapping.sourceFiles, mappingCount: mappingData.testMappings.length, unresolvedCount: mappingData.unresolved.length, generatedAt: new Date().toISOString() }, null, 2), 'utf8');
-      mappingNotice = `\nE2E mapping: ${path.relative(paths.root, paths.e2eMappingPath)} (${sourceMapping.sourceFiles.length} source files scanned)`;
-    }
-  } catch (error) {
-    if (opts.sourceCodePath) {
+  // Source inspection is an explicit opt-in. The normal specification-first path
+  // does not read the application source tree.
+  let mappingNotice = '\nE2E mapping: not generated (source inspection was not enabled)';
+  if (opts.sourceCodePath) {
+    try {
+      const sourceCodeRoot = path.resolve(opts.cwd, opts.sourceCodePath);
+      const sourceMapping = buildSourceDerivedE2EMapping(sourceCodeRoot, result.testPlanIR.testCases);
+      if (sourceMapping) {
+        ensureDir(paths.mappingsDir);
+        fs.writeFileSync(paths.e2eMappingPath, JSON.stringify(sourceMapping.mapping, null, 2), 'utf8');
+        const mappingData = sourceMapping.mapping as { testMappings: unknown[]; unresolved: unknown[] };
+        fs.writeFileSync(path.join(paths.artifactsDir, 'source-intelligence.json'), JSON.stringify({ schemaVersion: '1.0', sourceFiles: sourceMapping.sourceFiles, mappingCount: mappingData.testMappings.length, unresolvedCount: mappingData.unresolved.length, generatedAt: new Date().toISOString() }, null, 2), 'utf8');
+        mappingNotice = `\nE2E mapping: ${path.relative(paths.root, paths.e2eMappingPath)} (${sourceMapping.sourceFiles.length} source files scanned)`;
+      }
+    } catch (error) {
       throw new CliError('MAPPING_MISSING', `Source-derived mapping failed: ${error instanceof Error ? error.message : String(error)}`);
     }
-    mappingNotice = `\nE2E mapping: not generated (${error instanceof Error ? error.message : String(error)})`;
   }
 
   // Update workspace state

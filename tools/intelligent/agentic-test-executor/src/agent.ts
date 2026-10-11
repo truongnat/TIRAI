@@ -83,6 +83,8 @@ export class AgenticTestExecutor implements TestExecutor {
   private readonly dataNeedCoordinator: DataNeedCoordinator;
   private lastDataResolutions: DataResolutionResult[] = [];
   private lastDataResolutionMetrics: DataResolutionMetrics = emptyDataResolutionMetrics();
+  private lastRuntimeData?: RuntimeDataStore;
+  private hasActivePage = false;
   private lastMetrics: AgentMetrics = {
     agentCalls: 0,
     observations: 0,
@@ -228,6 +230,7 @@ export class AgenticTestExecutor implements TestExecutor {
         warnings,
       };
     }
+    this.lastRuntimeData = coordination.runtimeData;
 
     let page: BrowserPage;
     try {
@@ -239,6 +242,7 @@ export class AgenticTestExecutor implements TestExecutor {
       const sessionWithIsolatedPage = this.browserSession as BrowserSession & { createIsolatedPage?: () => Promise<BrowserPage> };
       if (sessionWithIsolatedPage.createIsolatedPage) {
         page = await sessionWithIsolatedPage.createIsolatedPage();
+        this.hasActivePage = true;
       } else {
         page = this.browserSession.page();
       }
@@ -330,15 +334,100 @@ export class AgenticTestExecutor implements TestExecutor {
     }
   }
 
-  async cleanup(_testCase: TestCase, context: TestExecutionContext): Promise<TestCleanupResult> {
+  async cleanup(testCase: TestCase, context: TestExecutionContext): Promise<TestCleanupResult> {
+    let cleanupError: { code: string; message: string } | undefined;
+    if (this.hasActivePage && testCase.cleanup.length > 0) {
+      const missingTargets = testCase.cleanup.filter((item) => !item.target?.trim());
+      if (missingTargets.length > 0) {
+        cleanupError = {
+          code: 'AGENT_CLEANUP_TARGET_MISSING',
+          message: 'Cleanup was not attempted because every cleanup action needs a human-approved target; manual cleanup is required.',
+        };
+      } else if (!this.lastRuntimeData) {
+        cleanupError = {
+          code: 'AGENT_CLEANUP_CONTEXT_MISSING',
+          message: 'Cleanup could not access the execution context; manual cleanup is required.',
+        };
+      } else {
+        try {
+          const page = this.browserSession.page();
+          for (const [index, cleanup] of testCase.cleanup.entries()) {
+            const step = {
+              order: testCase.steps.length + index + 1,
+              action: `Remove only the record created by test case ${testCase.id}. Match the exact approved target "${cleanup.target}" to one record created during this run; if it is not uniquely identifiable, do not change anything. ${cleanup.description}`,
+              target: cleanup.target,
+            };
+            const stepResult = await this.executeStep(
+              testCase,
+              step,
+              page,
+              context,
+              this.lastRuntimeData,
+              this.lastMetrics,
+              [],
+            );
+            if (stepResult.status !== 'passed') {
+              cleanupError = {
+                code: 'AGENT_CLEANUP_ACTION_FAILED',
+                message: `Cleanup stopped at target "${cleanup.target}": ${stepResult.error ?? stepResult.status}. Manual cleanup is required.`,
+              };
+              break;
+            }
+            const expected: TestCase['expectedResults'][number] = {
+              description: `Verify that the record created by ${testCase.id} at target "${cleanup.target}" is no longer visible after cleanup.`,
+              verificationType: 'ui',
+              target: cleanup.target,
+            };
+            const verification = await this.evaluateAssertion(
+              testCase,
+              testCase.expectedResults.length + index,
+              expected,
+              page,
+              context,
+              this.lastMetrics,
+              [],
+            );
+            if (verification.status !== 'passed') {
+              cleanupError = {
+                code: 'AGENT_CLEANUP_VERIFICATION_FAILED',
+                message: `Cleanup could not verify removal at target "${cleanup.target}". No further cleanup actions were attempted; manual cleanup is required.`,
+              };
+              break;
+            }
+          }
+        } catch (error) {
+          cleanupError = {
+            code: 'AGENT_CLEANUP_BROWSER_ERROR',
+            message: `Cleanup could not be completed safely: ${error instanceof Error ? error.message : String(error)}. Manual cleanup is required.`,
+          };
+        }
+      }
+    }
+
+    let sessionCloseError: string | undefined;
     try {
       await this.browserSession.close();
-    } catch {
-      // Best effort cleanup
+    } catch (error) {
+      sessionCloseError = error instanceof Error ? error.message : String(error);
     }
+    this.hasActivePage = false;
     const preparationCleanup = await this.dataNeedCoordinator.cleanup();
     context.bindings.clearSensitive?.();
-    return { status: preparationCleanup.failed > 0 ? 'failed' : 'succeeded' };
+    if (preparationCleanup.failed > 0 && !cleanupError) {
+      cleanupError = {
+        code: 'AGENT_DATA_CLEANUP_FAILED',
+        message: 'Prepared test data could not be cleaned up safely; manual cleanup is required.',
+      };
+    }
+    if (sessionCloseError && !cleanupError) {
+      cleanupError = {
+        code: 'AGENT_BROWSER_CLOSE_FAILED',
+        message: `Browser session cleanup failed: ${sessionCloseError}`,
+      };
+    }
+    return cleanupError
+      ? { status: 'failed', error: { ...cleanupError, retryable: false, executorType: 'ui' } }
+      : { status: 'succeeded' };
   }
 
   // ---- Step execution with replan loop ------------------------------------
@@ -664,8 +753,55 @@ export class AgenticTestExecutor implements TestExecutor {
       description: expected.description,
       grounding,
       status: assertionStatus,
+      actual: this.captureAssertionActual(observation, grounding, assertionStatus),
       evidenceIds: evidence ? [evidence.id] : [],
     };
+  }
+
+  private captureAssertionActual(
+    observation: BrowserObservation,
+    grounding: AgenticAssertionResult['grounding'],
+    status: AgenticAssertionResult['status'],
+  ): string {
+    switch (grounding.assertionType) {
+      case 'text-visible': {
+        if (status === 'passed') return 'Expected text was present in the observed page content.';
+        const observedText = sanitizeObservedText(observation.pageText).replace(/\s+/g, ' ').trim();
+        return observedText
+          ? `Expected text was absent. Observed page text: ${observedText.slice(0, 400)}`
+          : 'Expected text was absent; no page text was captured.';
+      }
+      case 'element-visible':
+      case 'element-absent': {
+        const element = grounding.elementId
+          ? observation.elements.find((candidate) => candidate.id === grounding.elementId)
+          : undefined;
+        if (!element) return 'Target element was absent from the browser observation.';
+        return `Target element was observed; visible=${element.visible !== false}.`;
+      }
+      case 'url-contains':
+      case 'url-equals': {
+        try {
+          const url = new URL(observation.url);
+          return `Observed URL: ${url.origin}${url.pathname}`;
+        } catch {
+          return 'Observed URL was unavailable.';
+        }
+      }
+      case 'value-equals': {
+        const element = grounding.elementId
+          ? observation.elements.find((candidate) => candidate.id === grounding.elementId)
+          : undefined;
+        return element?.visibleText
+          ? `Observed element text: ${sanitizeObservedText(element.visibleText)}`
+          : 'Observed element value was unavailable.';
+      }
+      case 'title-contains':
+      case 'title-equals':
+        return `Observed page title: ${sanitizeObservedText(observation.title)}`;
+      default:
+        return 'Actual state was not captured by the browser observation.';
+    }
   }
 
   private verifyAssertion(
@@ -956,9 +1092,15 @@ function toAssertionResult(assertion: AgenticAssertionResult): AssertionResult {
     description: assertion.description,
     verificationType: 'ui',
     status: assertion.status,
-    actual: assertion.grounding.expectedValue,
+    actual: assertion.actual,
     evidenceIds: assertion.evidenceIds,
   };
+}
+function sanitizeObservedText(value: string): string {
+  return value
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[REDACTED_EMAIL]')
+    .replace(/\b(?:\d[ -]*?){13,19}\b/g, '[REDACTED_NUMBER]')
+    .replace(/\b(?:sk|pk|token|secret)[_-][A-Za-z0-9_-]{12,}\b/gi, '[REDACTED_TOKEN]');
 }
 
 function emptyDataResolutionMetrics(): DataResolutionMetrics {

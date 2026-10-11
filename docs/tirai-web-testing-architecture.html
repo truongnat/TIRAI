@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TIRAI — Web-testing sequence diagram</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --fg: oklch(93% 0.018 92);
+        --muted: oklch(73% 0.018 160);
+        --border: oklch(40% 0.022 160);
+        --surface: oklch(23% 0.014 160);
+        --background: oklch(17% 0.01 160);
+        --accent: oklch(77% 0.14 68);
+        --error: oklch(70% 0.15 35);
+        font-family: "Source Sans 3", sans-serif;
+        color: var(--fg);
+        background: var(--background);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--background);
+      }
+
+      .viewport {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        touch-action: none;
+        cursor: grab;
+        user-select: none;
+      }
+
+      .viewport.dragging {
+        cursor: grabbing;
+      }
+
+      .pan-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: max-content;
+        height: max-content;
+        transform-origin: 0 0;
+        will-change: transform;
+      }
+
+      .mermaid {
+        width: max-content;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        color: var(--fg);
+        font-family: "Source Sans 3", sans-serif;
+        white-space: pre;
+        pointer-events: none;
+      }
+
+      .mermaid svg {
+        display: block;
+        max-width: none !important;
+        height: auto;
+        margin: 0;
+      }
+
+      .toolbar {
+        position: fixed;
+        z-index: 2;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      button,
+      output {
+        display: inline-grid;
+        min-width: 40px;
+        height: 36px;
+        place-items: center;
+        border: 0;
+        border-radius: 5px;
+        color: var(--fg);
+        background: transparent;
+        font: 600 0.9rem/1 "Source Sans 3", sans-serif;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: color-mix(in oklch, var(--fg) 10%, transparent);
+      }
+
+      button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+
+      output {
+        min-width: 54px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      #render-error {
+        position: fixed;
+        z-index: 3;
+        inset: 50% auto auto 50%;
+        max-width: min(36rem, calc(100vw - 2rem));
+        padding: 1rem 1.25rem;
+        transform: translate(-50%, -50%);
+        border: 1px solid var(--error);
+        border-radius: 8px;
+        color: var(--fg);
+        background: var(--surface);
+      }
+
+      #render-error[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="viewport" class="viewport" aria-label="TIRAI Mermaid sequence diagram">
+      <div id="pan-layer" class="pan-layer">
+        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor QA as Tester / QA
+    participant Skill as Codex Skill
+    participant CLI as TIRAI CLI + workflow
+    participant AI as Configured AI provider
+    participant WS as .tirai workspace
+    participant PW as Playwright / Chromium
+    participant App as Web app under test
+
+    QA->>Skill: Chọn spec Excel / Markdown / HTML và phạm vi test
+    Skill->>CLI: tirai ingest spec, sau đó tirai plan
+    CLI->>AI: Trích xuất requirements, scenarios, cases
+    AI-->>CLI: Cấu trúc có requirement links và provenance
+    CLI->>WS: Lưu source, contract, test plan, TestCases, fingerprints
+    Note over CLI,WS: Mặc định black-box. App source chỉ scan read-only khi tester opt-in.
+
+    alt Requirement còn mơ hồ
+        Skill-->>QA: Hỏi rõ, case liên quan bị chặn
+        QA->>Skill: Trả lời
+        Skill->>CLI: tirai review clarify
+        CLI->>WS: Sửa generated case, giữ spec/provenance, xóa approval cũ
+    else Requirement đã rõ
+        Skill-->>QA: Trình bày case để review
+    end
+    QA->>Skill: Duyệt steps, inputs, expected UI, cleanup chính xác
+
+    Skill->>CLI: Cấu hình target local / dev / staging và secret refs
+    opt Đăng nhập SSO thủ công
+        Skill->>CLI: tirai auth login
+        CLI->>PW: Mở browser headed
+        QA->>PW: Đăng nhập thủ công
+        PW-->>WS: Lưu session tạm, private, gitignored
+        Note over QA,WS: Session bị xóa sau run. Nếu bỏ dở, dùng tirai auth clear.
+    end
+    Skill->>CLI: tirai web discover
+    CLI->>PW: Khám phá same-origin route và navigation an toàn
+    PW->>App: Mở route, không submit form hoặc mutate dữ liệu
+    App-->>PW: UI và controls hiển thị
+    PW-->>CLI: Route/form metadata
+    CLI->>WS: Ghi snapshot discovery
+    Skill-->>QA: Trình bày routes
+    QA->>Skill: Chọn route cho từng case
+    Skill->>CLI: tirai review approve case + route
+    CLI->>WS: Lưu approval gắn case/spec fingerprints và route
+
+    Note over QA,Skill: Trước MỖI run: xác nhận lại URL, tenant test riêng và đúng case IDs.
+    QA->>Skill: Xác nhận môi trường, tenant, selection
+    Skill->>CLI: tirai execute chỉ với IDs đã duyệt
+    CLI->>WS: Snapshot spec, contract, cases, approvals của run
+    loop Mỗi UI case đã chọn và được duyệt
+        CLI->>PW: Agentic executor + orchestrator chạy Playwright
+        Note over CLI,PW: Cùng origin · infra retry tối đa 1 lần · assertion không retry · mismatch không chặn case độc lập.
+        PW->>App: Thực hiện interaction đã duyệt
+        App-->>PW: UI result
+        PW-->>CLI: Observation thực tế, assertion outcome, sanitized evidence
+        opt Case có mutation và cleanup chính xác đã duyệt
+            CLI->>PW: Dọn đúng record do test hiện tại tạo
+            PW->>App: Thực hiện cleanup hẹp
+            App-->>PW: Kết quả cleanup
+        end
+        alt Cleanup lỗi hoặc ownership không chắc
+            CLI-->>Skill: Dừng case phụ thuộc, yêu cầu manual cleanup
+        else Cleanup xong hoặc không cần
+            CLI-->>Skill: Tiếp tục các case độc lập
+        end
+    end
+    CLI->>AI: Tạo bug-draft candidate và severity proposal
+    AI-->>CLI: Candidate + rationale, chưa phải kết luận cuối
+    CLI->>WS: Lưu report JSON/MD, snapshot, sanitized evidence
+    CLI-->>Skill: Kết quả có spec link, repro, expected / observed
+    Skill-->>QA: Trình bày report và bug draft
+    QA-->>Skill: Xác nhận severity + wording trước khi chia sẻ
+
+    opt Export TestCases để review/chia sẻ
+        Skill->>CLI: tirai export
+        CLI->>WS: JSON / XLSX / Markdown / PDF / DOCX
+    end
+    Note over CLI,WS: Luồng code-gen hiện hữu là nhánh riêng: trusted mappings → Playwright/Vitest → tirai run.
+    Note over QA,CLI: Confluence cần export file trong v1. Ngoài phạm vi: API, visual, a11y, performance, production, CI, tracker.
+        </pre>
+      </div>
+    </main>
+
+    <div class="toolbar" role="group" aria-label="Điều khiển sơ đồ">
+      <button type="button" aria-label="Thu nhỏ" title="Thu nhỏ">−</button>
+      <output id="zoom-level" aria-live="polite">100%</output>
+      <button type="button" aria-label="Phóng to" title="Phóng to">+</button>
+      <button type="button" aria-label="Fit width" title="Fit width">Fit</button>
+    </div>
+    <p id="render-error" role="status" hidden></p>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      const viewport = document.querySelector("#viewport");
+      const layer = document.querySelector("#pan-layer");
+      const zoomLevel = document.querySelector("#zoom-level");
+      const errorBox = document.querySelector("#render-error");
+      const [zoomOut, zoomIn, fitWidth] = document.querySelectorAll(".toolbar button");
+      const minScale = 0.15;
+      const maxScale = 3;
+      let scale = 1;
+      let x = 0;
+      let y = 0;
+      let diagramWidth = 0;
+      let fitActive = true;
+      let drag = null;
+
+      const draw = () => {
+        layer.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+        zoomLevel.value = `${Math.round(scale * 100)}%`;
+      };
+
+      const fitToWidth = () => {
+        if (!diagramWidth) return;
+        scale = Math.min(1, Math.max(minScale, (viewport.clientWidth - 32) / diagramWidth));
+        x = (viewport.clientWidth - diagramWidth * scale) / 2;
+        y = 16;
+        fitActive = true;
+        draw();
+      };
+
+      const zoomAt = (nextScale, clientX, clientY) => {
+        const next = Math.min(maxScale, Math.max(minScale, nextScale));
+        const bounds = viewport.getBoundingClientRect();
+        const px = clientX - bounds.left;
+        const py = clientY - bounds.top;
+        const contentX = (px - x) / scale;
+        const contentY = (py - y) / scale;
+        x = px - contentX * next;
+        y = py - contentY * next;
+        scale = next;
+        fitActive = false;
+        draw();
+      };
+
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "strict",
+        theme: "base",
+        themeVariables: {
+          background: "#0c110e",
+          primaryColor: "#171f1b",
+          primaryTextColor: "#ece8db",
+          primaryBorderColor: "#3e4c44",
+          lineColor: "#eea244",
+          secondaryColor: "#171f1b",
+          tertiaryColor: "#171f1b",
+          clusterBkg: "#171f1b",
+          clusterBorder: "#3e4c44",
+          edgeLabelBackground: "#0c110e",
+          textColor: "#ece8db",
+          actorBkg: "#171f1b",
+          actorBorder: "#3e4c44",
+          actorTextColor: "#ece8db",
+          actorLineColor: "#3e4c44",
+          signalColor: "#eea244",
+          signalTextColor: "#ece8db",
+          labelBoxBkgColor: "#171f1b",
+          labelBoxBorderColor: "#3e4c44",
+          labelTextColor: "#ece8db",
+          loopTextColor: "#e6b55d",
+          noteBkgColor: "#332919",
+          noteBorderColor: "#eea244",
+          noteTextColor: "#ece8db",
+          activationBkgColor: "#1c2920",
+          activationBorderColor: "#97c07a",
+          fontFamily: '"Source Sans 3", sans-serif',
+          fontSize: "16px",
+        },
+        sequence: {
+          actorMargin: 45,
+          messageMargin: 26,
+          noteMargin: 12,
+          mirrorActors: true,
+          wrap: true,
+          useMaxWidth: false,
+        },
+      });
+
+      try {
+        await mermaid.run({ querySelector: ".mermaid" });
+        const svg = layer.querySelector("svg");
+        const bounds = svg.getBoundingClientRect();
+        diagramWidth = bounds.width;
+        if (window.innerWidth <= 720) {
+          scale = 1;
+          x = 16;
+          y = 16;
+          fitActive = false;
+          draw();
+        } else {
+          fitToWidth();
+        }
+      } catch (error) {
+        console.error(error);
+        errorBox.textContent = "Mermaid không render được. Kiểm tra kết nối CDN.";
+        errorBox.hidden = false;
+      }
+
+      zoomOut.addEventListener("click", () => zoomAt(scale / 1.2, innerWidth / 2, innerHeight / 2));
+      zoomIn.addEventListener("click", () => zoomAt(scale * 1.2, innerWidth / 2, innerHeight / 2));
+      fitWidth.addEventListener("click", fitToWidth);
+
+      viewport.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        zoomAt(scale * (event.deltaY < 0 ? 1.12 : 1 / 1.12), event.clientX, event.clientY);
+      }, { passive: false });
+
+      viewport.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        drag = { pointerId: event.pointerId, startX: event.clientX - x, startY: event.clientY - y };
+        viewport.setPointerCapture(event.pointerId);
+        viewport.classList.add("dragging");
+        fitActive = false;
+      });
+
+      viewport.addEventListener("pointermove", (event) => {
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        x = event.clientX - drag.startX;
+        y = event.clientY - drag.startY;
+        draw();
+      });
+
+      const finishDrag = (event) => {
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        drag = null;
+        viewport.classList.remove("dragging");
+      };
+      viewport.addEventListener("pointerup", finishDrag);
+      viewport.addEventListener("pointercancel", finishDrag);
+
+      window.addEventListener("resize", () => {
+        if (fitActive) fitToWidth();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.target instanceof HTMLButtonElement) return;
+        if (event.key === "+" || event.key === "=") zoomAt(scale * 1.2, innerWidth / 2, innerHeight / 2);
+        else if (event.key === "-") zoomAt(scale / 1.2, innerWidth / 2, innerHeight / 2);
+        else if (event.key === "0") fitToWidth();
+      });
+    </script>
+  </body>
+</html>

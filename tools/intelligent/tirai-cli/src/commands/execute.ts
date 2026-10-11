@@ -12,6 +12,9 @@ import { updateState } from '../state.js';
 import { CliError } from '../errors.js';
 import { resolveActiveTask, taskPaths, updateTask } from '../tasks.js';
 import { validateMappingItems } from './mapping.js';
+import { executeApprovedWebCases } from './web-execution.js';
+import { loadTestCases } from '../workflow.js';
+import type { TestCase } from 'test-execution-orchestrator';
 
 export interface ExecuteOptions {
   cwd: string;
@@ -20,6 +23,8 @@ export interface ExecuteOptions {
   json?: boolean;
   taskId?: string;
   testCaseId?: string;
+  testCaseIds?: string[];
+  confirmDedicatedTestTenant?: boolean;
   module?: string;
   mappingPath?: string;
 }
@@ -32,10 +37,17 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
   const paths = taskRoot ? { ...basePaths, testCasesPath: `${taskRoot.artifacts}/testcases.json` } : basePaths;
   const config = loadConfig(basePaths);
 
-  // Determine platform
   const platform = opts.platform || 'web';
+  if (platform === 'web' && !opts.environment) {
+    throw new CliError('INVALID_TARGET', 'Web execution requires an explicit --environment on every run.');
+  }
   const environment = opts.environment || config.project.defaultEnvironment || 'local';
-
+  if (platform === 'web') {
+    if (task) throw new CliError('INVALID_TARGET', 'Web execution uses the application .tirai workspace and does not support task-scoped artifacts.');
+    if ((!opts.testCaseId && !opts.testCaseIds?.length) || (opts.testCaseId && opts.testCaseIds) || opts.module) {
+      throw new CliError('INVALID_TARGET', 'Web execution requires explicit --test-case or --test-cases selection; --module is not supported.');
+    }
+  }
   // Validate platform is configured
   const platforms = config.platforms;
   if (!platforms || !platforms[platform as keyof typeof platforms]) {
@@ -45,16 +57,14 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
     );
   }
 
-  // Load canonical test cases
   const testCasesPath = paths.testCasesPath;
-  if (!fs.existsSync(testCasesPath)) {
-    throw new CliError('CONFIG_INVALID', 'No test cases found. Run "tirai plan" first.');
-  }
-  const loaded = JSON.parse(fs.readFileSync(testCasesPath, 'utf8'));
-  const allTestCases = Array.isArray(loaded) ? loaded : (loaded as { testCases?: unknown[] }).testCases ?? [];
+  const allTestCases = loadTestCases(testCasesPath);
+  const selectedIds = opts.testCaseIds ? new Set(opts.testCaseIds) : undefined;
   const testCases = allTestCases.filter((testCase) => {
     const value = testCase as { id?: string; module?: string; moduleId?: string };
-    return (!opts.testCaseId || value.id === opts.testCaseId) && (!opts.module || value.module === opts.module || value.moduleId === opts.module);
+    return (!opts.testCaseId || value.id === opts.testCaseId)
+      && (!selectedIds || selectedIds.has(value.id ?? ''))
+      && (!opts.module || value.module === opts.module || value.moduleId === opts.module);
   });
   if (testCases.length === 0) throw new CliError('CONFIG_INVALID', 'No test cases match the requested execution filter.');
   const contractPath = path.join(paths.artifactsDir, 'contract.json');
@@ -86,7 +96,15 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
   let result: Record<string, unknown>;
   switch (platform) {
     case 'web':
-      result = await executeWeb(testCases, platforms.web!.environments[environment], environment);
+      result = await executeApprovedWebCases({
+        paths,
+        config,
+        environment,
+        environmentConfig: platforms.web!.environments[environment],
+        testCases: testCases as TestCase[],
+        selectedCaseIds: opts.testCaseIds ?? (opts.testCaseId ? [opts.testCaseId] : []),
+        dedicatedTestTenantConfirmed: opts.confirmDedicatedTestTenant ?? false,
+      });
       break;
     case 'backend':
       result = await executeBackend(testCases, platforms.backend!.environments[environment], environment);
@@ -122,7 +140,7 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
     platform,
     environment,
     contract: contract ? { id: contract.contractId, version: contract.contractVersion, fingerprint: contract.metadata?.contractFingerprint } : null,
-    selection: { testCaseId: opts.testCaseId, module: opts.module, count: testCases.length, testCaseIds: testCases.map((testCase) => (testCase as { id?: string }).id).filter(Boolean) },
+    selection: { testCaseId: opts.testCaseId, testCaseIds: opts.testCaseIds, module: opts.module, count: testCases.length, testCaseIdsResolved: testCases.map((testCase) => (testCase as { id?: string }).id).filter(Boolean) },
     executionMapping,
     ...result,
   }, null, 2), 'utf8');
@@ -132,7 +150,7 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
     ...s,
     run: {
       at: new Date().toISOString(),
-      runId: `run-${Date.now()}`,
+      runId: typeof result.runId === 'string' ? result.runId : `run-${Date.now()}`,
       overall: result.status as string,
     },
   }));
@@ -150,24 +168,6 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
   }
 }
 
-async function executeWeb(
-  testCases: unknown[],
-  envConfig: { baseUrl: string },
-  environment: string,
-): Promise<Record<string, unknown>> {
-  // Web execution via agentic browser executor
-  // Full integration requires browser session setup
-  return {
-    status: 'ready',
-    executionStatus: 'manual',
-    evidence: { kind: 'configuration', executable: false, reason: 'Browser session is required; use generated Playwright tests for execution.' },
-    platform: 'web',
-    environment,
-    baseUrl: envConfig.baseUrl,
-    testCases: testCases.length,
-    note: 'Web execution requires browser session. Use "tirai run" for generated E2E tests.',
-  };
-}
 
 async function executeBackend(
   testCases: unknown[],
