@@ -159,6 +159,11 @@ describe('Provider Registry', () => {
     expect(provider.name).toBe('groq');
   });
 
+  it('creates subscription-backed CLI providers via the factory', () => {
+    for (const name of ['codex', 'claude', 'antigravity']) {
+      expect(createAIProvider({ provider: name }).name).toBe(name);
+    }
+  });
   it('throws CONFIG_ERROR for unknown provider', () => {
     expect(() => createAIProvider({ provider: 'nonexistent' }))
       .toThrow(/Unknown provider/);
@@ -167,7 +172,11 @@ describe('Provider Registry', () => {
   it('lists registered providers', () => {
     const providers = listProviders();
     expect(providers).toContain('groq');
+    expect(providers).toContain('codex');
+    expect(providers).toContain('claude');
+    expect(providers).toContain('antigravity');
     expect(providers).toContain('deepseek');
+    expect(providers).toContain('cli');
   });
 
   it('allows registering custom providers', () => {

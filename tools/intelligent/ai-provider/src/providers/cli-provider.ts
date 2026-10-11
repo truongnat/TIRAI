@@ -27,9 +27,8 @@ export class CLIProvider implements AIProvider {
     const args = rawArgs.map((arg) => arg.replaceAll('{input}', inputFile).replaceAll('{output}', outputFile));
     return new Promise((resolve, reject) => {
       const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'] });
-      let stdout = ''; let stderr = ''; let settled = false;
+      let stderr = ''; let settled = false;
       const timeout = setTimeout(() => { child.kill('SIGTERM'); reject(new AIProviderError({ code: AIProviderErrorCode.TIMEOUT, provider: this.name, message: 'AI CLI timed out.' })); settled = true; }, this.config.timeoutMs ?? 120_000);
-      child.stdout.on('data', (data) => { stdout += data.toString(); });
       child.stderr.on('data', (data) => { stderr += data.toString(); });
       child.on('error', (error) => { if (!settled) { clearTimeout(timeout); reject(new AIProviderError({ code: AIProviderErrorCode.PROVIDER_UNAVAILABLE, provider: this.name, message: 'AI CLI could not start.', cause: error })); } });
       child.on('close', (code) => {

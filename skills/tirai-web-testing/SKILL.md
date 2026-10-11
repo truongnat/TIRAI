@@ -1,7 +1,6 @@
 ---
 name: tirai-web-testing
 description: Guide a tester through TIRAI’s specification-first, human-approved web testing workflow.
-disable-model-invocation: true
 ---
 
 # TIRAI Web Testing
@@ -15,8 +14,9 @@ Operate TIRAI as a tester’s assistant. The tester decides scope, resolves ambi
 3. Read `.tirai/config.json`, `.tirai/state/workspace.json`, and current artifacts only as needed. If the CLI or Chromium is missing, explain the exact missing prerequisite and ask before installing anything.
 4. Confirm the target app is already running; its local/dev/staging URL; the dedicated test tenant and data; allowed test account; auth method; selected spec file; and tester/reviewer name. Never target production. The tester must confirm the environment and dedicated tenant again before every execution.
 5. Accept local Excel `.xlsx`/`.xlsm`, Markdown `.md`/`.markdown`, or HTML `.html`/`.htm` files. For Confluence, ask the tester to export a local file; there is no Confluence provider in v1.
-6. Use a real configured AI provider for ingestion, planning, and execution. If `.tirai/config.json` still uses `fake`, stop and ask the tester to configure `ai.provider`/`ai.model` and the provider key in the process environment. Never request, print, or persist raw credentials.
-7. Keep execution black-box by default. Ask separately before using `tirai ingest <spec> --source-code <dir>`; this is read-only source inspection and is not needed for web execution.
+6. Configure TIRAI's internal `ai.provider` before ingesting or testing. If it is `fake` or missing, check which supported CLI adapters are installed and ask the tester to select the intended provider/account when unclear. Subscription-capable CLI adapters are `codex`, `claude`, and `antigravity`; direct API providers `groq` and `deepseek` use process environment keys; `cli` is the separate artifact-wrapper protocol. The selected CLI uses its active saved authentication; the tester must confirm it is the intended subscription/account because TIRAI cannot inspect or enforce vendor billing mode. After the tester chooses, ask before changing only `ai.provider` and, if requested, `ai.model` in `.tirai/config.json`. Never request, print, or store raw credentials. If login is missing, ask before starting native sign-in (`codex login`, `claude auth login`, or interactive `agy`); select the intended account and pause for human browser/TTY input rather than collecting credentials.
+7. The host AI conversation is not forwarded to TIRAI's internal provider. Send only the messages required for the current TIRAI operation; never include host-chat history or credentials.
+8. Keep execution black-box by default. Ask separately before using `tirai ingest <spec> --source-code <dir>`; this is read-only source inspection and is not needed for web execution.
 
 ## 2. Ingest and inspect the specification
 

@@ -41,6 +41,17 @@ export type { CLIProviderConfig } from './providers/cli-provider.js';
 export type { DeepSeekProviderConfig } from './providers/deepseek/deepseek-config.js';
 export { resolveDeepSeekConfig } from './providers/deepseek/deepseek-config.js';
 
+// Subscription-backed local CLIs
+export {
+  AntigravityProvider,
+  ClaudeProvider,
+  CodexProvider,
+} from './providers/subscription-cli-provider.js';
+export type {
+  SubscriptionCLIProviderConfig,
+  SubscriptionCLIProviderName,
+} from './providers/subscription-cli-provider.js';
+
 // Utilities
 export { withRetry, DEFAULT_RETRY_OPTIONS } from './utils/retry.js';
 export type { RetryOptions } from './utils/retry.js';

@@ -11,12 +11,18 @@ import type { GroqProviderConfig } from './providers/groq/groq-config.js';
 import { DeepSeekProvider } from './providers/deepseek/deepseek-provider.js';
 import type { DeepSeekProviderConfig } from './providers/deepseek/deepseek-config.js';
 import { CLIProvider } from './providers/cli-provider.js';
+import {
+  AntigravityProvider,
+  ClaudeProvider,
+  CodexProvider,
+  type SubscriptionCLIProviderConfig,
+} from './providers/subscription-cli-provider.js';
 
 /** Factory function that creates an AIProvider instance. */
 export type ProviderFactory = (config?: Record<string, unknown>) => AIProvider;
 
 /** Known provider identifiers. */
-export type KnownProvider = 'groq' | 'deepseek' | 'cli';
+export type KnownProvider = 'groq' | 'deepseek' | 'codex' | 'claude' | 'antigravity' | 'cli';
 
 const registry = new Map<string, ProviderFactory>();
 
@@ -24,6 +30,9 @@ const registry = new Map<string, ProviderFactory>();
 registry.set('groq', (config) => new GroqProvider(config as Partial<GroqProviderConfig>));
 registry.set('deepseek', (config) => new DeepSeekProvider(config as Partial<DeepSeekProviderConfig>));
 registry.set('cli', (config) => new CLIProvider(config as { command: string; model?: string; timeoutMs?: number }));
+registry.set('codex', (config) => new CodexProvider(config as SubscriptionCLIProviderConfig));
+registry.set('claude', (config) => new ClaudeProvider(config as SubscriptionCLIProviderConfig));
+registry.set('antigravity', (config) => new AntigravityProvider(config as SubscriptionCLIProviderConfig));
 
 /**
  * Create an AI provider by name.

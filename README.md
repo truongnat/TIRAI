@@ -119,48 +119,46 @@ See [`docs/installation.md`](docs/installation.md) for full installation details
 # verify installation
 tirai --version
 tirai --help
-
-# from this TIRAI checkout, install the Codex-first Skill
-mkdir -p "$HOME/.agents/skills/tirai-web-testing"
-cp skills/tirai-web-testing/SKILL.md "$HOME/.agents/skills/tirai-web-testing/SKILL.md"
-
-# open your target project
-cd my-project
-
-# initialize a workspace in the app project
-tirai init
-
-# edit .tirai/config.json: set ai.provider and ai.model to a real supported provider
-# keep the API key in the matching process environment variable
-export GROQ_API_KEY=...
-
-# ingest a local Excel, Markdown, or HTML specification
-tirai ingest ./spec.xlsx
-tirai plan
-
-# configure a non-production app target; auth secrets stay in environment variables
-tirai target add web --environment staging --url https://staging.example.com
-
-# Choose one session setup if SSO is required:
-# Temporary manual session, consumed after execution:
-# tirai auth login --environment staging
-# Or import a reusable Playwright storageState JSON:
-# tirai auth import --environment staging --file ./storageState.json
-
-# discover same-origin routes, then let the Skill guide tester review/approval
-tirai web discover --environment staging
-
-# execute only reviewed case IDs, with dedicated test tenant confirmation
-tirai execute --platform web --environment staging --test-case TC-1 --confirm-dedicated-test-tenant
-tirai report --json
-
-# optional developer workflows
-tirai generate --target playwright
-tirai generate --target vitest --source-mapping ./unit.json
 ```
 
+From the TIRAI checkout, install the Skill into the host assistant you use:
 
-Provider credentials remain environment variables:
+```bash
+# Codex
+mkdir -p "$HOME/.agents/skills/tirai-web-testing"
+cp skills/tirai-web-testing/SKILL.md "$HOME/.agents/skills/tirai-web-testing/SKILL.md"
+# Claude Code
+mkdir -p "$HOME/.claude/skills/tirai-web-testing"
+cp skills/tirai-web-testing/SKILL.md "$HOME/.claude/skills/tirai-web-testing/SKILL.md"
+# Antigravity CLI
+mkdir -p "$HOME/.gemini/antigravity-cli/skills/tirai-web-testing"
+cp skills/tirai-web-testing/SKILL.md "$HOME/.gemini/antigravity-cli/skills/tirai-web-testing/SKILL.md"
+```
+
+Open the target application project in the host assistant, then start a chat:
+
+```bash
+cd my-project
+```
+
+Example request: “Set up TIRAI here, then help me review `./spec.xlsx` against the staging web app.” The Skill asks before initialization and provider/config changes, then guides spec clarification, route/case review, execution approval, and bug-draft confirmation. The host AI runs the TIRAI commands.
+
+### AI provider modes
+
+The host assistant (Codex, Claude Code, or Antigravity) reads the `tirai-web-testing` Skill and operates the TIRAI CLI. TIRAI's separate `ai.provider` setting powers its own ingestion and web-execution calls; the host conversation is not forwarded to it.
+
+| `ai.provider` | Authentication | Protocol |
+| --- | --- | --- |
+| `codex` | Native login via `codex login`; active account determines billing | Local CLI; subscription-capable |
+| `claude` | Native login via `claude auth login`; active account determines billing | Local CLI; subscription-capable |
+| `antigravity` | Run `agy` and complete native login; active account determines billing | Local CLI; subscription-capable |
+| `groq` | `GROQ_API_KEY` environment variable | Direct API |
+| `deepseek` | `DEEPSEEK_API_KEY` environment variable | Direct API |
+| `cli` | User-configured executable | JSON artifact wrapper using `{input}` and `{output}` |
+
+Subscription-capable providers use each CLI's active saved authentication. Confirm the selected account uses the intended subscription/quota; TIRAI cannot inspect or enforce the vendor's billing mode. TIRAI does not import or store vendor credentials. Keep API keys outside config and use the matching process environment variable.
+
+The three subscription CLI adapters run from a private temporary working directory with a filtered environment and no host-chat transcript. Codex uses read-only ephemeral execution; Claude Code runs with built-in tools and MCP tools disabled, safe mode, and no session persistence; Antigravity uses `--sandbox` and never bypasses permissions. Pre-existing broad Antigravity permissions can still widen access.
 
 ```bash
 export GROQ_API_KEY=...
@@ -168,9 +166,11 @@ export GROQ_API_KEY=...
 export DEEPSEEK_API_KEY=...
 ```
 
+The generic `cli` provider remains separate: its command must implement TIRAI's input/output artifact contract and is not a wrapper for arbitrary chat CLIs.
+
 ### Human-reviewed web testing
 
-The Codex-first `tirai-web-testing` Skill guides testers through specification review, route selection, approved test cases, execution, and bug-report drafts. TIRAI CLI supplies real Playwright browser execution and local run artifacts.
+The `tirai-web-testing` Skill guides specification review, clarification, route selection, approved cases, execution, and bug-report drafts through the host AI chat. TIRAI CLI supplies internal AI operations, real Playwright browser execution, and local run artifacts.
 
 - Web-testing v1 accepts local `.xlsx`/`.xlsm`, `.md`/`.markdown`, and `.html`/`.htm` specifications; Confluence is a future provider.
 - The runner is black-box by default, functional UI only, and accepts only local/dev/staging labels. It blocks production-like hostnames, but the tester must verify the exact URL and dedicated test tenant every run because arbitrary DNS aliases cannot be classified reliably.
