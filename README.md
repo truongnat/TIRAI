@@ -87,7 +87,7 @@ Excel / PDF / DOCX / Markdown / CSV / JSON / URL
 
 ## 🚀 Install
 
-Requires **Node.js 20+** and npm.
+Requires **Node.js 20+** and npm. The installer downloads the published `tirai-cli` package, verifies its SHA256, and installs it globally.
 
 ### Linux / macOS
 
@@ -106,20 +106,35 @@ install.cmd
 ### Install a specific version
 
 ```bash
-TIRAI_VERSION=1.0.0 ./install.sh
+TIRAI_VERSION=1.1.0 ./install.sh        # or set TIRAI_VERSION in the environment on Windows
+```
+
+Private forks can point the installer elsewhere and authenticate with a token:
+
+```bash
+TIRAI_REPO=your-org/TIRAI GITHUB_TOKEN=ghp_... ./install.sh
+```
+
+### Browser runtime (required for `tirai execute`)
+
+The web runner drives a real Chromium through Playwright. Install the browser once per machine:
+
+```bash
+npx playwright install chromium
+```
+
+### Verify
+
+```bash
+tirai --version
+tirai --help
 ```
 
 See [`docs/installation.md`](docs/installation.md) for full installation details.
-
 ---
 
 ## ⚡ Quick Start
 
-```bash
-# verify installation
-tirai --version
-tirai --help
-```
 
 From the TIRAI checkout, install the Skill into the host assistant you use:
 
