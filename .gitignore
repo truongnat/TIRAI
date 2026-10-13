@@ -42,3 +42,4 @@ test-results/
 tools/intelligent/source-to-testcase/scripts/acceptance-e2e/
 site/node_modules/
 site/dist/
+site/.astro/
