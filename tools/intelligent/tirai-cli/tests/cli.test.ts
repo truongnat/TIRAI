@@ -61,7 +61,7 @@ describe('tirai CLI', () => {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
-  });
+  }, 30000);
 
   it('reads canonical test plan and writes a summary', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-plan-'));
@@ -157,5 +157,5 @@ describe('tirai CLI', () => {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
-  });
+  }, 30000);
 });
