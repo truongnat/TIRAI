@@ -307,6 +307,7 @@ async function executeCaseAttempt(input: {
     capabilities: { ...defaultCapabilities(), browser: 'AVAILABLE' },
     policy: defaultAgentPolicy(),
     generationSeed: attemptId,
+    navigationTimeoutMs: input.environmentConfig.navigationTimeoutMs,
   });
   const executor: TestExecutor = {
     type: 'ui',
@@ -412,7 +413,7 @@ async function captureFailureEvidence(
 function createWebSecretProvider(environment: WebEnvironmentConfig): SecretProvider {
   const allowedRefs = new Map<string, string>();
   const auth = environment.auth;
-  for (const reference of [auth?.usernameRef, auth?.passwordRef, auth?.tokenRef]) {
+  for (const reference of [auth?.usernameRef, auth?.passwordRef, auth?.tokenRef, ...(auth?.extraRefs ?? [])]) {
     if (!reference) continue;
     const envName = reference.slice('env:'.length);
     allowedRefs.set(reference, envName);

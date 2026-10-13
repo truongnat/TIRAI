@@ -112,7 +112,8 @@ function validateTestCases(value: unknown): void {
       || !arrayOfRecords(record.expectedResults, (result) => hasText(result.description)
         && ['ui', 'api', 'database', 'state', 'log', 'other'].includes(String(result.verificationType)))
       || !arrayOfRecords(record.cleanup, (cleanup) => hasText(cleanup.description)
-        && (cleanup.target === undefined || hasText(cleanup.target)))
+        && (cleanup.target === undefined || hasText(cleanup.target))
+        && (cleanup.steps === undefined || (Array.isArray(cleanup.steps) && cleanup.steps.every((s: unknown) => typeof s === 'object' && s !== null && hasText((s as { action?: unknown }).action)))))
       || !arrayOfRecords(record.provenance, (provenance) => hasText(provenance.requirementId))) {
       invalid('has a malformed required field or array entry');
     }

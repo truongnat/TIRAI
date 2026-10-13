@@ -7,7 +7,7 @@ import type { BrowserObservation, ObservedElement, RawObservationData } from '..
 
 const OBSERVATION_BUDGET = 50;
 
-const INTERACTIVE_SELECTORS = 'button, a[href], input, select, textarea, [role=button], [role=link], [role=textbox], [role=checkbox], [role=radio], [role=combobox], [role=tab], [role=menuitem], [tabindex]';
+const INTERACTIVE_SELECTORS = 'button, a[href], input, select, textarea, label, [role=button], [role=link], [role=textbox], [role=checkbox], [role=radio], [role=combobox], [role=tab], [role=menuitem], [tabindex]';
 const HEADING_TAGS = 'h1, h2, h3';
 
 const OBSERVATION_SCRIPT = `
@@ -45,14 +45,33 @@ const OBSERVATION_SCRIPT = `
       if (labels.length > 0) return labels[0].textContent.trim();
     }
     const parentLabel = el.closest('label');
-    if (parentLabel) {
+    if (parentLabel && parentLabel !== el) {
       const clone = parentLabel.cloneNode(true);
       const inputs = clone.querySelectorAll('input, select, textarea');
       inputs.forEach(i => i.remove());
       const text = clone.textContent.trim();
       if (text) return text;
     }
+    // Sibling-label pattern (e.g. demoqa/Bootstrap markup without a for
+    // attribute): a label inside the same form group describes the control.
+    const group = el.closest('.form-group, .form-row, .row, fieldset, .field, .mb-3');
+    if (group) {
+      const sib = group.querySelector('label');
+      if (sib && sib !== el) {
+        const text = sib.textContent.trim();
+        if (text) return text.substring(0, 100);
+      }
+    }
     const tag = el.tagName.toLowerCase();
+    if (tag === 'input') {
+      // <input type="submit|button|reset"> renders its value attribute as the label.
+      const t = (el.getAttribute('type') || 'text').toLowerCase();
+      if (t === 'submit' || t === 'button' || t === 'reset' || t === 'image') {
+        const v = (el.getAttribute('value') || el.value || '').trim();
+        if (v) return v.substring(0, 100);
+      }
+      return '';
+    }
     if (tag === 'button' || tag === 'a') {
       return el.textContent.trim().substring(0, 100);
     }
@@ -63,7 +82,8 @@ const OBSERVATION_SCRIPT = `
     const style = window.getComputedStyle(el);
     if (style.display === 'none') return false;
     if (style.visibility === 'hidden') return false;
-    if (style.opacity === '0') return false;
+    // opacity:0 elements stay interactable (visually-hidden custom control
+    // pattern, e.g. styled checkboxes); Playwright treats them as visible.
     const rect = el.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0;
   }
@@ -74,10 +94,12 @@ const OBSERVATION_SCRIPT = `
   });
 
   const elements = [];
+  let domIndex = 0;
   document.querySelectorAll('${INTERACTIVE_SELECTORS}').forEach(el => {
+    const thisIndex = domIndex++;
     if (!isVisible(el)) return;
     const role = getRole(el);
-    if (role === 'generic' && !el.getAttribute('tabindex')) return;
+    if (role === 'generic' && !el.getAttribute('tabindex') && el.tagName.toLowerCase() !== 'label') return;
 
     const tag = el.tagName.toLowerCase();
     const inputType = tag === 'input' ? (el.getAttribute('type') || 'text').toLowerCase() : undefined;
@@ -94,6 +116,8 @@ const OBSERVATION_SCRIPT = `
       checked: !!el.checked,
       selected: !!el.selected,
       testId: el.getAttribute('data-testid') || undefined,
+      domId: el.id || undefined,
+      domIndex: thisIndex,
     });
   });
 
@@ -125,6 +149,8 @@ export async function observeBrowser(page: BrowserPage): Promise<BrowserObservat
       enabled: el.enabled,
       checked: el.checked || undefined,
       selected: el.selected || undefined,
+      domId: el.domId,
+      domIndex: el.domIndex,
     };
   });
 

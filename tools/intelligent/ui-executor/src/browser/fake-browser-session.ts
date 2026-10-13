@@ -88,6 +88,15 @@ export class FakeBrowserPage implements BrowserPage {
     this.actions.push({ type: 'press', target: target.description, value: key });
   }
 
+  async pressKey(key: string): Promise<void> {
+    this.actions.push({ type: 'press', value: key });
+  }
+
+  async hover(target: ResolvedLocator, _options?: { timeoutMs?: number }): Promise<void> {
+    this.checkElement(target);
+    this.actions.push({ type: 'hover', target: target.description });
+  }
+
   async focus(target: ResolvedLocator, _options?: { timeoutMs?: number }): Promise<void> {
     this.checkElement(target);
     this.actions.push({ type: 'focus', target: target.description });

@@ -27,6 +27,7 @@ export interface TargetAddOptions {
   usernameRef?: string;
   passwordRef?: string;
   tokenRef?: string;
+  secretRefs?: string;
   json?: boolean;
 }
 
@@ -96,7 +97,13 @@ export async function runTargetAdd(opts: TargetAddOptions): Promise<void> {
       throw new CliError('CONFIG_INVALID', `--${label} must use env:NAME; raw secrets are not accepted.`);
     }
   }
-  if (platform !== 'web' && (opts.authType || opts.usernameRef || opts.passwordRef || opts.tokenRef)) {
+  const extraRefs = (opts.secretRefs ?? '').split(',').map((ref) => ref.trim()).filter(Boolean);
+  for (const ref of extraRefs) {
+    if (!ref.startsWith('env:')) {
+      throw new CliError('CONFIG_INVALID', '--secret-refs must use env:NAME entries; raw secrets are not accepted.');
+    }
+  }
+  if (platform !== 'web' && (opts.authType || opts.usernameRef || opts.passwordRef || opts.tokenRef || extraRefs.length > 0)) {
     throw new CliError('INVALID_TARGET', 'Web authentication flags can only be used with the web platform.');
   }
 
@@ -120,6 +127,7 @@ export async function runTargetAdd(opts: TargetAddOptions): Promise<void> {
       ...(opts.usernameRef ? { usernameRef: opts.usernameRef as `env:${string}` } : {}),
       ...(opts.passwordRef ? { passwordRef: opts.passwordRef as `env:${string}` } : {}),
       ...(opts.tokenRef ? { tokenRef: opts.tokenRef as `env:${string}` } : {}),
+      ...(extraRefs.length > 0 ? { extraRefs: extraRefs as `env:${string}`[] } : {}),
     };
     const hasAuthRefs = Object.keys(authRefs).length > 0;
     const inferredAuthType = opts.authType ?? (opts.tokenRef ? 'bearer' : hasAuthRefs ? 'basic' : 'none');

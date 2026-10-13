@@ -14,6 +14,8 @@ export interface ActionResult {
 export interface ExecuteActionOptions {
   /** Origin used to resolve relative navigate URLs when the page is blank. */
   baseUrl?: string;
+  /** Override for page.goto timeout on slow targets. */
+  navigationTimeoutMs?: number;
 }
 
 export async function executeAction(
@@ -32,7 +34,7 @@ export async function executeAction(
         const target = /^https?:\/\//i.test(action.url)
           ? action.url
           : base ? new URL(action.url, base).href : action.url;
-        await page.goto(target);
+        await page.goto(target, options?.navigationTimeoutMs ? { timeoutMs: options.navigationTimeoutMs } : undefined);
         return { success: true };
       }
 
@@ -40,6 +42,13 @@ export async function executeAction(
         const loc = resolveLocator(action, idMap);
         if (!loc) return { success: false, error: `Cannot resolve element ${action.elementId}` };
         await page.click(loc);
+        return { success: true };
+      }
+
+      case 'hover': {
+        const loc = resolveLocator(action, idMap);
+        if (!loc) return { success: false, error: `Cannot resolve element ${action.elementId}` };
+        await page.hover(loc);
         return { success: true };
       }
 
@@ -82,6 +91,11 @@ export async function executeAction(
       }
 
       case 'press': {
+        if (!action.elementId) {
+          // Key-only press (e.g. "press Enter") acts on the focused element.
+          await page.pressKey(action.key ?? 'Enter');
+          return { success: true };
+        }
         const loc = resolveLocator(action, idMap);
         if (!loc) return { success: false, error: `Cannot resolve element ${action.elementId}` };
         await page.press(loc, action.key ?? 'Enter');

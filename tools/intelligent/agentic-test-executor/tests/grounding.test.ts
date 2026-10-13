@@ -254,4 +254,39 @@ describe('groundStep (deterministic)', () => {
     });
     expect(result.reasoning).toContain('Element detached');
   });
+
+  it('disambiguates fill between a label sibling and its textbox by role', () => {
+    const obs = makeObservation({
+      elements: [
+        makeElement({ id: 'el-001', role: 'generic', accessibleName: 'Email' }),
+        makeElement({ id: 'el-002', role: 'textbox', accessibleName: 'Email', placeholder: 'name@example.com' }),
+      ],
+    });
+    const result = groundStep({
+      testCaseId: 'TC-001',
+      stepIndex: 1,
+      stepDescription: 'Fill "Email" with tirai@example.com',
+      stepTarget: 'Email',
+      stepInput: 'tirai@example.com',
+      observation: obs,
+    });
+    expect(result.action).toEqual({ type: 'fill', elementId: 'el-002', value: 'tirai@example.com' });
+    expect(result.unresolvedReason).toBeUndefined();
+  });
+
+  it('stays fail-closed when two role-compatible matches remain ambiguous', () => {
+    const obs = makeObservation({
+      elements: [
+        makeElement({ id: 'el-001', role: 'button', accessibleName: 'Delete' }),
+        makeElement({ id: 'el-002', role: 'button', accessibleName: 'Delete' }),
+      ],
+    });
+    const result = groundStep({
+      testCaseId: 'TC-001',
+      stepIndex: 1,
+      stepDescription: 'Click "Delete"',
+      observation: obs,
+    });
+    expect(result.unresolvedReason).toBe('AMBIGUOUS_TARGET');
+  });
 });

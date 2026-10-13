@@ -321,6 +321,17 @@ class PlaywrightBrowserPage implements BrowserPage {
     await loc.press(key, { timeout: options?.timeoutMs });
   }
 
+  async pressKey(key: string): Promise<void> {
+    // Key-only press targets whichever element has focus (e.g. Enter to submit a form).
+    await this.page.keyboard.press(key);
+  }
+
+  async hover(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void> {
+    const loc = this.toPlaywrightLocator(target);
+    await this.assertUnique(loc, target);
+    await loc.hover({ timeout: options?.timeoutMs });
+  }
+
   async focus(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void> {
     const loc = this.toPlaywrightLocator(target);
     await this.assertUnique(loc, target);
