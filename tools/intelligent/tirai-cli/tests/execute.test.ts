@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
 import { runExecute } from '../src/commands/execute.js';
+import { runReport } from '../src/commands/report.js';
 import { runTargetAdd } from '../src/commands/target.js';
 import { getWorkspacePaths } from '../src/workspace.js';
 
@@ -17,7 +18,6 @@ describe('execute command', () => {
     fs.writeFileSync(path.join(tmp, '.tirai', 'config.json'), JSON.stringify({
       version: 2,
       workspaceVersion: 1,
-      ai: { provider: 'fake', model: 'fake-model' },
       project: { root: tmp, defaultEnvironment: 'local', defaultLanguage: 'en' },
       platforms: {},
       source: {},
@@ -55,13 +55,12 @@ describe('execute command', () => {
       { id: 'TC-001', title: 'test' },
     ]), 'utf8');
 
-    let error: Error | null = null;
-    try {
-      await runExecute({ cwd: tmp, platform: 'backend', environment: 'staging' });
-    } catch (e) {
-      error = e as Error;
-    }
-    expect(error).toBeNull();
+    const exitCode = await runExecute({ cwd: tmp, platform: 'backend', environment: 'staging' });
+    expect(exitCode).toBe(2);
+    await runReport({ cwd: tmp });
+    const report = JSON.parse(fs.readFileSync(path.join(tmp, '.tirai/reports/report.json'), 'utf8'));
+    expect(report.overall).toBe('MANUAL');
+    expect(report.adapters[0].executionStatus).toBe('manual');
   });
 
   it('executes for configured database platform', async () => {
@@ -71,13 +70,8 @@ describe('execute command', () => {
       { id: 'TC-001', title: 'test' },
     ]), 'utf8');
 
-    let error: Error | null = null;
-    try {
-      await runExecute({ cwd: tmp, platform: 'database', environment: 'staging' });
-    } catch (e) {
-      error = e as Error;
-    }
-    expect(error).toBeNull();
+    const exitCode = await runExecute({ cwd: tmp, platform: 'database', environment: 'staging' });
+    expect(exitCode).toBe(2);
   });
 
   it('rejects a selected case ID that is not in the canonical case list', async () => {
@@ -91,5 +85,17 @@ describe('execute command', () => {
       testCaseId: 'TC-404',
       confirmDedicatedTestTenant: true,
     })).rejects.toThrow('No test cases match');
+  });
+  it('returns a configuration error for an unknown environment', async () => {
+    await runTargetAdd({ cwd: tmp, platform: 'web', environment: 'local', url: 'http://localhost:4173' });
+    const paths = getWorkspacePaths(tmp);
+    fs.writeFileSync(paths.testCasesPath, JSON.stringify([{ id: 'TC-001', title: 'test' }]), 'utf8');
+    await expect(runExecute({
+      cwd: tmp,
+      platform: 'web',
+      environment: 'staging',
+      testCaseId: 'TC-001',
+      confirmDedicatedTestTenant: true,
+    })).rejects.toThrow(/Environment "staging" is not configured for platform "web"/);
   });
 });

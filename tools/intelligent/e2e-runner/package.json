@@ -1,7 +1,7 @@
 {
   "name": "e2e-runner",
   "version": "1.0.0",
-  "description": "End-to-End Test Runner v1 – product-level runtime entry point that orchestrates the complete test lifecycle",
+  "description": "End-to-End Test Runner v1 \u2013 product-level runtime entry point that orchestrates the complete test lifecycle",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,13 +26,7 @@
     "data-resolver": "file:../data-resolver",
     "execution-engine": "file:../execution-engine",
     "test-execution-orchestrator": "file:../test-execution-orchestrator",
-    "ui-executor": "file:../ui-executor",
-    "database-executor": "file:../database-executor",
-    "api-executor": "file:../api-executor",
-    "requirement-builder": "file:../requirement-builder",
-    "ai-provider": "file:../ai-provider",
-    "semantic-analyzer": "file:../semantic-analyzer",
-    "source-ingestion": "file:../source-ingestion"
+    "ui-executor": "file:../ui-executor"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

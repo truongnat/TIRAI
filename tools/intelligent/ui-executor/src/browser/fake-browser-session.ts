@@ -118,6 +118,18 @@ export class FakeBrowserPage implements BrowserPage {
     return state?.enabled !== false;
   }
 
+  async checkboxInfo(target: ResolvedLocator): Promise<{ kind: 'native' | 'aria' | 'unsupported'; checked: boolean | null }> {
+    const state = this.getElementState(target);
+    if (state?.attributes?.type === 'checkbox') {
+      return { kind: 'native', checked: state.checked ?? false };
+    }
+    if (state?.attributes?.role === 'checkbox') {
+      const checked = state.attributes['aria-checked'];
+      return { kind: 'aria', checked: checked === 'true' ? true : checked === 'false' ? false : null };
+    }
+    return { kind: 'unsupported', checked: null };
+  }
+
   async isChecked(target: ResolvedLocator): Promise<boolean> {
     const state = this.getElementState(target);
     return state?.checked === true;

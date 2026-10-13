@@ -284,6 +284,25 @@ class PlaywrightBrowserPage implements BrowserPage {
     void options;
   }
 
+  async checkboxInfo(target: ResolvedLocator): Promise<{ kind: 'native' | 'aria' | 'unsupported'; checked: boolean | null }> {
+    const loc = this.toPlaywrightLocator(target);
+    await this.assertUnique(loc, target);
+    const info = await loc.evaluate((element) => {
+      if (element.tagName.toLowerCase() === 'input' && element.getAttribute('type') === 'checkbox') {
+        return { kind: 'native' as const, checked: null };
+      }
+      if (element.getAttribute('role') === 'checkbox') {
+        const checked = element.getAttribute('aria-checked');
+        return {
+          kind: 'aria' as const,
+          checked: checked === 'true' ? true : checked === 'false' ? false : null,
+        };
+      }
+      return { kind: 'unsupported' as const, checked: null };
+    });
+    return info.kind === 'native' ? { ...info, checked: await loc.isChecked() } : info;
+  }
+
   async check(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void> {
     const loc = this.toPlaywrightLocator(target);
     await this.assertUnique(loc, target);

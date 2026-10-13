@@ -37,4 +37,19 @@ describe('spec-first ingestion defaults', () => {
       'The user can sign in',
     );
   });
+
+  it('produces only raw artifacts and awaits the host agent for a markdown spec', async () => {
+    await runInit({ cwd: root });
+    const specPath = path.join(root, 'requirements.md');
+    fs.writeFileSync(specPath, '# Login\nThe user can sign in with valid credentials.\n', 'utf8');
+
+    await runIngest({ cwd: root, sourcePath: specPath });
+
+    const paths = getWorkspacePaths(root);
+    expect(fs.existsSync(path.join(paths.artifactsDir, 'ai-input.json'))).toBe(true);
+    expect(fs.existsSync(path.join(paths.artifactsDir, 'context.json'))).toBe(true);
+    // TIRAI performs no embedded AI analysis: the canonical contract must not
+    // appear until the host agent produces and imports it.
+    expect(fs.existsSync(path.join(paths.artifactsDir, 'contract.json'))).toBe(false);
+  });
 });

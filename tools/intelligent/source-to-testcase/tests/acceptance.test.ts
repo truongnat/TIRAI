@@ -1,36 +1,46 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { createDefaultSourceConnectorRegistry } from 'source-ingestion';
-import { writeOrderValidationWorkbook } from './acceptance/make-fixture.js';
-import { buildAcceptanceProvider } from './acceptance/make-provider.js';
+import { writeOrderValidationWorkbook, writeStructuredDesignWorkbook } from './acceptance/make-fixture.js';
 import { runSourceToTestCasePipeline, SourceToTestCaseError } from '../src/index.js';
+import { buildContractIR } from '../src/contract-builder.js';
 
 const OUT = path.resolve(process.cwd(), 'output', 'phase-5-3-source-to-testcase');
 const SRC_DIR = path.join(OUT, 'source');
 const SRC = path.join(SRC_DIR, 'acceptance.xlsx');
+const STRUCTURED_SRC = path.join(SRC_DIR, 'structured-design.xlsx');
 
 beforeAll(async () => {
   fs.mkdirSync(SRC_DIR, { recursive: true });
   await writeOrderValidationWorkbook(SRC);
+  await writeStructuredDesignWorkbook(STRUCTURED_SRC);
 }, 30000);
 
 describe('Phase 5.3 source-to-testcase acceptance', () => {
-  it('runs a REAL .xlsx end-to-end into canonical TestCase JSON', async () => {
-    // Connector-neutral, read-only pre-inspection to learn chunk ids.
-    const registry = createDefaultSourceConnectorRegistry();
-    const doc = await registry.open({ kind: 'excel', path: SRC });
-    const chunkIds = doc.contexts.map((c) => c.id);
-    expect(chunkIds.length).toBeGreaterThan(0);
+  it('compiles a structured design workbook deterministically end-to-end', async () => {
+    const outputDir = path.join(OUT, 'structured');
+    const result = await runSourceToTestCasePipeline({ sourcePath: STRUCTURED_SRC, outputDir });
 
-    const provider = buildAcceptanceProvider(chunkIds);
-    const result = await runSourceToTestCasePipeline({ sourcePath: SRC, provider, outputDir: OUT });
-
-    // Stage AI accounting.
+    // No embedded AI: every stage ran deterministically or via connectors.
     expect(result.metrics.sourceIngestionAiCalls).toBe(0);
-    expect(result.semantic.aiCalls).toBeGreaterThan(0);
+    expect(result.semantic.aiCalls).toBe(0);
+    expect(result.requirements.aiCalls).toBe(0);
+    expect(result.testPlan.aiCalls).toBe(0);
     expect(result.requirements.requirementCount).toBeGreaterThan(0);
     expect(result.testPlan.testCaseCount).toBeGreaterThan(0);
+    expect(result.semanticIR).toBeDefined();
+
+    const importedContract = buildContractIR({
+      document: result.document,
+      semanticIR: { ...result.semanticIR!, analysis: {} as NonNullable<typeof result.semanticIR>['analysis'] },
+      requirementIR: result.requirementIR!,
+      testPlanIR: result.testPlanIR!,
+    });
+    expect(importedContract.metadata.promptVersions).toEqual([]);
+    expect(importedContract.metadata).not.toHaveProperty('aiProvider');
+    expect(importedContract.metadata).not.toHaveProperty('aiModel');
+    expect(result.requirementIR).toBeDefined();
+    expect(result.testPlanIR).toBeDefined();
 
     // Integrity gates.
     expect(result.metrics.secretLeakCount).toBe(0);
@@ -44,10 +54,9 @@ describe('Phase 5.3 source-to-testcase acceptance', () => {
       expect(fs.existsSync(f), `missing artifact ${f}`).toBe(true);
     }
 
-    for (const stage of ['semantic_analysis', 'requirement_build', 'test_planning']) {
-      const checkpoint = JSON.parse(fs.readFileSync(path.join(OUT, 'checkpoints', `${stage}.json`), 'utf8'));
+    for (const stage of ['source_ingestion', 'semantic_analysis', 'requirement_build', 'test_planning']) {
+      const checkpoint = JSON.parse(fs.readFileSync(path.join(outputDir, 'checkpoints', `${stage}.json`), 'utf8'));
       expect(checkpoint.status).toBe('completed');
-      expect(checkpoint.artifact).toBeTypeOf('string');
     }
 
     // Traceability: every test case traces back to a source context chunk.
@@ -57,11 +66,12 @@ describe('Phase 5.3 source-to-testcase acceptance', () => {
       expect(link.sourceContextIds.length).toBeGreaterThan(0);
     }
 
-    // Provider/model recorded (real provider config would appear here).
-    expect(result.semantic.provider).toBe('fake');
+    // The deterministic compiler is recorded as the provider; there is no model.
+    expect(result.semantic.provider).toBe('structured-design-compiler');
+    expect(result.semantic.model).toBe('none');
 
     // Persist the empirically observed metrics for the acceptance report.
-    fs.writeFileSync(path.join(OUT, 'metrics.json'), JSON.stringify({
+    fs.writeFileSync(path.join(outputDir, 'metrics.json'), JSON.stringify({
       source: result.source,
       semantic: result.semantic,
       requirements: result.requirements,
@@ -70,12 +80,39 @@ describe('Phase 5.3 source-to-testcase acceptance', () => {
     }, null, 2), 'utf8');
   }, 120000);
 
+  it('stops after ingestion for generic specs and awaits host-agent artifacts', async () => {
+    const outputDir = path.join(OUT, 'awaiting');
+    const result = await runSourceToTestCasePipeline({ sourcePath: SRC, outputDir });
+
+    expect(result.semantic.status).toBe('awaiting-agent');
+    expect(result.semantic.provider).toBe('agent-imported');
+    expect(result.semantic.model).toBe('none');
+    expect(result.semanticIR).toBeUndefined();
+    expect(result.requirementIR).toBeUndefined();
+    expect(result.testPlanIR).toBeUndefined();
+    expect(result.metrics.secretLeakCount).toBe(0);
+
+    // Ingestion artifacts for the host agent exist.
+    for (const artifact of ['context', 'aiInput', 'aiRun', 'semanticContextDir', 'rawContextManifest'] as const) {
+      expect(fs.existsSync(result.artifacts[artifact]), `missing artifact ${artifact}`).toBe(true);
+    }
+    // IR artifacts are produced later via `tirai artifact import`.
+    for (const artifact of ['semanticIr', 'requirements', 'testPlan', 'testCases', 'contract', 'trace', 'artifactPlan', 'testDesignSummary'] as const) {
+      expect(fs.existsSync(result.artifacts[artifact]), `unexpected artifact ${artifact}`).toBe(false);
+    }
+
+    for (const stage of ['semantic_analysis', 'requirement_build', 'test_planning']) {
+      const checkpoint = JSON.parse(fs.readFileSync(path.join(outputDir, 'checkpoints', `${stage}.json`), 'utf8'));
+      expect(checkpoint.status).toBe('awaiting-agent');
+      expect(checkpoint.aiCalls).toBe(0);
+    }
+  }, 120000);
+
   it('fails closed on an unsupported source (no fabricated downstream)', async () => {
     const bad = path.join(SRC_DIR, 'not-a-source.txt');
     fs.writeFileSync(bad, 'hello', 'utf8');
-    const provider = buildAcceptanceProvider(['ctx-x']);
     await expect(
-      runSourceToTestCasePipeline({ sourcePath: bad, provider, outputDir: path.join(OUT, 'neg') }),
+      runSourceToTestCasePipeline({ sourcePath: bad, outputDir: path.join(OUT, 'neg') }),
     ).rejects.toBeInstanceOf(SourceToTestCaseError);
   }, 30000);
 });

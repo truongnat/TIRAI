@@ -35,7 +35,7 @@ export class JSONExporter implements TestOutputExporter {
     fs.writeFileSync(filePath, JSON.stringify(output, null, 2), 'utf8');
 
     return {
-      artifactId: 'artifact-json-' + testPlanFingerprint.slice(0, 12),
+      artifactId: `artifact-json-${  testPlanFingerprint.slice(0, 12)}`,
       format: 'json',
       kind: 'test-case-export',
       path: filePath,

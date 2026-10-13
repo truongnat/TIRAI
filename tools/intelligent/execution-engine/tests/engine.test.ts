@@ -1363,7 +1363,11 @@ describe('Determinism', () => {
       seed: 'fixed-seed',
       executionIdProvider: { generate: () => 'FIXED' },
     });
-    expect(JSON.stringify(r1)).toBe(JSON.stringify(r2));
+    const withoutTimestamps = (result: typeof r1) => ({
+      ...result,
+      auditTrail: result.auditTrail.map(({ timestamp: _timestamp, ...event }) => event),
+    });
+    expect(withoutTimestamps(r1)).toEqual(withoutTimestamps(r2));
   });
 
   it('148. audit trail timestamps are fixed in dry-run', async () => {

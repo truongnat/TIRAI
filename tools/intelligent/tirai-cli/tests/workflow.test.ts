@@ -29,7 +29,6 @@ describe('private workspace artifact ignore rules', () => {
     const firstWrite = fs.readFileSync(ignorePath, 'utf8');
     ensurePrivateWorkspaceArtifactsIgnored(paths);
 
-    expect(firstWrite).toContain('artifacts/ai/');
     expect(firstWrite).toContain('artifacts/ai-input.json');
     expect(firstWrite).toContain('workflow/runtime/');
     expect(fs.readFileSync(ignorePath, 'utf8')).toBe(firstWrite);

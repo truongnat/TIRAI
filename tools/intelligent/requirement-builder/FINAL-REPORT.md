@@ -1,19 +1,13 @@
 # Requirement Builder v1 — Final Report
 
-## 1. Feature Overview
-
-**Feature**: Requirement Builder v1  
-**Location**: `tools/intelligent/requirement-builder/`  
-**Pipeline Position**: Semantic IR → **Requirement IR** → (Test Planner)  
-**Core Responsibility**: Transform Canonical Semantic IR into structured, testable, traceable requirements.
+> Historical implementation report. Provider/API measurements, test counts, and validation results below describe the report-era implementation only; they are not claims about current code or a live model-provider path.
 
 ---
 
 ## 2. Implementation Summary
 
 ### Architecture
-- **Two-pass pipeline**: Pass 1 = per-batch AI candidate extraction, Pass 2 = AI-assisted consolidation (dedup + conflict detection)
-- **Provider-independent**: Uses `AIProvider` interface, tested with Groq
+- **Tool-only execution**: Current pipeline uses deterministic/local analysis; historical provider-era measurements below describe an earlier implementation and are not current execution guarantees.
 - **Evidence-centric**: Every requirement traces back to semantic evidence (flows, rules, entities)
 - **Deterministic output**: Sorted by provenance → type → statement, then assigned REQ-0001, REQ-0002, etc.
 
@@ -34,7 +28,7 @@
 ### File Count
 - **Source files**: 20 TypeScript files in `src/`
 - **Test files**: 5 test files in `tests/`
-- **Total tests**: 50 unit tests + 1 Groq integration test
+- **Tests**: Counts below are historical report data, not a statement of current test status.
 
 ---
 
@@ -56,8 +50,8 @@
 | Testable | 20 (100%) |
 | Provenance Coverage | 1.0 (100%) |
 | Low Confidence | 0 |
-| AI Requests | 6 |
-| Total Tokens | ~20,763 |
+| Historical AI requests | 6 (not current runtime behavior) |
+| Historical token usage | ~20,763 (not current runtime behavior) |
 
 ### Requirement Type Distribution
 | Type | Count |
@@ -68,11 +62,7 @@
 | functional | 1 |
 | state-transition | 1 |
 
-### AI Enrichment Applied
-- **Provenance backfill**: 15 candidates had empty/unknown provenance → filled from batch context
-- **Evidence ID sanitization**: 5 candidates had `flow-flow-0003` → corrected to `flow-0003`
-- **Type inference**: 9 candidates had type "unknown" → inferred from statement content
-- **Testability assessment**: All 20 requirements assessed as "testable" via statement analysis
+Historical AI-enrichment results (not current runtime behavior):
 
 ---
 
@@ -109,16 +99,13 @@
 - 0.93–0.98: 12 requirements (derived from flows with strong evidence)
 - Below 0.9: 0 requirements
 
-### Deduplication Effectiveness
-- Raw candidates from AI: ~30+
-- After consolidation + deterministic dedup: 20
-- Merge groups applied: 4+ (near-duplicates eliminated)
+Historical provider-era candidate counts and consolidation results (not current runtime behavior).
 
 ---
 
 ## 6. Test Coverage
 
-### Unit Tests (50 passing)
+### Historical unit-test record (not current test status)
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
 | `loader.test.ts` | 8 | Input validation, structural checks (§64) |
@@ -126,9 +113,9 @@
 | `quality.test.ts` | 25 | Dedup, conflicts, provenance, testability, determinism, security |
 | `builder.test.ts` | 7 | End-to-end pipeline, manifest, quality report, output files |
 
-### Integration Tests (1 passing)
-| Test | Provider | Result |
-|------|----------|--------|
+Historical integration-test record (not a current/live provider path):
+| Test | Historical provider | Reported result |
+|------|--------------------|-----------------|
 | `groq-integration.test.ts` | Groq API (llama-3.3-70b) | PASS (4.8s) |
 
 ### Test Scenarios Covered (spec §65–§73)
@@ -142,7 +129,7 @@
 - ✅ Semantic reference validation
 - ✅ Entity-as-requirement warning
 - ✅ Non-atomic requirement warning
-- ✅ Schema repair on invalid AI output
+- ✅ Historical provider-era schema repair scenario
 - ✅ Loader rejects invalid input
 - ✅ Quality metrics computation
 - ✅ Manifest stats accuracy
@@ -157,20 +144,20 @@
 | 1 | Package builds without errors | ✅ |
 | 2 | Type-check passes (strict mode) | ✅ |
 | 3 | 50+ unit tests pass | ✅ (50) |
-| 4 | Groq integration test passes | ✅ |
-| 5 | Provider-independent (AIProvider interface) | ✅ |
+| 4 | Historical Groq integration test passed at report time | ✅ (historical) |
+| 5 | Historical provider-independent AIProvider design | ✅ (historical) |
 | 6 | Two-pass architecture (extraction + consolidation) | ✅ |
 | 7 | Evidence batching (bounded, flow-centric) | ✅ |
 | 8 | Candidate layer (intermediate RequirementCandidate) | ✅ |
 | 9 | Deterministic IDs (sorted, REQ-NNNN) | ✅ |
 | 10 | Deterministic ordering (provenance→type→statement) | ✅ |
-| 11 | Dedup (exact match + Jaccard + AI-proposed) | ✅ |
-| 12 | Conflict detection (deterministic + AI-proposed) | ✅ |
+| 11 | Historical AI-proposed dedup | ✅ (historical) |
+| 12 | Conflict detection (deterministic; historical AI proposals) | ✅ (historical) |
 | 13 | Provenance traceability (100% coverage) | ✅ |
 | 14 | Testability assessment (statement analysis) | ✅ |
 | 15 | Entity-as-requirement detection | ✅ |
 | 16 | Atomicity checking | ✅ |
-| 17 | Schema repair (single retry) | ✅ |
+| 17 | Historical schema repair behavior | ✅ (historical) |
 | 18 | Evidence ID sanitization | ✅ |
 | 19 | Type inference for "unknown" | ✅ |
 | 20 | Quality metrics (explicit/derived/testability) | ✅ |
@@ -194,10 +181,10 @@
 
 ## 8. Known Limitations
 
-1. **AI non-determinism**: Different Groq runs may produce slightly different candidate counts/statements (temperature=0 minimizes but doesn't eliminate variance)
-2. **Near-duplicate detection**: Jaccard threshold (0.6) may miss semantically similar requirements with very different wording
-3. **Testability heuristic**: Statement-based assessment is approximate; structured expectedBehaviors from AI would be more accurate
-4. **Single repair attempt**: Only one schema repair attempt per batch; complex failures may need more
+1. **Historical provider variability**: Prior Groq runs could vary in candidate counts/statements; this is not a current provider execution path.
+2. **Near-duplicate detection**: Jaccard threshold (0.6) may miss semantically similar requirements with very different wording.
+3. **Testability heuristic**: Statement-based assessment is approximate.
+4. The remaining entries in this historical report describe the then-current implementation, not a guarantee about current code.
 
 ---
 
@@ -205,6 +192,9 @@
 
 | Metric | Value |
 |--------|-------|
+Historical provider-era token and request measurements (not current runtime behavior):
+| Metric | Historical value |
+|--------|------------------|
 | AI Requests | 6 (5 batch extractions + 1 consolidation) |
 | Input Tokens | ~10,144 |
 | Output Tokens | ~10,619 |
@@ -216,12 +206,6 @@
 
 ## 10. Conclusion
 
-Requirement Builder v1 is **complete and validated**. It successfully transforms Semantic IR into structured, testable, traceable requirements with:
-- 100% provenance coverage
-- 100% testability assessment
-- Zero hallucinated entity-requirements
-- Zero dangling references
-- Deterministic, reproducible output
-- Provider-independent architecture
+The report-era Requirement Builder transformed Semantic IR into structured requirements. The historical quality figures above describe that earlier implementation only; they do not assert current runtime behavior or provider capability.
 
 The tool is ready for integration into the TIRAI pipeline as the second stage (after Semantic Analyzer, before Test Planner).

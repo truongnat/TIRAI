@@ -4,7 +4,7 @@ Use this file as the canonical copy for GitHub's repository-level showcase metad
 
 ## Description
 
-> AI-powered specification-to-test engine — turn Excel, PDF, DOCX, JSON and web specs into deterministic Playwright & Vitest tests.
+> Agent-driven specification-to-test engine — turn Excel, PDF, DOCX, JSON and web specs into deterministic Playwright & Vitest tests.
 
 ## Suggested topics
 
@@ -42,7 +42,7 @@ From Specification to Executable Tests
 ## Social preview subline
 
 ```text
-AI-assisted specification intelligence · Canonical TestCase JSON · Deterministic Playwright & Vitest
+Host-agent specification intelligence · Canonical TestCase JSON · Deterministic Playwright & Vitest
 ```
 
 ## Suggested social-preview direction

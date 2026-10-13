@@ -150,18 +150,19 @@
 sequenceDiagram
     autonumber
     actor QA as Tester / QA
-    participant Skill as Codex Skill
+    participant Skill as Host Agent + Skill
     participant CLI as TIRAI CLI + workflow
-    participant AI as Configured AI provider
     participant WS as .tirai workspace
     participant PW as Playwright / Chromium
     participant App as Web app under test
 
     QA->>Skill: Chọn spec Excel / Markdown / HTML và phạm vi test
-    Skill->>CLI: tirai ingest spec, sau đó tirai plan
-    CLI->>AI: Trích xuất requirements, scenarios, cases
-    AI-->>CLI: Cấu trúc có requirement links và provenance
-    CLI->>WS: Lưu source, contract, test plan, TestCases, fingerprints
+    Skill->>CLI: tirai ingest spec
+    CLI-->>WS: Raw artifacts (context.json, raw-context, ai-input, checkpoint)
+    Skill->>Skill: Phân tích spec, viết semantic-ir, requirements, test-plan, testcases, contract
+    Skill->>CLI: tirai artifact import từng kind
+    CLI->>WS: Validate rồi lưu canonical IRs, fingerprints
+    Note over Skill,CLI: TIRAI không gọi model nào. Host agent phân tích và viết artifact. Import fail-closed nếu invalid.
     Note over CLI,WS: Mặc định black-box. App source chỉ scan read-only khi tester opt-in.
 
     alt Requirement còn mơ hồ
@@ -193,7 +194,7 @@ sequenceDiagram
     Skill->>CLI: tirai review approve case + route
     CLI->>WS: Lưu approval gắn case/spec fingerprints và route
 
-    Note over QA,Skill: Trước MỖI run: xác nhận lại URL, tenant test riêng và đúng case IDs.
+    Note over QA,Skill: Trước MỖI run: xác nhận lại URL, tenant test riêng, đúng case IDs và approval khớp spec fingerprint hiện tại.
     QA->>Skill: Xác nhận môi trường, tenant, selection
     Skill->>CLI: tirai execute chỉ với IDs đã duyệt
     CLI->>WS: Snapshot spec, contract, cases, approvals của run
@@ -214,10 +215,10 @@ sequenceDiagram
             CLI-->>Skill: Tiếp tục các case độc lập
         end
     end
-    CLI->>AI: Tạo bug-draft candidate và severity proposal
-    AI-->>CLI: Candidate + rationale, chưa phải kết luận cuối
     CLI->>WS: Lưu report JSON/MD, snapshot, sanitized evidence
     CLI-->>Skill: Kết quả có spec link, repro, expected / observed
+    Skill->>Skill: Tạo bug-draft candidate và severity proposal
+    Note over Skill: Candidate + rationale, chưa phải kết luận cuối. Tester xác nhận.
     Skill-->>QA: Trình bày report và bug draft
     QA-->>Skill: Xác nhận severity + wording trước khi chia sẻ
 

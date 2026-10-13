@@ -23,7 +23,7 @@ Please preserve these boundaries unless the project explicitly changes direction
 - Test execution uses real runners.
 - Result truth comes from canonical execution results, not AI judgment.
 - Do not introduce selector/symbol guessing into the trusted mapping boundary.
-- Do not persist raw provider secrets.
+- Do not persist raw credentials or secrets.
 - Do not mutate application source as a side effect of normal TIRAI execution.
 
 ## Development setup

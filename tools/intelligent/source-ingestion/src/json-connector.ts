@@ -167,7 +167,7 @@ function splitJsonByLines(pretty: string, size: number): string[] {
   const chunks: string[] = [];
   let current = '';
   for (const line of lines) {
-    if ((current + '\n' + line).length > size && current) {
+    if (current && current.length + 1 + line.length > size) {
       chunks.push(current);
       current = line;
     } else {

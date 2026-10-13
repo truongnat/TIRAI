@@ -2,30 +2,8 @@
 // Agentic Test Executor — public API
 // ---------------------------------------------------------------------------
 
-export { AgenticTestExecutor, addTextEvidence, redactObservationForAI, resolveActionValue } from './agent.js';
+export { AgenticTestExecutor, addTextEvidence, resolveActionValue } from './agent.js';
 export type { AgenticTestExecutorOptions } from './agent.js';
-export { JourneyAgent } from './journey/journey-agent.js';
-export { JourneyTestExecutor } from './journey/journey-test-executor.js';
-export type { JourneyAgentOptions as JourneyTestExecutorOptions } from './journey/journey-agent.js';
-export type {
-  JourneyAgentOptions,
-} from './journey/journey-agent.js';
-
-export type {
-  SemanticApplicationState,
-  JourneyMilestone,
-  JourneyActionRecord,
-  JourneyObservationSummary,
-  JourneyLocation,
-  JourneyPageContext,
-  JourneyState,
-  JourneyExecutionPolicy,
-  JourneyExecutionResult,
-  JourneyDecision,
-} from './journey/models.js';
-export { defaultJourneyPolicy, summarizeObservationState, compactJourneyHistory } from './journey/models.js';
-export { classifyRuntimeFailure, decideRecovery } from './journey/recovery.js';
-export type { FailureClassification, RecoveryOperation, RecoveryDecision, RecoveryEvent, ReconciliationStatus, ReconciliationResult, ReconciliationRequest, RecoveryReconciliationAdapter } from './journey/recovery.js';
 export { verifyCrossLayer, correlationKey } from './verification.js';
 export type { VerificationSource, VerificationConfidence, EntityReference, SemanticExpectation, VerificationNeed, RawEvidence, VerificationAcquisitionRequest, VerificationSourceAdapter, VerificationPlan, VerificationRuntime, NormalizedFact, VerificationResultStatus, VerificationEvidenceView, VerificationNeedResult, VerificationReport } from './verification.js';
 export { sourceIntelligenceFromProjectProfile, StaticSourceIntelligenceProvider, resolveRelevantSourceHints, confirmSourceHints, groundConfirmedAction, sanitizeIntelligence } from './source-intelligence.js';

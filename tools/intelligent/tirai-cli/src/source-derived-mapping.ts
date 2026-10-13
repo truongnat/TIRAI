@@ -76,10 +76,11 @@ export function buildSourceDerivedE2EMapping(projectRoot: string, testCases: Tes
     .filter((name) => !name.startsWith('nav-'))
     .map((name) => `data-testid="${name}"`);
   const missingMarkers = requiredMarkers.filter((marker) => !sourceText.includes(marker));
-  if (sourceText.includes('data-testid={`nav-${tab.id}`}')) {
+  const navMarker = 'data-testid={`nav-$' + '{tab.id}`}';
+  if (sourceText.includes(navMarker)) {
     // The navigation IDs are generated from the concrete tab IDs in source.
   } else {
-    missingMarkers.push('data-testid={`nav-${tab.id}`}');
+    missingMarkers.push(navMarker);
   }
   if (missingMarkers.length > 0) {
     throw new Error(`Source-derived mapping is incomplete; missing markers: ${missingMarkers.join(', ')}`);

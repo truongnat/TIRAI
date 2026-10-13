@@ -1,9 +1,8 @@
 // Execution bridge (spec §18, §19, §28).
 //
-// Thin, independent shim around the Playwright CLI. It does NOT use the Agentic
-// Test Executor, Journey Planner, Recovery Planner, or any AI Provider. There is
-// no agentic fallback (spec §19): if generated execution fails, it fails as a
-// generated test, never as an agentic run.
+// Thin, independent shim around the Playwright CLI. It does not invoke the
+// Agentic Test Executor, Journey Planner, or Recovery Planner. There is no
+// agentic fallback (spec §19): generated execution failures remain failures.
 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';

@@ -5,26 +5,6 @@
 
 // Runner
 export { EndToEndRunner } from './runner.js';
-export { Scenario3Pipeline, runScenario3 } from './scenario3.js';
-export type {
-  Scenario3Input,
-  Scenario3Dependencies,
-  Scenario3Result,
-  Scenario3RequirementResult,
-  Scenario3TraceGraph,
-  Scenario3TraceNode,
-  Scenario3TraceEdge,
-  Scenario3TraceRelation,
-  Scenario3Specification,
-  Scenario3StageAdapters,
-  Scenario3ExecutionAdapter,
-  Scenario3Stage,
-  Scenario3ProgressEvent,
-  Scenario3StageName,
-  Scenario3StageMetric,
-  Scenario3RunMetrics,
-  Scenario3StageObserver,
-} from './scenario3.js';
 
 // Policy
 export { defaultPolicy, checkExecutionGate, isValidMode, enforceMaxTests } from './policy.js';

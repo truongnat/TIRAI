@@ -1,12 +1,15 @@
 // ---------------------------------------------------------------------------
-// Source-to-TestCase pipeline orchestration
+// Source-to-TestCase pipeline orchestration (deterministic only)
 // ---------------------------------------------------------------------------
-// Connector-neutral: it opens the source through the SourceConnectorRegistry
-// (no Excel-specific branching after ingestion), bridges the canonical
-// document into the semantic context format, then chains the existing,
-// AI-provider-injected stages: semantic analysis -> requirement building ->
-// test planning. The AIProvider is injected so the same orchestration runs
-// with a real provider or the architecture's FakeAIProvider for offline use.
+// TIRAI embeds no AI. The pipeline opens the source through the
+// SourceConnectorRegistry (no source-specific branching after ingestion),
+// persists the raw/semantic context packages plus `ai-input.json` for the
+// host agent, and then either:
+//   a) compiles a structured detailed-design workbook into canonical IR
+//      deterministically (structured-design-compiler), or
+//   b) stops after ingestion: downstream stages are marked `awaiting-agent`
+//      and the host agent supplies semantic-ir/requirements/test-plan/
+//      testcases/contract via `tirai artifact import`.
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -16,10 +19,9 @@ import {
   type CanonicalSourceDocument,
   type LocalSourceInput,
 } from 'source-ingestion';
-import { analyzeSemanticContext, type SemanticIR } from 'semantic-analyzer';
-import { buildRequirementsFromSemanticIR, type RequirementIR, type SemanticIRInput } from 'requirement-builder';
-import { buildTestPlanFromRequirementIR, type TestPlanIR, type RequirementIRInput } from 'test-planner';
-import { runAIStage, type AIProvider } from 'ai-provider';
+import type { SemanticIR } from 'semantic-analyzer';
+import type { RequirementIR } from 'requirement-builder';
+import type { TestPlanIR } from 'test-planner';
 import { writeSemanticContextPackage } from './bridge.js';
 import { scanSecrets } from './secret-scan.js';
 import { compileStructuredDesignDocument } from './structured-design-compiler.js';
@@ -36,7 +38,7 @@ export class SourceToTestCaseError extends Error {
   }
 }
 
-function writeStageCheckpoint(outputDir: string, stage: PipelineStage, status: 'completed' | 'failed', details: Record<string, unknown> = {}): void {
+function writeStageCheckpoint(outputDir: string, stage: PipelineStage, status: 'completed' | 'awaiting-agent' | 'failed', details: Record<string, unknown> = {}): void {
   const checkpointDir = path.join(outputDir, 'checkpoints');
   fs.mkdirSync(checkpointDir, { recursive: true });
   fs.writeFileSync(path.join(checkpointDir, `${stage.toLowerCase()}.json`), JSON.stringify({ schemaVersion: '1.0', stage, status, ...details }, null, 2), 'utf8');
@@ -44,10 +46,8 @@ function writeStageCheckpoint(outputDir: string, stage: PipelineStage, status: '
 
 export interface SourceToTestCaseOptions {
   sourcePath: string;
-  provider: AIProvider;
   outputDir: string;
   sourceKind?: string;
-  promptVersion?: string;
   sourceCodePath?: string;
 }
 
@@ -61,11 +61,13 @@ export interface SourceIdentity {
   connectorId: string;
 }
 
+export type PipelineProvider = 'deterministic' | 'structured-design-compiler' | 'agent-imported';
+
 export interface SourceToTestCaseResult {
   source: SourceIdentity;
-  semantic: { status: string; chunkCount: number; aiCalls: number; provider: string; model: string };
-  requirements: { requirementCount: number; aiCalls: number; provider: string; model: string };
-  testPlan: { scenarioCount: number; testCaseCount: number; aiCalls: number; provider: string; model: string };
+  semantic: { status: string; chunkCount: number; aiCalls: number; provider: PipelineProvider; model: 'none' };
+  requirements: { requirementCount: number; aiCalls: number; provider: PipelineProvider; model: 'none' };
+  testPlan: { scenarioCount: number; testCaseCount: number; aiCalls: number; provider: PipelineProvider; model: 'none' };
   metrics: {
     sourceIngestionAiCalls: number;
     semanticAiCalls: number;
@@ -94,22 +96,14 @@ export interface SourceToTestCaseResult {
     aiInput: string;
   };
   document: CanonicalSourceDocument;
-  semanticIR: SemanticIR;
-  requirementIR: RequirementIR;
-  testPlanIR: TestPlanIR;
-}
-
-function analysisInfo(analysis: unknown): { aiCalls: number; provider: string; model: string } {
-  const a = (analysis ?? {}) as { aiRequests?: number; provider?: string; model?: string };
-  return {
-    aiCalls: a.aiRequests ?? 0,
-    provider: a.provider ?? 'unknown',
-    model: a.model ?? 'unknown',
-  };
+  /** Present only when the structured-design compiler produced IR; otherwise the host agent imports it via `tirai artifact import`. */
+  semanticIR?: SemanticIR;
+  requirementIR?: RequirementIR;
+  testPlanIR?: TestPlanIR;
 }
 
 export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions): Promise<SourceToTestCaseResult> {
-  const { sourcePath, provider, outputDir } = opts;
+  const { sourcePath, outputDir } = opts;
   fs.mkdirSync(outputDir, { recursive: true });
 
   let byteLength = 0;
@@ -125,7 +119,9 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
     const registry = createDefaultSourceConnectorRegistry();
     const input: LocalSourceInput = { kind: opts.sourceKind ?? 'excel', path: sourcePath };
     doc = await registry.open(input);
+    writeStageCheckpoint(outputDir, 'SOURCE_INGESTION', 'completed', { artifactCount: doc.artifacts.length, contextCount: doc.contexts.length });
   } catch (err) {
+    writeStageCheckpoint(outputDir, 'SOURCE_INGESTION', 'failed', { error: err instanceof Error ? err.message : String(err) });
     throw new SourceToTestCaseError('SOURCE_INGESTION', `Failed to ingest source: ${err instanceof Error ? err.message : String(err)}`, err);
   }
 
@@ -144,15 +140,13 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   const writeResult = writeSemanticContextPackage(doc, semanticContextDir);
   const rawContext = writeRawContextPackage(doc, path.join(outputDir, 'raw-context'));
   const aiInputPath = path.join(outputDir, 'ai-input.json');
-  fs.writeFileSync(aiInputPath, JSON.stringify({ schemaVersion: '1.0', purpose: 'unified-ai-test-design-input', source: doc.source, revision: doc.revision, artifacts: doc.artifacts, contexts: doc.contexts, sourcePath, sourceCode: collectSourceCode(opts.sourceCodePath), policy: { requireDimensions: ['happy-path', 'negative', 'boundary', 'validation', 'empty', 'loading', 'error', 'state-transition', 'security'], requireAssertions: true, requireProvenance: true } }, null, 2), 'utf8');
+  fs.writeFileSync(aiInputPath, JSON.stringify({ schemaVersion: '1.0', purpose: 'unified-agent-test-design-input', source: doc.source, revision: doc.revision, artifacts: doc.artifacts, contexts: doc.contexts, sourcePath, sourceCode: collectSourceCode(opts.sourceCodePath), policy: { requireDimensions: ['happy-path', 'negative', 'boundary', 'validation', 'empty', 'loading', 'error', 'state-transition', 'security'], requireAssertions: true, requireProvenance: true } }, null, 2), 'utf8');
 
   // Structured detailed-design workbooks already carry explicit row-level
-  // requirements. Compile that contract deterministically before the AI path
-  // so offline/example runs never substitute unrelated generic fake data.
-  // Deterministic structured compilation is retained only for offline fake mode.
-  // Real/CLI providers must analyze the complete semantic context so they can
-  // expand behavior dimensions instead of applying one-case-per-flow policy.
-  const structuredCompilation = provider.name === 'fake' ? compileStructuredDesignDocument(doc) : null;
+  // requirements. Compile that contract deterministically whenever the
+  // workbook exposes a business-flow table; every other source stops after
+  // ingestion and waits for the host agent to import its IR artifacts.
+  const structuredCompilation = compileStructuredDesignDocument(doc);
   if (structuredCompilation) {
     const { semanticIR, requirementIR, testPlanIR } = structuredCompilation;
     const contextPath = path.join(outputDir, 'context.json');
@@ -183,9 +177,13 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       { name: 'test-planning', mode: 'deterministic', aiCalls: 0, reason: 'test scenarios are compiled with source traceability' },
     ] }, null, 2), 'utf8');
 
+    writeStageCheckpoint(outputDir, 'SEMANTIC_ANALYSIS', 'completed', { artifact: 'semantic-ir.json', aiCalls: 0, provider: 'structured-design-compiler' });
+    writeStageCheckpoint(outputDir, 'REQUIREMENT_BUILD', 'completed', { artifact: 'requirements.json', aiCalls: 0, provider: 'structured-design-compiler' });
+    writeStageCheckpoint(outputDir, 'TEST_PLANNING', 'completed', { artifact: 'test-plan.json', aiCalls: 0, provider: 'structured-design-compiler' });
+
     const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath, aiRunPath, artifactPlanPath, aiInputPath, ...rawContext.files]);
-    const semanticProvider = 'structured-design-compiler';
-    const semanticModel = 'deterministic';
+    const semanticProvider = 'structured-design-compiler' as const;
+    const semanticModel = 'none' as const;
     return {
       source,
       semantic: { status: semanticIR.status, chunkCount: writeResult.chunkCount, aiCalls: 0, provider: semanticProvider, model: semanticModel },
@@ -231,67 +229,13 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
     };
   }
 
-  // -- Count AI calls per stage via a transparent proxy (no behavior change)
-  let stage: PipelineStage = 'SEMANTIC_ANALYSIS';
-  const aiCalls: Record<PipelineStage, number> = {
-    SOURCE_INGESTION: 0,
-    SEMANTIC_ANALYSIS: 0,
-    REQUIREMENT_BUILD: 0,
-    TEST_PLANNING: 0,
-  };
-  const providerProxy: AIProvider = new Proxy(provider, {
-    get(target, prop, receiver) {
-      if (prop === 'generate') {
-        return async (...args: unknown[]) => {
-          aiCalls[stage]++;
-          return runAIStage(target, args[0] as Parameters<AIProvider['generate']>[0], { stage, promptVersion: opts.promptVersion });
-        };
-      }
-      return Reflect.get(target, prop, receiver);
-    },
-  });
-
-  // -- Stage 2: semantic analysis -----------------------------------------
-  let semanticIR: SemanticIR;
-  try {
-    stage = 'SEMANTIC_ANALYSIS';
-    semanticIR = await analyzeSemanticContext(semanticContextDir, providerProxy, {
-      outputDir: path.join(outputDir, 'semantic'),
-      promptVersion: opts.promptVersion,
-    });
-    writeStageCheckpoint(outputDir, stage, 'completed', { artifact: 'semantic/semantic-ir.json', aiCalls: aiCalls.SEMANTIC_ANALYSIS });
-  } catch (err) {
-    writeStageCheckpoint(outputDir, stage, 'failed', { error: err instanceof Error ? err.message : String(err) });
-    throw new SourceToTestCaseError('SEMANTIC_ANALYSIS', `Semantic analysis failed: ${err instanceof Error ? err.message : String(err)}`, err);
-  }
-
-  // -- Stage 3: requirement building ---------------------------------------
-  let requirementIR: RequirementIR;
-  try {
-    stage = 'REQUIREMENT_BUILD';
-    requirementIR = await buildRequirementsFromSemanticIR(semanticIR as unknown as SemanticIRInput, providerProxy, {
-      outputDir: path.join(outputDir, 'requirements'),
-    }, sourcePath);
-    writeStageCheckpoint(outputDir, stage, 'completed', { artifact: 'requirements/requirements.json', aiCalls: aiCalls.REQUIREMENT_BUILD });
-  } catch (err) {
-    writeStageCheckpoint(outputDir, stage, 'failed', { error: err instanceof Error ? err.message : String(err) });
-    throw new SourceToTestCaseError('REQUIREMENT_BUILD', `Requirement building failed: ${err instanceof Error ? err.message : String(err)}`, err);
-  }
-
-  // -- Stage 4: test planning ---------------------------------------------
-  let testPlanIR: TestPlanIR;
-  try {
-    stage = 'TEST_PLANNING';
-    testPlanIR = await buildTestPlanFromRequirementIR(requirementIR as unknown as RequirementIRInput, providerProxy, {
-      outputDir: path.join(outputDir, 'testplan'),
-    }, sourcePath);
-    writeStageCheckpoint(outputDir, stage, 'completed', { artifact: 'testplan/test-plan.json', aiCalls: aiCalls.TEST_PLANNING });
-  } catch (err) {
-    writeStageCheckpoint(outputDir, stage, 'failed', { error: err instanceof Error ? err.message : String(err) });
-    throw new SourceToTestCaseError('TEST_PLANNING', `Test planning failed: ${err instanceof Error ? err.message : String(err)}`, err);
-  }
-
-  // -- Persist artifacts (exact pipeline output; no hand editing) ---------
+  // -- Awaiting host agent -------------------------------------------------
+  // TIRAI makes no embedded AI calls. The raw context, semantic context and
+  // `ai-input.json` packages written above are the host agent's inputs; the
+  // agent later supplies semantic-ir.json / requirements.json /
+  // test-plan.json / testcases.json / contract.json via `tirai artifact
+  // import`. Downstream stages are recorded as awaiting-agent so consumers
+  // fail closed instead of guessing.
   const contextPath = path.join(outputDir, 'context.json');
   const contractPath = path.join(outputDir, 'contract.json');
   const semanticIrPath = path.join(outputDir, 'semantic-ir.json');
@@ -302,46 +246,38 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
   const aiRunPath = path.join(outputDir, 'ai-run.json');
   const artifactPlanPath = path.join(outputDir, 'artifact-plan.json');
   const testDesignSummaryPath = path.join(outputDir, 'test-design-summary.json');
-  const semInfo = analysisInfo((semanticIR as unknown as { analysis?: unknown }).analysis);
-  const reqInfo = { aiCalls: aiCalls.REQUIREMENT_BUILD, provider: provider.name, model: provider.name };
-  const planInfo = { aiCalls: aiCalls.TEST_PLANNING, provider: provider.name, model: provider.name };
 
   fs.writeFileSync(contextPath, JSON.stringify(doc, null, 2), 'utf8');
-  const contract = buildContractIR({ document: doc, semanticIR, requirementIR, testPlanIR });
-  fs.writeFileSync(artifactPlanPath, JSON.stringify(planArtifacts(contract), null, 2), 'utf8');
-  fs.writeFileSync(testDesignSummaryPath, JSON.stringify(buildTestDesignSummary(testPlanIR), null, 2), 'utf8');
-  fs.writeFileSync(contractPath, JSON.stringify(contract, null, 2), 'utf8');
-  fs.writeFileSync(semanticIrPath, JSON.stringify(semanticIR, null, 2), 'utf8');
-  fs.writeFileSync(requirementsPath, JSON.stringify(requirementIR, null, 2), 'utf8');
-  fs.writeFileSync(testPlanPath, JSON.stringify(testPlanIR, null, 2), 'utf8');
-  fs.writeFileSync(testCasesPath, JSON.stringify(testPlanIR.testCases, null, 2), 'utf8');
-  fs.writeFileSync(tracePath, JSON.stringify(buildTrace(doc, requirementIR, testPlanIR), null, 2), 'utf8');
   fs.writeFileSync(aiRunPath, JSON.stringify({ schemaVersion: '1.0', stages: [
     { name: 'source-ingestion', mode: 'connector', aiCalls: 0 },
-    { name: 'semantic-analysis', mode: 'ai', aiCalls: semInfo.aiCalls, provider: semInfo.provider, model: semInfo.model },
-    { name: 'requirement-build', mode: 'ai', aiCalls: reqInfo.aiCalls, provider: reqInfo.provider, model: reqInfo.model },
-    { name: 'test-planning', mode: 'ai', aiCalls: planInfo.aiCalls, provider: planInfo.provider, model: planInfo.model },
+    { name: 'semantic-analysis', mode: 'awaiting-agent', aiCalls: 0, reason: 'host agent supplies semantic-ir via tirai artifact import' },
+    { name: 'requirement-build', mode: 'awaiting-agent', aiCalls: 0, reason: 'host agent supplies requirements via tirai artifact import' },
+    { name: 'test-planning', mode: 'awaiting-agent', aiCalls: 0, reason: 'host agent supplies test-plan/testcases via tirai artifact import' },
   ] }, null, 2), 'utf8');
 
-  // -- Metrics -------------------------------------------------------------
-  const secretLeakCount = scanSecrets([contractPath, contextPath, semanticIrPath, requirementsPath, testPlanPath, testCasesPath, tracePath, aiRunPath, artifactPlanPath, aiInputPath, ...rawContext.files]);
+  writeStageCheckpoint(outputDir, 'SEMANTIC_ANALYSIS', 'awaiting-agent', { artifact: 'semantic-ir.json', aiCalls: 0 });
+  writeStageCheckpoint(outputDir, 'REQUIREMENT_BUILD', 'awaiting-agent', { artifact: 'requirements.json', aiCalls: 0 });
+  writeStageCheckpoint(outputDir, 'TEST_PLANNING', 'awaiting-agent', { artifact: 'test-plan.json', aiCalls: 0 });
 
+  const secretLeakCount = scanSecrets([contextPath, aiRunPath, aiInputPath, ...rawContext.files]);
+  const semanticProvider = 'agent-imported' as const;
+  const semanticModel = 'none' as const;
   return {
     source,
-    semantic: { status: semanticIR.status, chunkCount: writeResult.chunkCount, aiCalls: semInfo.aiCalls, provider: semInfo.provider, model: semInfo.model },
-    requirements: { requirementCount: requirementIR.requirements.length, aiCalls: reqInfo.aiCalls, provider: reqInfo.provider, model: reqInfo.model },
+    semantic: { status: 'awaiting-agent', chunkCount: writeResult.chunkCount, aiCalls: 0, provider: semanticProvider, model: semanticModel },
+    requirements: { requirementCount: 0, aiCalls: 0, provider: semanticProvider, model: semanticModel },
     testPlan: {
-      scenarioCount: testPlanIR.scenarios.length,
-      testCaseCount: testPlanIR.testCases.length,
-      aiCalls: planInfo.aiCalls,
-      provider: planInfo.provider,
-      model: planInfo.model,
+      scenarioCount: 0,
+      testCaseCount: 0,
+      aiCalls: 0,
+      provider: semanticProvider,
+      model: semanticModel,
     },
     metrics: {
       sourceIngestionAiCalls: 0,
-      semanticAiCalls: semInfo.aiCalls,
-      requirementBuilderAiCalls: reqInfo.aiCalls,
-      testPlannerAiCalls: planInfo.aiCalls,
+      semanticAiCalls: 0,
+      requirementBuilderAiCalls: 0,
+      testPlannerAiCalls: 0,
       secretLeakCount,
       sourceMutations: 0,
       manualArtifactSubstitutions: 0,
@@ -365,9 +301,6 @@ export async function runSourceToTestCasePipeline(opts: SourceToTestCaseOptions)
       aiInput: aiInputPath,
     },
     document: doc,
-    semanticIR,
-    requirementIR,
-    testPlanIR,
   };
 }
 

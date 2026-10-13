@@ -1,19 +1,17 @@
 // ---------------------------------------------------------------------------
-// Agent loop tests — AgenticTestExecutor with fakes
+// Agent loop tests — AgenticTestExecutor with deterministic grounding
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
 import type { BrowserSession } from 'ui-executor';
 import type { TestDataItem } from 'test-data-planner';
 import { AgenticTestExecutor } from '../src/agent.js';
-import { defaultCapabilities, type BrowserObservation } from '../src/models.js';
+import { defaultCapabilities, type AgentCapabilities, type BrowserObservation } from '../src/models.js';
 import type {
   RuntimeCapabilityInventory,
   RuntimePreparationAdapter,
 } from '../src/data/runtime-capability-inventory.js';
-import type { PreparationMutationPolicy } from '../src/data/preparation-lifecycle.js';
 import {
-  createFakeAI,
   createFakePage,
   createFakeBrowserSession,
   makeTestCase,
@@ -25,11 +23,9 @@ import {
 } from './fixtures/helpers.js';
 
 function buildExecutor(opts: {
-  ai: ReturnType<typeof createFakeAI>;
   observationSequence?: BrowserObservation[];
-  capabilities?: ReturnType<typeof defaultCapabilities>;
   capabilityInventory?: Partial<RuntimeCapabilityInventory>;
-  preparationPolicy?: Partial<PreparationMutationPolicy>;
+  capabilities?: AgentCapabilities;
   testDataItems?: TestDataItem[];
 }) {
   const obsSequence = opts.observationSequence ?? [loginPageObservation(), dashboardObservation()];
@@ -38,7 +34,7 @@ function buildExecutor(opts: {
   const state: FakePageState = {
     url: 'http://127.0.0.1:3000/login',
     title: 'Login',
-    observation: obsSequence[0],
+    observation: obsSequence[0]!,
     clickedElements: [],
     filledElements: [],
     gotoCalls: [],
@@ -46,14 +42,14 @@ function buildExecutor(opts: {
 
   const page = createFakePage(state);
   page.evaluate = async <T>(_expr: string): Promise<T> => {
-    const currentObs = obsSequence[Math.min(obsIndex, obsSequence.length - 1)];
+    const observation = obsSequence[Math.min(obsIndex, obsSequence.length - 1)]!;
     obsIndex++;
     const raw = {
-      url: currentObs.url,
-      title: currentObs.title,
-      headings: currentObs.headings,
-      pageText: currentObs.pageText ?? '',
-      elements: currentObs.elements.map((el) => ({
+      url: observation.url,
+      title: observation.title,
+      headings: observation.headings,
+      pageText: observation.pageText,
+      elements: observation.elements.map((el) => ({
         tag: 'button',
         role: el.role,
         accessibleName: el.accessibleName,
@@ -62,9 +58,9 @@ function buildExecutor(opts: {
         inputType: el.inputType,
         visibleText: el.visibleText,
         enabled: el.enabled,
-        checked: el.checked ?? false,
-        selected: el.selected ?? false,
-        testId: undefined,
+        checked: false,
+        selected: false,
+        testId: el.testId,
       })),
     };
     return raw as T;
@@ -74,13 +70,11 @@ function buildExecutor(opts: {
 
   const executor = new AgenticTestExecutor({
     browserSession: session,
-    aiProvider: opts.ai,
-    baseUrl: 'http://127.0.0.1:3000',
+    baseUrl: 'http://127.0.0.1:3000/login',
     capabilities: opts.capabilities ?? { ...defaultCapabilities(), browser: 'AVAILABLE' },
-    allowedOrigins: ['http://127.0.0.1'],
+    testDataItems: opts.testDataItems,
     capabilityInventory: opts.capabilityInventory,
     preparationPolicy: opts.preparationPolicy,
-    testDataItems: opts.testDataItems,
   });
 
   return { executor, state, session };
@@ -89,19 +83,14 @@ function buildExecutor(opts: {
 describe('AgenticTestExecutor', () => {
   describe('canExecute', () => {
     it('returns supported when browser capability available', () => {
-      const { executor } = buildExecutor({
-        ai: createFakeAI(() => ({})),
-      });
+      const { executor } = buildExecutor({});
       const match = executor.canExecute(makeTestCase(), makeContext());
       expect(match.supported).toBe(true);
       expect(match.score).toBe(0.8);
     });
 
     it('returns unsupported when browser capability unavailable', () => {
-      const { executor } = buildExecutor({
-        ai: createFakeAI(() => ({})),
-        capabilities: defaultCapabilities(),
-      });
+      const { executor } = buildExecutor({ capabilities: defaultCapabilities() });
       const match = executor.canExecute(makeTestCase(), makeContext());
       expect(match.supported).toBe(false);
       expect(match.score).toBe(0);
@@ -110,13 +99,13 @@ describe('AgenticTestExecutor', () => {
 
   describe('validate', () => {
     it('valid test case with steps', async () => {
-      const { executor } = buildExecutor({ ai: createFakeAI(() => ({})) });
+      const { executor } = buildExecutor({});
       const result = await executor.validate(makeTestCase(), makeContext());
       expect(result.valid).toBe(true);
     });
 
     it('invalid test case with no steps', async () => {
-      const { executor } = buildExecutor({ ai: createFakeAI(() => ({})) });
+      const { executor } = buildExecutor({});
       const tc = makeTestCase({ steps: [] });
       const result = await executor.validate(tc, makeContext());
       expect(result.valid).toBe(false);
@@ -126,25 +115,6 @@ describe('AgenticTestExecutor', () => {
 
   describe('execute', () => {
     it('executes a simple login flow successfully', async () => {
-      let callCount = 0;
-      const ai = createFakeAI((_req) => {
-        callCount++;
-        if (callCount <= 3) {
-          const actions: AgenticAction[] = [
-            { type: 'fill', elementId: 'el-001', value: 'demo' },
-            { type: 'fill', elementId: 'el-002', value: 'secret://login/password' },
-            { type: 'click', elementId: 'el-003' },
-          ];
-          return { action: actions[callCount - 1], confidence: 'high', reasoning: 'test' };
-        }
-        return {
-          assertionType: 'text-visible',
-          expectedValue: 'Welcome, demo!',
-          confidence: 'high',
-          reasoning: 'test',
-        };
-      });
-
       const observations = [
         loginPageObservation(),
         loginPageObservation(),
@@ -152,16 +122,16 @@ describe('AgenticTestExecutor', () => {
         dashboardObservation(),
       ];
 
-      const { executor } = buildExecutor({ ai, observationSequence: observations });
+      const { executor } = buildExecutor({ observationSequence: observations });
 
       const tc = makeTestCase({
         steps: [
-          { order: 1, action: 'Enter username', input: 'demo' },
-          { order: 2, action: 'Enter password', input: 'secret://login/password' },
-          { order: 3, action: 'Click login button' },
+          { order: 1, action: 'Enter "Username"', input: 'demo' },
+          { order: 2, action: 'Enter "Password"', input: 'secret://login/password' },
+          { order: 3, action: 'Click "Login"' },
         ],
         expectedResults: [
-          { description: 'Welcome message shown', verificationType: 'ui' },
+          { description: 'The message "Welcome, demo!" is displayed', verificationType: 'ui' },
         ],
       });
 
@@ -189,23 +159,6 @@ describe('AgenticTestExecutor', () => {
           cleaned.push(request.item.id);
         },
       };
-      let aiCalls = 0;
-      const ai = createFakeAI(() => {
-        aiCalls++;
-        if (aiCalls === 1) {
-          return {
-            action: { type: 'fill', elementId: 'el-001', valueSource: 'testdata://DATA-ORDER' },
-            confidence: 'high',
-            reasoning: 'fill the prepared order identifier',
-          };
-        }
-        return {
-          assertionType: 'text-visible',
-          expectedValue: 'Order ready',
-          confidence: 'high',
-          reasoning: 'verify prepared order state',
-        };
-      });
       const preparedItem: TestDataItem = {
         id: 'DATA-ORDER',
         name: 'approved-order',
@@ -224,7 +177,6 @@ describe('AgenticTestExecutor', () => {
         confidence: 1,
       };
       const { executor, state } = buildExecutor({
-        ai,
         observationSequence: [
           {
             url: 'http://127.0.0.1:3000/orders',
@@ -262,8 +214,8 @@ describe('AgenticTestExecutor', () => {
         preparationPolicy: { environment: 'test', allowApiCreate: true },
       });
       const result = await executor.execute(makeTestCase({
-        steps: [{ order: 1, action: 'Enter prepared order', input: 'testdata://DATA-ORDER' }],
-        expectedResults: [{ description: 'Order ready is shown', verificationType: 'ui' }],
+        steps: [{ order: 1, action: 'Enter "Order ID"', input: 'testdata://DATA-ORDER' }],
+        expectedResults: [{ description: 'The message "Order ready" is displayed', verificationType: 'ui' }],
       }), makeContext());
 
       expect(result.status).toBe('passed');
@@ -274,7 +226,6 @@ describe('AgenticTestExecutor', () => {
     });
 
     it('returns error when browser fails to start', async () => {
-      const ai = createFakeAI(() => ({}));
       const session = {
         start: async () => { throw new Error('Browser crashed'); },
         page: () => { throw new Error('No page'); },
@@ -285,7 +236,6 @@ describe('AgenticTestExecutor', () => {
 
       const executor = new AgenticTestExecutor({
         browserSession: session as unknown as BrowserSession,
-        aiProvider: ai,
         baseUrl: 'http://127.0.0.1:3000',
         capabilities: { ...defaultCapabilities(), browser: 'AVAILABLE' },
       });
@@ -314,13 +264,8 @@ describe('AgenticTestExecutor', () => {
           await baseSession.start(config);
         },
       } as BrowserSession;
-      let aiCalls = 0;
       const executor = new AgenticTestExecutor({
         browserSession: session,
-        aiProvider: createFakeAI(() => {
-          aiCalls++;
-          return {};
-        }),
         baseUrl: 'http://127.0.0.1:3000',
         capabilities: { ...defaultCapabilities(), browser: 'AVAILABLE' },
         testDataItems: [{
@@ -348,7 +293,6 @@ describe('AgenticTestExecutor', () => {
       expect(result.error?.code).toBe('AGENT_DATA_UNRESOLVED');
       expect(browserStarts).toBe(0);
       expect(pageState.gotoCalls).toHaveLength(0);
-      expect(aiCalls).toBe(0);
       expect(executor.getLastMetrics().actions).toBe(0);
       expect(executor.getLastDataResolutions()[0].status).toBe('NEEDS_CAPABILITY');
       expect(executor.getLastDataResolutions()[0].value).toBeUndefined();
@@ -356,7 +300,6 @@ describe('AgenticTestExecutor', () => {
 
     it('returns ERROR when an explicit discovery capability crashes', async () => {
       const { executor, state } = buildExecutor({
-        ai: createFakeAI(() => ({})),
         testDataItems: [{
           id: 'DATA-DB-ERROR',
           name: 'existing-user',
@@ -397,19 +340,12 @@ describe('AgenticTestExecutor', () => {
       expect(state.gotoCalls).toHaveLength(0);
     });
 
-    it('returns blocked when grounding fails repeatedly', async () => {
-      const ai = createFakeAI(() => ({
-        action: undefined,
-        confidence: 'low',
-        reasoning: 'Cannot find element',
-        unresolvedReason: 'AGENT_GROUNDING_FAILED',
-      }));
-
+    it('returns blocked when grounding cannot resolve the element', async () => {
       const observations = [loginPageObservation(), loginPageObservation(), loginPageObservation(), loginPageObservation()];
-      const { executor } = buildExecutor({ ai, observationSequence: observations });
+      const { executor } = buildExecutor({ observationSequence: observations });
 
       const tc = makeTestCase({
-        steps: [{ order: 1, action: 'Click nonexistent element' }],
+        steps: [{ order: 1, action: 'Click "Nonexistent element"' }],
         expectedResults: [],
       });
 
@@ -418,26 +354,12 @@ describe('AgenticTestExecutor', () => {
     });
 
     it('returns failed when assertion contradicts', async () => {
-      let callCount = 0;
-      const ai = createFakeAI((_req) => {
-        callCount++;
-        if (callCount === 1) {
-          return { action: { type: 'click', elementId: 'el-003' }, confidence: 'high', reasoning: 'test' };
-        }
-        return {
-          assertionType: 'text-visible',
-          expectedValue: 'This text does not exist',
-          confidence: 'high',
-          reasoning: 'test',
-        };
-      });
-
       const observations = [loginPageObservation(), loginPageObservation()];
-      const { executor } = buildExecutor({ ai, observationSequence: observations });
+      const { executor } = buildExecutor({ observationSequence: observations });
 
       const tc = makeTestCase({
-        steps: [{ order: 1, action: 'Click login' }],
-        expectedResults: [{ description: 'Nonexistent text shown', verificationType: 'ui' }],
+        steps: [{ order: 1, action: 'Click "Login"' }],
+        expectedResults: [{ description: 'The message "This text does not exist" is displayed', verificationType: 'ui' }],
       });
 
       const result = await executor.execute(tc, makeContext());
@@ -446,41 +368,22 @@ describe('AgenticTestExecutor', () => {
     });
 
     it('handles negative login (error message displayed)', async () => {
-      let callCount = 0;
-      const ai = createFakeAI((_req) => {
-        callCount++;
-        if (callCount <= 3) {
-          const actions: AgenticAction[] = [
-            { type: 'fill', elementId: 'el-001', value: 'demo' },
-            { type: 'fill', elementId: 'el-002', value: 'wrong-password' },
-            { type: 'click', elementId: 'el-003' },
-          ];
-          return { action: actions[callCount - 1], confidence: 'high', reasoning: 'test' };
-        }
-        return {
-          assertionType: 'text-visible',
-          expectedValue: 'Invalid credentials',
-          confidence: 'high',
-          reasoning: 'test',
-        };
-      });
-
       const observations = [
         loginPageObservation(),
         loginPageObservation(),
         loginPageObservation(),
         errorLoginObservation(),
       ];
-      const { executor } = buildExecutor({ ai, observationSequence: observations });
+      const { executor } = buildExecutor({ observationSequence: observations });
 
       const tc = makeTestCase({
         steps: [
-          { order: 1, action: 'Enter username', input: 'demo' },
-          { order: 2, action: 'Enter wrong password' },
-          { order: 3, action: 'Click login' },
+          { order: 1, action: 'Enter "Username"', input: 'demo' },
+          { order: 2, action: 'Enter "Password"', input: 'wrong-password' },
+          { order: 3, action: 'Click "Login"' },
         ],
         expectedResults: [
-          { description: 'Error message is displayed', verificationType: 'ui' },
+          { description: 'Error message "Invalid credentials" is displayed', verificationType: 'ui' },
         ],
       });
 
@@ -490,12 +393,12 @@ describe('AgenticTestExecutor', () => {
     });
 
     it('cleanup succeeds', async () => {
-      const { executor } = buildExecutor({ ai: createFakeAI(() => ({})) });
+      const { executor } = buildExecutor({});
       const result = await executor.cleanup(makeTestCase(), makeContext());
       expect(result.status).toBe('succeeded');
     });
     it('refuses cleanup without a human-approved target after an isolated test session', async () => {
-      const { executor, session } = buildExecutor({ ai: createFakeAI(() => ({})) });
+      const { executor, session } = buildExecutor({});
       Object.assign(session, { createIsolatedPage: async () => session.page() });
       const testCase = makeTestCase({
         steps: [],

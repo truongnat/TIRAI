@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AIGenerationRequest, AIGenerationResponse, AIProvider } from 'ai-provider';
-import { TestExecutionOrchestrator, TestExecutorRegistry } from 'test-execution-orchestrator';
-import { PlaywrightBrowserSession } from 'ui-executor';
-import { JourneyTestExecutor } from '../src/journey/journey-test-executor.js';
-import { startFixtureServer } from './fixtures/fixture-server.js';
+
 import {
   confirmSourceHints,
   groundConfirmedAction,
@@ -63,32 +59,4 @@ describe('Phase 2F source intelligence', () => {
     expect(JSON.stringify(clean)).not.toContain('fake-secret');
     expect(clean.hints[0]?.provenance.confidence).toBe('DECLARED');
   });
-
-  it('rejects a stale source action and continues from runtime reality', async () => {
-    const fixture = await startFixtureServer();
-    const source = intelligence({ hints: [{ ...intelligence().hints[0]!, semanticName: 'Complete item', lifecycle: 'STALE' }] });
-    const session = new PlaywrightBrowserSession();
-    const executor = new JourneyTestExecutor({ browserSession: session, aiProvider: new RuntimeOnlyAI(), baseUrl: `${fixture.origin}/journey-home`, allowedOrigins: [fixture.origin], sourceIntelligence: new StaticSourceIntelligenceProvider(source) });
-    const registry = new TestExecutorRegistry();
-    registry.register(executor);
-    const run = await new TestExecutionOrchestrator({ registry, journeyEnabled: true, policy: { mode: 'execute' } }).run([{ id: 'TC-SOURCE-STALE', scenarioId: 'SC-SOURCE-STALE', requirementIds: [], title: 'Complete item', objective: 'Complete item', type: 'functional', priority: 'high', preconditions: [], inputs: [], steps: [{ order: 1, action: 'Complete item' }], expectedResults: [{ description: 'Item status: Completed', verificationType: 'ui' }], cleanup: [], automation: { status: 'ready', suggestedExecutor: 'ui', reasons: [] }, provenance: [], confidence: 1 } as never]);
-    const result = executor.getLastJourneyResult();
-    expect(run.testResults[0]?.status).toBe('passed');
-    expect(result?.metrics.sourceHintsRejected).toBeGreaterThan(0);
-    expect(result?.metrics.sourceHintsUsed).toBe(0);
-    await session.close();
-    await fixture.close();
-  }, 30_000);
 });
-
-class RuntimeOnlyAI implements AIProvider {
-  readonly name = 'runtime-only-fixture-ai';
-  readonly capabilities = { jsonMode: true, toolCalling: false, vision: false };
-  async generate<T>(request: AIGenerationRequest<T>): Promise<AIGenerationResponse<T>> {
-    const prompt = request.messages.map((message) => message.content).join('\n');
-    const data = prompt.includes('verification')
-      ? { assertionType: 'text-visible', expectedValue: 'Item status: Completed', confidence: 'high', reasoning: 'Runtime observation confirms final state.' }
-      : { action: { type: 'click', elementId: 'el-001' }, confidence: 'high', reasoning: 'Use current runtime control.' };
-    return { data: data as T, usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 } };
-  }
-}

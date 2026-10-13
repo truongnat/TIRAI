@@ -4,7 +4,7 @@ import { requireWorkspace } from '../workspace.js';
 import { CliError } from '../errors.js';
 
 type MappingPlatform = 'api' | 'database';
-type Mapping = { id?: string; method?: string; endpoint?: string; query?: string; readOnly?: boolean; approved?: boolean };
+interface Mapping { id?: string; method?: string; endpoint?: string; query?: string; readOnly?: boolean; approved?: boolean }
 
 export function validateMappingItems(items: unknown[], platform: MappingPlatform): string[] {
   const errors: string[] = [];
@@ -18,7 +18,14 @@ export function validateMappingItems(items: unknown[], platform: MappingPlatform
       if (item.endpoint && !/^https?:\/\//.test(item.endpoint) && !item.endpoint.startsWith('/')) errors.push(`${label}.endpoint must be an http(s) URL or path`);
     } else {
       if (!item.query || !item.readOnly) errors.push(`${label} requires a read-only query`);
-      if (item.query && /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE)\b/i.test(item.query)) errors.push(`${label}.query contains a mutating SQL keyword`);
+      if (item.query) {
+        const sql = item.query.trim();
+        // Fail-closed allowlist: a read-only mapping may only contain a single
+        // SELECT-family statement. Anything else (CALL, EXEC, multi-statements,
+        // comment smuggling) is rejected rather than keyword-denylisted.
+        if (!/^(select|with|explain|values|show)\b/i.test(sql)) errors.push(`${label}.query must be a single read-only SELECT-family statement`);
+        else if (/--|\/\*|\*\/|;(?!\s*$)/.test(sql)) errors.push(`${label}.query must be a single statement without comments or chained statements`);
+      }
       if (item.approved !== true) errors.push(`${label}.approved must be true before database execution`);
     }
   });
@@ -26,7 +33,7 @@ export function validateMappingItems(items: unknown[], platform: MappingPlatform
 }
 
 export async function runMappingValidate(opts: { cwd: string; inputPath: string; platform?: string; json?: boolean }): Promise<void> {
-  const paths = requireWorkspace(opts.cwd);
+  requireWorkspace(opts.cwd);
   const platform = opts.platform as MappingPlatform | undefined;
   if (platform !== 'api' && platform !== 'database') throw new CliError('INVALID_TARGET', 'Use --platform api or --platform database.');
   const inputPath = path.resolve(opts.cwd, opts.inputPath);

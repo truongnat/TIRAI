@@ -11,16 +11,28 @@ export interface ActionResult {
   error?: string;
 }
 
+export interface ExecuteActionOptions {
+  /** Origin used to resolve relative navigate URLs when the page is blank. */
+  baseUrl?: string;
+}
+
 export async function executeAction(
   page: BrowserPage,
   action: AgenticAction,
   idMap: ElementIdMap,
+  options?: ExecuteActionOptions,
 ): Promise<ActionResult> {
   try {
     switch (action.type) {
       case 'navigate': {
         if (!action.url) return { success: false, error: 'Missing URL' };
-        await page.goto(action.url);
+        // Relative paths must resolve against the page's current origin —
+        // Playwright rejects bare relative URLs with "invalid URL".
+        const base = options?.baseUrl ?? (page.url().startsWith('http') ? page.url() : undefined);
+        const target = /^https?:\/\//i.test(action.url)
+          ? action.url
+          : base ? new URL(action.url, base).href : action.url;
+        await page.goto(target);
         return { success: true };
       }
 
@@ -45,17 +57,27 @@ export async function executeAction(
         return { success: true };
       }
 
-      case 'check': {
-        const loc = resolveLocator(action, idMap);
-        if (!loc) return { success: false, error: `Cannot resolve element ${action.elementId}` };
-        await page.check(loc);
-        return { success: true };
-      }
-
+      case 'check':
       case 'uncheck': {
         const loc = resolveLocator(action, idMap);
         if (!loc) return { success: false, error: `Cannot resolve element ${action.elementId}` };
-        await page.uncheck(loc);
+        const desired = action.type === 'check';
+        const before = await page.checkboxInfo(loc);
+        if (before.checked === null || before.kind === 'unsupported') {
+          return { success: false, error: 'Cannot safely determine checkbox state' };
+        }
+        if (before.checked !== desired) {
+          if (before.kind === 'native') {
+            if (desired) await page.check(loc);
+            else await page.uncheck(loc);
+          } else {
+            await page.click(loc);
+          }
+        }
+        const after = await page.checkboxInfo(loc);
+        if (after.checked !== desired) {
+          return { success: false, error: `Checkbox state did not change to ${desired}` };
+        }
         return { success: true };
       }
 

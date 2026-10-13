@@ -65,14 +65,65 @@ describe('Phase 8: End-to-end acceptance', () => {
     expect(r.code).toBe(0);
     expect(r.out).toContain('web:');
 
-    // 6. Ingest (creates canonical artifacts)
+    // 6. Ingest (deterministic: raw context artifacts only; host agent supplies canonical artifacts)
     r = await run(['ingest', './spec.xlsx'], tmp);
-    expect(r.code).toBe(0);
+    expect(r.code, r.err || r.out).toBe(0);
+    expect(fs.existsSync(path.join(tmp, '.tirai', 'artifacts', 'ai-input.json'))).toBe(true);
+
+    // 6b. Host agent produces canonical artifacts; import them
+    const hostDir = path.join(tmp, 'host');
+    fs.mkdirSync(hostDir, { recursive: true });
+    const writeHost = (name: string, value: unknown) => {
+      fs.writeFileSync(path.join(hostDir, name), JSON.stringify(value), 'utf8');
+    };
+    writeHost('semantic-ir.json', {
+      schemaVersion: '1.0', status: 'complete', document: { title: 'Order Validation', provenance: [] },
+      sections: [], entities: [], flows: [], rules: [], relationships: [], unresolved: [], analysis: {},
+    });
+    writeHost('requirements.json', {
+      schemaVersion: '1.0', document: { title: 'Order Validation', provenance: [] },
+      requirements: [], unresolved: [], conflicts: [], quality: {},
+    });
+    writeHost('test-plan.json', {
+      schemaVersion: '1.0',
+      scope: { requirementIds: [], objective: 'Verify order validation', assumptions: [], exclusions: [] },
+      requirementCoverage: [], scenarios: [{ id: 'SCN-1', title: 'Insufficient stock' }],
+      testCases: [{ id: 'TC-1', title: 'Reject order when quantity exceeds availableStock' }],
+      dataNeeds: [], unresolved: [],
+      quality: {
+        requirementsTotal: 0, requirementsCovered: 0, requirementsPartiallyCovered: 0,
+        requirementsNotCovered: 0, coverageRate: 0, scenarios: 1, testCases: 1,
+        positiveCases: 0, negativeCases: 0, boundaryCases: 0, validationCases: 0,
+        unresolved: 0, automationReady: 1, provenanceCoverage: 1,
+      },
+    });
+    writeHost('testcases.json', [{
+      id: 'TC-1', scenarioId: 'SCN-1', title: 'Reject order when quantity exceeds availableStock',
+      objective: 'Submit an order with quantity above stock', type: 'api', priority: 'high',
+      requirementIds: ['REQ-1'], preconditions: [], inputs: [], dataNeeds: [],
+      steps: [{ order: 1, action: 'Submit order', target: 'order service' }],
+      expectedResults: [{ description: 'Rejected with INSUFFICIENT_STOCK', verificationType: 'state' }],
+      cleanup: [], automation: { status: 'ready', reasons: [] }, provenance: [], confidence: 1,
+    }]);
+    writeHost('contract.json', {
+      schemaVersion: '1.0', contractId: 'contract-e2e', contractVersion: 1,
+      project: { id: 'proj-e2e', name: 'E2E Test' }, document: { title: 'Order Validation' },
+      sources: [], rawContexts: [], requirements: [], businessFlows: [], ui: [], apis: [],
+      entities: [], modules: [], scenarios: [],
+      testCases: [{ id: 'TC-1', kind: 'test-case', title: 'Reject order when quantity exceeds availableStock', relatedIds: [], provenance: [], confidence: 1 }],
+      artifacts: [], unresolved: [], conflicts: [],
+      quality: { requirements: 0, requirementsCovered: 0, scenarios: 0, testCases: 1, automationReady: 0, unresolved: 0, conflicts: 0, provenanceCoverage: 1 },
+      metadata: { contractFingerprint: 'pending', generatedAt: '2026-01-01T00:00:00.000Z', generatorVersion: 'test', promptVersions: [] },
+    });
+    for (const kind of ['semantic-ir', 'requirements', 'test-plan', 'testcases', 'contract']) {
+      r = await run(['artifact', 'import', kind, '--file', `host/${kind}.json`], tmp);
+      expect(r.code, `artifact import ${kind}: ${r.err || r.out}`).toBe(0);
+    }
     expect(fs.existsSync(path.join(tmp, '.tirai', 'artifacts', 'testcases.json'))).toBe(true);
 
     // 7. Export all formats
     r = await run(['export', '--format', 'all'], tmp);
-    expect(r.code).toBe(0);
+    expect(r.code, r.err || r.out).toBe(0);
 
     // Verify outputs exist
     expect(fs.existsSync(path.join(tmp, '.tirai', 'outputs', 'json', 'test-cases.json'))).toBe(true);

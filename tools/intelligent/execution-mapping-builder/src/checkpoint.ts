@@ -24,15 +24,11 @@ export class CheckpointStore {
     stage: CheckpointMetadata['stage'],
     fingerprint: string,
     data: unknown,
-    providerName?: string,
-    model?: string,
   ): void {
     const meta: CheckpointMetadata = {
       stage,
       fingerprint,
       timestamp: new Date().toISOString(),
-      providerName,
-      model,
       completedBatches: [],
     };
 

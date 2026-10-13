@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------------------
-// Bridge: CanonicalSourceDocument -> semantic-analyzer context package format
+// Bridge: CanonicalSourceDocument -> semantic context package format
 // ---------------------------------------------------------------------------
-// The semantic analyzer consumes a directory with `manifest.json` and
-// `chunks/<id>.json`. The Excel (and any) connector emits a
+// The host agent's semantic analysis consumes a directory with `manifest.json`
+// and `chunks/<id>.json`. The Excel (and any) connector emits a
 // `CanonicalSourceDocument` whose `contexts` carry exactly the fields the
 // semantic chunk model expects (content, sheet, provenance, relations).
 // This adapter writes that directory with NO source-specific branching:

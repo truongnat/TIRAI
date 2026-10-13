@@ -2,48 +2,10 @@
 // Test helpers — fakes, factories, builders
 // ---------------------------------------------------------------------------
 
-import type { AIProvider, AIGenerationRequest, AIGenerationResponse } from 'ai-provider';
 import type { BrowserSession, BrowserPage, ResolvedLocator, UIEnvironmentConfig } from 'ui-executor';
 import type { TestCase, TestExecutionContext } from 'test-execution-orchestrator';
-import type { BrowserObservation, ObservedElement, AgenticAction } from '../../src/models.js';
+import type { BrowserObservation, ObservedElement } from '../../src/models.js';
 
-// ---- Fake AI Provider -----------------------------------------------------
-
-export interface FakeAIHandler {
-  (request: AIGenerationRequest): unknown;
-}
-
-export function createFakeAI(handler: FakeAIHandler): AIProvider {
-  return {
-    name: 'fake',
-    capabilities: { structuredOutput: true, strictStructuredOutput: true, streaming: false },
-    async generate<T>(request: AIGenerationRequest<T>): Promise<AIGenerationResponse<T>> {
-      const data = handler(request) as T;
-      return { provider: 'fake', model: 'fake-model', data };
-    },
-  };
-}
-
-export function createGroundingHandler(action: AgenticAction, confidence = 'high' as const) {
-  return (_req: AIGenerationRequest): unknown => ({
-    action,
-    confidence,
-    reasoning: 'test grounding',
-  });
-}
-
-export function createAssertionHandler(
-  assertionType: string,
-  opts?: { elementId?: string; expectedValue?: string },
-) {
-  return (_req: AIGenerationRequest): unknown => ({
-    assertionType,
-    elementId: opts?.elementId,
-    expectedValue: opts?.expectedValue,
-    confidence: 'high',
-    reasoning: 'test assertion',
-  });
-}
 
 // ---- Fake Browser Page ----------------------------------------------------
 
@@ -72,6 +34,7 @@ export function createFakePage(state: FakePageState): BrowserPage {
     waitForHidden: async () => {},
     isVisible: async () => true,
     isEnabled: async () => true,
+    checkboxInfo: async () => ({ kind: 'unsupported', checked: null }),
     isChecked: async () => false,
     textContent: async () => '',
     inputValue: async () => '',

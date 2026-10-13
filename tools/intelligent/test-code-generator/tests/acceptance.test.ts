@@ -305,12 +305,10 @@ describe('Phase 5.1 vertical slice', () => {
     const testCases = tcs();
 
     // Reuse the existing, frozen Execution Mapping Builder to produce a TRUSTED
-    // ExecutionMappingIR with ZERO AI calls (no provider supplied).
+    // ExecutionMappingIR. The builder is fully deterministic (no AI calls).
     const emb = await buildExecutionMapping({
       testCases,
       uiCatalog: catalog,
-      provider: undefined,
-      providerName: undefined,
     });
     expect(emb.aiCalls).toBe(0);
 

@@ -8,7 +8,7 @@ import * as path from 'node:path';
 import { createHash } from 'node:crypto';
 import { requireWorkspace, ensureDir } from '../workspace.js';
 import { loadConfig } from '../config.js';
-import { updateState, loadState } from '../state.js';
+import { updateState } from '../state.js';
 import { CliError } from '../errors.js';
 
 export interface SpecEntry {
@@ -50,13 +50,13 @@ export interface SpecInspectOptions {
 
 function fingerprintFile(filePath: string): string {
   const content = fs.readFileSync(filePath);
-  return 'sha256:' + createHash('sha256').update(content).digest('hex');
+  return `sha256:${  createHash('sha256').update(content).digest('hex')}`;
 }
 
 function generateSpecId(sourcePath: string): string {
   const base = path.basename(sourcePath, path.extname(sourcePath));
   const hash = createHash('sha256').update(sourcePath).digest('hex').slice(0, 8);
-  return 'spec-' + base + '-' + hash;
+  return `spec-${  base  }-${  hash}`;
 }
 
 function detectSourceType(sourcePath: string): string {
@@ -89,13 +89,13 @@ export async function runSpecAdd(opts: SpecAddOptions): Promise<void> {
 
   const absSource = isUrlSource ? opts.sourcePath : path.resolve(opts.cwd, opts.sourcePath);
   if (!isUrlSource && !fs.existsSync(absSource)) {
-    throw new CliError('SOURCE_NOT_FOUND', 'Source not found: ' + opts.sourcePath);
+    throw new CliError('SOURCE_NOT_FOUND', `Source not found: ${  opts.sourcePath}`);
   }
 
   const sourceType = detectSourceType(opts.sourcePath);
   const id = generateSpecId(opts.sourcePath);
   const fingerprint = isUrlSource
-    ? 'sha256:' + createHash('sha256').update(opts.sourcePath).digest('hex')
+    ? `sha256:${  createHash('sha256').update(opts.sourcePath).digest('hex')}`
     : fingerprintFile(absSource);
 
   const entry: SpecEntry = {
@@ -115,7 +115,7 @@ export async function runSpecAdd(opts: SpecAddOptions): Promise<void> {
   if (existing) {
     throw new CliError(
       'SOURCE_INPUT_ERROR',
-      'Spec already registered: ' + existing.id + ' (' + existing.name + ')',
+      `Spec already registered: ${  existing.id  } (${  existing.name  })`,
       'Use `tirai spec list` to see registered specs.',
     );
   }
@@ -140,11 +140,11 @@ export async function runSpecAdd(opts: SpecAddOptions): Promise<void> {
   if (opts.json) {
     console.log(JSON.stringify(entry, null, 2));
   } else {
-    console.log('Spec registered: ' + entry.id);
-    console.log('  Name:   ' + entry.name);
-    console.log('  Type:   ' + entry.sourceType);
-    console.log('  Source: ' + entry.sourceRef);
-    console.log('  Hash:   ' + entry.revisionFingerprint.slice(0, 16) + '...');
+    console.log(`Spec registered: ${  entry.id}`);
+    console.log(`  Name:   ${  entry.name}`);
+    console.log(`  Type:   ${  entry.sourceType}`);
+    console.log(`  Source: ${  entry.sourceRef}`);
+    console.log(`  Hash:   ${  entry.revisionFingerprint.slice(0, 16)  }...`);
   }
 }
 
@@ -155,9 +155,9 @@ export async function runSpecList(opts: SpecListOptions): Promise<void> {
   if (opts.json) {
     console.log(JSON.stringify(registry, null, 2));
   } else {
-    console.log('Registered specs: ' + registry.specs.length);
+    console.log(`Registered specs: ${  registry.specs.length}`);
     for (const spec of registry.specs) {
-      console.log('  ' + spec.id + ' (' + spec.sourceType + ') - ' + spec.name);
+      console.log(`  ${  spec.id  } (${  spec.sourceType  }) - ${  spec.name}`);
     }
   }
 }
@@ -168,21 +168,21 @@ export async function runSpecInspect(opts: SpecInspectOptions): Promise<void> {
   const spec = registry.specs.find((s) => s.id === opts.specId);
 
   if (!spec) {
-    throw new CliError('SOURCE_NOT_FOUND', 'Spec not found: ' + opts.specId);
+    throw new CliError('SOURCE_NOT_FOUND', `Spec not found: ${  opts.specId}`);
   }
 
   if (opts.json) {
     console.log(JSON.stringify(spec, null, 2));
   } else {
-    console.log('Spec: ' + spec.id);
-    console.log('  Name:      ' + spec.name);
-    console.log('  Type:      ' + spec.sourceType);
-    console.log('  Source:    ' + spec.sourceRef);
-    console.log('  Fingerprint: ' + spec.revisionFingerprint);
-    console.log('  Language:  ' + spec.language);
-    console.log('  Domain:    ' + spec.domain);
-    console.log('  Priority:  ' + spec.priority);
-    console.log('  Ingested:  ' + spec.ingestedAt);
+    console.log(`Spec: ${  spec.id}`);
+    console.log(`  Name:      ${  spec.name}`);
+    console.log(`  Type:      ${  spec.sourceType}`);
+    console.log(`  Source:    ${  spec.sourceRef}`);
+    console.log(`  Fingerprint: ${  spec.revisionFingerprint}`);
+    console.log(`  Language:  ${  spec.language}`);
+    console.log(`  Domain:    ${  spec.domain}`);
+    console.log(`  Priority:  ${  spec.priority}`);
+    console.log(`  Ingested:  ${  spec.ingestedAt}`);
   }
 }
 

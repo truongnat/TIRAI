@@ -103,7 +103,6 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const workflowIgnoreRules = `${workflowIgnoreMarker}
 !reports/
 !reports/latest-summary.md
-artifacts/ai/
 artifacts/ai-input.json
 workflow/runtime/
 runtime/manual-session-*.json

@@ -1,7 +1,7 @@
 {
   "name": "execution-mapping-builder",
   "version": "1.0.0",
-  "description": "Execution Mapping Builder v1 – Test Case IR → validated Test Execution Mapping IR",
+  "description": "Execution Mapping Builder v1 \u2013 Test Case IR \u2192 validated Test Execution Mapping IR",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,12 +19,9 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
-    "ai-provider": "file:../ai-provider",
     "test-planner": "file:../test-planner",
     "ui-executor": "file:../ui-executor",
-    "test-execution-orchestrator": "file:../test-execution-orchestrator",
-    "execution-engine": "file:../execution-engine",
-    "semantic-analyzer": "file:../semantic-analyzer"
+    "test-execution-orchestrator": "file:../test-execution-orchestrator"
   },
   "devDependencies": {
     "typescript": "^5.5.0",

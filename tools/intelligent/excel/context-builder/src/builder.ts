@@ -231,7 +231,7 @@ function isTabular(cells: CellInput[]): boolean {
 function isContentCell(cell: CellInput): boolean {
   if (cell.formula) return true;
   if (cell.comment) return true;
-  if (cell.displayValue != null && String(cell.displayValue).trim() !== '') return true;
-  if (cell.rawValue != null && String(cell.rawValue).trim() !== '') return true;
+  if (cell.displayValue !== null && cell.displayValue !== undefined && cell.displayValue.trim() !== '') return true;
+  if (cell.rawValue !== null && cell.rawValue !== undefined && String(cell.rawValue).trim() !== '') return true;
   return false;
 }

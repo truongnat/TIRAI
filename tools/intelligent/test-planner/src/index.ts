@@ -1,12 +1,8 @@
 // ---------------------------------------------------------------------------
-// Test Planner – public API
+// Test Planner – public API (type shell)
 // ---------------------------------------------------------------------------
-
-export { buildTestPlan, buildTestPlanFromRequirementIR } from './planner.js';
-export { TEST_PLANNER_PROMPT_VERSION } from './prompts/system.js';
-export { TestPlannerError, TestPlannerErrorCode } from './errors.js';
-export { TestPlannerWarningCode, TEST_CONFIDENCE_THRESHOLD } from './warnings.js';
-export { computeFingerprint } from './fingerprint.js';
+// TIRAI is a pure tool: test planning is supplied by the host agent.
+// This package retains the canonical Test Plan / Test Case IR model only.
 
 export type {
   TestPlanIR,
@@ -38,14 +34,6 @@ export type {
   VerificationIntentKind,
   VerificationAuthorityIntent,
   ValueStrategy,
-  CoverageCandidate,
-  ScenarioCandidate,
-  TestCaseCandidate,
-  CoverageAnalysisResult,
-  ScenarioExtractionResult,
-  TestCaseExtractionResult,
-  TestPlannerOptions,
-  TestPlannerManifest,
   TestPlannerWarning,
   RequirementIRInput,
   ProvenanceReference,

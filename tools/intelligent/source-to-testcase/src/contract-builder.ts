@@ -145,7 +145,7 @@ export function buildContractIR(input: {
     contractId: `contract-${document.revision.contentHash.slice(0, 16)}`,
     contractVersion: 1,
     project: input.project ?? { id: 'unconfigured-project', name: 'Unconfigured project' },
-    document: { title: semanticIR.document.title ?? document.source.displayName, ...(semanticIR.document.summary ? { summary: semanticIR.document.summary } : {}), ...(semanticIR.document.language ? { language: semanticIR.document.language } : {}) },
+    document: { title: semanticIR.document.title ?? document.source.displayName, ...(semanticIR.document.summary ? { summary: semanticIR.document.summary } : {}), ...(semanticIR.document.language ? { language: Array.isArray(semanticIR.document.language) ? semanticIR.document.language : [semanticIR.document.language] } : {}) },
     sources: [{ id: sourceId, kind: sourceKind(document.source.kind), displayName: document.source.displayName, contentHash: document.revision.contentHash, provenance: [{ sourceId }] }],
     rawContexts,
     requirements,
@@ -178,9 +178,9 @@ export function buildContractIR(input: {
       contractFingerprint: 'pending',
       generatedAt: new Date().toISOString(),
       generatorVersion: 'contract-ir-1.0.0',
-      aiProvider: semanticIR.analysis.provider,
-      aiModel: semanticIR.analysis.model,
-      promptVersions: [semanticIR.analysis.promptVersion],
+      ...(semanticIR.analysis?.provider ? { aiProvider: semanticIR.analysis.provider } : {}),
+      ...(semanticIR.analysis?.model ? { aiModel: semanticIR.analysis.model } : {}),
+      promptVersions: semanticIR.analysis?.promptVersion ? [semanticIR.analysis.promptVersion] : [],
     },
   };
   contract.quality.unresolved = contract.unresolved.length;
