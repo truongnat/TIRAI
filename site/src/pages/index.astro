@@ -1,0 +1,378 @@
+---
+const nav = [
+  { href: '#how', label: 'How it works' },
+  { href: '#pipeline', label: 'Pipeline' },
+  { href: '#cli', label: 'CLI' },
+  { href: '#trust', label: 'Trust model' },
+];
+---
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TIRAI — Specification-first test automation</title>
+<meta name="description" content="TIRAI turns Excel, PDF, DOCX, Markdown, and JSON specifications into canonical test cases and real Playwright/Vitest execution. Zero AI calls in the tool." />
+<style>
+  :root {
+    --bg: #0b0d10;
+    --surface: #111417;
+    --surface-2: #16191d;
+    --border: #24282d;
+    --fg: #e8eaed;
+    --muted: #9aa1a9;
+    --accent: #5eead4;
+    --accent-2: #38bdf8;
+    --mono: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  .mono { font-family: var(--mono); }
+
+  /* — layout — */
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* — nav — */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav { display: flex; align-items: center; height: 60px; gap: 32px; }
+  .logo { font-family: var(--mono); font-weight: 700; font-size: 18px; letter-spacing: .5px; }
+  .logo span { color: var(--accent); }
+  nav .links { margin-left: auto; display: flex; gap: 24px; font-size: 14px; color: var(--muted); }
+  nav .links a:hover { color: var(--fg); }
+  nav .gh {
+    padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg); font-size: 13px; font-family: var(--mono);
+  }
+  nav .gh:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* — hero — */
+  .hero { padding: 120px 0 80px; text-align: center; }
+  .badge {
+    display: inline-block; padding: 5px 12px; border: 1px solid var(--border);
+    border-radius: 999px; font-size: 12px; color: var(--muted); margin-bottom: 28px;
+    font-family: var(--mono); letter-spacing: .4px;
+  }
+  h1 {
+    font-size: clamp(40px, 6vw, 72px); font-weight: 700; letter-spacing: -0.03em;
+    line-height: 1.05; margin-bottom: 24px;
+  }
+  h1 em {
+    font-style: normal;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { font-size: 18px; color: var(--muted); max-width: 640px; margin: 0 auto 40px; }
+  .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 22px; border-radius: 8px; font-size: 15px; font-weight: 500;
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  .btn.primary { background: var(--accent); color: #06231e; border-color: transparent; }
+  .btn.primary:hover { filter: brightness(1.1); }
+  .btn:hover { border-color: var(--accent); }
+  .install-cmd {
+    margin: 32px auto 0; display: inline-flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 18px; font-family: var(--mono); font-size: 13.5px; color: var(--muted);
+  }
+  .install-cmd .prompt { color: var(--accent); }
+
+  /* — trust strip — */
+  .strip {
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    padding: 20px 0; color: var(--muted); font-size: 13px;
+    display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
+    font-family: var(--mono);
+  }
+  .strip strong { color: var(--fg); font-weight: 600; }
+
+  /* — sections — */
+  section { padding: 96px 0; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .15em; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; }
+  h2 { font-size: clamp(28px, 4vw, 44px); letter-spacing: -0.02em; margin-bottom: 16px; }
+  .lead { color: var(--muted); font-size: 17px; max-width: 560px; margin-bottom: 48px; }
+
+  /* — pipeline diagram — */
+  .pipeline {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 40px 0;
+  }
+  .stage {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 16px; position: relative;
+  }
+  .stage::after {
+    content: '→'; position: absolute; right: -14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-family: var(--mono);
+  }
+  .stage:last-child::after { display: none; }
+  .stage .num { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-bottom: 8px; }
+  .stage .name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .stage .desc { font-size: 13px; color: var(--muted); }
+  @media (max-width: 800px) {
+    .pipeline { grid-template-columns: 1fr; }
+    .stage::after { right: auto; bottom: -16px; top: auto; left: 50%; transform: translateX(-50%) rotate(90deg); }
+  }
+
+  /* — feature grid — */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 28px;
+  }
+  .card h3 { font-size: 17px; margin-bottom: 8px; }
+  .card p { font-size: 14.5px; color: var(--muted); }
+  .card .ico { font-family: var(--mono); color: var(--accent); font-size: 20px; margin-bottom: 14px; display: block; }
+
+  /* — cli — */
+  .terminal {
+    background: #0d0f12; border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; font-family: var(--mono); font-size: 13.5px;
+  }
+  .term-bar {
+    display: flex; gap: 6px; padding: 12px 16px; background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #ffbd2e; } .dot.g { background: #28c840; }
+  .term-body { padding: 20px 24px; overflow-x: auto; }
+  .term-body .ln { display: block; padding: 3px 0; white-space: pre; }
+  .cmd { color: var(--fg); }
+  .cmd::before { content: '$ '; color: var(--accent); }
+  .out { color: var(--muted); }
+  .out .ok { color: var(--accent); }
+  .out .warn { color: #fbbf24; }
+
+  /* — trust — */
+  .trust-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  @media (max-width: 800px) { .trust-grid { grid-template-columns: 1fr; } }
+  .trust-list { list-style: none; }
+  .trust-list li {
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .trust-list .tick { color: var(--accent); font-family: var(--mono); flex-shrink: 0; }
+  .trust-list strong { display: block; font-size: 15px; margin-bottom: 2px; }
+  .trust-list span { color: var(--muted); font-size: 14px; }
+
+  /* — footer cta — */
+  .foot-cta {
+    text-align: center; padding: 96px 0;
+    border-top: 1px solid var(--border);
+  }
+  footer { padding: 32px 0; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+  footer .wrap { display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <a class="logo" href="/">TIRAI<span>.</span></a>
+      <div class="links">
+        {nav.map(n => <a href={n.href}>{n.label}</a>)}
+      </div>
+      <a class="gh" href="https://github.com/truongnat/TIRAI">GitHub →</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- HERO -->
+<div class="hero wrap">
+  <div class="badge">v1.1.0 — open source · MIT</div>
+  <h1>Specification-first<br /><em>test automation</em>.</h1>
+  <p class="sub">
+    TIRAI turns Excel, PDF, DOCX, Markdown, and JSON specifications into canonical test cases,
+    then runs them for real — Playwright Chromium and Vitest — with zero model calls inside the tool.
+  </p>
+  <div class="cta-row">
+    <a class="btn primary" href="#install">Install CLI</a>
+    <a class="btn" href="#how">How it works</a>
+  </div>
+  <div class="install-cmd mono">
+    <span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash
+  </div>
+</div>
+
+<!-- TRUST STRIP -->
+<div class="strip">
+  <span><strong>0</strong> AI calls at runtime</span>
+  <span><strong>7</strong> source formats</span>
+  <span><strong>22</strong> deterministic workspaces</span>
+  <span><strong>143</strong> executor tests</span>
+  <span>Fail-closed <strong>by design</strong></span>
+</div>
+
+<!-- HOW -->
+<section id="how">
+  <div class="wrap">
+    <div class="eyebrow">How it works</div>
+    <h2>The host agent decides <em>what</em>.<br />TIRAI decides <em>how</em>.</h2>
+    <p class="lead">
+      Most test tools start from code. TIRAI starts from specifications. The host AI reads your spec,
+      writes canonical JSON artifacts, and TIRAI executes them deterministically — no guessing, no silent fallbacks.
+    </p>
+    <div class="pipeline" id="pipeline">
+      <div class="stage">
+        <div class="num">01</div>
+        <div class="name">Ingest</div>
+        <div class="desc">Excel · PDF · DOCX · MD · CSV · JSON · URL → canonical context</div>
+      </div>
+      <div class="stage">
+        <div class="num">02</div>
+        <div class="name">Host IR</div>
+        <div class="desc">Host agent writes semantic-ir, requirements, test-plan, testcases</div>
+      </div>
+      <div class="stage">
+        <div class="num">03</div>
+        <div class="name">Import</div>
+        <div class="desc">tirai artifact import validates structure; invalid input fails closed</div>
+      </div>
+      <div class="stage">
+        <div class="num">04</div>
+        <div class="name">Execute</div>
+        <div class="desc">Real Chromium / Vitest — secrets via env refs, never literals</div>
+      </div>
+      <div class="stage">
+        <div class="num">05</div>
+        <div class="name">Report</div>
+        <div class="desc">Canonical result IR → PASS / FAIL / BLOCKED with evidence</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section style="background:var(--surface);border-block:1px solid var(--border);">
+  <div class="wrap">
+    <div class="eyebrow">Capabilities</div>
+    <h2>Everything downstream of the spec is deterministic.</h2>
+    <p class="lead">The tool makes no model calls, stores no credentials, and refuses to guess.</p>
+    <div class="grid">
+      <div class="card">
+        <span class="ico">→</span>
+        <h3>Multi-source ingestion</h3>
+        <p>Excel, PDF, DOCX, Markdown, CSV, JSON, and remote HTML all converge into the same canonical context — same pipeline downstream regardless of input format.</p>
+      </div>
+      <div class="card">
+        <span class="ico">#</span>
+        <h3>Canonical JSON artifacts</h3>
+        <p>Requirements, test plans, and test cases live as validated JSON in <code>.tirai/artifacts/</code> — the product truth between spec and execution.</p>
+      </div>
+      <div class="card">
+        <span class="ico">▶</span>
+        <h3>Real browser execution</h3>
+        <p>Playwright drives actual Chromium. Role-, DOM-id-, and positional selectors; ambiguous targets block rather than pick.</p>
+      </div>
+      <div class="card">
+        <span class="ico">⚿</span>
+        <h3>Secret refs, not secrets</h3>
+        <p><code>secret://env:NAME</code> in test cases resolves at runtime through configured <code>auth</code> refs — credentials never enter artifacts or results.</p>
+      </div>
+      <div class="card">
+        <span class="ico">✕</span>
+        <h3>Fail-closed validation</h3>
+        <p>Unconfigured environments, stale specs, ambiguous elements, missing cleanup plans — all surface as exit code 2, never as silent passes.</p>
+      </div>
+      <div class="card">
+        <span class="ico">⎘</span>
+        <h3>Multi-format export</h3>
+        <p>JSON, Excel, Markdown, PDF, DOCX — export canonical cases without mutating the source of truth.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLI -->
+<section id="cli">
+  <div class="wrap">
+    <div class="eyebrow">CLI</div>
+    <h2>One command surface.</h2>
+    <p class="lead">Init, ingest, import, approve, execute, report — all deterministic, all inspectable.</p>
+    <div class="terminal">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      </div>
+      <div class="term-body">
+        <span class="ln cmd">tirai init --name my-app</span>
+        <span class="ln out">Initialized TIRAI workspace at ./.tirai</span>
+        <span class="ln"> </span>
+        <span class="ln cmd">tirai ingest specs/checkout.md</span>
+        <span class="ln out">Ingested: 3 requirements, 7 scenarios</span>
+        <span class="ln"> </span>
+        <span class="ln cmd">tirai artifact import testcases --file testcases.json</span>
+        <span class="ln out">Imported testcases: .tirai/artifacts/testcases.json</span>
+        <span class="ln"> </span>
+        <span class="ln cmd">tirai execute --platform web --environment staging --test-cases TC-001,TC-002 --confirm-dedicated-test-tenant</span>
+        <span class="ln out">TIRAI execute complete: <span class="ok">passed</span></span>
+        <span class="ln out">  Platform: web</span>
+        <span class="ln out">  Environment: staging</span>
+        <span class="ln out">  Test cases: 2  <span class="ok">EXIT=0</span></span>
+        <span class="ln"> </span>
+        <span class="ln cmd">tirai report</span>
+        <span class="ln out">  Result: <span class="ok">PASS</span>  →  .tirai/reports/latest-summary.md</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section id="trust" style="background:var(--surface);border-block:1px solid var(--border);">
+  <div class="wrap trust-grid">
+    <div>
+      <div class="eyebrow">Trust model</div>
+      <h2>No guessing.<br />Ever.</h2>
+      <p class="lead">
+        TIRAI is a pure tool. The host agent supplies semantic understanding;
+        TIRAI supplies deterministic validation, execution, and reporting.
+        Anything ambiguous or unconfigured fails closed — visibly.
+      </p>
+    </div>
+    <ul class="trust-list">
+      <li><span class="tick">→</span><div><strong>Zero AI calls at runtime</strong><span>generationAiCalls = executionAiCalls = agenticFallbacks = 0</span></div></li>
+      <li><span class="tick">→</span><div><strong>Secret refs only</strong><span>usernameRef / passwordRef / tokenRef / extraRefs — env vars at runtime, never stored</span></div></li>
+      <li><span class="tick">→</span><div><strong>Approval gate</strong><span>review approve binds a case to a route before it can execute; stale fingerprints reject</span></div></li>
+      <li><span class="tick">→</span><div><strong>Mutation requires cleanup</strong><span>steps that mutate business data must declare a cleanup plan or the run blocks</span></div></li>
+      <li><span class="tick">→</span><div><strong>Evidence per run</strong><span>sanitized screenshots, page text, and assertion results land in .tirai/workflow/runs/</span></div></li>
+      <li><span class="tick">→</span><div><strong>Exit code contract</strong><span>0 = pass · 1 = business fail · 2 = blocked/manual/error — CI-friendly</span></div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- FOOTER CTA -->
+<div class="foot-cta wrap" id="install">
+  <div class="eyebrow">Get started</div>
+  <h2>One line to install.</h2>
+  <div class="install-cmd mono" style="margin-top:24px">
+    <span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash
+  </div>
+  <p style="margin-top:20px;color:var(--muted);font-size:14px">Then <code>npx playwright install chromium</code> and run <code>tirai --help</code>.</p>
+</div>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>TIRAI · MIT License · Built for host-agent workflows</span>
+    <a href="https://github.com/truongnat/TIRAI" style="font-family:var(--mono)">github.com/truongnat/TIRAI →</a>
+  </div>
+</footer>
+
+</body>
+</html>
