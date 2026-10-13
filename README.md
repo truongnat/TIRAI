@@ -156,6 +156,8 @@ The `tirai-web-testing` Skill guides specification review, clarification, route 
 - Ambiguous requirements remain out of execution until the tester answers and reviews a revised case. The original source file is never edited.
 - Assertion mismatches create local bug-draft candidates with expected/observed behavior and sanitized browser evidence. Severity is a host-agent proposal; the tester confirms before sharing.
 - `.tirai/workflow/runs/` stores per-run spec/case snapshots, JSON/Markdown reports, and sanitized evidence. `.tirai/workflow/runtime/` holds temporary or imported sessions and is gitignored. Imported sessions remain until `tirai auth clear`; treat the source file and stored session as credentials.
+- Credentials are never stored: `tirai target add web` only records `env:NAME` references (`--username-ref`, `--password-ref`, `--token-ref`, `--secret-refs`), and `tirai execute` resolves them from the process environment at run time. Test-case inputs of the form `secret://env:NAME` must match a configured ref or the step fails closed; `testdata://` inputs resolve from runtime data.
+- `.tirai/config.json` per-environment keys: `baseUrl`, `auth` (refs above), `navigationTimeoutMs` (per-navigation budget applied to both the initial page load and step navigations).
 
 
 TIRAI writes project-owned state under:
@@ -239,7 +241,7 @@ tirai spec list
 tirai spec inspect <spec-id>
 
 tirai target list
-tirai target add web <environment> --url <url> [--username-ref env:NAME --password-ref env:NAME]
+tirai target add web <environment> --url <url> [--auth-type basic|bearer|none] [--username-ref env:NAME --password-ref env:NAME --token-ref env:NAME] [--secret-refs env:A,env:B]
 tirai target validate
 tirai web discover --environment local|dev|staging
 tirai auth login --environment <env>
