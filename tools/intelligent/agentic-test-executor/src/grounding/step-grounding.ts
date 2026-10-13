@@ -61,7 +61,41 @@ export function groundStep(request: StepGroundingRequest): StepGroundingResult {
     };
   }
 
-  // Element-bound actions: click, fill, select, check, uncheck, press, wait-for.
+  // Element-bound actions: click, fill, select, check, uncheck, wait-for.
+  // `press` may be key-only (target names a keyboard key like "Enter" →
+  // focused element) or element-bound ("press the Save button").
+  if (actionType === 'press') {
+    const KEY_NAMES = /^(enter|tab|escape|backspace|delete|arrowup|arrowdown|arrowleft|arrowright|home|end|pageup|pagedown|f([1-9]|1[0-2])|control|alt|shift|meta)$/i;
+    const KEY_MAP: Record<string, string> = { enter: 'Enter', tab: 'Tab', escape: 'Escape', backspace: 'Backspace', delete: 'Delete', arrowup: 'ArrowUp', arrowdown: 'ArrowDown', arrowleft: 'ArrowLeft', arrowright: 'ArrowRight', home: 'Home', end: 'End', pageup: 'PageUp', pagedown: 'PageDown', control: 'Control', alt: 'Alt', shift: 'Shift', meta: 'Meta' };
+    const canonicalKey = (raw: string | undefined): string | undefined => {
+      if (!raw || !KEY_NAMES.test(raw)) return undefined;
+      const lower = raw.toLowerCase();
+      return KEY_MAP[lower] ?? (/^f\d+$/i.test(lower) ? lower.toUpperCase() : undefined);
+    };
+    // Key wins only when the step has no element target, or the target itself names a key.
+    const keyName = canonicalKey(request.stepInput?.trim() || extractQuotedText(request.stepDescription))
+      ?? canonicalKey(request.stepTarget?.trim());
+    if (keyName && (!request.stepTarget?.trim() || canonicalKey(request.stepTarget.trim()))) {
+      // Key-only press unless the description names a distinct element
+      // (e.g. 'Press Enter in "Search"' should bind the Search field).
+      const label = extractTargetLabel(request) ?? extractQuotedText(request.stepDescription);
+      const elementMatch = label ? matchElement(label, request.observation) : undefined;
+      const bound = elementMatch && elementMatch.elements.length === 1 ? elementMatch.elements[0] : undefined;
+      const action: AgenticAction = bound
+        ? { type: 'press', key: keyName, elementId: bound.id }
+        : { type: 'press', key: keyName };
+      return {
+        ...base,
+        action,
+        candidateActions: [candidateFor(action, bound
+          ? `Key press "${keyName}" bound to ${bound.id}.`
+          : `Key-only press of "${keyName}" on the focused element.`)],
+        confidence: 'high',
+        reasoning: `Press "${keyName}" resolved as a keyboard key${bound ? ` on element ${bound.id}` : ' with no element target'}.${prior}`,
+      };
+    }
+  }
+
   const target = extractTargetLabel(request);
   if (!target) {
     return unresolved(base, 'TARGET_MISSING',
@@ -74,6 +108,35 @@ export function groundStep(request: StepGroundingRequest): StepGroundingResult {
       `No observed element matches target "${target}".${prior}`);
   }
   if (match.elements.length > 1) {
+    // Role-compatible disambiguation: an action on a label-bearing form field
+    // should bind the control, not its <label> sibling. If exactly one match
+    // supports the action's role, prefer it; otherwise stay fail-closed.
+    const COMPATIBLE_ROLES: Record<string, string[]> = {
+      click: ['button', 'link', 'checkbox', 'radio', 'tab', 'menuitem'],
+      fill: ['textbox', 'combobox'],
+      select: ['combobox'],
+      check: ['checkbox'],
+      uncheck: ['checkbox'],
+      'wait-for': [],
+      hover: [],
+      press: [],
+    };
+    const compatible = COMPATIBLE_ROLES[actionType] ?? [];
+    const narrowed = compatible.length > 0
+      ? match.elements.filter((element) => compatible.includes(element.role))
+      : match.elements;
+    if (narrowed.length === 1) {
+      const element = narrowed[0]!;
+      const action = buildElementAction(actionType, element, request);
+      return {
+        ...base,
+        action,
+        candidateActions: [candidateFor(action, `Resolved to role-compatible ${describeElement(element)} out of ${match.elements.length} label matches.`)],
+        confidence: 'medium',
+        reasoning: `Multiple elements matched "${target}", but only ${describeElement(element)} is role-compatible with "${actionType}".${prior}`,
+      };
+    }
+    if (narrowed.length > 0) match.elements.splice(0, match.elements.length, ...narrowed);
     const candidateActions = match.elements.map((element) =>
       candidateFor(
         { type: actionType, elementId: element.id },
@@ -113,11 +176,17 @@ const ACTION_PATTERNS: Array<{ type: AgenticActionType; pattern: RegExp }> = [
   { type: 'wait-for', pattern: /\bwait[\s-]*(?:for)?\b/i },
   { type: 'observe', pattern: /\b(observe|verify\s+page|inspect)\b/i },
   { type: 'click', pattern: /\b(click|tap|submit)\b/i },
+  { type: 'hover', pattern: /\bhover\b/i },
 ];
 
+// Quoted spans are target labels/values, not verbs — strip them before matching
+// so e.g. hover steps referencing "Write report" don't misfire as fill.
+const STRIP_QUOTED = /"[^"]+"|'[^']+'|“[^”]+”|‘[^’]+’/g;
+
 function parseActionType(description: string): AgenticActionType | undefined {
+  const probe = description.replace(STRIP_QUOTED, ' ');
   for (const { type, pattern } of ACTION_PATTERNS) {
-    if (pattern.test(description)) return type;
+    if (pattern.test(probe)) return type;
   }
   return undefined;
 }

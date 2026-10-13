@@ -278,6 +278,7 @@ async function main(): Promise<void> {
             usernameRef: flags['username-ref'] as string | undefined,
             passwordRef: flags['password-ref'] as string | undefined,
             tokenRef: flags['token-ref'] as string | undefined,
+            secretRefs: flags['secret-refs'] as string | undefined,
             json: Boolean(flags.json),
           });
         } else if (subcmd === 'validate') {

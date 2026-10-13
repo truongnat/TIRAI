@@ -41,7 +41,27 @@ export class ElementIdMap {
 }
 
 function buildLocator(element: ObservedElement): ResolvedLocator {
-  if (element.accessibleName && element.role) {
+  // DOM id is deterministic and unique — strongest strategy when present.
+  if (element.domId) {
+    return {
+      strategy: 'css' as UILocatorStrategy,
+      value: `[id="${element.domId.replace(/"/g, '\\"')}"]`,
+      exact: true,
+      description: `css [id="${element.domId}"]`,
+    };
+  }
+  // Positional css fallback is always unique: nth match of the same selector
+  // the observer scanned. Chosen before role/text so generic labels and
+  // shared accessible names cannot produce ambiguous locators.
+  if (typeof element.domIndex === 'number') {
+    return {
+      strategy: 'css' as UILocatorStrategy,
+      value: `${INTERACTIVE_SELECTOR_CSS} >> nth=${element.domIndex}`,
+      exact: true,
+      description: `${element.role} "${element.accessibleName ?? element.label ?? element.id}" (domIndex ${element.domIndex})`,
+    };
+  }
+  if (element.accessibleName && element.role && element.role !== 'generic') {
     return {
       strategy: 'role' as UILocatorStrategy,
       value: element.role,
@@ -49,6 +69,17 @@ function buildLocator(element: ObservedElement): ResolvedLocator {
       name: element.accessibleName,
       exact: true,
       description: `${element.role} "${element.accessibleName}"`,
+    };
+  }
+  // Generic elements (labels, spans) resolve by their exact text — role-based
+  // locators for 'generic' also match ancestor containers with the same
+  // accessible name and fail the uniqueness check.
+  if (element.accessibleName) {
+    return {
+      strategy: 'text' as UILocatorStrategy,
+      value: element.accessibleName,
+      exact: true,
+      description: `text "${element.accessibleName}"`,
     };
   }
 
@@ -86,3 +117,6 @@ function buildLocator(element: ObservedElement): ResolvedLocator {
     description: `${element.role || 'generic'} [${element.id}]`,
   };
 }
+
+export const INTERACTIVE_SELECTOR_CSS =
+  'button, a[href], input, select, textarea, label, [role=button], [role=link], [role=textbox], [role=checkbox], [role=radio], [role=combobox], [role=tab], [role=menuitem], [tabindex]';

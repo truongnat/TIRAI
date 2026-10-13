@@ -66,6 +66,8 @@ export interface AgenticTestExecutorOptions {
   /** Explicit policy for mutable test-state preparation; defaults fail-closed. */
   preparationPolicy?: Partial<PreparationMutationPolicy>;
   generationSeed?: string;
+  /** Per-navigation timeout passed to page.goto; undefined uses the driver's default. */
+  navigationTimeoutMs?: number;
 }
 
 export class AgenticTestExecutor implements TestExecutor {
@@ -76,6 +78,7 @@ export class AgenticTestExecutor implements TestExecutor {
   private readonly capabilities: AgentCapabilities;
   private readonly policy: AgentExecutionPolicy;
   private readonly allowedOrigins: string[];
+  private readonly navigationTimeoutMs?: number;
   private readonly testDataItems: TestDataItem[];
   private readonly dataNeedCoordinator: DataNeedCoordinator;
   private lastDataResolutions: DataResolutionResult[] = [];
@@ -100,6 +103,7 @@ export class AgenticTestExecutor implements TestExecutor {
     this.policy = options.policy ?? defaultAgentPolicy();
     this.allowedOrigins = options.allowedOrigins ?? ['http://127.0.0.1', 'http://localhost'];
     this.testDataItems = options.testDataItems ?? [];
+    this.navigationTimeoutMs = options.navigationTimeoutMs;
     this.dataNeedCoordinator = new DataNeedCoordinator({
       inventory: buildRuntimeCapabilityInventory(this.capabilities, options.capabilityInventory),
       preparationPolicy: options.preparationPolicy,
@@ -242,7 +246,7 @@ export class AgenticTestExecutor implements TestExecutor {
       } else {
         page = this.browserSession.page();
       }
-      await page.goto(this.baseUrl);
+      await page.goto(this.baseUrl, this.navigationTimeoutMs ? { timeoutMs: this.navigationTimeoutMs } : undefined);
     } catch (err) {
       return {
         status: 'error',
@@ -348,27 +352,35 @@ export class AgenticTestExecutor implements TestExecutor {
         try {
           const page = this.browserSession.page();
           for (const [index, cleanup] of testCase.cleanup.entries()) {
-            const step = {
-              order: testCase.steps.length + index + 1,
-              action: `Remove only the record created by test case ${testCase.id}. Match the exact approved target "${cleanup.target}" to one record created during this run; if it is not uniquely identifiable, do not change anything. ${cleanup.description}`,
-              target: cleanup.target,
-            };
-            const stepResult = await this.executeStep(
-              testCase,
-              step,
-              page,
-              context,
-              this.lastRuntimeData,
-              this.lastMetrics,
-              [],
-            );
-            if (stepResult.status !== 'passed') {
-              cleanupError = {
-                code: 'AGENT_CLEANUP_ACTION_FAILED',
-                message: `Cleanup stopped at target "${cleanup.target}": ${stepResult.error ?? stepResult.status}. Manual cleanup is required.`,
+            const actions = Array.isArray(cleanup.steps) && cleanup.steps.length > 0
+              ? cleanup.steps
+              : [{ action: cleanup.description, target: cleanup.target }];
+            let failed = false;
+            for (const [subIndex, sub] of actions.entries()) {
+              const step = {
+                order: testCase.steps.length + index + subIndex + 1,
+                action: `Remove only the record created by test case ${testCase.id}. Match the exact approved target "${cleanup.target}" to one record created during this run; if it is not uniquely identifiable, do not change anything. ${sub.action}`,
+                target: sub.target ?? cleanup.target,
               };
-              break;
+              const stepResult = await this.executeStep(
+                testCase,
+                step,
+                page,
+                context,
+                this.lastRuntimeData,
+                this.lastMetrics,
+                [],
+              );
+              if (stepResult.status !== 'passed') {
+                cleanupError = {
+                  code: 'AGENT_CLEANUP_ACTION_FAILED',
+                  message: `Cleanup stopped at target "${cleanup.target}": ${stepResult.error ?? stepResult.status}. Manual cleanup is required.`,
+                };
+                failed = true;
+                break;
+              }
             }
+            if (failed) break;
             const expected: TestCase['expectedResults'][number] = {
               description: `Verify that the record created by ${testCase.id} at target "${cleanup.target}" is no longer visible after cleanup.`,
               verificationType: 'ui',
@@ -557,7 +569,7 @@ export class AgenticTestExecutor implements TestExecutor {
         };
       }
 
-      const result = await executeAction(page, resolution.action, idMap, { baseUrl: this.baseUrl });
+      const result = await executeAction(page, resolution.action, idMap, { baseUrl: this.baseUrl, navigationTimeoutMs: this.navigationTimeoutMs });
       metrics.actions++;
       if (grounding.action.type === 'navigate') metrics.navigationActions++;
 
@@ -928,10 +940,13 @@ export async function resolveActionValue(
     const secretRef = source.slice('secret://'.length);
     try {
       const resolved = await context.secrets.resolve(secretRef);
-      if (!resolved?.value) return { error: 'Secret resolution failed.' };
+      if (!resolved?.value) {
+        return { error: `Secret resolution failed: '${secretRef}' resolved to an empty value.` };
+      }
       return { action: { ...action, value: resolved.value, valueSource: source } };
-    } catch {
-      return { error: 'Secret resolution failed.' };
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      return { error: `Secret resolution failed: ${reason}` };
     }
   }
 
@@ -974,6 +989,7 @@ async function validateRuntimeAction(
   const staticValidation = validateAction(action, observation, policy, metrics);
   if (!staticValidation.valid) return staticValidation;
   if (action.type === 'navigate' || action.type === 'observe') return staticValidation;
+  if (action.type === 'press' && !action.elementId) return staticValidation;
 
   const mapping = action.elementId ? idMap.get(action.elementId) : undefined;
   if (!mapping) return { valid: false, reason: `Element ${action.elementId ?? '(missing)'} is not mapped.` };

@@ -210,6 +210,11 @@ export interface TestDataNeed {
 export interface TestCleanup {
   description: string;
   target?: string;
+  /** Optional ordered action steps (e.g. {action:'hover',target:'the item'} then
+   *  {action:'click',target:'Delete'}) executed before verifying the target is
+   *  gone. Each step falls back to the cleanup's own target when omitted.
+   *  When absent, `description` is executed as the single cleanup action. */
+  steps?: Array<{ action: string; target?: string }>;
 }
 
 export interface AutomationReadiness {

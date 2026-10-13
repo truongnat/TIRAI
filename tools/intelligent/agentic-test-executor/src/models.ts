@@ -126,6 +126,7 @@ export type AgenticActionType =
   | 'check'
   | 'uncheck'
   | 'press'
+  | 'hover'
   | 'wait-for'
   | 'observe';
 
@@ -152,6 +153,8 @@ export interface ObservedElement {
   inputType?: string;
   testId?: string;
   visibleText?: string;
+  domId?: string;
+  domIndex?: number;
   enabled: boolean;
   checked?: boolean;
   selected?: boolean;
@@ -354,5 +357,7 @@ export interface RawObservationData {
     checked: boolean;
     selected: boolean;
     testId?: string;
+    domId?: string;
+    domIndex: number;
   }>;
 }

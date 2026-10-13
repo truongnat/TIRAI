@@ -261,6 +261,9 @@ export interface BrowserPage {
   check(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void>;
   uncheck(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void>;
   press(target: ResolvedLocator, key: string, options?: { timeoutMs?: number }): Promise<void>;
+  /** Press a key without an element target; acts on the focused element. */
+  pressKey(key: string): Promise<void>;
+  hover(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void>;
   focus(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void>;
   blur(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void>;
   waitForVisible(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void>;

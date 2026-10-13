@@ -168,7 +168,7 @@ export async function runWebDiscover(opts: WebDiscoverOptions): Promise<void> {
       const target = new URL(route, origin);
       if (target.origin !== origin || isUnsafeRoute(target.pathname)) continue;
       try {
-        await page.goto(target.href, { timeoutMs: 15000 });
+        await page.goto(target.href, { timeoutMs: envConfig.navigationTimeoutMs ?? 15000 });
       } catch {
         continue;
       }

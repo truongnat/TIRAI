@@ -20,6 +20,8 @@ export interface WebAuthConfig {
   usernameRef?: SecretRef;
   passwordRef?: SecretRef;
   tokenRef?: SecretRef;
+  /** Additional environment-approved env:NAME secrets resolvable from test cases (e.g. multiple login personas). */
+  extraRefs?: SecretRef[];
 }
 
 export interface WebCapabilityConfig {
@@ -35,6 +37,8 @@ export interface WebEnvironmentConfig {
   auth?: WebAuthConfig;
   capabilities?: WebCapabilityConfig;
   viewport?: { width: number; height: number };
+  /** Per-navigation timeout for slow targets; defaults to the CLI's built-in values. */
+  navigationTimeoutMs?: number;
 }
 
 export interface WebConfig {
@@ -197,6 +201,11 @@ function validateAuthSecrets(
   }
   if (auth.tokenRef && !auth.tokenRef.startsWith('env:')) {
     errors.push({ path: `${path}.tokenRef`, message: 'Secret must use env:NAME reference' });
+  }
+  for (const [index, ref] of (auth.extraRefs ?? []).entries()) {
+    if (!ref.startsWith('env:')) {
+      errors.push({ path: `${path}.extraRefs[${index}]`, message: 'Secret must use env:NAME reference' });
+    }
   }
 }
 

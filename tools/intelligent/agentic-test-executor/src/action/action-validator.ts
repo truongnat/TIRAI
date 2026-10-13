@@ -33,6 +33,8 @@ export function validateAction(
   }
 
   if (!action.elementId) {
+    // Key-only press (e.g. "press Enter") targets the focused element — no elementId needed.
+    if (action.type === 'press' && action.key) return { valid: true };
     return { valid: false, reason: `Action "${action.type}" requires elementId` };
   }
 
