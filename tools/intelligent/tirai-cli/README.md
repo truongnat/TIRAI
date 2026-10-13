@@ -19,13 +19,18 @@ node tools/intelligent/tirai-cli/dist/cli.js --help
 # Initialize in the web app project
 tirai init
 
-# In host AI chat, use the installed Skill to select and configure ai.provider first.
-# For Groq or DeepSeek only, export the matching API key:
-export GROQ_API_KEY=...
-# or export DEEPSEEK_API_KEY=...
+# The host AI agent performs semantic analysis and writes the canonical
+# artifacts (semantic-ir, requirements, test-plan, testcases, contract);
+# TIRAI itself makes no model calls.
 
 # Ingest a local Excel, Markdown, or HTML specification
 tirai ingest ./spec.xlsx
+# Import host-written canonical artifacts (validated on import)
+# tirai artifact import requirements --file ./requirements.json
+# tirai artifact import test-plan --file ./test-plan.json
+# tirai artifact import testcases --file ./testcases.json
+# tirai artifact import semantic-ir --file ./semantic-ir.json
+# tirai artifact import contract --file ./contract.json
 tirai plan
 
 # Configure only a non-production environment
@@ -65,7 +70,7 @@ cp skills/tirai-web-testing/SKILL.md "$HOME/.gemini/antigravity-cli/skills/tirai
 
 ```text
 .tirai/
-  config.json              # AI provider, platform environments, env-secret references
+  config.json              # platform environments, env-secret references
   sources/                 # ingested local specification
   artifacts/               # canonical contract, requirements, test plan, TestCases
   discovery/routes.json    # same-origin route discovery snapshot
@@ -73,7 +78,7 @@ cp skills/tirai-web-testing/SKILL.md "$HOME/.gemini/antigravity-cli/skills/tirai
     approvals.json         # case fingerprint + approved route + reviewer
     clarifications.json    # tester answers linked to spec fingerprint
     pending-clarifications.json # unresolved Skill questions
-    runtime/               # local sessions and AI artifacts; gitignored
+    runtime/               # local sessions and scratch files; gitignored
     runs/<run-id>/
       snapshot/             # spec, contract, plan, selected cases, approvals
       report.json
@@ -87,11 +92,11 @@ cp skills/tirai-web-testing/SKILL.md "$HOME/.gemini/antigravity-cli/skills/tirai
   .gitignore
 ```
 
-Reviewed test plans, approvals, clarification records, run snapshots, reports, and sanitized evidence are commit-friendly. Browser sessions, AI request artifacts, temporary files, and raw logs are gitignored. Imported sessions remain available until `tirai auth clear`; treat the source file and stored session as credentials.
+Reviewed test plans, approvals, clarification records, run snapshots, reports, and sanitized evidence are commit-friendly. Browser sessions, temporary files, and raw logs are gitignored. Imported sessions remain available until `tirai auth clear`; treat the source file and stored session as credentials.
 
 ## Configuration
 
-`tirai init` creates `.tirai/config.json` with config version 2 and `ai.provider: "fake"`. Configure a real provider before ingestion or web execution. Subscription-capable CLI adapters (`codex`, `claude`, `antigravity`) use each CLI's active saved authentication; confirm it is the intended subscription/account because TIRAI cannot inspect or enforce vendor billing mode. TIRAI never imports or stores those credentials. Direct API providers (`groq`, `deepseek`) require `GROQ_API_KEY` or `DEEPSEEK_API_KEY` in the process environment. The generic `cli` provider requires a command implementing TIRAI's JSON artifact protocol with `{input}` and `{output}` placeholders; it is not a wrapper for arbitrary chat CLIs. Web execution rejects `fake`.
+`tirai init` creates `.tirai/config.json` with config version 2. TIRAI makes no model calls and has no AI provider configuration: the host agent produces the canonical artifacts and imports them via `tirai artifact import <semantic-ir|requirements|test-plan|testcases|contract> --file <path>`. Each import is validated before it is written to `.tirai/artifacts/`; invalid artifacts fail closed.
 
 Configure web targets with `tirai target add web <environment> --url <url>`. Optional username/password/token inputs are `env:NAME` references. `local`, `dev`, `development`, or `staging` are the only accepted web environment names; `local` must use localhost. Every run also requires `--confirm-dedicated-test-tenant`.
 
@@ -114,6 +119,7 @@ Generated-code `tirai run` exit codes: `0` all passed, `1` business assertion fa
 - `tirai auth clear [--environment <name>]` — remove temporary and imported browser sessions.
 - `tirai review clarify --file <json>` — store a tester answer and a revised case while preserving source requirement links.
 - `tirai review approve --test-case <id> --route </path> --reviewer <name>` — record human approval.
+- `tirai artifact import <semantic-ir|requirements|test-plan|testcases|contract> --file <path>` — validate and import a host-written canonical artifact into `.tirai/artifacts/`.
 - `tirai execute --platform web --environment <name> --test-case <id> --confirm-dedicated-test-tenant` — run selected approved cases.
 - `tirai report [--json]` — show the latest web report or canonical generated-test summary.
 - `tirai generate [--e2e|--unit]` / `tirai run` — optional developer code-generation path.
@@ -122,6 +128,6 @@ The `tirai-web-testing` Skill lets a host AI assistant coordinate clarification,
 
 ## Notes
 
-- Web execution uses real Chromium and an AI provider; assertion mismatches are never retried.
+- Web execution uses real Chromium and deterministic grounding (no model calls); assertion mismatches are never retried.
 - A transient browser/network infrastructure failure is retried once. Assertion mismatches do not stop independent cases; unsafe environment or cleanup failures do.
 - `execution-mapping-builder` remains for generated-code workflows; black-box web execution does not require source-derived selectors.

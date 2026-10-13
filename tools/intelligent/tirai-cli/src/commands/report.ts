@@ -55,8 +55,11 @@ export async function runReport(opts: ReportOptions): Promise<void> {
 
   const hasE2e = fs.existsSync(paths.e2eResultPath);
   const hasUnit = fs.existsSync(paths.unitResultPath);
-  if (!hasE2e && !hasUnit) {
-    throw new CliError('CONFIG_INVALID', 'No run results found. Run `tirai run` first.');
+  const adapterPaths = fs.existsSync(paths.resultsDir)
+    ? fs.readdirSync(paths.resultsDir).filter((name) => name.startsWith('execute-') && name.endsWith('.json'))
+    : [];
+  if (!hasE2e && !hasUnit && adapterPaths.length === 0) {
+    throw new CliError('CONFIG_INVALID', 'No run results found. Run `tirai run` or `tirai execute` first.');
   }
 
   let e2eResult: unknown = null;
@@ -85,14 +88,30 @@ export async function runReport(opts: ReportOptions): Promise<void> {
   // Derive summary from canonical results, not raw
   const e2eSummary = (e2eResult as { summary?: { passed: number; failed: number; errors: number; blocked: number; testsTotal: number } } | null)?.summary;
   const unitSummary = (unitResult as { summary?: { passed: number; failed: number; errors: number; blocked: number; testsTotal: number } } | null)?.summary;
-  const adapterResults = fs.existsSync(paths.resultsDir) ? fs.readdirSync(paths.resultsDir).filter((name) => name.startsWith('execute-') && name.endsWith('.json')).map((name) => {
-    try { return JSON.parse(fs.readFileSync(path.join(paths.resultsDir, name), 'utf8')) as { platform?: string; environment?: string; status?: string; adapter?: string; testCases?: number; apiOperations?: number; databaseChecks?: number }; } catch { return null; }
-  }).filter(Boolean) : [];
+  const adapterResults = adapterPaths.map((name) => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(paths.resultsDir, name), 'utf8')) as {
+        platform?: string; environment?: string; status?: string; executionStatus?: string;
+        adapter?: string; testCases?: number; apiOperations?: number; databaseChecks?: number;
+      };
+    } catch {
+      return null;
+    }
+  }).filter(Boolean);
   const e2eStatus = (e2eResult as { status?: string } | null)?.status ?? 'unknown';
   const unitStatus = (unitResult as { status?: string } | null)?.status ?? 'unknown';
-  const overall = hasE2e && hasUnit
-    ? e2eStatus === 'passed' && unitStatus === 'passed' ? 'PASS' : e2eStatus === 'error' || unitStatus === 'error' ? 'ERROR' : 'FAIL'
-    : e2eStatus === 'passed' || unitStatus === 'passed' ? 'PASS' : 'FAIL';
+  const executionStatuses = [
+    ...(hasE2e ? [e2eStatus] : []),
+    ...(hasUnit ? [unitStatus] : []),
+    ...adapterResults.map((result) => result?.executionStatus ?? result?.status ?? 'unknown'),
+  ];
+  const overall = executionStatuses.includes('error') ? 'ERROR'
+    : executionStatuses.includes('failed') ? 'FAIL'
+    : executionStatuses.includes('blocked') ? 'BLOCKED'
+    : executionStatuses.includes('manual') ? 'MANUAL'
+    : executionStatuses.includes('partial') ? 'PARTIAL'
+    : executionStatuses.every((status) => status === 'passed') ? 'PASS'
+    : 'UNKNOWN';
 
   // Ensure reports dir exists and write latest-summary.md via canonical writer where possible
   ensureDir(paths.reportsDir);
@@ -152,7 +171,7 @@ export async function runReport(opts: ReportOptions): Promise<void> {
     `  ${unitSummary ? `${unitSummary.passed} passed, ${unitSummary.failed} failed, ${unitSummary.errors} errors, ${unitSummary.blocked} blocked (${unitStatus})` : 'no result'}`,
     '',
     `Adapter execution:`,
-    ...(adapterResults.length ? adapterResults.map((r) => `  ${r?.platform ?? 'unknown'} / ${r?.environment ?? 'unknown'}: ${r?.status ?? 'unknown'} (${r?.adapter ?? 'adapter'})`) : ['  no result']),
+    ...(adapterResults.length ? adapterResults.map((r) => `  ${r?.platform ?? 'unknown'} / ${r?.environment ?? 'unknown'}: ${r?.executionStatus ?? r?.status ?? 'unknown'} (${r?.adapter ?? 'adapter'})`) : ['  no result']),
     '',
     `Result:`,
     `  ${overall}`,
@@ -170,7 +189,7 @@ export async function runReport(opts: ReportOptions): Promise<void> {
   if (task) updateTask(basePaths, task.id, { status: 'reported' });
 
   if (opts.json) {
-    console.log(JSON.stringify({ e2eStatus, unitStatus, overall, e2eSummary, unitSummary, source: sourcePath, testCases: testCasesCount }, null, 2));
+    console.log(JSON.stringify({ e2eStatus, unitStatus, adapters: adapterResults, overall, e2eSummary, unitSummary, source: sourcePath, testCases: testCasesCount }, null, 2));
   } else {
     console.log(lines.join('\n'));
   }

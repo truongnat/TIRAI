@@ -123,7 +123,7 @@ export class ExcelExporter implements TestOutputExporter {
     summarySheet.addRow({ metric: 'Total Test Cases', value: testPlan.quality.testCases });
     summarySheet.addRow({ metric: 'Total Scenarios', value: testPlan.quality.scenarios });
     summarySheet.addRow({ metric: 'Total Requirements', value: testPlan.quality.requirementsTotal });
-    summarySheet.addRow({ metric: 'Coverage Rate', value: (testPlan.quality.coverageRate * 100).toFixed(1) + '%' });
+    summarySheet.addRow({ metric: 'Coverage Rate', value: `${(testPlan.quality.coverageRate * 100).toFixed(1)  }%` });
     summarySheet.addRow({ metric: 'Automation Ready', value: testPlan.quality.automationReady });
 
     fs.mkdirSync(outDir, { recursive: true });
@@ -131,7 +131,7 @@ export class ExcelExporter implements TestOutputExporter {
     await workbook.xlsx.writeFile(filePath);
 
     return {
-      artifactId: 'artifact-xlsx-' + testPlanFingerprint.slice(0, 12),
+      artifactId: `artifact-xlsx-${  testPlanFingerprint.slice(0, 12)}`,
       format: 'xlsx',
       kind: 'test-case-export',
       path: filePath,

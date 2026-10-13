@@ -30,7 +30,6 @@ jobs:
         run: |
           set -euo pipefail
           for workspace in \
-            tools/intelligent/ai-provider \
             tools/intelligent/test-planner \
             tools/intelligent/test-data-planner \
             tools/intelligent/data-resolver \

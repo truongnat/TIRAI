@@ -8,7 +8,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "canary:real": "RUN_REAL_AI_CANARY=true vitest run tests/real-ai-black-box-canary.test.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
@@ -25,7 +24,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "ai-provider": "file:../ai-provider",
     "test-execution-orchestrator": "file:../test-execution-orchestrator",
     "ui-executor": "file:../ui-executor",
     "test-planner": "file:../test-planner",

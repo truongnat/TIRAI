@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { runSourceToTestCasePipeline } from '../src/index.js';
-import { createDefaultSourceConnectorRegistry } from 'source-ingestion';
+import type { TestCase } from 'test-planner';
 import {
   generateUnitTests,
   validateGeneratedUnitSource,
@@ -15,22 +14,44 @@ import {
 } from 'test-code-generator';
 
 const OUT = path.resolve(process.cwd(), 'output', 'phase-5-3-source-to-testcase');
-const SRC = path.join(OUT, 'source', 'acceptance.xlsx');
 const COMPAT = path.join(OUT, 'compatibility');
 
-// Re-run the pipeline slice to obtain a canonical TestCase (REAL .xlsx input).
-async function getTestCase() {
-  const registry = createDefaultSourceConnectorRegistry();
-  const doc = await registry.open({ kind: 'excel', path: SRC });
-  const provider = (await import('./acceptance/make-provider.js')).buildAcceptanceProvider(doc.contexts.map((c) => c.id));
-  const result = await runSourceToTestCasePipeline({ sourcePath: SRC, provider, outputDir: path.join(COMPAT, 'pipeline') });
-  const tc = result.testPlanIR.testCases[0]!;
-  return { tc, testPlanIR: result.testPlanIR };
+// TIRAI no longer runs embedded AI stages. The canonical TestCase consumed
+// downstream is supplied by the host agent and imported via
+// `tirai artifact import testcases` — this literal mirrors that artifact shape.
+function getTestCase(): TestCase {
+  return {
+    id: 'TC-0001',
+    scenarioId: 'SC-0001',
+    requirementIds: ['REQ-0001'],
+    title: 'Reject order when quantity exceeds available stock',
+    objective: 'Verify orderRejectionReason returns INSUFFICIENT_STOCK when quantity > availableStock',
+    type: 'api',
+    priority: 'high',
+    preconditions: [],
+    inputs: [
+      { name: 'quantity', valueStrategy: 'fixed', value: 10, description: 'Requested order quantity' },
+      { name: 'availableStock', valueStrategy: 'fixed', value: 5, description: 'Current stock level' },
+    ],
+    dataNeeds: [],
+    steps: [{ order: 1, action: 'Submit', target: 'order' }],
+    expectedResults: [
+      {
+        description: 'INSUFFICIENT_STOCK',
+        verificationType: 'state',
+        verificationIntent: { kind: 'value-equals', expectedValue: 'INSUFFICIENT_STOCK' },
+      },
+    ],
+    cleanup: [],
+    automation: { status: 'manual-only', reasons: [] },
+    provenance: [{ requirementId: 'REQ-0001', contextId: 'ctx-0' }],
+    confidence: 0.9,
+  } as unknown as TestCase;
 }
 
-describe('Phase 5.3 compatibility: generated TestCase consumed by Phase 5.1/5.2', () => {
+describe('Phase 5.3 compatibility: imported TestCase consumed by Phase 5.1/5.2', () => {
   it('Unit (Phase 5.2): TestCase generates a validated, runnable Vitest spec', async () => {
-    const { tc } = await getTestCase();
+    const tc = getTestCase();
 
     const unitRoot = path.join(COMPAT, 'unit');
     const targetDir = path.join(unitRoot, 'target');
@@ -89,7 +110,7 @@ describe('Phase 5.3 compatibility: generated TestCase consumed by Phase 5.1/5.2'
   }, 120000);
 
   it('E2E (Phase 5.1): TestCase generates an E2E spec via explicit trusted mapping', async () => {
-    const { tc } = await getTestCase();
+    const tc = getTestCase();
     const first = tc.provenance?.[0]?.contextId ?? 'ctx-unknown';
 
     const ui: TestExecutionMapping = {
@@ -110,7 +131,7 @@ describe('Phase 5.3 compatibility: generated TestCase consumed by Phase 5.1/5.2'
           executorType: 'ui',
           confidence: 1,
           status: 'ready',
-          source: ['trusted-explicit'],
+          source: [{ type: 'explicit', reference: 'trusted-explicit' }],
           ui,
           unresolvedIds: [],
           provenance: [{ requirementId: 'REQ-0001', contextId: first }],
@@ -142,7 +163,7 @@ describe('Phase 5.3 compatibility: generated TestCase consumed by Phase 5.1/5.2'
     const profile: ProjectExecutionProfile = {
       project: { id: 'compat', adapterVersion: '1.0.0' },
       environment: { id: 'local' },
-      ui: { environment: { baseUrl: 'http://localhost' }, catalog: { pages: [], elements: [] } as UIElementCatalog },
+      ui: { environment: { baseUrl: 'http://localhost' }, catalog: { environmentId: 'local', pages: [] } as UIElementCatalog },
       bindings: { definitions: [] },
       secrets: { references: [] },
       commands: { commands: [] },

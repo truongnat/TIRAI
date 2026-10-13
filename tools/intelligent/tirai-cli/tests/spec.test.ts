@@ -13,7 +13,6 @@ describe('spec registry', () => {
     fs.writeFileSync(path.join(tmp, '.tirai', 'config.json'), JSON.stringify({
       version: 2,
       workspaceVersion: 1,
-      ai: { provider: 'fake', model: 'fake-model' },
       project: { root: tmp, defaultEnvironment: 'local', defaultLanguage: 'en' },
       platforms: {},
       source: {},
@@ -82,7 +81,7 @@ describe('spec registry', () => {
       const tc = testCases[i];
       const f = path.join(tmp, tc.name);
       // Unique content per file to avoid fingerprint collision
-      fs.writeFileSync(f, 'unique-content-' + i);
+      fs.writeFileSync(f, `unique-content-${  i}`);
       await runSpecAdd({ cwd: tmp, sourcePath: f });
     }
     const paths = { specsIndexPath: path.join(tmp, '.tirai', 'specs', 'index.json') };

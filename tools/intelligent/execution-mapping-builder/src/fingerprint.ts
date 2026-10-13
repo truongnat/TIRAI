@@ -10,8 +10,6 @@ export interface FingerprintInput {
   testCases: TestCase[];
   uiCatalog?: UIElementCatalog;
   bindingsCatalog?: BindingsCatalog;
-  providerName?: string;
-  model?: string;
 }
 
 export function computeFingerprint(input: FingerprintInput): string {
@@ -21,8 +19,6 @@ export function computeFingerprint(input: FingerprintInput): string {
     catalogPages: input.uiCatalog?.pages.map(p => p.id).sort() ?? [],
     catalogElements: input.uiCatalog?.pages.flatMap(p => p.elements.map(e => e.logicalName)).sort() ?? [],
     bindingNames: input.bindingsCatalog?.bindings.map(b => b.name).sort() ?? [],
-    providerName: input.providerName ?? 'none',
-    model: input.model ?? 'default',
   };
 
   const json = JSON.stringify(stable);

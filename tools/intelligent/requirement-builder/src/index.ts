@@ -1,12 +1,8 @@
 // ---------------------------------------------------------------------------
-// Requirement Builder – public API
+// Requirement Builder – public API (type shell)
 // ---------------------------------------------------------------------------
-
-export { buildRequirements, buildRequirementsFromSemanticIR } from './builder.js';
-export { REQUIREMENT_PROMPT_VERSION } from './prompts/system.js';
-export { RequirementBuilderError, RequirementErrorCode } from './errors.js';
-export { RequirementWarningCode, CONFIDENCE_THRESHOLD } from './warnings.js';
-export { computeFingerprint } from './fingerprint.js';
+// TIRAI is a pure tool: requirement building is supplied by the host agent.
+// This package retains the canonical Requirement IR model only.
 
 export type {
   RequirementIR,
@@ -22,10 +18,7 @@ export type {
   RequirementUnresolved,
   RequirementConflict,
   RequirementQualityMetrics,
-  RequirementCandidate,
   RequirementWarning,
-  RequirementManifest,
-  RequirementBuilderOptions,
   RequirementDocument,
   ProvenanceReference,
   SemanticIRInput,

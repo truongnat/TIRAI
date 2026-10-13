@@ -41,30 +41,21 @@
     "check": "npm run typecheck && npm run lint && npm run build && npm test"
   },
   "dependencies": {
-    "ai-provider": "file:../ai-provider",
     "ajv": "^8.17.0",
+    "contract-ir": "file:../contract-ir",
     "docx": "^9.7.1",
     "exceljs": "^4.4.0",
-    "execution-mapping-builder": "file:../execution-mapping-builder",
-    "groq-sdk": "^0.15.0",
-    "jszip": "^3.10.1",
-    "mammoth": "^1.9.1",
-    "pdf-parse": "^2.4.5",
-    "pdfjs-dist": "^4.4.168",
-    "prettier": "^3.3.0",
-    "project-adapter": "file:../project-adapter",
-    "source-ingestion": "file:../source-ingestion",
+    "pdf-lib": "^1.17.1",
     "source-to-testcase": "file:../source-to-testcase",
-    "typescript": "^5.5.0",
-    "agentic-test-executor": "file:../agentic-test-executor",
+    "test-code-generator": "file:../test-code-generator",
     "test-execution-orchestrator": "file:../test-execution-orchestrator",
+    "test-planner": "file:../test-planner",
     "ui-executor": "file:../ui-executor"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "docx": "^9.7.1",
     "esbuild": "^0.21.5",
-    "pdf-lib": "^1.17.1",
+    "prettier": "^3.3.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
   }

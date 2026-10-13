@@ -235,7 +235,7 @@ function buildSemanticIR(
     unresolved: [],
     analysis: {
       provider: 'structured-design-compiler',
-      model: 'deterministic',
+      model: 'none',
       promptVersion: 'structured-design-1.0',
       chunksAnalyzed: doc.contexts.length,
       aiRequests: 0,

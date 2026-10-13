@@ -1,13 +1,8 @@
 // ---------------------------------------------------------------------------
-// Test Data Planner – public API
+// Test Data Planner – public API (type shell)
 // ---------------------------------------------------------------------------
-
-export { buildTestDataPlan, buildTestDataPlanFromTestCaseIR } from './planner.js';
-export { extractDeterministic, mergeExtractionResults } from './analysis/deterministic-extractor.js';
-export { TEST_DATA_PLANNER_PROMPT_VERSION } from './prompts/system.js';
-export { TestDataPlannerError, TestDataPlannerErrorCode } from './errors.js';
-export { TestDataPlannerWarningCode, DATA_CONFIDENCE_THRESHOLD } from './warnings.js';
-export { computeFingerprint } from './fingerprint.js';
+// TIRAI is a pure tool: test data planning is supplied by the host agent.
+// This package retains the canonical Test Data Plan IR model only.
 
 export type {
   TestDataPlanIR,
@@ -30,13 +25,6 @@ export type {
   TestDataUnresolved,
   DataUnresolvedReason,
   TestDataQualityMetrics,
-  DataRequirementCandidate,
-  DependencyCandidate,
-  ReuseCandidate,
-  DataRequirementExtractionResult,
-  DependencyAnalysisResult,
-  TestDataPlannerOptions,
-  TestDataPlannerManifest,
   TestDataPlannerWarning,
   TestCaseIRInput,
   TestPlanIRInput,

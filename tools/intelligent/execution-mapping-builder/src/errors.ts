@@ -1,6 +1,6 @@
 // Execution Mapping Builder — Error codes and error class.
 //
-// All error codes are deterministic and traceable. AI cannot suppress errors.
+// All error codes are deterministic and traceable.
 
 import type { ExecutionMappingErrorCode } from './models.js';
 
@@ -11,7 +11,6 @@ export const EXECUTION_MAPPING_ERROR_CODES: ReadonlySet<ExecutionMappingErrorCod
   'EMB_MISSING_BINDING',
   'EMB_UNSUPPORTED_ACTION',
   'EMB_UNSUPPORTED_ASSERTION',
-  'EMB_PROVIDER_FAILED',
   'EMB_SCHEMA_INVALID',
   'EMB_CHECKPOINT_CORRUPT',
   'EMB_DUPLICATE_MAPPING',

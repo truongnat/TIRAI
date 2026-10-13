@@ -25,37 +25,37 @@ export class DOCXExporter implements TestOutputExporter {
     const children: Paragraph[] = [];
 
     children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('TIRAI Test Plan Export')] }));
-    children.push(new Paragraph({ children: [new TextRun('Generated: ' + new Date().toISOString())] }));
-    children.push(new Paragraph({ children: [new TextRun('Fingerprint: ' + testPlanFingerprint.slice(0, 16) + '...')] }));
+    children.push(new Paragraph({ children: [new TextRun(`Generated: ${  new Date().toISOString()}`)] }));
+    children.push(new Paragraph({ children: [new TextRun(`Fingerprint: ${  testPlanFingerprint.slice(0, 16)  }...`)] }));
     children.push(new Paragraph({ children: [new TextRun('')] }));
 
     children.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun('Summary')] }));
-    children.push(new Paragraph({ children: [new TextRun('Total Test Cases: ' + testPlan.quality.testCases)] }));
-    children.push(new Paragraph({ children: [new TextRun('Total Scenarios: ' + testPlan.quality.scenarios)] }));
-    children.push(new Paragraph({ children: [new TextRun('Total Requirements: ' + testPlan.quality.requirementsTotal)] }));
-    children.push(new Paragraph({ children: [new TextRun('Coverage Rate: ' + (testPlan.quality.coverageRate * 100).toFixed(1) + '%')] }));
-    children.push(new Paragraph({ children: [new TextRun('Automation Ready: ' + testPlan.quality.automationReady)] }));
+    children.push(new Paragraph({ children: [new TextRun(`Total Test Cases: ${  testPlan.quality.testCases}`)] }));
+    children.push(new Paragraph({ children: [new TextRun(`Total Scenarios: ${  testPlan.quality.scenarios}`)] }));
+    children.push(new Paragraph({ children: [new TextRun(`Total Requirements: ${  testPlan.quality.requirementsTotal}`)] }));
+    children.push(new Paragraph({ children: [new TextRun(`Coverage Rate: ${  (testPlan.quality.coverageRate * 100).toFixed(1)  }%`)] }));
+    children.push(new Paragraph({ children: [new TextRun(`Automation Ready: ${  testPlan.quality.automationReady}`)] }));
     children.push(new Paragraph({ children: [new TextRun('')] }));
 
     children.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun('Test Cases')] }));
 
     for (const tc of testCases) {
-      children.push(new Paragraph({ heading: HeadingLevel.HEADING_3, children: [new TextRun(tc.id + ': ' + tc.title)] }));
-      children.push(new Paragraph({ children: [new TextRun('Objective: ' + tc.objective)] }));
-      children.push(new Paragraph({ children: [new TextRun('Type: ' + tc.type + ' | Priority: ' + tc.priority + ' | Status: ' + tc.automation.status)] }));
-      children.push(new Paragraph({ children: [new TextRun('Requirements: ' + tc.requirementIds.join(', '))] }));
+      children.push(new Paragraph({ heading: HeadingLevel.HEADING_3, children: [new TextRun(`${tc.id  }: ${  tc.title}`)] }));
+      children.push(new Paragraph({ children: [new TextRun(`Objective: ${  tc.objective}`)] }));
+      children.push(new Paragraph({ children: [new TextRun(`Type: ${  tc.type  } | Priority: ${  tc.priority  } | Status: ${  tc.automation.status}`)] }));
+      children.push(new Paragraph({ children: [new TextRun(`Requirements: ${  tc.requirementIds.join(', ')}`)] }));
 
       if (tc.steps.length > 0) {
         children.push(new Paragraph({ children: [new TextRun({ text: 'Steps:', bold: true })] }));
         for (const step of tc.steps) {
-          children.push(new Paragraph({ children: [new TextRun(step.order + '. ' + step.action + (step.target ? ' (' + step.target + ')' : ''))] }));
+          children.push(new Paragraph({ children: [new TextRun(`${step.order  }. ${  step.action  }${step.target ? ` (${  step.target  })` : ''}`)] }));
         }
       }
 
       if (tc.expectedResults.length > 0) {
         children.push(new Paragraph({ children: [new TextRun({ text: 'Expected Results:', bold: true })] }));
         for (const er of tc.expectedResults) {
-          children.push(new Paragraph({ children: [new TextRun('- [' + er.verificationType + '] ' + er.description)] }));
+          children.push(new Paragraph({ children: [new TextRun(`- [${  er.verificationType  }] ${  er.description}`)] }));
         }
       }
       children.push(new Paragraph({ children: [new TextRun('')] }));
@@ -69,7 +69,7 @@ export class DOCXExporter implements TestOutputExporter {
     fs.writeFileSync(filePath, buffer);
 
     return {
-      artifactId: 'artifact-docx-' + testPlanFingerprint.slice(0, 12),
+      artifactId: `artifact-docx-${  testPlanFingerprint.slice(0, 12)}`,
       format: 'docx',
       kind: 'test-case-export',
       path: filePath,

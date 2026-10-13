@@ -1,4 +1,3 @@
-import type { AIProvider } from 'ai-provider';
 import type { BrowserObservation, TestCase } from './models.js';
 
 export type VerificationSource = 'UI' | 'API' | 'DATABASE';
@@ -66,9 +65,8 @@ export interface VerificationRuntime {
   sources: Partial<Record<VerificationSource, VerificationSourceAdapter>>;
   maxVerificationAcquisitions?: number;
   maxVerificationAttempts?: number;
-  maxVerificationAICalls?: number;
-  aiProvider?: AIProvider;
 }
+
 
 export interface NormalizedFact {
   source: VerificationSource;
@@ -103,7 +101,6 @@ export interface VerificationReport {
   needs: VerificationNeedResult[];
   evidence: VerificationEvidenceView[];
   acquisitions: number;
-  verificationAICalls: number;
   conflicts: Array<{ needId: string; sources: VerificationSource[]; values: unknown[] }>;
   explanation: string;
 }
@@ -195,7 +192,7 @@ export async function verifyCrossLayer(
     : results.some((result) => result.status === 'CONTRADICTED') ? 'CONTRADICTED'
       : results.some((result) => result.status === 'INSUFFICIENT_EVIDENCE') ? 'INSUFFICIENT_EVIDENCE' : 'VERIFIED';
   const explanation = results.map((result) => `${result.needId}: ${result.status}${result.reason ? ` (${result.reason})` : ''}`).join('; ');
-  return { status, needs: results, evidence, acquisitions, verificationAICalls: 0, conflicts, explanation };
+  return { status, needs: results, evidence, acquisitions, conflicts, explanation };
 }
 
 export function correlationKey(subject: EntityReference): string {

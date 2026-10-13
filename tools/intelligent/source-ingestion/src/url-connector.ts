@@ -1,4 +1,3 @@
-import { stat } from 'node:fs/promises';
 import { basename } from 'node:path';
 import type {
   CanonicalContextChunk,

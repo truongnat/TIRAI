@@ -2,7 +2,6 @@
 // Agentic Test Executor — core agent loop
 // ---------------------------------------------------------------------------
 
-import type { AIProvider } from 'ai-provider';
 import type {
   BrowserSession,
   BrowserPage,
@@ -56,7 +55,6 @@ import type { RuntimeDataStore } from './data/runtime-data-store.js';
 
 export interface AgenticTestExecutorOptions {
   browserSession: BrowserSession;
-  aiProvider: AIProvider;
   baseUrl: string;
   capabilities?: AgentCapabilities;
   policy?: AgentExecutionPolicy;
@@ -74,7 +72,6 @@ export class AgenticTestExecutor implements TestExecutor {
   readonly type = 'ui';
 
   private readonly browserSession: BrowserSession;
-  private readonly aiProvider: AIProvider;
   private readonly baseUrl: string;
   private readonly capabilities: AgentCapabilities;
   private readonly policy: AgentExecutionPolicy;
@@ -98,7 +95,6 @@ export class AgenticTestExecutor implements TestExecutor {
 
   constructor(options: AgenticTestExecutorOptions) {
     this.browserSession = options.browserSession;
-    this.aiProvider = options.aiProvider;
     this.baseUrl = normalizeBaseUrl(options.baseUrl);
     this.capabilities = options.capabilities ?? defaultCapabilities();
     this.policy = options.policy ?? defaultAgentPolicy();
@@ -492,37 +488,17 @@ export class AgenticTestExecutor implements TestExecutor {
         };
       }
 
-      let grounding;
-      try {
-        metrics.agentCalls++;
-        grounding = await groundStep(this.aiProvider, {
-          testCaseId: testCase.id,
-          stepIndex: step.order,
-          stepDescription: step.action,
-          stepTarget: step.target,
-          stepInput: step.input,
-          observation,
-          previousFailure,
-        });
-      } catch (err) {
-        return {
-          stepOrder: step.order,
-          intent: step.action,
-          grounding: {
-            testCaseId: testCase.id,
-            stepIndex: step.order,
-            stepIntent: step.action,
-            candidateActions: [],
-            confidence: 'low',
-            reasoning: 'Grounding AI call failed',
-            unresolvedReason: 'AGENT_GROUNDING_FAILED',
-          },
-          status: 'blocked',
-          replans,
-          evidenceIds: [],
-          error: `Grounding failed: ${err instanceof Error ? err.message : String(err)}`,
-        };
-      }
+      // Count the deterministic grounding attempt against the per-test budget.
+      metrics.agentCalls++;
+      const grounding = groundStep({
+        testCaseId: testCase.id,
+        stepIndex: step.order,
+        stepDescription: step.action,
+        stepTarget: step.target,
+        stepInput: step.input,
+        observation,
+        previousFailure,
+      });
 
       if (!grounding.action) {
         if (replans < this.policy.maxReplans) {
@@ -581,7 +557,7 @@ export class AgenticTestExecutor implements TestExecutor {
         };
       }
 
-      const result = await executeAction(page, resolution.action, idMap);
+      const result = await executeAction(page, resolution.action, idMap, { baseUrl: this.baseUrl });
       metrics.actions++;
       if (grounding.action.type === 'navigate') metrics.navigationActions++;
 
@@ -687,33 +663,15 @@ export class AgenticTestExecutor implements TestExecutor {
         evidenceIds: [],
       };
     }
-
-    let grounding;
-    try {
-      metrics.agentCalls++;
-      grounding = await groundAssertion(this.aiProvider, {
-        testCaseId: testCase.id,
-        expectedResultIndex: index,
-        expectedDescription: expected.description,
-        verificationType: expected.verificationType,
-        observation: await redactObservationForAI(observation, testCase, context),
-      });
-    } catch {
-      return {
-        expectedResultIndex: index,
-        description: expected.description,
-        grounding: {
-          testCaseId: testCase.id,
-          expectedResultIndex: index,
-          assertionType: 'text-visible',
-          confidence: 'low',
-          reasoning: 'Assertion grounding AI call failed',
-          unresolvedReason: 'AGENT_ASSERTION_UNRESOLVED',
-        },
-        status: 'blocked',
-        evidenceIds: [],
-      };
-    }
+    // Count the deterministic grounding attempt against the per-test budget.
+    metrics.agentCalls++;
+    const grounding = groundAssertion({
+      testCaseId: testCase.id,
+      expectedResultIndex: index,
+      expectedDescription: expected.description,
+      verificationType: expected.verificationType,
+      observation,
+    });
 
     if (grounding.unresolvedReason) {
       return {
@@ -965,7 +923,7 @@ export async function resolveActionValue(
 
   if (source?.startsWith('secret://')) {
     if (action.value && action.value !== source) {
-      return { error: 'Secret-backed fill must use valueSource; literal AI values are rejected.' };
+      return { error: 'Secret-backed fill must use valueSource; literal values are rejected.' };
     }
     const secretRef = source.slice('secret://'.length);
     try {
@@ -979,7 +937,7 @@ export async function resolveActionValue(
 
   if (source?.startsWith('testdata://')) {
     if (action.value && action.value !== source) {
-      return { error: 'Runtime data fill must use valueSource; literal AI values are rejected.' };
+      return { error: 'Runtime data fill must use valueSource; literal values are rejected.' };
     }
     const value = runtimeData?.resolve(source);
     if (typeof value !== 'string') return { error: 'Runtime data binding resolution failed.' };
@@ -1029,40 +987,6 @@ async function validateRuntimeAction(
     return { valid: false, reason: `Element ${action.elementId} could not be deterministically validated.` };
   }
   return { valid: true };
-}
-
-export async function redactObservationForAI(
-  observation: BrowserObservation,
-  testCase: TestCase,
-  context: TestExecutionContext,
-): Promise<BrowserObservation> {
-  const secretValues: string[] = [];
-  for (const step of testCase.steps) {
-    if (!step.input?.startsWith('secret://')) continue;
-    try {
-      const secret = await context.secrets.resolve(step.input.slice('secret://'.length));
-      if (secret?.value) secretValues.push(secret.value);
-    } catch {
-      // The execution path will report secret resolution failure if needed.
-    }
-  }
-  if (secretValues.length === 0) return observation;
-  const redact = (value: string | undefined): string | undefined => {
-    if (value === undefined) return undefined;
-    return secretValues.reduce((result, secret) => result.split(secret).join('[REDACTED]'), value);
-  };
-  return {
-    ...observation,
-    headings: observation.headings.map((heading) => redact(heading) ?? ''),
-    pageText: redact(observation.pageText) ?? '',
-    elements: observation.elements.map((element) => ({
-      ...element,
-      accessibleName: redact(element.accessibleName),
-      label: redact(element.label),
-      placeholder: redact(element.placeholder),
-      visibleText: redact(element.visibleText),
-    })),
-  };
 }
 
 export function addTextEvidence(

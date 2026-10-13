@@ -4,7 +4,7 @@
 
 ### From specification to executable tests. Automatically.
 
-**AI-assisted specification intelligence with deterministic test generation and real execution.**
+**Host-agent specification intelligence with deterministic ingestion, validation, generation, and real execution.**
 
 Turn **Excel, PDF, DOCX, Markdown, CSV, JSON, and web specifications** into canonical test cases, generate trusted **Playwright** and **Vitest** suites, execute them with real runners, and export canonical results.
 
@@ -37,14 +37,14 @@ Most test automation tools start from code. **TIRAI starts from specifications.*
 ```text
 Specification
     ↓
-Semantic understanding
+Semantic understanding (host agent)
     ↓
 Canonical TestCase JSON
     ↓
 Multi-format export / Execution
 ```
 
-TIRAI keeps AI where it is useful — understanding intent — while keeping generation and execution deterministic, inspectable, and fail-closed.
+TIRAI makes no model calls itself. The host agent performs semantic understanding and hands canonical artifacts to TIRAI, which keeps ingestion, validation, generation, and execution deterministic, inspectable, and fail-closed.
 
 ### Why it is different
 
@@ -66,7 +66,7 @@ Excel / PDF / DOCX / Markdown / CSV / JSON / URL
                         ↓
                 Canonical Context
                         ↓
-                 Semantic Analysis
+       Host agent analysis → Artifact import
                         ↓
          Requirement / Scenario / TestCase
                         ↓
@@ -74,14 +74,14 @@ Excel / PDF / DOCX / Markdown / CSV / JSON / URL
                         ↓
         ┌───────────────┼───────────────┐
         ↓               ↓               ↓
-   Multi-format    Platform-aware    Optional Code
-     Export          Execution       Generation
-   (JSON/XLSX/      (Web/API/DB)    (Playwright/
-    PDF/DOCX/                       Vitest)
+   Multi-format    Platform-aware   Optional Code
+     Export          Execution      Generation
+   (JSON/XLSX/    (Web UI only;    (Playwright/
+    PDF/DOCX/      API/DB prep)      Vitest)
     Markdown)
 ```
 
-> **AI/specification logic determines what should be tested. Trusted mappings determine where and how those tests connect to the real project.**
+> **The host agent determines what should be tested. Trusted mappings determine where and how those tests connect to the real project.**
 
 ---
 
@@ -141,42 +141,21 @@ Open the target application project in the host assistant, then start a chat:
 cd my-project
 ```
 
-Example request: “Set up TIRAI here, then help me review `./spec.xlsx` against the staging web app.” The Skill asks before initialization and provider/config changes, then guides spec clarification, route/case review, execution approval, and bug-draft confirmation. The host AI runs the TIRAI commands.
+Example request: “Set up TIRAI here, then help me review `./spec.xlsx` against the staging web app.” The Skill asks before initialization and config changes, then guides spec clarification, route/case review, execution approval, and bug-draft confirmation. The host AI runs the TIRAI commands.
 
-### AI provider modes
+### Tool-only architecture
 
-The host assistant (Codex, Claude Code, or Antigravity) reads the `tirai-web-testing` Skill and operates the TIRAI CLI. TIRAI's separate `ai.provider` setting powers its own ingestion and web-execution calls; the host conversation is not forwarded to it.
-
-| `ai.provider` | Authentication | Protocol |
-| --- | --- | --- |
-| `codex` | Native login via `codex login`; active account determines billing | Local CLI; subscription-capable |
-| `claude` | Native login via `claude auth login`; active account determines billing | Local CLI; subscription-capable |
-| `antigravity` | Run `agy` and complete native login; active account determines billing | Local CLI; subscription-capable |
-| `groq` | `GROQ_API_KEY` environment variable | Direct API |
-| `deepseek` | `DEEPSEEK_API_KEY` environment variable | Direct API |
-| `cli` | User-configured executable | JSON artifact wrapper using `{input}` and `{output}` |
-
-Subscription-capable providers use each CLI's active saved authentication. Confirm the selected account uses the intended subscription/quota; TIRAI cannot inspect or enforce the vendor's billing mode. TIRAI does not import or store vendor credentials. Keep API keys outside config and use the matching process environment variable.
-
-The three subscription CLI adapters run from a private temporary working directory with a filtered environment and no host-chat transcript. Codex uses read-only ephemeral execution; Claude Code runs with built-in tools and MCP tools disabled, safe mode, and no session persistence; Antigravity uses `--sandbox` and never bypasses permissions. Pre-existing broad Antigravity permissions can still widen access.
-
-```bash
-export GROQ_API_KEY=...
-# or
-export DEEPSEEK_API_KEY=...
-```
-
-The generic `cli` provider remains separate: its command must implement TIRAI's input/output artifact contract and is not a wrapper for arbitrary chat CLIs.
+The host assistant (Codex, Claude Code, or Antigravity) reads the `tirai-web-testing` Skill and operates the TIRAI CLI. TIRAI makes no model calls: it runs deterministic ingestion, artifact validation and import, Playwright/Vitest execution, and reporting. The host agent performs semantic analysis, requirement building, test planning, and judgment, then writes `semantic-ir.json`, `requirements.json`, `test-plan.json`, `testcases.json`, and `contract.json` and imports them with `tirai artifact import <kind> --file <path>` (`kind`: `semantic-ir | requirements | test-plan | testcases | contract`). Each artifact is validated on import and written to `.tirai/artifacts/`; invalid or ambiguous input fails closed.
 
 ### Human-reviewed web testing
 
-The `tirai-web-testing` Skill guides specification review, clarification, route selection, approved cases, execution, and bug-report drafts through the host AI chat. TIRAI CLI supplies internal AI operations, real Playwright browser execution, and local run artifacts.
+The `tirai-web-testing` Skill guides specification review, clarification, route selection, approved cases, execution, and bug-report drafts through the host AI chat. TIRAI CLI supplies deterministic ingestion, artifact validation/import, real Playwright browser execution, and local run artifacts.
 
-- Web-testing v1 accepts local `.xlsx`/`.xlsm`, `.md`/`.markdown`, and `.html`/`.htm` specifications; Confluence is a future provider.
+- Web-testing v1 accepts local `.xlsx`/`.xlsm`, `.md`/`.markdown`, and `.html`/`.htm` specifications; Confluence is a future connector.
 - The runner is black-box by default, functional UI only, and accepts only local/dev/staging labels. It blocks production-like hostnames, but the tester must verify the exact URL and dedicated test tenant every run because arbitrary DNS aliases cannot be classified reliably.
 - Ambiguous requirements remain out of execution until the tester answers and reviews a revised case. The original source file is never edited.
-- Assertion mismatches create local bug-draft candidates with expected/observed behavior and sanitized browser evidence. Severity is an AI proposal; the tester confirms before sharing.
-- `.tirai/workflow/runs/` stores per-run spec/case snapshots, JSON/Markdown reports, and sanitized evidence. `.tirai/workflow/runtime/` holds temporary or imported sessions and AI artifacts and is gitignored. Imported sessions remain until `tirai auth clear`; treat the source file and stored session as credentials.
+- Assertion mismatches create local bug-draft candidates with expected/observed behavior and sanitized browser evidence. Severity is a host-agent proposal; the tester confirms before sharing.
+- `.tirai/workflow/runs/` stores per-run spec/case snapshots, JSON/Markdown reports, and sanitized evidence. `.tirai/workflow/runtime/` holds temporary or imported sessions and is gitignored. Imported sessions remain until `tirai auth clear`; treat the source file and stored session as credentials.
 
 
 TIRAI writes project-owned state under:
@@ -207,7 +186,7 @@ TIRAI writes project-owned state under:
 │   ├── approvals.json
 │   ├── clarifications.json
 │   ├── pending-clarifications.json # unresolved Skill questions
-│   ├── runtime/          # temporary sessions and AI artifacts; gitignored
+│   ├── runtime/          # temporary sessions; gitignored
 │   └── runs/             # per-run snapshots, reports, sanitized evidence
 ├── discovery/
 │   └── routes.json
@@ -268,6 +247,7 @@ tirai auth import --environment <env> --file <storageState.json>
 tirai auth clear [--environment <env>]
 tirai review clarify --file <json>
 tirai review approve --test-case <id> --route </path> --reviewer <name>
+tirai artifact import <semantic-ir|requirements|test-plan|testcases|contract> --file <path>
 
 tirai plan [--json]
 tirai export --format all|json|xlsx|markdown|pdf|docx [--out <dir>]
@@ -279,13 +259,15 @@ tirai report [--json]
 tirai status [--json]
 ```
 
-Exit codes:
+`tirai run` and `tirai execute` process exit codes:
 
 ```text
 0 = PASS
 1 = business assertion FAIL
-2 = BLOCKED / validation / configuration / infrastructure ERROR
+2 = BLOCKED / manual / validation / configuration / infrastructure ERROR
 ```
+
+`tirai report` summarizes both `tirai run` results and `tirai execute` adapter results. For `tirai execute`, use the per-case report and exit code together; API/database preparation-only results exit 2 rather than being reported as passes.
 
 ---
 
@@ -339,8 +321,8 @@ Playwright/Vitest generation requires trusted mappings. Without mappings, TIRAI 
 └──────────────────────┬──────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────┐
-│           INTELLIGENCE / SEMANTIC           │
-│ Context → Semantic IR → Requirement → Test  │
+│   HOST AGENT ANALYSIS → ARTIFACT IMPORT     │
+│ Semantic IR → Requirements → Test plan      │
 └──────────────────────┬──────────────────────┘
                        ↓
 ┌─────────────────────────────────────────────┐
@@ -352,13 +334,14 @@ Playwright/Vitest generation requires trusted mappings. Without mappings, TIRAI 
         ↓              ↓              ↓
    Multi-format    Platform-aware   Optional Code
      Export          Execution      Generation
-                    (Web/API/DB)   (Playwright/Vitest)
+                    (Web UI; API/DB preparation only) (Playwright/Vitest)
 ```
 
 ### Core design principles
 
 ```text
 Sources describe WHAT should be tested.
+The host agent supplies canonical JSON artifacts.
 Canonical JSON is intermediate product truth.
 Trusted mappings bind truth to the real project.
 Deterministic generators create executable tests.
@@ -367,8 +350,8 @@ Real runners produce canonical results.
 
 ### Security model
 
-- Provider API keys are read from environment variables, never persisted workspace config.
-- Generated code and canonical results must not contain raw provider credentials.
+- TIRAI makes no model calls and stores no model credentials; the host agent supplies artifacts through its own session.
+- Generated code and canonical results must not contain raw credentials.
 - TIRAI writes managed state under `.tirai/` instead of mutating application source.
 - Unit target fingerprints protect against stale symbol mappings.
 - Missing authority fails closed.
@@ -377,17 +360,18 @@ Real runners produce canonical results.
 
 ## 🤖 AI boundaries
 
-| Stage | AI allowed? | Runtime authority? |
-|---|---:|---:|
-| Source understanding | ✅ | No |
-| Semantic analysis | ✅ | No |
-| Requirement/TestCase planning | ✅ | No |
-| E2E trusted mapping | No guessing | Human/project authority |
-| Unit target mapping | No guessing | Exact symbol/fingerprint |
-| Playwright generation | ❌ | Deterministic |
-| Vitest generation | ❌ | Deterministic |
-| Test execution | ❌ | Real runner |
-| Result mapping | ❌ | Deterministic |
+TIRAI performs zero model calls. Semantic stages run in the host agent and enter TIRAI only as validated artifacts.
+
+| Stage | Runtime authority? |
+|---|---:|
+| Source understanding | Host agent → `semantic-ir` artifact |
+| Requirement/TestCase planning | Host agent → `requirements`/`test-plan`/`testcases` artifacts |
+| E2E trusted mapping | Human/project authority (no guessing) |
+| Unit target mapping | Exact symbol/fingerprint (no guessing) |
+| Playwright generation | Deterministic |
+| Vitest generation | Deterministic |
+| Test execution | Real runner |
+| Result mapping | Deterministic |
 
 Acceptance invariants for generated-code execution:
 

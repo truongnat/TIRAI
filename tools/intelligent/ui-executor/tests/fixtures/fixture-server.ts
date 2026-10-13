@@ -50,7 +50,10 @@ const DASHBOARD_PAGE = `<!DOCTYPE html>
 <body>
   <h1 data-testid="welcome">Welcome, demo!</h1>
   <button data-testid="logout">Logout</button>
-</body>
+  <input type="checkbox" aria-label="Receive updates">
+  <div role="checkbox" aria-label="Persist session" aria-checked="false" tabindex="0" style="display:block;width:20px;height:20px"
+    onclick="this.setAttribute('aria-checked', this.getAttribute('aria-checked') === 'true' ? 'false' : 'true')"></div>
+  </body>
 </html>`;
 
 const DUPLICATE_PAGE = `<!DOCTYPE html>

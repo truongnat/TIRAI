@@ -1,7 +1,6 @@
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
-import type { WorkspacePaths } from './workspace.js';
-import { atomicWriteJson, ensureDir, readJsonIfExists } from './workspace.js';
+import { atomicWriteJson, ensureDir, readJsonIfExists, type WorkspacePaths } from './workspace.js';
 
 export type TaskStatus =
   | 'created'

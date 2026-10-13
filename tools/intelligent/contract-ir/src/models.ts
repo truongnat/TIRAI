@@ -167,8 +167,11 @@ export interface ContractMetadata {
   contractFingerprint: string;
   generatedAt: string;
   generatorVersion: string;
+  /** Provenance copied from host-supplied analysis; TIRAI does not invoke this provider. */
   aiProvider?: string;
+  /** Model label copied from host-supplied analysis; TIRAI does not invoke this model. */
   aiModel?: string;
+  /** Prompt versions reported by the host-supplied analysis, if any. */
   promptVersions: string[];
 }
 

@@ -44,7 +44,7 @@ export function ensurePrivateWorkspaceArtifactsIgnored(paths: WorkspacePaths): v
   const ignorePath = path.join(paths.workspace, '.gitignore');
   const current = fs.existsSync(ignorePath) ? fs.readFileSync(ignorePath, 'utf8') : '';
   const marker = '# TIRAI web-testing workflow artifacts';
-  const requiredRules = ['artifacts/ai/', 'artifacts/ai-input.json', 'workflow/runtime/'];
+  const requiredRules = ['artifacts/ai-input.json', 'workflow/runtime/'];
   const currentLines = current.split(/\r?\n/);
   const hasMarker = currentLines.includes(marker);
   const rulesAreLast = current.trimEnd().endsWith(requiredRules.join('\n'));
@@ -104,7 +104,26 @@ function hasTestCaseId(value: unknown): value is { id: string } {
 }
 
 export function caseFingerprint(testCase: TestCase): string {
-  return createHash('sha256').update(JSON.stringify(testCase)).digest('hex');
+  // Approval binds to the executable content of a case only; cosmetic fields
+  // (title, objective, priority, confidence, provenance, scenarioId) do not
+  // change what runs, so editing them must not invalidate an approval.
+  // Unknown new fields ARE included: anything not explicitly cosmetic stays in
+  // the hash (fail-closed).
+  const COSMETIC_FIELDS = new Set(['title', 'objective', 'priority', 'confidence', 'provenance', 'scenarioId']);
+  const strip = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(strip);
+    if (typeof value === 'object' && value !== null) {
+      const record = value as Record<string, unknown>;
+      const out: Record<string, unknown> = {};
+      for (const key of Object.keys(record).sort()) {
+        if (COSMETIC_FIELDS.has(key)) continue;
+        out[key] = strip(record[key]);
+      }
+      return out;
+    }
+    return value;
+  };
+  return createHash('sha256').update(JSON.stringify(strip(testCase))).digest('hex');
 }
 
 const SECRET_FIELD_NAME = /password|passcode|username|user.?name|login|secret|token|credential|cookie|authorization|api.?key/i;

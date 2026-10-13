@@ -267,11 +267,12 @@ export interface BrowserPage {
   waitForHidden(target: ResolvedLocator, options?: { timeoutMs?: number }): Promise<void>;
   isVisible(target: ResolvedLocator): Promise<boolean>;
   isEnabled(target: ResolvedLocator): Promise<boolean>;
+  checkboxInfo(target: ResolvedLocator): Promise<{ kind: 'native' | 'aria' | 'unsupported'; checked: boolean | null }>;
   isChecked(target: ResolvedLocator): Promise<boolean>;
-  textContent(target: ResolvedLocator): Promise<string>;
-  inputValue(target: ResolvedLocator): Promise<string>;
   attribute(target: ResolvedLocator, name: string): Promise<string | null>;
   count(target: ResolvedLocator): Promise<number>;
+  textContent(target: ResolvedLocator): Promise<string>;
+  inputValue(target: ResolvedLocator): Promise<string>;
   title(): Promise<string>;
   url(): string;
   goBack?(): Promise<HistoryNavigationResult>;

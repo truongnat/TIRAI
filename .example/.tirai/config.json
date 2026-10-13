@@ -1,10 +1,6 @@
 {
   "version": 2,
   "workspaceVersion": 1,
-  "ai": {
-    "provider": "fake",
-    "model": "fake-model"
-  },
   "project": {
     "root": "/Users/truongdq/tx/GitHub/TIRAI/example-react",
     "defaultEnvironment": "local",

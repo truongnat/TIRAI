@@ -1,115 +1,84 @@
 // ---------------------------------------------------------------------------
-// Assertion grounding tests
+// Assertion grounding tests — deterministic rules
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
 import { groundAssertion } from '../src/assertion/assertion-grounding.js';
-import { createFakeAI, createAssertionHandler, makeObservation, makeElement } from './fixtures/helpers.js';
+import { makeObservation, makeElement } from './fixtures/helpers.js';
 
-describe('groundAssertion', () => {
-  it('returns text-visible assertion', async () => {
-    const obs = makeObservation({
-      headings: ['Welcome, demo!'],
-      elements: [makeElement({ id: 'el-001', role: 'button', accessibleName: 'Logout' })],
-    });
+function request(expectedDescription: string, elements = makeObservation().elements) {
+  return {
+    testCaseId: 'TC-001',
+    expectedResultIndex: 0,
+    expectedDescription,
+    verificationType: 'ui',
+    observation: makeObservation({ elements }),
+  };
+}
 
-    const ai = createFakeAI(createAssertionHandler('text-visible', { expectedValue: 'Welcome, demo!' }));
+describe('groundAssertion (deterministic)', () => {
+  it('grounds text-visible from quoted expected text', () => {
+    const result = groundAssertion(request('Error message "Invalid credentials" is displayed'));
 
-    const result = await groundAssertion(ai, {
-      testCaseId: 'TC-001',
-      expectedResultIndex: 0,
-      expectedDescription: 'Dashboard welcome message is shown',
-      verificationType: 'ui',
-      observation: obs,
-    });
+    expect(result.assertionType).toBe('text-visible');
+    expect(result.expectedValue).toBe('Invalid credentials');
+    expect(result.confidence).toBe('high');
+    expect(result.unresolvedReason).toBeUndefined();
+  });
+
+  it('grounds text-visible from unquoted "text X is displayed" phrasing', () => {
+    const result = groundAssertion(request('The welcome message Welcome, demo! is displayed'));
 
     expect(result.assertionType).toBe('text-visible');
     expect(result.expectedValue).toBe('Welcome, demo!');
-    expect(result.confidence).toBe('high');
   });
 
-  it('returns url-contains assertion', async () => {
-    const obs = makeObservation({ url: 'http://127.0.0.1:3000/dashboard' });
-    const ai = createFakeAI(createAssertionHandler('url-contains', { expectedValue: '/dashboard' }));
+  it('grounds url-contains and url-equals', () => {
+    const contains = groundAssertion(request('The url contains "/dashboard"'));
+    expect(contains.assertionType).toBe('url-contains');
+    expect(contains.expectedValue).toBe('/dashboard');
 
-    const result = await groundAssertion(ai, {
-      testCaseId: 'TC-001',
-      expectedResultIndex: 0,
-      expectedDescription: 'URL contains /dashboard',
-      verificationType: 'ui',
-      observation: obs,
-    });
-
-    expect(result.assertionType).toBe('url-contains');
-    expect(result.expectedValue).toBe('/dashboard');
+    const equals = groundAssertion(request('The page URL equals http://127.0.0.1/dashboard'));
+    expect(equals.assertionType).toBe('url-equals');
+    expect(equals.expectedValue).toBe('http://127.0.0.1/dashboard');
   });
 
-  it('returns element-visible assertion with elementId', async () => {
-    const obs = makeObservation({
-      elements: [makeElement({ id: 'el-001', role: 'button', accessibleName: 'Logout' })],
-    });
-    const ai = createFakeAI(createAssertionHandler('element-visible', { elementId: 'el-001' }));
+  it('grounds title-contains and title-equals', () => {
+    const contains = groundAssertion(request('The page title contains "Dashboard"'));
+    expect(contains.assertionType).toBe('title-contains');
+    expect(contains.expectedValue).toBe('Dashboard');
 
-    const result = await groundAssertion(ai, {
-      testCaseId: 'TC-001',
-      expectedResultIndex: 0,
-      expectedDescription: 'Logout button is visible',
-      verificationType: 'ui',
-      observation: obs,
-    });
+    const equals = groundAssertion(request('The page title equals "Dashboard"'));
+    expect(equals.assertionType).toBe('title-equals');
+  });
+
+  it('grounds element-visible with a unique element match', () => {
+    const elements = [makeElement({ id: 'el-001', role: 'button', accessibleName: 'Logout' })];
+    const result = groundAssertion(request('The "Logout" button is visible', elements));
 
     expect(result.assertionType).toBe('element-visible');
     expect(result.elementId).toBe('el-001');
   });
 
-  it('returns element-absent assertion', async () => {
-    const obs = makeObservation({ elements: [] });
-    const ai = createFakeAI(createAssertionHandler('element-absent', { elementId: 'el-004' }));
-
-    const result = await groundAssertion(ai, {
-      testCaseId: 'TC-001',
-      expectedResultIndex: 0,
-      expectedDescription: 'Error message is not shown',
-      verificationType: 'ui',
-      observation: obs,
-    });
+  it('grounds element-absent when no element matches', () => {
+    const result = groundAssertion(request('The "Spinner" element is not visible'));
 
     expect(result.assertionType).toBe('element-absent');
+    expect(result.elementId).toBeUndefined();
   });
 
-  it('returns unresolved when cannot determine assertion', async () => {
-    const obs = makeObservation({ elements: [] });
-    const ai = createFakeAI((_req) => ({
-      assertionType: 'text-visible',
-      confidence: 'low',
-      reasoning: 'Cannot determine',
-      unresolvedReason: 'AGENT_ASSERTION_UNRESOLVED',
-    }));
-
-    const result = await groundAssertion(ai, {
-      testCaseId: 'TC-001',
-      expectedResultIndex: 0,
-      expectedDescription: 'Something unclear',
-      verificationType: 'ui',
-      observation: obs,
-    });
-
-    expect(result.unresolvedReason).toBe('AGENT_ASSERTION_UNRESOLVED');
+  it('grounds value-equals with expected value and element', () => {
+    const elements = [makeElement({ id: 'el-001', role: 'textbox', accessibleName: 'Username' })];
+    const result = groundAssertion(request('The username input value equals "demo"', elements));
+    expect(result.assertionType).toBe('value-equals');
+    expect(result.expectedValue).toBe('demo');
+    expect(result.elementId).toBe('el-001');
   });
 
-  it('returns title-contains assertion', async () => {
-    const obs = makeObservation({ title: 'Dashboard - My App' });
-    const ai = createFakeAI(createAssertionHandler('title-contains', { expectedValue: 'Dashboard' }));
+  it('returns ASSERTION_UNPARSEABLE when nothing can be determined', () => {
+    const result = groundAssertion(request('Everything should work correctly'));
 
-    const result = await groundAssertion(ai, {
-      testCaseId: 'TC-001',
-      expectedResultIndex: 0,
-      expectedDescription: 'Page title contains Dashboard',
-      verificationType: 'ui',
-      observation: obs,
-    });
-
-    expect(result.assertionType).toBe('title-contains');
-    expect(result.expectedValue).toBe('Dashboard');
+    expect(result.confidence).toBe('low');
+    expect(result.unresolvedReason).toBe('ASSERTION_UNPARSEABLE');
   });
 });

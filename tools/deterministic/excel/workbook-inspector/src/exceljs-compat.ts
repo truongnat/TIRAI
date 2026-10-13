@@ -36,7 +36,7 @@ export async function loadExcelJsCompatibleBuffer(filePath: string): Promise<Buf
       const sourcePart = relationshipSourcePart(entry.name);
       if (sourcePart) {
         const baseDir = path.posix.dirname(sourcePart);
-        normalized = normalized.replace(/Target="(\/xl\/[^\"]+)"/g, (_match, target: string) => {
+        normalized = normalized.replace(/Target="(\/xl\/[^"]+)"/g, (_match, target: string) => {
           const relativeTarget = path.posix.relative(baseDir, target.slice(1));
           return `Target="${relativeTarget}"`;
         });

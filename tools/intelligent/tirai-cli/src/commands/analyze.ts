@@ -11,9 +11,9 @@ export async function runAnalyze(opts: { cwd: string; taskId?: string; json?: bo
   const artifactsDir = task ? taskPaths(paths, task.id).artifacts : paths.artifactsDir;
   const inputPath = path.join(artifactsDir, 'ai-input.json');
   const rawManifestPath = path.join(artifactsDir, 'raw-context', 'manifest.json');
-  if (!fs.existsSync(inputPath) || !fs.existsSync(rawManifestPath)) throw new CliError('CONFIG_INVALID', 'AI input package not found. Run `tirai ingest` first.');
+  if (!fs.existsSync(inputPath) || !fs.existsSync(rawManifestPath)) throw new CliError('CONFIG_INVALID', 'Agent input package not found. Run `tirai ingest` first.');
   const input = JSON.parse(fs.readFileSync(inputPath, 'utf8')) as { contexts?: unknown[]; artifacts?: unknown[]; policy?: unknown };
   const manifest = JSON.parse(fs.readFileSync(rawManifestPath, 'utf8')) as { stats?: unknown; modules?: unknown[] };
   const result = { inputPath, rawManifestPath, contextCount: input.contexts?.length ?? 0, artifactCount: input.artifacts?.length ?? 0, moduleCount: manifest.modules?.length ?? 0, policy: input.policy };
-  if (opts.json) console.log(JSON.stringify(result, null, 2)); else console.log(`AI input ready: ${result.contextCount} contexts, ${result.artifactCount} source artifacts, ${result.moduleCount} modules`);
+  if (opts.json) console.log(JSON.stringify(result, null, 2)); else console.log(`Agent input ready: ${result.contextCount} contexts, ${result.artifactCount} source artifacts, ${result.moduleCount} modules`);
 }

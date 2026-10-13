@@ -29,7 +29,6 @@ import type {
   SecretProvider,
 } from 'test-execution-orchestrator';
 
-import type { AIProvider } from 'ai-provider';
 
 // Re-export upstream types for downstream consumers.
 export type {
@@ -49,7 +48,6 @@ export type {
   TestExecutorType,
   RuntimeBindingStore,
   SecretProvider,
-  AIProvider,
 };
 
 // ---- Mapping Trust Levels (spec §27) --------------------------------------
@@ -282,45 +280,6 @@ export interface ExecutionMappingIR {
   quality: ExecutionMappingQuality;
 }
 
-// ---- AI Candidate Response (spec §32) -------------------------------------
-
-export interface AIMappingCandidatesResponse {
-  mappingCandidates: AICandidateMapping[];
-  unresolvedCandidates: AIUnresolvedCandidate[];
-}
-
-export interface AICandidateMapping {
-  testCaseId: string;
-  executorType: ClassificationExecutorType;
-  pageLogicalName?: string;
-  stepCandidates: AIStepCandidate[];
-  assertionCandidates: AIAssertionCandidate[];
-}
-
-export interface AIStepCandidate {
-  stepOrder: number;
-  action: UIActionType;
-  targetLogicalName?: string;
-  valueBinding?: string;
-  valueLiteral?: string;
-  secretRef?: string;
-  confidence?: number;
-}
-
-export interface AIAssertionCandidate {
-  expectedResultIndex: number;
-  assertionType: UIAssertionType;
-  targetLogicalName?: string;
-  expectedValue?: string;
-  confidence?: number;
-}
-
-export interface AIUnresolvedCandidate {
-  testCaseId: string;
-  stage: UnresolvedStage;
-  description: string;
-  reason: UnresolvedReason;
-}
 
 // ---- Builder Options ------------------------------------------------------
 
@@ -331,11 +290,8 @@ export interface ExecutionMappingBuilderOptions {
   dbCatalog?: DbEntityCatalog;
   bindingsCatalog?: BindingsCatalog;
   semanticEntities?: SemanticEntity[];
-  provider?: AIProvider;
-  providerName?: string;
   resume?: boolean;
   checkpointDir?: string;
-  batchSize?: number;
 }
 
 // ---- Semantic Entity (simplified) -----------------------------------------
@@ -364,8 +320,6 @@ export interface CheckpointMetadata {
   stage: 'classification' | 'candidates' | 'validation' | 'complete';
   fingerprint: string;
   timestamp: string;
-  providerName?: string;
-  model?: string;
   completedBatches: number[];
 }
 
@@ -378,7 +332,6 @@ export type ExecutionMappingErrorCode =
   | 'EMB_MISSING_BINDING'
   | 'EMB_UNSUPPORTED_ACTION'
   | 'EMB_UNSUPPORTED_ASSERTION'
-  | 'EMB_PROVIDER_FAILED'
   | 'EMB_SCHEMA_INVALID'
   | 'EMB_CHECKPOINT_CORRUPT'
   | 'EMB_DUPLICATE_MAPPING';
@@ -386,7 +339,5 @@ export type ExecutionMappingErrorCode =
 // ---- Builder Warning Codes ------------------------------------------------
 
 export type ExecutionMappingWarningCode =
-  | 'EMB_NO_PROVIDER'
-  | 'EMB_AI_CANDIDATE_REJECTED'
   | 'EMB_LOW_CONFIDENCE'
   | 'EMB_PARTIAL_COVERAGE';

@@ -579,12 +579,6 @@ describe('Fingerprint', () => {
     expect(fp1).not.toBe(fp2);
   });
 
-  it('changes when provider changes', () => {
-    const tc = makeLoginTestCase();
-    const fp1 = computeFingerprint({ testCases: [tc], providerName: 'none' });
-    const fp2 = computeFingerprint({ testCases: [tc], providerName: 'deepseek' });
-    expect(fp1).not.toBe(fp2);
-  });
 });
 
 // ===========================================================================
@@ -745,9 +739,9 @@ describe('Builder', () => {
 
 describe('Errors', () => {
   it('has all error codes', () => {
-    expect(EXECUTION_MAPPING_ERROR_CODES.size).toBe(10);
+    expect(EXECUTION_MAPPING_ERROR_CODES.size).toBe(9);
     expect(EXECUTION_MAPPING_ERROR_CODES.has('EMB_INVALID_TEST_CASE')).toBe(true);
-    expect(EXECUTION_MAPPING_ERROR_CODES.has('EMB_PROVIDER_FAILED')).toBe(true);
+    expect(EXECUTION_MAPPING_ERROR_CODES.has('EMB_PROVIDER_FAILED')).toBe(false);
   });
 
   it('creates error with code', () => {
@@ -769,8 +763,8 @@ describe('Errors', () => {
 
 describe('Warnings', () => {
   it('has all warning codes', () => {
-    expect(EXECUTION_MAPPING_WARNING_CODES.size).toBe(4);
-    expect(EXECUTION_MAPPING_WARNING_CODES.has('EMB_NO_PROVIDER')).toBe(true);
+    expect(EXECUTION_MAPPING_WARNING_CODES.size).toBe(2);
+    expect(EXECUTION_MAPPING_WARNING_CODES.has('EMB_NO_PROVIDER')).toBe(false);
   });
 });
 
@@ -957,21 +951,19 @@ describe('Security', () => {
 // ===========================================================================
 
 describe('Offline mode', () => {
-  it('works with provider none', async () => {
+  it('works fully deterministically', async () => {
     const result = await buildExecutionMapping({
       testCases: [makeLoginTestCase()],
       uiCatalog: makeLoginCatalog(),
       bindingsCatalog: makeBindingsCatalog(),
-      providerName: 'none',
     });
     expect(result.aiCalls).toBe(0);
   });
 
-  it('preserves unresolved without provider', async () => {
+  it('preserves unresolved', async () => {
     const tc = makeTestCase({ type: 'unknown' });
     const result = await buildExecutionMapping({
       testCases: [tc],
-      providerName: 'none',
     });
     expect(result.mapping.unresolved.length).toBeGreaterThan(0);
   });

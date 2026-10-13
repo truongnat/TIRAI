@@ -107,7 +107,7 @@ describe('executeAction', () => {
 
     const result = await executeAction(page, { type: 'navigate', url: '/dashboard' }, idMap);
     expect(result.success).toBe(true);
-    expect(state.gotoCalls).toContain('/dashboard');
+    expect(state.gotoCalls).toContain('http://127.0.0.1:3000/dashboard');
   });
 
   it('executes click action', async () => {
@@ -132,6 +132,53 @@ describe('executeAction', () => {
     const result = await executeAction(page, { type: 'fill', elementId: 'el-001', value: 'demo' }, idMap);
     expect(result.success).toBe(true);
     expect(state.filledElements[0].value).toBe('demo');
+  });
+
+  it('uses native checkbox operations only when a state change is needed', async () => {
+    const obs = makeObservation({ elements: [makeElement({ id: 'el-check', role: 'checkbox', checked: false })] });
+    const { page } = makePageWithState(obs);
+    const nativePage = page as typeof page & { checkboxInfo: typeof page.checkboxInfo };
+    let checked = false;
+    const operations: string[] = [];
+    nativePage.checkboxInfo = async () => ({ kind: 'native', checked });
+    nativePage.check = async () => { checked = true; operations.push('check'); };
+    nativePage.uncheck = async () => { checked = false; operations.push('uncheck'); };
+    const idMap = ElementIdMap.fromObservation(obs);
+
+    expect((await executeAction(page, { type: 'check', elementId: 'el-check' }, idMap)).success).toBe(true);
+    expect((await executeAction(page, { type: 'check', elementId: 'el-check' }, idMap)).success).toBe(true);
+    expect((await executeAction(page, { type: 'uncheck', elementId: 'el-check' }, idMap)).success).toBe(true);
+    expect(operations).toEqual(['check', 'uncheck']);
+  });
+
+  it('toggles custom ARIA checkboxes only when needed and verifies state', async () => {
+    const obs = makeObservation({ elements: [makeElement({ id: 'el-aria', role: 'checkbox', checked: false })] });
+    const { page } = makePageWithState(obs);
+    let checked = false;
+    let clicks = 0;
+    page.checkboxInfo = async () => ({ kind: 'aria', checked });
+    page.click = async () => { checked = !checked; clicks++; };
+    const idMap = ElementIdMap.fromObservation(obs);
+
+    expect((await executeAction(page, { type: 'check', elementId: 'el-aria' }, idMap)).success).toBe(true);
+    expect((await executeAction(page, { type: 'check', elementId: 'el-aria' }, idMap)).success).toBe(true);
+    expect((await executeAction(page, { type: 'uncheck', elementId: 'el-aria' }, idMap)).success).toBe(true);
+    expect((await executeAction(page, { type: 'uncheck', elementId: 'el-aria' }, idMap)).success).toBe(true);
+    expect(checked).toBe(false);
+    expect(clicks).toBe(2);
+  });
+
+
+  it('fails closed when checkbox state cannot be observed', async () => {
+    const obs = makeObservation({ elements: [makeElement({ id: 'el-unknown', role: 'checkbox' })] });
+    const { page } = makePageWithState(obs);
+    let clicks = 0;
+    page.checkboxInfo = async () => ({ kind: 'aria', checked: null });
+    page.click = async () => { clicks++; };
+
+    const result = await executeAction(page, { type: 'check', elementId: 'el-unknown' }, ElementIdMap.fromObservation(obs));
+    expect(result.success).toBe(false);
+    expect(clicks).toBe(0);
   });
 
   it('returns failure for unresolvable element', async () => {

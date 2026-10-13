@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { generateUnitTests } from '../src/index.js';
-import type { TestCase, TargetProjectProfile } from '../src/index.js';
+import { generateUnitTests, type TestCase, type TargetProjectProfile } from '../src/index.js';
 
 function tc(id: string, title: string, inputs: Array<{ name: string; value: unknown }>, expected: unknown): TestCase {
   return {

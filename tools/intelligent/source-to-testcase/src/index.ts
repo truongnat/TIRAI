@@ -4,6 +4,7 @@ export type {
   SourceToTestCaseResult,
   SourceIdentity,
   PipelineStage,
+  PipelineProvider,
 } from './pipeline.js';
 export { writeSemanticContextPackage } from './bridge.js';
 export type { SemanticContextWriteResult } from './bridge.js';

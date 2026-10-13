@@ -150,6 +150,7 @@ export interface ObservedElement {
   label?: string;
   placeholder?: string;
   inputType?: string;
+  testId?: string;
   visibleText?: string;
   enabled: boolean;
   checked?: boolean;
@@ -321,8 +322,7 @@ export type AgenticFailureCode =
   | 'AGENT_ASSERTION_UNRESOLVED'
   | 'AGENT_NAVIGATION_BUDGET_EXCEEDED'
   | 'AGENT_OBSERVATION_BUDGET_EXCEEDED'
-  | 'AGENT_BROWSER_ERROR'
-  | 'AGENT_PROVIDER_ERROR';
+  | 'AGENT_BROWSER_ERROR';
 
 // ---- Agent Checkpoint (§40) -----------------------------------------------
 

@@ -6,7 +6,6 @@
 //     --ui-catalog catalog/ui.json \
 //     --bindings output/data-resolver/bindings.json \
 //     --output output/execution-mapping \
-//     --provider none \
 //     --resume
 
 import { readFileSync } from 'node:fs';
@@ -53,7 +52,6 @@ Options:
   --ui-catalog <path>   Path to UI Element Catalog JSON (optional)
   --bindings <path>     Path to Bindings Catalog JSON (optional)
   --output <path>       Output directory (default: output/execution-mapping)
-  --provider <name>     AI provider name or "none" (default: none)
   --resume              Resume from checkpoint if available
   --checkpoint <path>   Checkpoint directory (optional)
   --help                Show this help message
@@ -87,7 +85,6 @@ Options:
     testCases,
     uiCatalog,
     bindingsCatalog,
-    providerName: args['provider'] ?? 'none',
     resume: args['resume'] !== undefined,
     checkpointDir: args['checkpoint'] ? resolve(args['checkpoint']) : undefined,
   };
@@ -107,7 +104,6 @@ Options:
     console.log(`  Ready: ${result.mapping.quality.ready}`);
     console.log(`  Partial: ${result.mapping.quality.partial}`);
     console.log(`  Unresolved: ${result.mapping.quality.unresolved}`);
-    console.log(`  AI calls: ${result.aiCalls}`);
     console.log(`  Output: ${outputDir}`);
   } catch (err) {
     console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);

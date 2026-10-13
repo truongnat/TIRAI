@@ -26,7 +26,6 @@ export type {
   UnresolvedReason,
   ApiTestExecutionMapping,
   DatabaseTestExecutionMapping,
-  AIMappingCandidatesResponse,
   CheckpointMetadata,
   ExecutionMappingErrorCode,
   ExecutionMappingWarningCode,
@@ -68,9 +67,6 @@ export { BindingResolver, createEmptyBindingsCatalog, createBindingsCatalog } fr
 // Validation
 export { validateUICandidate, validateAllCandidates } from './validation/index.js';
 export type { ValidationResult } from './validation/index.js';
-
-// AI
-export { requestAICandidates, buildEvidencePackage } from './ai/index.js';
 
 // Quality
 export { computeQuality } from './quality/index.js';

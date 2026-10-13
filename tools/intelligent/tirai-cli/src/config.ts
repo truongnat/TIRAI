@@ -7,19 +7,10 @@ import {
   defaultPlatformConfig,
 } from './platform-config.js';
 
-const AI_PROVIDER_NAMES = ['fake', 'groq', 'deepseek', 'codex', 'claude', 'antigravity', 'cli'] as const;
-const AI_PROVIDER_SET: ReadonlySet<string> = new Set(AI_PROVIDER_NAMES);
 
 export interface TiraiConfig {
   version: number;
   workspaceVersion: number;
-  ai: {
-    provider: (typeof AI_PROVIDER_NAMES)[number];
-    model?: string;
-    command?: string;
-    timeoutMs?: number;
-    artifactDir?: string;
-  };
   project: {
     root: string;
     name?: string;
@@ -50,10 +41,6 @@ export function defaultConfig(projectRoot: string): TiraiConfig {
   return {
     version: CONFIG_VERSION,
     workspaceVersion: 1,
-    ai: {
-      provider: 'fake',
-      model: 'fake-model',
-    },
     project: {
       root: projectRoot,
       name: undefined,
@@ -94,17 +81,6 @@ export function loadConfig(paths: WorkspacePaths): TiraiConfig {
       'Re-run `tirai init` or migrate config.',
     );
   }
-  validateAIProviderConfig(config.ai);
-  if (config.ai.provider === 'groq' || config.ai.provider === 'deepseek') {
-    const keyName = config.ai.provider === 'groq' ? 'GROQ_API_KEY' : 'DEEPSEEK_API_KEY';
-    if (!process.env[keyName]) {
-      throw new CliError(
-        'CONFIG_INVALID',
-        `Missing required credential: ${keyName} is not set`,
-        `Set ${keyName} in your environment (do not put raw keys in config).`,
-      );
-    }
-  }
   // Validate platforms if present
   if (config.platforms) {
     const result = validatePlatformConfig(config.platforms);
@@ -116,30 +92,8 @@ export function loadConfig(paths: WorkspacePaths): TiraiConfig {
   return config;
 }
 
-/** Validate the standalone CLI provider's artifact-first command contract. */
-export function validateAIProviderConfig(ai: TiraiConfig['ai']): void {
-  if (!ai || typeof ai.provider !== 'string') {
-    throw new CliError('CONFIG_INVALID', `Config missing ai.provider (${AI_PROVIDER_NAMES.join('|')})`);
-  }
-  if (!AI_PROVIDER_SET.has(ai.provider)) {
-    throw new CliError('CONFIG_INVALID', `Unsupported ai.provider "${ai.provider}"`);
-  }
-  if (ai.provider === 'cli') {
-    if (!ai.command) {
-      throw new CliError('CONFIG_INVALID', 'CLI AI provider requires ai.command (use {input} and {output} placeholders).');
-    }
-    if (!ai.command.includes('{input}') || !ai.command.includes('{output}')) {
-      throw new CliError('CONFIG_INVALID', 'CLI AI command must include both {input} and {output} placeholders for artifact protocol.');
-    }
-  }
-}
-
-export function validateConfigForIngest(config: TiraiConfig): void {
-  if (!config.ai.provider) throw new CliError('CONFIG_INVALID', 'Missing ai.provider');
-}
 
 export function validateConfigForGenerate(config: TiraiConfig): void {
-  validateConfigForIngest(config);
   if (!config.e2e?.baseUrl) throw new CliError('CONFIG_INVALID', 'Missing e2e.baseUrl');
   if (!config.unit?.projectRoot) throw new CliError('CONFIG_INVALID', 'Missing unit.projectRoot');
 }

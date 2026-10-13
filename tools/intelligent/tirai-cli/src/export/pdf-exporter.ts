@@ -47,36 +47,36 @@ export class PDFExporter implements TestOutputExporter {
 
     drawText('TIRAI Test Plan Export', { bold: true, size: 18 });
     y -= 10;
-    drawText('Generated: ' + new Date().toISOString(), { size: 9 });
+    drawText(`Generated: ${  new Date().toISOString()}`, { size: 9 });
     y -= 15;
 
     drawText('Summary', { bold: true, size: 14 });
-    drawText('Total Test Cases: ' + testPlan.quality.testCases);
-    drawText('Total Scenarios: ' + testPlan.quality.scenarios);
-    drawText('Total Requirements: ' + testPlan.quality.requirementsTotal);
-    drawText('Coverage Rate: ' + (testPlan.quality.coverageRate * 100).toFixed(1) + '%');
-    drawText('Automation Ready: ' + testPlan.quality.automationReady);
+    drawText(`Total Test Cases: ${  testPlan.quality.testCases}`);
+    drawText(`Total Scenarios: ${  testPlan.quality.scenarios}`);
+    drawText(`Total Requirements: ${  testPlan.quality.requirementsTotal}`);
+    drawText(`Coverage Rate: ${  (testPlan.quality.coverageRate * 100).toFixed(1)  }%`);
+    drawText(`Automation Ready: ${  testPlan.quality.automationReady}`);
     y -= 15;
 
     drawText('Test Cases', { bold: true, size: 14 });
 
     for (const tc of testCases) {
-      drawText(tc.id + ': ' + tc.title, { bold: true, size: 11 });
-      drawText('  Objective: ' + tc.objective);
-      drawText('  Type: ' + tc.type + ' | Priority: ' + tc.priority + ' | Status: ' + tc.automation.status);
-      drawText('  Requirements: ' + tc.requirementIds.join(', '));
+      drawText(`${tc.id  }: ${  tc.title}`, { bold: true, size: 11 });
+      drawText(`  Objective: ${  tc.objective}`);
+      drawText(`  Type: ${  tc.type  } | Priority: ${  tc.priority  } | Status: ${  tc.automation.status}`);
+      drawText(`  Requirements: ${  tc.requirementIds.join(', ')}`);
 
       if (tc.steps.length > 0) {
         drawText('  Steps:', { bold: true });
         for (const step of tc.steps) {
-          drawText('    ' + step.order + '. ' + step.action + (step.target ? ' (' + step.target + ')' : ''));
+          drawText(`    ${  step.order  }. ${  step.action  }${step.target ? ` (${  step.target  })` : ''}`);
         }
       }
 
       if (tc.expectedResults.length > 0) {
         drawText('  Expected Results:', { bold: true });
         for (const er of tc.expectedResults) {
-          drawText('    - [' + er.verificationType + '] ' + er.description);
+          drawText(`    - [${  er.verificationType  }] ${  er.description}`);
         }
       }
       y -= 5;
@@ -89,7 +89,7 @@ export class PDFExporter implements TestOutputExporter {
     fs.writeFileSync(filePath, pdfBytes);
 
     return {
-      artifactId: 'artifact-pdf-' + testPlanFingerprint.slice(0, 12),
+      artifactId: `artifact-pdf-${  testPlanFingerprint.slice(0, 12)}`,
       format: 'pdf',
       kind: 'test-case-export',
       path: filePath,

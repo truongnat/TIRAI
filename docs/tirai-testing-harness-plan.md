@@ -2,22 +2,21 @@
 
 ## Product goal
 
-Build TIRAI as a general-purpose AI testing compiler. A tester provides a
-project configuration and one or more specifications; TIRAI analyzes them,
-creates a canonical JSON contract, generates selected test artifacts, executes
-them when possible, and produces traceable reports.
+Build TIRAI as a general-purpose deterministic testing tool. A tester
+provides a project configuration and one or more specifications; the host
+agent analyzes them and produces a canonical JSON contract; TIRAI validates,
+imports, generates selected test artifacts, executes them when possible, and
+produces traceable reports.
 
 ### Control-plane architecture
 
-TIRAI supports two control planes over the same artifact protocol:
+TIRAI is tool-only: it makes no model calls. The host agent (Codex, Claude,
+or another agent) orchestrates TIRAI, performs every semantic stage itself,
+and reads/writes raw context, contract, checkpoints, and reports through the
+artifact protocol.
 
-- Standalone CLI: TIRAI orchestrates stages and uses configured API-key,
-  local-model, or fake providers for model calls.
-- External agent host: Codex, Claude, or another agent orchestrates TIRAI and
-  reads/writes raw context, contract, checkpoints, and reports. TIRAI does not
-  spawn another agent CLI in this mode.
-
-CLI is the workflow interface, not an AI provider.
+CLI is the workflow interface; semantic output enters only through
+`artifact`/`contract` import validation.
 
 ## Incremental execution plan
 
@@ -32,7 +31,7 @@ validate`, `contract import`, and `artifact plan`. External agents can read
 the generated artifacts, return a contract JSON file, and have TIRAI validate,
 fingerprint, and persist it without spawning an agent process.
 
-- Chốt config schema cho project, task, AI host/provider và output policy.
+- Chốt config schema cho project, task và output policy.
 - Chốt input/output artifact protocol: raw package, AI input, contract,
   artifact plan, execution result, report.
 - Thêm CLI commands `analyze`, `contract validate`, `artifact plan` dưới dạng
@@ -52,15 +51,17 @@ grouping, provenance, hashes, and bounded source-file context.
 - Acceptance: cùng input tạo raw manifest ổn định; spec lớn được chia theo
   module/context mà không mất traceability.
 
-### Phase C — AI-assisted analysis
+### Phase C — Host-agent analysis
 
 - Tạo stage input hợp nhất từ raw context, source intelligence và project
-  profile.
-- Cho phép Codex/Claude host điều khiển stage qua artifact protocol.
-- Cho standalone CLI dùng API-key/local provider nếu người dùng cấu hình.
-- Bắt structured output theo schema, retry, checkpoint và prompt version.
-- Acceptance: AI có thể sinh contract từ toàn bộ input; fake chỉ dùng cho test,
-  không được thay thế semantic stage trong real run.
+  profile (`ai-input.json` + raw package).
+- Host agent (Codex/Claude/…) đọc raw package, tự thực hiện mọi semantic
+  stage và viết canonical IR (`semantic-ir`, `requirements`, `test-plan`,
+  `testcases`, `contract`).
+- Host import từng artifact qua `tirai artifact import`; TIRAI validate theo
+  schema, fingerprint và lưu vào `.tirai/artifacts/`.
+- Acceptance: contract do host agent sinh được TIRAI validate/fingerprint;
+  artifact không hợp lệ bị từ chối, không có suy diễn mặc định.
 
 ### Phase D — Contract consolidation
 
@@ -77,8 +78,8 @@ grouping, provenance, hashes, and bounded source-file context.
   empty, loading, error, permission, state transition, retry và rollback.
 - Bắt precondition, data need, cleanup, UI/API/DB/state assertions và manual
   reason.
-- Dùng toàn bộ context làm input trong cùng stage AI, không dùng one-case-
-  per-flow hard-code policy.
+- Dùng toàn bộ context làm input trong cùng host analysis pass, không dùng
+  one-case-per-flow hard-code policy.
 - Acceptance: coverage tính theo behavior path; mỗi acceptance behavior có
   test hoặc unresolved reason rõ ràng.
 
@@ -106,13 +107,13 @@ grouping, provenance, hashes, and bounded source-file context.
 - Golden/replay/deterministic tests cho từng connector và adapter.
 - Prompt-injection defense, secret scan, file/token/resource limits.
 - Audit trail, cache, resume, migration và CI checks.
-- Acceptance: cùng input, tool version, model version và config tái tạo được
-  contract/artifact plan; mọi quyết định AI/execution đều audit được.
+- Acceptance: cùng input, tool version và config tái tạo được
+  contract/artifact plan; mọi quyết định của host agent và execution đều audit được.
 
 ```text
 Multi-source spec + project context
   -> raw context and chunks
-  -> AI analysis and consolidation
+  -> host-agent analysis and consolidation
   -> canonical Contract IR
   -> artifact plan
   -> Excel / Markdown / Playwright / unit / API / DB tests
@@ -133,8 +134,8 @@ Multi-source spec + project context
   `task create`, `task list`, and `task show`.
 - The remaining goals below are roadmap work; the current example still uses
   the legacy stage IRs as the source for the first Contract IR adapter.
-- CLI/API-provider separation is explicit: external agents control TIRAI
-  through artifacts, while model providers are injectable dependencies.
+- CLI/agent separation is explicit: the host agent controls TIRAI through
+  artifacts and supplies all semantic output itself.
 
 ## Goal 0 — Contract IR as the system of record
 
@@ -160,7 +161,7 @@ Multi-source spec + project context
 ### Tasks
 
 - Extend `init` with project type, frontend, backend, database, source code,
-  environments, AI provider, capabilities, and desired outputs.
+  environments, capabilities, and desired outputs.
 - Create independent task workspaces for each specification.
 - Track task states: created, ingesting, analyzed, contract-ready, generated,
   executed, and reported.
@@ -189,25 +190,26 @@ execute, and report individual tasks without editing internal JSON manually.
 An 8,000-line input can be split into reusable module contexts, each with a
 stable ID, source location, and content hash.
 
-## Goal 3 — AI orchestration for every semantic stage
+## Goal 3 — Host-agent semantic stages over the artifact protocol
 
 ### Tasks
 
-- Provide pluggable API-key, local-model, and fake providers for standalone
-  CLI runs; external agent hosts control TIRAI through the same artifacts.
-- Add stage runners for source understanding, requirement extraction, UI/API/
-  data analysis, source analysis, cross-reference, consolidation, test design,
-  artifact planning, execution analysis, and reporting.
-- Require structured output against schemas.
-- Add retries, JSON repair, token budgets, concurrency limits, checkpoints,
-  prompt versions, and request metadata.
-- Support chat-based refinement of a task and its contract.
-- Never replace a required AI semantic stage with hard-coded fixture logic.
+- The artifact protocol is the contract: `tirai ingest` produces the raw
+  package and `tirai artifact import` validates and persists host-written
+  `semantic-ir`, `requirements`, `test-plan`, `testcases`, and `contract`.
+- No embedded providers: the host agent performs source understanding,
+  requirement extraction, UI/API/data analysis, cross-reference,
+  consolidation, test design, artifact planning, execution analysis, and
+  reporting judgment; TIRAI validates inputs and executes deterministically.
+- Require structured output against schemas at the import boundary.
+- Keep checkpoints and per-stage manifests so a run can resume after failure.
+- Support chat-based refinement of a task and its contract in the host.
+- Never replace a required host semantic stage with hard-coded fixture logic.
 
 ### Done when
 
-Each stage has a declared input/output contract, can resume after failure, and
-can switch AI providers without changing pipeline behavior.
+Each stage has a declared input/output contract at the artifact boundary, can
+resume after failure, and never depends on an embedded provider.
 
 ## Goal 4 — Contract analysis and consolidation
 
@@ -387,15 +389,14 @@ node, generated test, and source code.
 - Add unit, schema, golden, replay, deterministic-generation, and end-to-end
   tests for every source type and adapter.
 - Protect against prompt injection in specifications.
-- Scan and redact secrets from artifacts, logs, and AI metadata.
+- Scan and redact secrets from artifacts, logs, and host-agent metadata.
 - Enforce file-size, token, timeout, and resource limits.
 - Add audit trail, caching, checkpointing, CI, and contract migration tests.
 
 ### Done when
 
-The same input, tool version, model version, and configuration can reproduce
-the same contract and artifact plan, while all AI and execution decisions are
-auditable.
+The same input, tool version, and configuration can reproduce the same
+artifact plan, while all host-agent and execution decisions are auditable.
 
 ## Delivery milestones
 
@@ -405,13 +406,13 @@ auditable.
 - Project/task model
 - Raw context model
 - Artifact manifest
-- AI provider interface
+- Artifact import validation
 
-### M1 — Multi-source AI analysis
+### M1 — Multi-source host-agent analysis
 
 - Excel/PDF/DOCX/Markdown ingestion
 - Structural chunking
-- AI stage runner
+- Artifact import validation for host-written IRs
 - Requirement and flow extraction
 - Contract consolidation
 
@@ -447,8 +448,8 @@ auditable.
 
 ## Immediate implementation order in the current repository
 
-1. Replace the hard-coded structured-design compiler with AI-backed stages.
-2. Define the Contract IR before adding more prompts.
+1. Remove the hard-coded structured-design compiler; semantic stages run in the host agent and enter through `artifact import`.
+2. Define the Contract IR before adding more artifact kinds.
 3. Preserve all Excel sections and join UI/DB/FE/API/business-flow data.
 4. Generate behavior-path test cases instead of one test per business-flow row.
 5. Add `ArtifactPlan` and manifest support.
@@ -456,5 +457,5 @@ auditable.
 7. Improve source intelligence and trusted bindings.
 8. Add execution fixtures and result traceability.
 9. Add chat refinement and unresolved-item confirmation.
-10. Optimize prompts, model selection, cost, and latency after correctness is
+10. Optimize host-agent analysis cost and latency after correctness is
     established.

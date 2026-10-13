@@ -120,6 +120,7 @@ export async function observeBrowser(page: BrowserPage): Promise<BrowserObservat
       label: el.label,
       placeholder: el.placeholder,
       inputType: el.inputType,
+      testId: el.testId,
       visibleText: el.visibleText,
       enabled: el.enabled,
       checked: el.checked || undefined,

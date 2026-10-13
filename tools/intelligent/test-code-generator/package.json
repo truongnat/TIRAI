@@ -1,13 +1,10 @@
 {
   "name": "test-code-generator",
   "version": "1.0.0",
-  "description": "Phase 5.1 — Test Code Generation vertical slice: canonical TestCase + ExecutionMappingIR → real Playwright *.spec.ts",
+  "description": "Phase 5.1 \u2014 Test Code Generation vertical slice: canonical TestCase + ExecutionMappingIR \u2192 real Playwright *.spec.ts",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "tirai-generate-tests": "dist/cli.js"
-  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",

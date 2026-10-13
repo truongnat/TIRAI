@@ -23,6 +23,7 @@ import type {
   EvidenceCollector,
   EvidenceInput,
   TestRunPolicy,
+  ResolvedLocator,
 } from '../src/models.js';
 import type { TestRunAuditRecorder } from 'test-execution-orchestrator';
 
@@ -252,6 +253,28 @@ describe('Real Playwright — CASE A: valid login', () => {
     expect(result.steps.every((s) => s.status === 'passed')).toBe(true);
     expect(result.assertions.length).toBe(1);
     expect(result.assertions[0].status).toBe('passed');
+    const checkbox: ResolvedLocator = {
+      strategy: 'role',
+      value: 'checkbox',
+      role: 'checkbox',
+      name: 'Persist session',
+      exact: true,
+      description: 'checkbox "Persist session"',
+    };
+    expect(await session.page().checkboxInfo(checkbox)).toEqual({ kind: 'aria', checked: false });
+    await session.page().click(checkbox);
+    expect(await session.page().checkboxInfo(checkbox)).toEqual({ kind: 'aria', checked: true });
+    const nativeCheckbox: ResolvedLocator = {
+      strategy: 'role',
+      value: 'checkbox',
+      role: 'checkbox',
+      name: 'Receive updates',
+      exact: true,
+      description: 'checkbox "Receive updates"',
+    };
+    expect(await session.page().checkboxInfo(nativeCheckbox)).toEqual({ kind: 'native', checked: false });
+    await session.page().check(nativeCheckbox);
+    expect(await session.page().checkboxInfo(nativeCheckbox)).toEqual({ kind: 'native', checked: true });
   });
 });
 

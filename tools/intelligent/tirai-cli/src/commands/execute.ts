@@ -29,7 +29,7 @@ export interface ExecuteOptions {
   mappingPath?: string;
 }
 
-export async function runExecute(opts: ExecuteOptions): Promise<void> {
+export async function runExecute(opts: ExecuteOptions): Promise<number> {
   const basePaths = requireWorkspace(opts.cwd);
   const task = opts.taskId ? resolveActiveTask(basePaths, opts.taskId) : undefined;
   if (opts.taskId && !task) throw new CliError('TASK_NOT_FOUND', `Task not found: ${opts.taskId}`);
@@ -75,10 +75,26 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
     throw new CliError('CONFIG_INVALID', 'Canonical contract is missing contract ID or fingerprint. Re-run `tirai ingest`.');
   }
   const contractNodes = contract as { apis?: Array<{ id?: string; method?: string; endpoint?: string; relatedIds?: string[] }>; entities?: Array<{ id?: string; title?: string }> } | undefined;
+  const requireEnvironment = <T>(record: Record<string, T>, name: string): T => {
+    const env = record[environment];
+    if (!env) {
+      const known = Object.keys(record);
+      throw new CliError(
+        'CONFIG_INVALID',
+        `Environment "${environment}" is not configured for platform "${name}".${known.length ? ` Configured: ${known.join(', ')}.` : ' No environments configured.'}`,
+      );
+    }
+    return env;
+  };
+  let configuredMappingPath: string | undefined;
+  if (platform === 'backend') {
+    configuredMappingPath = requireEnvironment(platforms.backend!.environments, 'backend').mappingPath;
+  } else if (platform === 'database') {
+    configuredMappingPath = requireEnvironment(platforms.database!.environments, 'database').mappingPath;
+  } else if (platform === 'web') {
+    requireEnvironment(platforms.web!.environments, 'web');
+  }
   let executionMapping: { path: string; count: number } | undefined;
-  const configuredMappingPath = platform === 'backend'
-    ? platforms.backend!.environments[environment].mappingPath
-    : platform === 'database' ? platforms.database!.environments[environment].mappingPath : undefined;
   const effectiveMappingPath = opts.mappingPath ?? configuredMappingPath;
   if (effectiveMappingPath) {
     const mappingPath = path.resolve(opts.cwd, effectiveMappingPath);
@@ -100,17 +116,17 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
         paths,
         config,
         environment,
-        environmentConfig: platforms.web!.environments[environment],
+        environmentConfig: requireEnvironment(platforms.web!.environments, 'web'),
         testCases: testCases as TestCase[],
         selectedCaseIds: opts.testCaseIds ?? (opts.testCaseId ? [opts.testCaseId] : []),
         dedicatedTestTenantConfirmed: opts.confirmDedicatedTestTenant ?? false,
       });
       break;
     case 'backend':
-      result = await executeBackend(testCases, platforms.backend!.environments[environment], environment);
+      result = await executeBackend(testCases, requireEnvironment(platforms.backend!.environments, 'backend'), environment);
       break;
     case 'database':
-      result = await executeDatabase(testCases, platforms.database!.environments[environment], environment);
+      result = await executeDatabase(testCases, requireEnvironment(platforms.database!.environments, 'database'), environment);
       break;
     default:
       throw new CliError('INVALID_PLATFORM', `Unsupported platform: ${platform}`);
@@ -166,6 +182,9 @@ export async function runExecute(opts: ExecuteOptions): Promise<void> {
       console.log(`  Test cases: ${result.testCases}`);
     }
   }
+  const executionStatus = typeof result.executionStatus === 'string' ? result.executionStatus : result.status;
+  if (Number(result.failed ?? 0) > 0 || executionStatus === 'failed') return 1;
+  return executionStatus === 'passed' ? 0 : 2;
 }
 
 

@@ -1,4 +1,4 @@
-// Additional tests: edge cases, batch, AI safety, integration, coverage.
+// Additional tests: edge cases, deterministic pipeline, integration, coverage.
 
 import { describe, it, expect } from 'vitest';
 
@@ -12,7 +12,6 @@ import {
 import { validateUICandidate } from '../src/validation/validation.js';
 import { buildExecutionMapping } from '../src/builder.js';
 import { ExecutionMappingError } from '../src/errors.js';
-import { buildEvidencePackage } from '../src/ai/ai-layer.js';
 import {
   makeTestCase,
   makeLoginTestCase,
@@ -182,40 +181,6 @@ describe('Validation — additional', () => {
     };
     const result = validateUICandidate(tc, candidate, catalog, bindings);
     expect(result.errors.length).toBeGreaterThan(0);
-  });
-});
-
-// ===========================================================================
-// AI EVIDENCE PACKAGE TEST
-// ===========================================================================
-
-describe('AI evidence package', () => {
-  it('includes test case ID', () => {
-    const tc = makeLoginTestCase();
-    const catalog = createUICatalogResolver(makeLoginCatalog());
-    const evidence = buildEvidencePackage(tc, catalog);
-    expect(evidence).toContain('TC-0001');
-  });
-
-  it('includes steps', () => {
-    const tc = makeLoginTestCase();
-    const catalog = createUICatalogResolver(makeLoginCatalog());
-    const evidence = buildEvidencePackage(tc, catalog);
-    expect(evidence).toContain('Steps:');
-  });
-
-  it('includes expected results', () => {
-    const tc = makeLoginTestCase();
-    const catalog = createUICatalogResolver(makeLoginCatalog());
-    const evidence = buildEvidencePackage(tc, catalog);
-    expect(evidence).toContain('Expected Results:');
-  });
-
-  it('includes available UI elements', () => {
-    const tc = makeLoginTestCase();
-    const catalog = createUICatalogResolver(makeLoginCatalog());
-    const evidence = buildEvidencePackage(tc, catalog);
-    expect(evidence).toContain('username-field');
   });
 });
 

@@ -13,7 +13,7 @@ import { runExport } from './commands/export.js';
 import { runExecute } from './commands/execute.js';
 import { runTaskCreate, runTaskList, runTaskShow } from './commands/task.js';
 import { runContractValidate, runContractImport } from './commands/contract.js';
-import { runArtifactPlan, runArtifactVerify } from './commands/artifact.js';
+import { runArtifactPlan, runArtifactVerify, runArtifactImport } from './commands/artifact.js';
 import { runAnalyze } from './commands/analyze.js';
 import { CliError } from './errors.js';
 import { runMappingValidate } from './commands/mapping.js';
@@ -31,7 +31,7 @@ Usage:
 
 Commands:
   init                    Initialize TIRAI workspace (.tirai/)
-  ingest <spec>           Ingest a local spec into canonical contract/TestCases
+  ingest <spec>           Ingest a spec into raw context artifacts (structured designs compile to contract/TestCases)
     --source-code <dir>   Explicit read-only source scan; default is black-box
   generate                Generate tests (requires --target)
     --target playwright   Generate Playwright E2E (requires E2E mapping)
@@ -50,10 +50,12 @@ Commands:
   task show <task-id>     Show a task workspace
   contract validate       Validate canonical contract JSON
   contract import <file>  Import an externally generated contract (--task <id> supported)
+  artifact import <kind>  Import a host-agent artifact: semantic-ir | requirements | test-plan | testcases | contract
+    --file <path>         Path to the artifact JSON produced by the host agent
   artifact plan           Plan outputs from canonical contract
   artifact verify         Verify exported artifact checksums
   mapping validate <file> Validate explicit API/DB execution mapping
-  analyze                 Inspect AI input and raw context package
+  analyze                 Inspect agent input and raw context package
   plan                    Inspect canonical test plan and coverage quality
   export                  Export test cases (json/xlsx/markdown/pdf/docx/all)
   execute                 Execute selected approved cases on the configured platform
@@ -82,6 +84,7 @@ Commands:
 Examples:
   tirai init
   tirai ingest ./spec.xlsx
+  tirai artifact import contract --file ./contract.json
   tirai generate --target playwright
   tirai generate --target vitest --source-mapping ./unit.json
   tirai run
@@ -163,8 +166,9 @@ async function main(): Promise<void> {
       }
       case 'artifact': {
         if (args[0] === 'plan') await runArtifactPlan({ cwd, contractPath: flags.file as string, taskId: flags.task as string, json: Boolean(flags.json) });
+        else if (args[0] === 'import' && args[1]) await runArtifactImport({ cwd, kind: args[1], filePath: flags.file as string, taskId: flags.task as string, json: Boolean(flags.json) });
         else if (args[0] === 'verify') await runArtifactVerify({ cwd, taskId: flags.task as string, json: Boolean(flags.json) });
-        else throw new CliError('INVALID_TARGET', 'Usage: tirai artifact plan | tirai artifact verify');
+        else throw new CliError('INVALID_TARGET', 'Usage: tirai artifact import <kind> --file <path> | tirai artifact plan | tirai artifact verify');
         break;
       }
       case 'analyze': {
@@ -345,7 +349,7 @@ async function main(): Promise<void> {
         break;
       }
       case 'execute': {
-        await runExecute({
+        process.exitCode = await runExecute({
           cwd,
           platform: flags.platform as string,
           environment: flags.environment as string,

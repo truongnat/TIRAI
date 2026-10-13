@@ -4,7 +4,29 @@
 // Source-independent, provider-independent, domain-flexible.
 // Excel terminology appears only in provenance references.
 
-import type { SemanticAnalyzerBudget } from './budget.js';
+// ---- Request budget types (retained for SemanticAnalyzerOptions) -----------
+
+export interface OutputBudgetPolicy {
+  /** Hard ceiling for output tokens per request. */
+  maxOutputBudgetCeiling: number;
+  /** Maximum number of output-budget escalations per chunk. */
+  maxOutputEscalations: number;
+}
+
+export interface SemanticAnalyzerBudget {
+  maxInputTokensPerRequest: number;
+  maxOutputTokensPerRequest: number;
+  maxContextsPerBatch: number;
+  maxConcurrentRequests: number;
+  maxRepairAttempts: number;
+  maxConsolidationInputTokens: number;
+  maxConsolidationItemsPerBatch: number;
+  /** Separate hard-bounded output budget for consolidation requests. */
+  maxConsolidationOutputTokens: number;
+  maxTotalRequests?: number;
+  /** Adaptive output budget policy. */
+  outputBudgetPolicy?: OutputBudgetPolicy;
+}
 
 // ---- Top-level IR --------------------------------------------------------
 
