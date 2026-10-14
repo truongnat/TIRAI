@@ -1,7 +1,6 @@
 ---
 const nav = [
   { href: '#how', label: 'How it works' },
-  { href: '#pipeline', label: 'Pipeline' },
   { href: '#cli', label: 'CLI' },
   { href: '#trust', label: 'Trust model' },
 ];
@@ -11,19 +10,21 @@ const nav = [
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>TIRAI — Specification-first test automation</title>
-<meta name="description" content="TIRAI turns Excel, PDF, DOCX, Markdown, and JSON specifications into canonical test cases and real Playwright/Vitest execution. Zero AI calls in the tool." />
+<meta name="description" content="TIRAI turns specs into canonical test cases and real Playwright/Vitest execution. Zero AI calls in the tool." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #0b0d10;
-    --surface: #111417;
-    --surface-2: #16191d;
-    --border: #24282d;
-    --fg: #e8eaed;
-    --muted: #9aa1a9;
+    --bg: #030208;
+    --fg: #eef2ff;
+    --muted: #8b90b8;
     --accent: #5eead4;
-    --accent-2: #38bdf8;
-    --mono: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+    --violet: #a78bfa;
+    --pink: #f472b6;
+    --blue: #60a5fa;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sans: 'Space Grotesk', -apple-system, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
@@ -32,161 +33,313 @@ const nav = [
     color: var(--fg);
     font-family: var(--sans);
     line-height: 1.6;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
   }
   a { color: inherit; text-decoration: none; }
-  .mono { font-family: var(--mono); }
+  ::selection { background: var(--violet); color: #000; }
 
-  /* — layout — */
-  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  /* — layers — */
+  #stars, #nebula, #hero3d { position: fixed; inset: 0; pointer-events: none; }
+  #stars { z-index: 0; }
+  #nebula { z-index: 1; opacity: .55; }
+  #hero3d { z-index: 2; opacity: .9; }
+  .content { position: relative; z-index: 10; }
 
   /* — nav — */
   header {
-    position: sticky; top: 0; z-index: 50;
-    background: color-mix(in srgb, var(--bg) 85%, transparent);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(180deg, rgba(3,2,8,.85), rgba(3,2,8,0));
+    backdrop-filter: blur(14px);
   }
-  nav { display: flex; align-items: center; height: 60px; gap: 32px; }
-  .logo { font-family: var(--mono); font-weight: 700; font-size: 18px; letter-spacing: .5px; }
-  .logo span { color: var(--accent); }
-  nav .links { margin-left: auto; display: flex; gap: 24px; font-size: 14px; color: var(--muted); }
-  nav .links a:hover { color: var(--fg); }
+  nav { display: flex; align-items: center; height: 68px; gap: 32px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+  .logo {
+    font-family: var(--mono); font-weight: 600; font-size: 19px; letter-spacing: 2px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo .orb {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: conic-gradient(from 90deg, var(--accent), var(--violet), var(--pink), var(--accent));
+    box-shadow: 0 0 18px var(--violet), 0 0 40px rgba(167,139,250,.5);
+    animation: spin 6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  nav .links { margin-left: auto; display: flex; gap: 28px; font-size: 14px; color: var(--muted); }
+  nav .links a { transition: color .2s; }
+  nav .links a:hover { color: var(--fg); text-shadow: 0 0 12px var(--violet); }
   nav .gh {
-    padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px;
-    color: var(--fg); font-size: 13px; font-family: var(--mono);
+    padding: 8px 18px; border-radius: 999px; font-size: 13px; font-family: var(--mono);
+    border: 1px solid rgba(167,139,250,.4);
+    background: linear-gradient(90deg, rgba(167,139,250,.12), rgba(94,234,212,.12));
+    transition: box-shadow .25s;
   }
-  nav .gh:hover { border-color: var(--accent); color: var(--accent); }
+  nav .gh:hover { box-shadow: 0 0 24px rgba(167,139,250,.5); }
 
   /* — hero — */
-  .hero { padding: 120px 0 80px; text-align: center; }
+  .hero {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    position: relative; padding: 120px 24px 80px;
+  }
+  .hero-orb {
+    width: 340px; height: 340px; margin-bottom: 8px;
+    filter: drop-shadow(0 0 40px rgba(94,234,212,.35)) drop-shadow(0 0 80px rgba(167,139,250,.3));
+  }
+  /* — status badge: rotating gradient border + ping dot + split segments — */
+  .badge-wrap { position: relative; display: inline-flex; margin-bottom: 32px; }
   .badge {
-    display: inline-block; padding: 5px 12px; border: 1px solid var(--border);
-    border-radius: 999px; font-size: 12px; color: var(--muted); margin-bottom: 28px;
-    font-family: var(--mono); letter-spacing: .4px;
+    position: relative; display: inline-flex; align-items: center;
+    border-radius: 999px; font-size: 12px; font-family: var(--mono);
+    background: rgba(10,8,22,.7); backdrop-filter: blur(10px);
+    isolation: isolate;
+  }
+  .badge::before {
+    content: ''; position: absolute; inset: -1px; border-radius: 999px; z-index: -1;
+    background: conic-gradient(from var(--bangle, 0deg),
+      transparent 0%, var(--accent) 12%, var(--violet) 28%, var(--pink) 44%, transparent 60%, transparent 100%);
+    animation: badge-spin 4s linear infinite;
+  }
+  .badge::after {
+    content: ''; position: absolute; inset: 0; border-radius: 999px; z-index: -1;
+    background: rgba(10,8,22,.9);
+  }
+  @property --bangle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  @keyframes badge-spin { to { --bangle: 360deg; } }
+  .badge .seg {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 14px; white-space: nowrap;
+  }
+  .badge .seg + .seg { border-left: 1px solid rgba(255,255,255,.12); }
+  .badge .seg.status { color: var(--accent); }
+  .badge .seg.ver { color: var(--muted); }
+  .ping {
+    position: relative; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+    box-shadow: 0 0 10px var(--accent), 0 0 20px rgba(94,234,212,.5);
+  }
+  .ping::before {
+    content: ''; position: absolute; inset: -5px; border-radius: 50%;
+    border: 1px solid var(--accent); opacity: .7;
+    animation: ping-ring 1.8s cubic-bezier(0,0,.2,1) infinite;
+  }
+  @keyframes ping-ring {
+    0% { transform: scale(.5); opacity: .8; }
+    80%,100% { transform: scale(1.9); opacity: 0; }
+  }
+  /* nav chip */
+  .devchip {
+    font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: .12em;
+    padding: 2px 7px; border-radius: 4px; margin-left: 2px;
+    color: var(--accent); border: 1px solid rgba(94,234,212,.45);
+    background: rgba(94,234,212,.08); text-transform: uppercase;
+    animation: chip-glow 2.6s ease-in-out infinite;
+  }
+  @keyframes chip-glow {
+    0%,100% { box-shadow: 0 0 4px rgba(94,234,212,.15); }
+    50% { box-shadow: 0 0 14px rgba(94,234,212,.45); }
   }
   h1 {
-    font-size: clamp(40px, 6vw, 72px); font-weight: 700; letter-spacing: -0.03em;
-    line-height: 1.05; margin-bottom: 24px;
+    font-size: clamp(44px, 7vw, 88px); font-weight: 700; letter-spacing: -0.03em;
+    line-height: 1.02; margin-bottom: 26px;
+    text-shadow: 0 0 60px rgba(167,139,250,.35);
   }
   h1 em {
     font-style: normal;
-    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    background: linear-gradient(120deg, var(--accent) 0%, var(--blue) 45%, var(--violet) 75%, var(--pink) 100%);
+    background-size: 220% auto;
     -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shimmer 7s linear infinite;
   }
-  .sub { font-size: 18px; color: var(--muted); max-width: 640px; margin: 0 auto 40px; }
-  .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  @keyframes shimmer { to { background-position: 220% center; } }
+  .sub { font-size: 18px; color: var(--muted); max-width: 660px; margin: 0 auto 44px; }
+  .cta-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
   .btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 12px 22px; border-radius: 8px; font-size: 15px; font-weight: 500;
-    border: 1px solid var(--border); background: var(--surface);
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 30px; border-radius: 12px; font-size: 15px; font-weight: 600;
+    transition: transform .2s, box-shadow .25s;
   }
-  .btn.primary { background: var(--accent); color: #06231e; border-color: transparent; }
-  .btn.primary:hover { filter: brightness(1.1); }
-  .btn:hover { border-color: var(--accent); }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    color: #040b14; box-shadow: 0 8px 40px rgba(94,234,212,.4);
+  }
+  .btn.primary:hover { box-shadow: 0 12px 60px rgba(94,234,212,.55); }
+  .btn.ghost {
+    border: 1px solid rgba(167,139,250,.4); color: var(--fg);
+    background: rgba(167,139,250,.08); backdrop-filter: blur(8px);
+  }
+  .btn.ghost:hover { box-shadow: 0 8px 32px rgba(167,139,250,.35); }
   .install-cmd {
-    margin: 32px auto 0; display: inline-flex; align-items: center; gap: 10px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    padding: 12px 18px; font-family: var(--mono); font-size: 13.5px; color: var(--muted);
+    margin-top: 40px; display: inline-flex; align-items: center; gap: 12px;
+    padding: 14px 22px; border-radius: 12px; font-family: var(--mono); font-size: 13px;
+    color: var(--muted); border: 1px solid rgba(255,255,255,.1);
+    background: rgba(255,255,255,.04); backdrop-filter: blur(10px);
   }
   .install-cmd .prompt { color: var(--accent); }
-
-  /* — trust strip — */
-  .strip {
-    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-    padding: 20px 0; color: var(--muted); font-size: 13px;
-    display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
-    font-family: var(--mono);
+  .install-cmd .copy {
+    margin-left: 8px; padding: 4px 10px; border-radius: 6px; font-size: 11px;
+    border: 1px solid rgba(255,255,255,.15); color: var(--fg); cursor: pointer;
+    background: transparent; font-family: var(--mono);
   }
-  .strip strong { color: var(--fg); font-weight: 600; }
+  .install-cmd .copy:hover { border-color: var(--accent); color: var(--accent); }
+
+  .scroll-hint {
+    position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
+    color: var(--muted); font-size: 11px; letter-spacing: .3em; font-family: var(--mono);
+    animation: float 2.5s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-8px)} }
+
+  /* — strip — */
+  .strip {
+    border-top: 1px solid rgba(255,255,255,.06); border-bottom: 1px solid rgba(255,255,255,.06);
+    padding: 26px 0; display: flex; justify-content: center; gap: 56px; flex-wrap: wrap;
+    background: rgba(255,255,255,.02); backdrop-filter: blur(10px);
+  }
+  .strip .stat { text-align: center; }
+  .strip .num {
+    font-family: var(--mono); font-size: 30px; font-weight: 600;
+    background: linear-gradient(120deg, var(--accent), var(--blue));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .strip .lbl { font-size: 12px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
 
   /* — sections — */
-  section { padding: 96px 0; }
-  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .15em; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; }
-  h2 { font-size: clamp(28px, 4vw, 44px); letter-spacing: -0.02em; margin-bottom: 16px; }
-  .lead { color: var(--muted); font-size: 17px; max-width: 560px; margin-bottom: 48px; }
+  section { padding: 130px 0; position: relative; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .22em; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 18px; display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::before { content: ''; width: 28px; height: 1px; background: linear-gradient(90deg, var(--accent), transparent); }
+  h2 { font-size: clamp(30px, 4.5vw, 52px); letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 18px; }
+  .lead { color: var(--muted); font-size: 17px; max-width: 580px; margin-bottom: 56px; }
 
-  /* — pipeline diagram — */
-  .pipeline {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 40px 0;
+  /* — orbit pipeline — */
+  .orbit-wrap { position: relative; height: 460px; margin: 20px 0 40px; }
+  .orbit-stage {
+    position: absolute; width: 200px; padding: 18px;
+    border-radius: 14px; text-align: center;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    backdrop-filter: blur(12px);
+    transition: transform .25s, box-shadow .25s;
   }
-  .stage {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    padding: 20px 16px; position: relative;
+  .orbit-stage:hover { transform: translateY(-4px); box-shadow: 0 16px 50px rgba(167,139,250,.3); }
+  .orbit-stage .num { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-bottom: 6px; }
+  .orbit-stage .name { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+  .orbit-stage .desc { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+  .orbit-line {
+    position: absolute; inset: 0; z-index: -1;
   }
-  .stage::after {
-    content: '→'; position: absolute; right: -14px; top: 50%; transform: translateY(-50%);
-    color: var(--muted); font-family: var(--mono);
-  }
-  .stage:last-child::after { display: none; }
-  .stage .num { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-bottom: 8px; }
-  .stage .name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
-  .stage .desc { font-size: 13px; color: var(--muted); }
-  @media (max-width: 800px) {
-    .pipeline { grid-template-columns: 1fr; }
-    .stage::after { right: auto; bottom: -16px; top: auto; left: 50%; transform: translateX(-50%) rotate(90deg); }
+  @media (max-width: 900px) {
+    .orbit-wrap { height: auto; display: grid; gap: 14px; }
+    .orbit-stage { position: static; width: auto; }
+    .orbit-line { display: none; }
   }
 
-  /* — feature grid — */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  /* — glass cards — */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
   .card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-    padding: 28px;
+    position: relative; padding: 30px; border-radius: 16px;
+    background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.09);
+    backdrop-filter: blur(14px); overflow: hidden;
+    transition: transform .25s, border-color .25s;
+    transform-style: preserve-3d; perspective: 800px;
   }
+  .card::before {
+    content: ''; position: absolute; inset: 0; border-radius: 16px; padding: 1px;
+    background: linear-gradient(135deg, transparent 30%, rgba(94,234,212,.5), rgba(167,139,250,.5), transparent 70%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: 0; transition: opacity .3s; pointer-events: none;
+  }
+  .card:hover { transform: translateY(-4px); }
+  .card:hover::before { opacity: 1; }
   .card h3 { font-size: 17px; margin-bottom: 8px; }
   .card p { font-size: 14.5px; color: var(--muted); }
-  .card .ico { font-family: var(--mono); color: var(--accent); font-size: 20px; margin-bottom: 14px; display: block; }
+  .card code { font-family: var(--mono); font-size: .9em; color: var(--accent); }
+  .card .ico {
+    font-family: var(--mono); font-size: 22px; display: inline-block; margin-bottom: 16px;
+    background: linear-gradient(120deg, var(--accent), var(--violet));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 12px rgba(94,234,212,.4));
+  }
 
-  /* — cli — */
+  /* — terminal — */
   .terminal {
-    background: #0d0f12; border: 1px solid var(--border); border-radius: 12px;
-    overflow: hidden; font-family: var(--mono); font-size: 13.5px;
+    border-radius: 18px; overflow: hidden; font-family: var(--mono); font-size: 13.5px;
+    border: 1px solid rgba(255,255,255,.1);
+    background: linear-gradient(180deg, rgba(20,15,40,.85), rgba(8,6,18,.92));
+    backdrop-filter: blur(16px);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 60px rgba(167,139,250,.12);
   }
   .term-bar {
-    display: flex; gap: 6px; padding: 12px 16px; background: var(--surface-2);
-    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.08); color: var(--muted); font-size: 12px;
   }
-  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
   .dot.r { background: #ff5f57; } .dot.y { background: #ffbd2e; } .dot.g { background: #28c840; }
-  .term-body { padding: 20px 24px; overflow-x: auto; }
-  .term-body .ln { display: block; padding: 3px 0; white-space: pre; }
+  .term-title { margin-left: 10px; letter-spacing: .05em; }
+  .term-body { padding: 26px 30px; overflow-x: auto; }
+  .term-body .ln { display: block; padding: 4px 0; white-space: pre; }
   .cmd { color: var(--fg); }
-  .cmd::before { content: '$ '; color: var(--accent); }
+  .cmd::before { content: '❯ '; color: var(--accent); }
   .out { color: var(--muted); }
-  .out .ok { color: var(--accent); }
-  .out .warn { color: #fbbf24; }
+  .out .ok { color: var(--accent); text-shadow: 0 0 10px rgba(94,234,212,.5); }
+  .cursor {
+    display: inline-block; width: 8px; height: 15px; background: var(--accent);
+    vertical-align: -2px; animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
 
   /* — trust — */
-  .trust-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
-  @media (max-width: 800px) { .trust-grid { grid-template-columns: 1fr; } }
+  .trust-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+  @media (max-width: 900px) { .trust-grid { grid-template-columns: 1fr; } }
   .trust-list { list-style: none; }
   .trust-list li {
-    padding: 14px 0; border-bottom: 1px solid var(--border);
-    display: flex; gap: 14px; align-items: flex-start;
+    padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,.07);
+    display: flex; gap: 16px; align-items: flex-start;
+    opacity: 0; transform: translateX(24px);
+    transition: opacity .5s, transform .5s;
   }
-  .trust-list .tick { color: var(--accent); font-family: var(--mono); flex-shrink: 0; }
-  .trust-list strong { display: block; font-size: 15px; margin-bottom: 2px; }
+  .trust-list li.in { opacity: 1; transform: none; }
+  .trust-list .tick {
+    color: var(--accent); font-family: var(--mono); flex-shrink: 0; margin-top: 2px;
+    text-shadow: 0 0 10px rgba(94,234,212,.6);
+  }
+  .trust-list strong { display: block; font-size: 15.5px; margin-bottom: 3px; }
   .trust-list span { color: var(--muted); font-size: 14px; }
 
-  /* — footer cta — */
-  .foot-cta {
-    text-align: center; padding: 96px 0;
-    border-top: 1px solid var(--border);
+  /* — foot cta — */
+  .foot-cta { text-align: center; padding: 140px 24px; position: relative; }
+  .foot-cta h2 { margin-bottom: 30px; }
+  footer {
+    padding: 40px 0; border-top: 1px solid rgba(255,255,255,.07);
+    color: var(--muted); font-size: 13px;
   }
-  footer { padding: 32px 0; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
   footer .wrap { display: flex; justify-content: space-between; align-items: center; }
+
+  /* — reveal — */
+  .reveal { opacity: 0; transform: translateY(36px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
 </style>
 </head>
 <body>
 
+<canvas id="stars"></canvas>
+<div id="nebula"></div>
+<canvas id="hero3d"></canvas>
+
+<div class="content">
+
 <header>
   <div class="wrap">
     <nav>
-      <a class="logo" href="/">TIRAI<span>.</span></a>
+      <a class="logo" href="/"><span class="orb"></span>TIRAI<span class="devchip">dev</span></a>
       <div class="links">
         {nav.map(n => <a href={n.href}>{n.label}</a>)}
       </div>
-      <a class="gh" href="https://github.com/truongnat/TIRAI">GitHub →</a>
+      <a class="gh" href="https://github.com/truongnat/TIRAI">★ GitHub</a>
     </nav>
   </div>
 </header>
@@ -194,106 +347,124 @@ const nav = [
 <main>
 
 <!-- HERO -->
-<div class="hero wrap">
-  <div class="badge">v1.1.0 — open source · MIT</div>
-  <h1>Specification-first<br /><em>test automation</em>.</h1>
+<div class="hero">
+  <div class="badge-wrap">
+    <span class="badge">
+      <span class="seg status"><span class="ping"></span>IN DEVELOPMENT</span>
+      <span class="seg ver">v1.1.0</span>
+      <span class="seg ver">MIT</span>
+      <span class="seg ver">zero AI calls</span>
+    </span>
+  </div>
+  <h1>Specification-first<br /><em>test automation</em></h1>
   <p class="sub">
-    TIRAI turns Excel, PDF, DOCX, Markdown, and JSON specifications into canonical test cases,
-    then runs them for real — Playwright Chromium and Vitest — with zero model calls inside the tool.
+    Turn Excel, PDF, DOCX, Markdown, and JSON specs into canonical test cases —
+    executed for real on Chromium &amp; Vitest. Deterministic. Inspectable. Fail-closed.
   </p>
   <div class="cta-row">
-    <a class="btn primary" href="#install">Install CLI</a>
-    <a class="btn" href="#how">How it works</a>
+    <a class="btn primary" href="#install">⌁ Install CLI</a>
+    <a class="btn ghost" href="#how">How it works ↓</a>
   </div>
-  <div class="install-cmd mono">
-    <span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash
+  <div class="install-cmd">
+    <span class="prompt">$</span>
+    <span>curl -fsSL https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash</span>
+    <button class="copy" onclick="navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash');this.textContent='copied'">copy</button>
   </div>
+  <div class="scroll-hint">SCROLL</div>
 </div>
 
-<!-- TRUST STRIP -->
+<!-- STRIP -->
 <div class="strip">
-  <span><strong>0</strong> AI calls at runtime</span>
-  <span><strong>7</strong> source formats</span>
-  <span><strong>22</strong> deterministic workspaces</span>
-  <span><strong>143</strong> executor tests</span>
-  <span>Fail-closed <strong>by design</strong></span>
+  <div class="stat"><div class="num">0</div><div class="lbl">AI calls at runtime</div></div>
+  <div class="stat"><div class="num">7</div><div class="lbl">source formats</div></div>
+  <div class="stat"><div class="num">22</div><div class="lbl">workspaces</div></div>
+  <div class="stat"><div class="num">143</div><div class="lbl">executor tests</div></div>
+  <div class="stat"><div class="num">3</div><div class="lbl">exit codes</div></div>
 </div>
 
 <!-- HOW -->
 <section id="how">
   <div class="wrap">
     <div class="eyebrow">How it works</div>
-    <h2>The host agent decides <em>what</em>.<br />TIRAI decides <em>how</em>.</h2>
+    <h2>The host agent decides <em style="font-style:normal;color:var(--accent)">what</em>.<br />TIRAI decides <em style="font-style:normal;color:var(--violet)">how</em>.</h2>
     <p class="lead">
-      Most test tools start from code. TIRAI starts from specifications. The host AI reads your spec,
-      writes canonical JSON artifacts, and TIRAI executes them deterministically — no guessing, no silent fallbacks.
+      Most test tools start from code. TIRAI starts from specifications.
+      The host AI reads your spec, writes canonical JSON artifacts, and TIRAI executes them
+      deterministically — no guessing, no silent fallbacks.
     </p>
-    <div class="pipeline" id="pipeline">
-      <div class="stage">
-        <div class="num">01</div>
-        <div class="name">Ingest</div>
+    <div class="orbit-wrap reveal">
+      <svg class="orbit-line" viewBox="0 0 1100 460" preserveAspectRatio="none">
+        <path d="M100,230 C250,60 450,60 550,230 C650,400 850,400 1000,230"
+          fill="none" stroke="url(#g1)" stroke-width="1.2" stroke-dasharray="4 6"/>
+        <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5eead4"/><stop offset=".5" stop-color="#a78bfa"/><stop offset="1" stop-color="#f472b6"/>
+        </linearGradient></defs>
+      </svg>
+      <div class="orbit-stage" style="left:2%;top:38%">
+        <div class="num">01 / INGEST</div>
+        <div class="name">Multi-source</div>
         <div class="desc">Excel · PDF · DOCX · MD · CSV · JSON · URL → canonical context</div>
       </div>
-      <div class="stage">
-        <div class="num">02</div>
-        <div class="name">Host IR</div>
-        <div class="desc">Host agent writes semantic-ir, requirements, test-plan, testcases</div>
+      <div class="orbit-stage" style="left:23%;top:8%">
+        <div class="num">02 / HOST IR</div>
+        <div class="name">Semantic artifacts</div>
+        <div class="desc">Host agent writes requirements, test-plan, testcases</div>
       </div>
-      <div class="stage">
-        <div class="num">03</div>
-        <div class="name">Import</div>
-        <div class="desc">tirai artifact import validates structure; invalid input fails closed</div>
+      <div class="orbit-stage" style="left:43%;top:44%">
+        <div class="num">03 / IMPORT</div>
+        <div class="name">Validated</div>
+        <div class="desc">artifact import checks schema — invalid input fails closed</div>
       </div>
-      <div class="stage">
-        <div class="num">04</div>
-        <div class="name">Execute</div>
-        <div class="desc">Real Chromium / Vitest — secrets via env refs, never literals</div>
+      <div class="orbit-stage" style="left:64%;top:70%">
+        <div class="num">04 / EXECUTE</div>
+        <div class="name">Real runners</div>
+        <div class="desc">Chromium + Vitest · secrets via env refs · cleanup required</div>
       </div>
-      <div class="stage">
-        <div class="num">05</div>
-        <div class="name">Report</div>
-        <div class="desc">Canonical result IR → PASS / FAIL / BLOCKED with evidence</div>
+      <div class="orbit-stage" style="left:82%;top:32%">
+        <div class="num">05 / REPORT</div>
+        <div class="name">Canonical result</div>
+        <div class="desc">PASS / FAIL / BLOCKED with sanitized evidence per run</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- FEATURES -->
-<section style="background:var(--surface);border-block:1px solid var(--border);">
+<section>
   <div class="wrap">
     <div class="eyebrow">Capabilities</div>
-    <h2>Everything downstream of the spec is deterministic.</h2>
-    <p class="lead">The tool makes no model calls, stores no credentials, and refuses to guess.</p>
+    <h2>Everything downstream of the spec<br />is deterministic.</h2>
+    <p class="lead">No model calls inside the tool. No credentials stored. No silent guessing.</p>
     <div class="grid">
-      <div class="card">
-        <span class="ico">→</span>
+      <div class="card reveal">
+        <span class="ico">⟶</span>
         <h3>Multi-source ingestion</h3>
-        <p>Excel, PDF, DOCX, Markdown, CSV, JSON, and remote HTML all converge into the same canonical context — same pipeline downstream regardless of input format.</p>
+        <p>Excel, PDF, DOCX, Markdown, CSV, JSON, remote HTML — one canonical pipeline regardless of format.</p>
       </div>
-      <div class="card">
-        <span class="ico">#</span>
+      <div class="card reveal">
+        <span class="ico">◈</span>
         <h3>Canonical JSON artifacts</h3>
-        <p>Requirements, test plans, and test cases live as validated JSON in <code>.tirai/artifacts/</code> — the product truth between spec and execution.</p>
+        <p>Requirements, plans, cases live as validated JSON in <code>.tirai/artifacts/</code> — truth between spec and execution.</p>
       </div>
-      <div class="card">
+      <div class="card reveal">
         <span class="ico">▶</span>
         <h3>Real browser execution</h3>
-        <p>Playwright drives actual Chromium. Role-, DOM-id-, and positional selectors; ambiguous targets block rather than pick.</p>
+        <p>Playwright drives actual Chromium. DOM-id and positional locators guaranteed unique; ambiguous targets block.</p>
       </div>
-      <div class="card">
+      <div class="card reveal">
         <span class="ico">⚿</span>
         <h3>Secret refs, not secrets</h3>
-        <p><code>secret://env:NAME</code> in test cases resolves at runtime through configured <code>auth</code> refs — credentials never enter artifacts or results.</p>
+        <p><code>secret://env:NAME</code> resolves at runtime through <code>auth</code> refs — credentials never enter artifacts.</p>
       </div>
-      <div class="card">
+      <div class="card reveal">
         <span class="ico">✕</span>
         <h3>Fail-closed validation</h3>
-        <p>Unconfigured environments, stale specs, ambiguous elements, missing cleanup plans — all surface as exit code 2, never as silent passes.</p>
+        <p>Unconfigured envs, stale specs, ambiguous elements, missing cleanup — exit 2, never a silent pass.</p>
       </div>
-      <div class="card">
+      <div class="card reveal">
         <span class="ico">⎘</span>
         <h3>Multi-format export</h3>
-        <p>JSON, Excel, Markdown, PDF, DOCX — export canonical cases without mutating the source of truth.</p>
+        <p>JSON, Excel, Markdown, PDF, DOCX — export cases without mutating the source of truth.</p>
       </div>
     </div>
   </div>
@@ -304,36 +475,35 @@ const nav = [
   <div class="wrap">
     <div class="eyebrow">CLI</div>
     <h2>One command surface.</h2>
-    <p class="lead">Init, ingest, import, approve, execute, report — all deterministic, all inspectable.</p>
-    <div class="terminal">
+    <p class="lead">Init → ingest → import → approve → execute → report. Deterministic, inspectable, CI-ready.</p>
+    <div class="terminal reveal">
       <div class="term-bar">
         <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">tirai — session</span>
       </div>
-      <div class="term-body">
+      <div class="term-body" id="term">
         <span class="ln cmd">tirai init --name my-app</span>
         <span class="ln out">Initialized TIRAI workspace at ./.tirai</span>
-        <span class="ln"> </span>
+        <span class="ln">&nbsp;</span>
         <span class="ln cmd">tirai ingest specs/checkout.md</span>
         <span class="ln out">Ingested: 3 requirements, 7 scenarios</span>
-        <span class="ln"> </span>
+        <span class="ln">&nbsp;</span>
         <span class="ln cmd">tirai artifact import testcases --file testcases.json</span>
         <span class="ln out">Imported testcases: .tirai/artifacts/testcases.json</span>
-        <span class="ln"> </span>
+        <span class="ln">&nbsp;</span>
         <span class="ln cmd">tirai execute --platform web --environment staging --test-cases TC-001,TC-002 --confirm-dedicated-test-tenant</span>
         <span class="ln out">TIRAI execute complete: <span class="ok">passed</span></span>
-        <span class="ln out">  Platform: web</span>
-        <span class="ln out">  Environment: staging</span>
-        <span class="ln out">  Test cases: 2  <span class="ok">EXIT=0</span></span>
-        <span class="ln"> </span>
-        <span class="ln cmd">tirai report</span>
-        <span class="ln out">  Result: <span class="ok">PASS</span>  →  .tirai/reports/latest-summary.md</span>
+        <span class="ln out">  Platform: web · Environment: staging · Test cases: 2</span>
+        <span class="ln out">  <span class="ok">EXIT=0</span></span>
+        <span class="ln">&nbsp;</span>
+        <span class="ln cmd">tirai report<span class="cursor"></span></span>
       </div>
     </div>
   </div>
 </section>
 
 <!-- TRUST -->
-<section id="trust" style="background:var(--surface);border-block:1px solid var(--border);">
+<section id="trust">
   <div class="wrap trust-grid">
     <div>
       <div class="eyebrow">Trust model</div>
@@ -344,35 +514,175 @@ const nav = [
         Anything ambiguous or unconfigured fails closed — visibly.
       </p>
     </div>
-    <ul class="trust-list">
-      <li><span class="tick">→</span><div><strong>Zero AI calls at runtime</strong><span>generationAiCalls = executionAiCalls = agenticFallbacks = 0</span></div></li>
-      <li><span class="tick">→</span><div><strong>Secret refs only</strong><span>usernameRef / passwordRef / tokenRef / extraRefs — env vars at runtime, never stored</span></div></li>
-      <li><span class="tick">→</span><div><strong>Approval gate</strong><span>review approve binds a case to a route before it can execute; stale fingerprints reject</span></div></li>
-      <li><span class="tick">→</span><div><strong>Mutation requires cleanup</strong><span>steps that mutate business data must declare a cleanup plan or the run blocks</span></div></li>
-      <li><span class="tick">→</span><div><strong>Evidence per run</strong><span>sanitized screenshots, page text, and assertion results land in .tirai/workflow/runs/</span></div></li>
-      <li><span class="tick">→</span><div><strong>Exit code contract</strong><span>0 = pass · 1 = business fail · 2 = blocked/manual/error — CI-friendly</span></div></li>
+    <ul class="trust-list" id="trustList">
+      <li><span class="tick">▸</span><div><strong>Zero AI calls at runtime</strong><span>generationAiCalls = executionAiCalls = agenticFallbacks = 0</span></div></li>
+      <li><span class="tick">▸</span><div><strong>Secret refs only</strong><span>usernameRef / passwordRef / tokenRef / extraRefs — env vars at runtime, never stored</span></div></li>
+      <li><span class="tick">▸</span><div><strong>Approval gate</strong><span>review approve binds a case to a route before it can execute; stale fingerprints reject</span></div></li>
+      <li><span class="tick">▸</span><div><strong>Mutation requires cleanup</strong><span>data-mutating steps must declare a cleanup plan or the run blocks</span></div></li>
+      <li><span class="tick">▸</span><div><strong>Evidence per run</strong><span>sanitized screenshots, page text, assertion results in .tirai/workflow/runs/</span></div></li>
+      <li><span class="tick">▸</span><div><strong>Exit code contract</strong><span>0 pass · 1 business fail · 2 blocked/manual/error — CI-friendly</span></div></li>
     </ul>
   </div>
 </section>
 
-<!-- FOOTER CTA -->
-<div class="foot-cta wrap" id="install">
-  <div class="eyebrow">Get started</div>
-  <h2>One line to install.</h2>
-  <div class="install-cmd mono" style="margin-top:24px">
-    <span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash
+<!-- FOOT CTA -->
+<div class="foot-cta" id="install">
+  <div class="eyebrow" style="justify-content:center">Get started</div>
+  <h2>One line<br /><em style="font-style:normal;background:linear-gradient(120deg,var(--accent),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent">to install.</em></h2>
+  <div class="install-cmd">
+    <span class="prompt">$</span>
+    <span>curl -fsSL https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash</span>
+    <button class="copy" onclick="navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/truongnat/TIRAI/main/install.sh | bash');this.textContent='copied'">copy</button>
   </div>
-  <p style="margin-top:20px;color:var(--muted);font-size:14px">Then <code>npx playwright install chromium</code> and run <code>tirai --help</code>.</p>
+  <p style="margin-top:22px;color:var(--muted);font-size:14px;font-family:var(--mono)">then <span style="color:var(--accent)">npx playwright install chromium</span> → <span style="color:var(--accent)">tirai --help</span></p>
 </div>
 
 </main>
 
 <footer>
   <div class="wrap">
-    <span>TIRAI · MIT License · Built for host-agent workflows</span>
-    <a href="https://github.com/truongnat/TIRAI" style="font-family:var(--mono)">github.com/truongnat/TIRAI →</a>
+    <span>TIRAI · MIT · built for host-agent workflows</span>
+    <a href="https://github.com/truongnat/TIRAI" style="font-family:var(--mono);color:var(--muted)">github.com/truongnat/TIRAI →</a>
   </div>
 </footer>
+
+</div>
+
+<script>
+// — starfield —
+const starCanvas = document.getElementById('stars');
+const sctx = starCanvas.getContext('2d');
+let W, H, stars;
+function resize() {
+  W = starCanvas.width = innerWidth;
+  H = starCanvas.height = innerHeight;
+  stars = Array.from({length: 220}, () => ({
+    x: Math.random()*W, y: Math.random()*H,
+    r: Math.random()*1.4 + .3,
+    s: Math.random()*.25 + .05,
+    a: Math.random()*Math.PI*2,
+  }));
+}
+resize(); addEventListener('resize', resize);
+(function drawStars() {
+  sctx.clearRect(0,0,W,H);
+  for (const s of stars) {
+    s.a += .02;
+    s.y -= s.s; if (s.y < 0) s.y = H;
+    sctx.beginPath();
+    sctx.arc(s.x, s.y, s.r, 0, 7);
+    sctx.fillStyle = `rgba(230,235,255,${.35 + Math.sin(s.a)*.3})`;
+    sctx.fill();
+  }
+  requestAnimationFrame(drawStars);
+})();
+
+// — nebula blobs —
+const neb = document.getElementById('nebula');
+neb.innerHTML = '';
+const colors = ['94,234,212','167,139,250','244,114,182','96,165,250'];
+for (let i = 0; i < 5; i++) {
+  const d = document.createElement('div');
+  const c = colors[i % colors.length];
+  const size = 400 + Math.random()*500;
+  d.style.cssText = `position:absolute;width:${size}px;height:${size}px;border-radius:50%;
+    background:radial-gradient(circle,rgba(${c},.14) 0%,transparent 65%);
+    left:${Math.random()*100}%;top:${Math.random()*100}%;
+    animation:nebDrift ${30+i*12}s ease-in-out infinite alternate;filter:blur(40px)`;
+  neb.appendChild(d);
+}
+const style = document.createElement('style');
+style.textContent = `@keyframes nebDrift{from{transform:translate(0,0) scale(1)}to{transform:translate(${'-80px'},60px) scale(1.15)}}`;
+document.head.appendChild(style);
+
+// — three.js hero orb —
+import('https://unpkg.com/three@0.160.0/build/three.module.js').then(({ default: THREE, ...THREE_NS }) => {
+  const T = { ...THREE_NS, ...THREE } || THREE_NS;
+}).catch(() => {});
+// Load via module script below instead
+</script>
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+const canvas = document.getElementById('hero3d');
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, .1, 100);
+camera.position.z = 7;
+
+// wireframe torus knot — the "spec orb"
+const knot = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(1.6, .42, 180, 24, 2, 3),
+  new THREE.MeshBasicMaterial({ color: 0x5eead4, wireframe: true, transparent: true, opacity: .14 })
+);
+scene.add(knot);
+
+// inner glowing icosahedron
+const ico = new THREE.Mesh(
+  new THREE.IcosahedronGeometry(.7, 1),
+  new THREE.MeshBasicMaterial({ color: 0xa78bfa, wireframe: true, transparent: true, opacity: .35 })
+);
+scene.add(ico);
+
+// orbit particles
+const pGeo = new THREE.BufferGeometry();
+const N = 700, pos = new Float32Array(N*3);
+for (let i=0;i<N;i++) {
+  const r = 3 + Math.random()*5;
+  const t = Math.random()*Math.PI*2, p = Math.acos(2*Math.random()-1);
+  pos[i*3]   = r*Math.sin(p)*Math.cos(t);
+  pos[i*3+1] = r*Math.sin(p)*Math.sin(t)*.45;
+  pos[i*3+2] = r*Math.cos(p)*.6;
+}
+pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({
+  color: 0x9aa8ff, size: .025, transparent: true, opacity: .8
+}));
+scene.add(particles);
+
+let mx = 0, my = 0;
+addEventListener('mousemove', e => {
+  mx = (e.clientX/innerWidth - .5)*2;
+  my = (e.clientY/innerHeight - .5)*2;
+});
+function size() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+}
+size(); addEventListener('resize', size);
+
+let scrollY = 0;
+addEventListener('scroll', () => scrollY = window.scrollY, { passive: true });
+
+(function tick(t) {
+  requestAnimationFrame(tick);
+  const s = t*.0001;
+  knot.rotation.x = s*3 + my*.4;
+  knot.rotation.y = s*4 + mx*.6;
+  ico.rotation.x = -s*5; ico.rotation.y = s*6;
+  particles.rotation.y = s*.8;
+  particles.rotation.x = Math.sin(s*.5)*.1 + my*.15;
+  const fade = Math.max(0, 1 - scrollY/(innerHeight*.9));
+  knot.material.opacity = .14*fade;
+  ico.material.opacity = .35*fade;
+  particles.material.opacity = .8*fade;
+  camera.position.y = scrollY*-.0015;
+  renderer.render(scene, camera);
+})(0);
+</script>
+
+<script>
+// scroll reveal
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}), { threshold: .12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+document.querySelectorAll('#trustList li').forEach((el, i) => {
+  setTimeout(() => io.observe(el), i*80);
+});
+</script>
 
 </body>
 </html>
