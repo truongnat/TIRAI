@@ -107,3 +107,20 @@ function validateQuality(contract: Partial<ContractIR>): string[] {
   if (quality.conflicts !== (contract.conflicts?.length ?? 0)) errors.push('/quality/conflicts does not match conflicts length');
   return errors;
 }
+
+export function evaluateQualityGate(contract: Partial<ContractIR>): { passed: boolean; nonHappyRatio: number; warnings: string[] } {
+  const scenarios = contract.scenarios ?? [];
+  if (scenarios.length === 0) return { passed: false, nonHappyRatio: 0, warnings: ['No scenarios defined.'] };
+
+  const nonHappyCount = scenarios.filter((s) => s.category !== 'happy-path').length;
+  const nonHappyRatio = nonHappyCount / scenarios.length;
+  const warnings: string[] = [];
+
+  if (scenarios.length >= 3 && nonHappyRatio < 0.4) {
+    warnings.push(
+      `QUALITY_WARNING: Test suite has low edge-case coverage (${(nonHappyRatio * 100).toFixed(1)}% non-happy-path). Recommended minimum is 40% (include boundary, validation, negative, and security edge cases).`,
+    );
+  }
+
+  return { passed: warnings.length === 0, nonHappyRatio, warnings };
+}

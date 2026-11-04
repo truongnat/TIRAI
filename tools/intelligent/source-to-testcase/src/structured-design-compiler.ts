@@ -24,7 +24,7 @@ import type {
   TestScenarioCategory,
   TestInput,
 } from 'test-planner';
-import { compileJapaneseScreenDesignDocument } from './japanese-screen-compiler.js';
+import { compileGenericTabularSpec } from './generic-tabular-compiler.js';
 
 interface ParsedRow {
   rowNumber: number;
@@ -63,6 +63,13 @@ interface DesignCompilation {
  * the originating workbook context and row range, and no AI calls are made.
  */
 export function compileStructuredDesignDocument(doc: CanonicalSourceDocument): DesignCompilation | null {
+  // 1. Language-Agnostic Generic Tabular Compiler with Autonomous Edge-Case Expansion
+  const genericCompilation = compileGenericTabularSpec(doc);
+  if (genericCompilation) {
+    return genericCompilation;
+  }
+
+  // 2. Legacy business-flow fallback
   const sheets = doc.contexts.map(parseSheet);
   const flowSheet = sheets.find((sheet) => isBusinessFlowSheet(sheet));
   if (flowSheet) {
@@ -75,12 +82,6 @@ export function compileStructuredDesignDocument(doc: CanonicalSourceDocument): D
       const testPlanIR = buildTestPlanIR(doc, flows, requirementIR);
       return { semanticIR, requirementIR, testPlanIR };
     }
-  }
-
-  // Automatic compilation for Japanese enterprise screen design specs (画面設計書 / 帳票設計書)
-  const jpCompilation = compileJapaneseScreenDesignDocument(doc);
-  if (jpCompilation) {
-    return jpCompilation;
   }
 
   return null;

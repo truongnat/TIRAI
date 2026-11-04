@@ -13,7 +13,7 @@ import { runExport } from './commands/export.js';
 import { runExecute } from './commands/execute.js';
 import { runTaskCreate, runTaskList, runTaskShow } from './commands/task.js';
 import { runContractValidate, runContractImport } from './commands/contract.js';
-import { runArtifactPlan, runArtifactVerify, runArtifactImport } from './commands/artifact.js';
+import { runArtifactPlan, runArtifactVerify, runArtifactImport, runArtifactTemplate } from './commands/artifact.js';
 import { runAnalyze } from './commands/analyze.js';
 import { CliError } from './errors.js';
 import { runMappingValidate } from './commands/mapping.js';
@@ -167,8 +167,9 @@ async function main(): Promise<void> {
       case 'artifact': {
         if (args[0] === 'plan') await runArtifactPlan({ cwd, contractPath: flags.file as string, taskId: flags.task as string, json: Boolean(flags.json) });
         else if (args[0] === 'import' && args[1]) await runArtifactImport({ cwd, kind: args[1], filePath: flags.file as string, taskId: flags.task as string, json: Boolean(flags.json) });
+        else if (args[0] === 'template' && args[1]) await runArtifactTemplate({ kind: args[1], out: flags.out as string, json: Boolean(flags.json) });
         else if (args[0] === 'verify') await runArtifactVerify({ cwd, taskId: flags.task as string, json: Boolean(flags.json) });
-        else throw new CliError('INVALID_TARGET', 'Usage: tirai artifact import <kind> --file <path> | tirai artifact plan | tirai artifact verify');
+        else throw new CliError('INVALID_TARGET', 'Usage: tirai artifact import <kind> --file <path> | tirai artifact template <kind> [--out <path>] | tirai artifact plan | tirai artifact verify');
         break;
       }
       case 'analyze': {

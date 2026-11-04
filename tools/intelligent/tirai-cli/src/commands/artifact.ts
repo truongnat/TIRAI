@@ -230,3 +230,77 @@ export async function runArtifactVerify(opts: { cwd: string; taskId?: string; js
   if (!valid) throw new CliError('CONFIG_INVALID', `Export manifest verification failed: ${checks.filter((check) => !check.valid).map((check) => path.basename(check.path)).join(', ')}`);
   if (opts.json) console.log(JSON.stringify(result, null, 2)); else console.log(`Artifact manifest valid: ${checks.length} file(s)`);
 }
+
+export async function runArtifactTemplate(opts: { kind: string; out?: string; json?: boolean }): Promise<void> {
+  const kind = opts.kind as ArtifactKind;
+  if (!ARTIFACT_KINDS.includes(kind)) {
+    throw new CliError('CONFIG_INVALID', `Unknown artifact kind: ${opts.kind}. Supported kinds: ${ARTIFACT_KINDS.join(', ')}`);
+  }
+
+  let template: unknown;
+  if (kind === 'semantic-ir') {
+    template = {
+      schemaVersion: '1.0',
+      status: 'complete',
+      document: { title: 'Specification Title', summary: 'System feature spec', language: ['en', 'vi', 'ja'], provenance: [] },
+      sections: [{ id: 'sec-1', title: 'Main Section', order: 1, contentSummary: 'Section overview', confidence: 1, provenance: [] }],
+      entities: [{ id: 'ent-model', name: 'FormModel', type: 'data-entity', description: 'Data entity', confidence: 1, attributes: [{ name: 'field1', type: 'string', required: true, description: 'Field description' }], provenance: [] }],
+      flows: [{ id: 'flow-1', name: 'Submit Action', description: 'User submits data', confidence: 1, steps: [{ order: 1, action: 'User clicks button', target: 'btnSubmit', provenance: [] }], postconditions: ['Data saved'], provenance: [] }],
+      rules: [{ id: 'rule-1', name: 'Validation Rule', statement: 'Field1 cannot be empty', type: 'validation', confidence: 1, provenance: [] }],
+      relationships: [],
+      unresolved: [],
+    };
+  } else if (kind === 'requirements') {
+    template = {
+      schemaVersion: '1.0',
+      document: { title: 'Specification Requirements', summary: 'Functional and validation requirements', sourceSemanticIR: 'semantic-ir.json', provenance: [] },
+      requirements: [{ id: 'REQ-001', title: 'Feature Execution', statement: 'System shall execute feature upon valid input', type: 'functional', sourceNature: 'explicit', inputs: [], dataNeeds: [], outcomes: [{ description: 'Executed', state: 'success', provenance: [] }], confidence: 1, relatedSemanticIds: [], preconditions: [{ description: 'Screen is open', provenance: [] }], expectedBehaviors: [{ description: 'Success response', provenance: [] }], constraints: [], testability: { status: 'testable', reasons: [] }, provenance: [] }],
+      unresolved: [],
+      conflicts: [],
+      quality: { total: 1, explicit: 1, derived: 0, testable: 1, partiallyTestable: 0, notTestable: 0, unknownTestability: 0, lowConfidence: 0, unresolved: 0, conflicts: 0, provenanceCoverage: 1 },
+    };
+  } else if (kind === 'testcases') {
+    template = [
+      {
+        id: 'TC-001',
+        scenarioId: 'SC-001',
+        requirementIds: ['REQ-001'],
+        title: 'Happy path execution with valid inputs',
+        objective: 'Verify system executes successfully under valid boundary conditions',
+        type: 'ui',
+        priority: 'high',
+        confidence: 1,
+        preconditions: [{ description: 'User is on target screen', sourceRequirementIds: ['REQ-001'] }],
+        inputs: [{ name: 'inputField', value: 'valid-val', valueStrategy: 'valid' }],
+        dataNeeds: [],
+        steps: [{ order: 1, action: 'navigate to "/target"', target: '/target' }, { order: 2, action: 'type "valid-val" into "Field"', target: 'inputField', input: 'valid-val' }, { order: 3, action: 'click "Submit"', target: 'btnSubmit' }],
+        expectedResults: [{ description: 'Success confirmation is displayed', verificationType: 'ui' }],
+        cleanup: [{ description: 'Clean state', target: 'none' }],
+        automation: { status: 'ready', suggestedExecutor: 'ui', reasons: [] },
+        provenance: [{ requirementId: 'REQ-001', contextId: 'ctx-1' }],
+      },
+    ];
+  } else if (kind === 'test-plan') {
+    template = {
+      schemaVersion: '1.0',
+      scope: { requirementIds: ['REQ-001'], objective: 'Comprehensive test coverage across 11 behavior dimensions', assumptions: [], exclusions: [] },
+      requirementCoverage: [{ requirementId: 'REQ-001', strategies: ['positive'], scenarioIds: ['SC-001'], status: 'covered', reasons: [] }],
+      scenarios: [{ id: 'SC-001', title: 'Happy path scenario', objective: 'Verify normal operation', category: 'happy-path', priority: 'high', confidence: 1, requirementIds: ['REQ-001'], preconditions: [{ description: 'Screen open', sourceRequirementIds: ['REQ-001'] }], dataNeeds: [], expectedBehavior: ['Success display'], provenance: [{ requirementId: 'REQ-001', contextId: 'ctx-1' }] }],
+      testCases: [],
+      dataNeeds: [],
+      quality: { requirementsTotal: 1, requirementsCovered: 1, requirementsPartiallyCovered: 0, requirementsNotCovered: 0, coverageRate: 1, scenarios: 1, testCases: 1, positiveCases: 1, negativeCases: 0, boundaryCases: 0, validationCases: 0, unresolved: 0, automationReady: 1, provenanceCoverage: 1 },
+      unresolved: [],
+    };
+  } else {
+    template = { schemaVersion: '1.0', contractId: 'contract-sample', contractVersion: 1, metadata: { contractFingerprint: 'pending', generatedAt: new Date().toISOString(), generatorVersion: '1.2.0' } };
+  }
+
+  const outputText = JSON.stringify(template, null, 2);
+  if (opts.out) {
+    fs.mkdirSync(path.dirname(opts.out), { recursive: true });
+    fs.writeFileSync(opts.out, outputText, 'utf8');
+    if (opts.json) console.log(JSON.stringify({ kind, path: opts.out }, null, 2)); else console.log(`Template for ${kind} written to: ${opts.out}`);
+  } else {
+    console.log(outputText);
+  }
+}
