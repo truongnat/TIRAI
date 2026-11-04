@@ -24,6 +24,7 @@ import type {
   TestScenarioCategory,
   TestInput,
 } from 'test-planner';
+import { compileJapaneseScreenDesignDocument } from './japanese-screen-compiler.js';
 
 interface ParsedRow {
   rowNumber: number;
@@ -64,17 +65,25 @@ interface DesignCompilation {
 export function compileStructuredDesignDocument(doc: CanonicalSourceDocument): DesignCompilation | null {
   const sheets = doc.contexts.map(parseSheet);
   const flowSheet = sheets.find((sheet) => isBusinessFlowSheet(sheet));
-  if (!flowSheet) return null;
+  if (flowSheet) {
+    const flows = flowSheet.rows
+      .map((row) => toBusinessFlow(flowSheet, row))
+      .filter((flow): flow is BusinessFlow => flow !== null);
+    if (flows.length > 0) {
+      const semanticIR = buildSemanticIR(doc, sheets, flows);
+      const requirementIR = buildRequirementIR(doc, flows, semanticIR);
+      const testPlanIR = buildTestPlanIR(doc, flows, requirementIR);
+      return { semanticIR, requirementIR, testPlanIR };
+    }
+  }
 
-  const flows = flowSheet.rows
-    .map((row) => toBusinessFlow(flowSheet, row))
-    .filter((flow): flow is BusinessFlow => flow !== null);
-  if (flows.length === 0) return null;
+  // Automatic compilation for Japanese enterprise screen design specs (画面設計書 / 帳票設計書)
+  const jpCompilation = compileJapaneseScreenDesignDocument(doc);
+  if (jpCompilation) {
+    return jpCompilation;
+  }
 
-  const semanticIR = buildSemanticIR(doc, sheets, flows);
-  const requirementIR = buildRequirementIR(doc, flows, semanticIR);
-  const testPlanIR = buildTestPlanIR(doc, flows, requirementIR);
-  return { semanticIR, requirementIR, testPlanIR };
+  return null;
 }
 
 function parseSheet(context: CanonicalContextChunk): ParsedSheet {
