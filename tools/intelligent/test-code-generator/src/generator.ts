@@ -47,6 +47,7 @@ const SUPPORTED_GENERATOR_ACTIONS = new Set([
   'check',
   'uncheck',
   'blur',
+  'wait',
 ]);
 
 const VALUE_REQUIRED_ACTIONS = new Set(['fill', 'type', 'select']);
@@ -293,6 +294,8 @@ function buildStatements(ctx: CaseContext): string[] {
       statements.push(`await ${loc}.uncheck();`);
     } else if (step.action === 'blur') {
       statements.push(`await ${loc}.blur();`);
+    } else if (step.action === 'wait') {
+      statements.push(`await ${loc}.waitFor({ state: "visible" });`);
     }
   }
 

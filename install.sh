@@ -49,6 +49,10 @@ elif [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
   die "GitHub API returned HTTP ${HTTP_STATUS} while resolving the release."
 fi
 
+ASSET_DOWNLOAD_URL="$(printf '%s' "$RELEASE_JSON" | node -e '
+let s=""; process.stdin.on("data",d=>s+=d); process.stdin.on("end",()=>{const r=JSON.parse(s); const a=(r.assets||[]).find(x=>/^tirai-cli-.*\.tgz$/.test(x.name)); if(!a) process.exit(2); process.stdout.write(a.browser_download_url || a.url);});
+')" || die "The selected release does not contain a tirai-cli-*.tgz asset."
+
 ASSET_API_URL="$(printf '%s' "$RELEASE_JSON" | node -e '
 let s=""; process.stdin.on("data",d=>s+=d); process.stdin.on("end",()=>{const r=JSON.parse(s); const a=(r.assets||[]).find(x=>/^tirai-cli-.*\.tgz$/.test(x.name)); if(!a) process.exit(2); process.stdout.write(a.url);});
 ')" || die "The selected release does not contain a tirai-cli-*.tgz asset."
@@ -57,20 +61,37 @@ ASSET_NAME="$(printf '%s' "$RELEASE_JSON" | node -e '
 let s=""; process.stdin.on("data",d=>s+=d); process.stdin.on("end",()=>{const r=JSON.parse(s); const a=(r.assets||[]).find(x=>/^tirai-cli-.*\.tgz$/.test(x.name)); if(!a) process.exit(2); process.stdout.write(a.name);});
 ')"
 
+SHA_DOWNLOAD_URL="$(printf '%s' "$RELEASE_JSON" | node -e '
+let s=""; process.stdin.on("data",d=>s+=d); process.stdin.on("end",()=>{const r=JSON.parse(s); const a=(r.assets||[]).find(x=>/\.sha256$/.test(x.name)); if(a) process.stdout.write(a.browser_download_url || a.url);});
+')"
+
 SHA_API_URL="$(printf '%s' "$RELEASE_JSON" | node -e '
 let s=""; process.stdin.on("data",d=>s+=d); process.stdin.on("end",()=>{const r=JSON.parse(s); const a=(r.assets||[]).find(x=>/\.sha256$/.test(x.name)); if(a) process.stdout.write(a.url);});
 ')"
+
+AUTH_HEADERS=()
+if [ -n "$TOKEN" ]; then
+  AUTH_HEADERS+=(-H "Authorization: Bearer ${TOKEN}")
+fi
 
 TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t tirai-install)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 TGZ_PATH="${TMP_DIR}/${ASSET_NAME}"
 
 log "Downloading ${ASSET_NAME}..."
-curl -fsSL "${HEADERS[@]}" -H 'Accept: application/octet-stream' "$ASSET_API_URL" -o "$TGZ_PATH" || die "Failed to download release package."
+if [ -n "$TOKEN" ]; then
+  curl -fsSL "${AUTH_HEADERS[@]}" -H 'Accept: application/octet-stream' "$ASSET_API_URL" -o "$TGZ_PATH" || die "Failed to download release package."
+else
+  curl -fsSL "$ASSET_DOWNLOAD_URL" -o "$TGZ_PATH" || die "Failed to download release package."
+fi
 
-if [ -n "$SHA_API_URL" ]; then
+if [ -n "$SHA_DOWNLOAD_URL" ]; then
   SHA_FILE="${TMP_DIR}/tirai.sha256"
-  curl -fsSL "${HEADERS[@]}" -H 'Accept: application/octet-stream' "$SHA_API_URL" -o "$SHA_FILE" || die "Failed to download checksum."
+  if [ -n "$TOKEN" ]; then
+    curl -fsSL "${AUTH_HEADERS[@]}" -H 'Accept: application/octet-stream' "$SHA_API_URL" -o "$SHA_FILE" || die "Failed to download checksum."
+  else
+    curl -fsSL "$SHA_DOWNLOAD_URL" -o "$SHA_FILE" || die "Failed to download checksum."
+  fi
   EXPECTED="$(awk '{print $1}' "$SHA_FILE" | head -n 1)"
   if command -v sha256sum >/dev/null 2>&1; then
     ACTUAL="$(sha256sum "$TGZ_PATH" | awk '{print $1}')"

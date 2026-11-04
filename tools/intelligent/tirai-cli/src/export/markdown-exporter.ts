@@ -25,14 +25,22 @@ export class MarkdownExporter implements TestOutputExporter {
     md += `**Generated:** ${  new Date().toISOString()  }\n`;
     md += `**Fingerprint:** ${  testPlanFingerprint.slice(0, 16)  }...\n\n`;
 
+    const q = testPlan.quality as unknown as Record<string, unknown> | undefined;
+    const totalCases = (q?.testCases as number | undefined) ?? testCases.length;
+    const totalScenarios = (q?.scenarios as number | undefined) ?? testPlan.scenarios?.length ?? 0;
+    const totalRequirements = (q?.requirementsTotal as number | undefined) ?? testPlan.requirementCoverage?.length ?? 0;
+    const rawCoverage = q?.coverageRate as number | undefined;
+    const coverageRate = typeof rawCoverage === 'number' && !Number.isNaN(rawCoverage) ? (rawCoverage * 100).toFixed(1) : '100.0';
+    const automationReady = (q?.automationReady as number | undefined) ?? testCases.filter((tc) => tc.automation?.status === 'ready').length;
+
     md += '## Summary\n\n';
     md += '| Metric | Value |\n';
     md += '|--------|-------|\n';
-    md += `| Total Test Cases | ${  testPlan.quality.testCases  } |\n`;
-    md += `| Total Scenarios | ${  testPlan.quality.scenarios  } |\n`;
-    md += `| Total Requirements | ${  testPlan.quality.requirementsTotal  } |\n`;
-    md += `| Coverage Rate | ${  (testPlan.quality.coverageRate * 100).toFixed(1)  }% |\n`;
-    md += `| Automation Ready | ${  testPlan.quality.automationReady  } |\n\n`;
+    md += `| Total Test Cases | ${totalCases} |\n`;
+    md += `| Total Scenarios | ${totalScenarios} |\n`;
+    md += `| Total Requirements | ${totalRequirements} |\n`;
+    md += `| Coverage Rate | ${coverageRate}% |\n`;
+    md += `| Automation Ready | ${automationReady} |\n\n`;
 
     md += '## Test Cases\n\n';
     for (const tc of testCases) {

@@ -42,22 +42,25 @@ export function extractCells(
       // Guard against iterating beyond actual column range.
       if (colNumber > maxCol && maxCol > 0) return;
 
-      const source: SourceReference = {
-        sheet: sheetName,
-        cell: cell.address,
-      };
-
-      const style = extractStyleFromCell(cell);
-      const hasStyle = !isDefaultStyle(style);
-      const styleId = hasStyle ? styleRegistry.register(style) : null;
-
       const hasValue = cell.value !== null && cell.value !== undefined;
       const hasFormula = cell.type === ExcelJS.ValueType.Formula;
       const hasHyperlink = !!cell.hyperlink;
       const hasComment = !!cell.note;
 
-      // Skip truly empty cells with no style/hyperlink/comment.
-      if (!hasValue && !hasStyle && !hasHyperlink && !hasComment) return;
+      const style = extractStyleFromCell(cell);
+      const hasStyle = !isDefaultStyle(style);
+      const styleId = hasStyle ? styleRegistry.register(style) : null;
+
+      // Skip empty cells that have no value/formula/hyperlink/comment and no visual fill or border
+      if (!hasValue && !hasFormula && !hasHyperlink && !hasComment) {
+        if (!_includeEmptyAll && (!style.fill && !style.border)) return;
+        if (!hasStyle) return;
+      }
+
+      const source: SourceReference = {
+        sheet: sheetName,
+        cell: cell.address,
+      };
 
       const { rawValue, displayValue, type, formula, cachedResult, numFmt, isRichText } =
         extractCellValue(cell, hasFormula, warnings, sheetName, cell.address);

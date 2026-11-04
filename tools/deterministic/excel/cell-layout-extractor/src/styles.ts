@@ -128,6 +128,9 @@ function extractFill(f: Partial<ExcelJS.Fill> | undefined): FillRaw | null {
 
   const patternFill = f.type === 'pattern' ? (f as ExcelJS.FillPattern) : null;
   if (patternFill) {
+    if (patternFill.pattern === 'none' && !patternFill.fgColor && !patternFill.bgColor) {
+      return null;
+    }
     return {
       type: 'pattern',
       pattern: patternFill.pattern ?? null,

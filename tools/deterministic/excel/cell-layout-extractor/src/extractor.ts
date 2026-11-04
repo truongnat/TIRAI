@@ -408,11 +408,11 @@ async function extractArrayFormulasFromXml(
 
     const sheetPath = `xl/worksheets/sheet${sheetIndex + 1}.xml`;
     const sheetXml = await context.text(sheetPath);
-    if (sheetXml === null) return result;
+    if (sheetXml === null || !sheetXml.includes('t="array"')) return result;
 
     // Match cells with array formulas: <f t="array" ref="C2:C10">FORMULA</f>
-    // The cell is: <c r="C2" ...><f t="array" ref="C2:C10">...</f><v>...</v></c>
-    const cellRegex = /<c\s+r="([^"]+)"[^>]*>([\s\S]*?)<\/c>/g;
+    // Guard against matching across other <c tags
+    const cellRegex = /<c\s+r="([A-Z0-9]+)"[^>]*>((?:(?!<c[\s>])[\s\S])*?)<\/c>/g;
     let cellMatch;
 
     while ((cellMatch = cellRegex.exec(sheetXml)) !== null) {

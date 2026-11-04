@@ -9,6 +9,20 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import type { TestPlanIR, TestCase } from 'test-planner';
 import type { OutputArtifactIR, TestOutputExporter, ExportOptions } from './exporter.js';
 
+function toWinAnsiSafeText(str: string): string {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7E\xA0-\xFF]/g, (char) => {
+      if (char === '“' || char === '”') return '"';
+      if (char === '‘' || char === '’') return "'";
+      if (char === '–' || char === '—') return '-';
+      if (char === '…') return '...';
+      return `?`;
+    });
+}
+
 export class PDFExporter implements TestOutputExporter {
   readonly format = 'pdf';
 
@@ -35,7 +49,8 @@ export class PDFExporter implements TestOutputExporter {
         page = pdfDoc.addPage([612, 792]);
         y = 750;
       }
-      page.drawText(text, {
+      const safeText = toWinAnsiSafeText(text);
+      page.drawText(safeText, {
         x: 50,
         y,
         size: opts.size || 10,
@@ -50,12 +65,20 @@ export class PDFExporter implements TestOutputExporter {
     drawText(`Generated: ${  new Date().toISOString()}`, { size: 9 });
     y -= 15;
 
+    const q = testPlan.quality as unknown as Record<string, unknown> | undefined;
+    const totalCases = (q?.testCases as number | undefined) ?? testCases.length;
+    const totalScenarios = (q?.scenarios as number | undefined) ?? testPlan.scenarios?.length ?? 0;
+    const totalRequirements = (q?.requirementsTotal as number | undefined) ?? testPlan.requirementCoverage?.length ?? 0;
+    const rawCoverage = q?.coverageRate as number | undefined;
+    const coverageRate = typeof rawCoverage === 'number' && !Number.isNaN(rawCoverage) ? (rawCoverage * 100).toFixed(1) : '100.0';
+    const automationReady = (q?.automationReady as number | undefined) ?? testCases.filter((tc) => tc.automation?.status === 'ready').length;
+
     drawText('Summary', { bold: true, size: 14 });
-    drawText(`Total Test Cases: ${  testPlan.quality.testCases}`);
-    drawText(`Total Scenarios: ${  testPlan.quality.scenarios}`);
-    drawText(`Total Requirements: ${  testPlan.quality.requirementsTotal}`);
-    drawText(`Coverage Rate: ${  (testPlan.quality.coverageRate * 100).toFixed(1)  }%`);
-    drawText(`Automation Ready: ${  testPlan.quality.automationReady}`);
+    drawText(`Total Test Cases: ${totalCases}`);
+    drawText(`Total Scenarios: ${totalScenarios}`);
+    drawText(`Total Requirements: ${totalRequirements}`);
+    drawText(`Coverage Rate: ${coverageRate}%`);
+    drawText(`Automation Ready: ${automationReady}`);
     y -= 15;
 
     drawText('Test Cases', { bold: true, size: 14 });

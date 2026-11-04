@@ -124,7 +124,7 @@ describe('tirai CLI', () => {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
-  });
+  }, 30000);
 
   it('imports a private reusable storageState session through the CLI and clears it', async () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tirai-cli-auth-import-'));

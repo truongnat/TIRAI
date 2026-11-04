@@ -68,10 +68,10 @@ export function buildContractIR(input: {
     description: scenario.objective,
     relatedIds: scenario.requirementIds,
     provenance: nodeProvenance(scenario.provenance),
-    confidence: scenario.confidence,
+    confidence: scenario.confidence ?? 1,
     requirementIds: scenario.requirementIds,
     category: scenario.category,
-    preconditions: scenario.preconditions.map((item) => item.description),
+    preconditions: (scenario.preconditions ?? []).map((item) => item.description),
     expectedBehaviors: scenario.expectedBehavior,
   }));
 
@@ -166,10 +166,10 @@ export function buildContractIR(input: {
     conflicts: requirementIR.conflicts.map((item) => ({ id: item.id, description: item.description, type: item.type, relatedIds: item.requirementIds, provenance: nodeProvenance(item.provenance), confidence: item.confidence })),
     quality: {
       requirements: requirements.length,
-      requirementsCovered: testPlanIR.quality.requirementsCovered,
+      requirementsCovered: (testPlanIR.quality as unknown as { requirementsCovered?: number })?.requirementsCovered ?? testPlanIR.requirementCoverage?.length ?? requirements.length,
       scenarios: scenarios.length,
       testCases: testCases.length,
-      automationReady: testCases.filter((item) => item.automation === 'ready').length,
+      automationReady: testCases.filter((item) => (item.automation as unknown as { status?: string })?.status === 'ready' || item.automation === 'ready').length,
       unresolved: 0,
       conflicts: 0,
       provenanceCoverage,

@@ -9,11 +9,37 @@ const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 // Backup original
 fs.writeFileSync(`${pkgPath}.bak`, JSON.stringify(pkg, null, 2));
 
-// Remove file: dependencies for publishing - they are bundled
+// Remove file: and internal monorepo workspace dependencies for publishing - they are bundled by esbuild
+const internalPkgs = new Set([
+  'agentic-test-executor',
+  'contract-ir',
+  'source-ingestion',
+  'excel-context-builder',
+  'semantic-analyzer',
+  'requirement-builder',
+  'test-planner',
+  'test-data-planner',
+  'data-resolver',
+  'execution-engine',
+  'database-executor',
+  'api-executor',
+  'test-execution-orchestrator',
+  'ui-executor',
+  'execution-mapping-builder',
+  'project-adapter',
+  'e2e-runner',
+  'test-code-generator',
+  'source-to-testcase',
+  'workbook-inspector',
+  'cell-layout-extractor',
+  'officecli-adapter',
+  'performance-benchmark'
+]);
+
 const deps = pkg.dependencies || {};
 const filtered = {};
 for (const [k, v] of Object.entries(deps)) {
-  if (!String(v).startsWith('file:')) {
+  if (!String(v).startsWith('file:') && !internalPkgs.has(k)) {
     filtered[k] = v;
   }
 }
