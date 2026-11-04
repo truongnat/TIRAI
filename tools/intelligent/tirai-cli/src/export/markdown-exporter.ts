@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// TIRAI — Markdown Exporter
+// TIRAI — Professional Markdown Exporter
 // ---------------------------------------------------------------------------
 
 import * as fs from 'node:fs';
@@ -21,53 +21,65 @@ export class MarkdownExporter implements TestOutputExporter {
     const testCaseIds = testCases.map((tc) => tc.id);
     const testPlanFingerprint = createHash('sha256').update(JSON.stringify(testPlan)).digest('hex');
 
-    let md = '# TIRAI Test Plan Export\n\n';
-    md += `**Generated:** ${  new Date().toISOString()  }\n`;
-    md += `**Fingerprint:** ${  testPlanFingerprint.slice(0, 16)  }...\n\n`;
-
     const q = testPlan.quality as unknown as Record<string, unknown> | undefined;
     const totalCases = (q?.testCases as number | undefined) ?? testCases.length;
     const totalScenarios = (q?.scenarios as number | undefined) ?? testPlan.scenarios?.length ?? 0;
     const totalRequirements = (q?.requirementsTotal as number | undefined) ?? testPlan.requirementCoverage?.length ?? 0;
     const rawCoverage = q?.coverageRate as number | undefined;
-    const coverageRate = typeof rawCoverage === 'number' && !Number.isNaN(rawCoverage) ? (rawCoverage * 100).toFixed(1) : '100.0';
+    const coverageRate = typeof rawCoverage === 'number' && !Number.isNaN(rawCoverage) ? `${(rawCoverage * 100).toFixed(1)}%` : '100.0%';
     const automationReady = (q?.automationReady as number | undefined) ?? testCases.filter((tc) => tc.automation?.status === 'ready').length;
 
-    md += '## Summary\n\n';
-    md += '| Metric | Value |\n';
-    md += '|--------|-------|\n';
-    md += `| Total Test Cases | ${totalCases} |\n`;
-    md += `| Total Scenarios | ${totalScenarios} |\n`;
-    md += `| Total Requirements | ${totalRequirements} |\n`;
-    md += `| Coverage Rate | ${coverageRate}% |\n`;
-    md += `| Automation Ready | ${automationReady} |\n\n`;
+    let md = '# 🧪 TIRAI Test Specification & Execution Plan\n\n';
+    md += `> **Generated:** \`${new Date().toISOString()}\`  \n`;
+    md += `> **Fingerprint:** \`${testPlanFingerprint.slice(0, 16)}...\`  \n`;
+    md += `> **Generator:** \`TIRAI Engine v1.1.0 (Deterministic)\`\n\n`;
 
-    md += '## Test Cases\n\n';
-    for (const tc of testCases) {
-      md += `### ${  tc.id  }: ${  tc.title  }\n\n`;
-      md += `- **Objective:** ${  tc.objective  }\n`;
-      md += `- **Type:** ${  tc.type  }\n`;
-      md += `- **Priority:** ${  tc.priority  }\n`;
-      md += `- **Status:** ${  tc.automation.status  }\n`;
-      md += `- **Requirements:** ${  tc.requirementIds.join(', ')  }\n\n`;
+    md += '## 1. Executive Quality Summary\n\n';
+    md += '| Metric | Value | Benchmark / Description |\n';
+    md += '|:-------|:-----:|:------------------------|\n';
+    md += `| **Total Test Cases** | \`${totalCases}\` | Tổng số kịch bản kiểm thử sinh ra từ đặc tả |\n`;
+    md += `| **Total Scenarios** | \`${totalScenarios}\` | Kịch bản luồng nghiệp vụ xác định |\n`;
+    md += `| **Requirements Covered** | \`${totalRequirements}\` | Yêu cầu nghiệp vụ được kiểm chứng |\n`;
+    md += `| **Coverage Rate** | **${coverageRate}** | Tỷ lệ bao phủ kịch bản theo yêu cầu đặc tả |\n`;
+    md += `| **Automation Ready** | \`${automationReady} / ${totalCases}\` | Số kịch bản tự động hóa 100% không cần can thiệp tay |\n\n`;
+
+    md += '---\n\n';
+    md += '## 2. Detailed Test Cases Matrix\n\n';
+
+    for (const [index, tc] of testCases.entries()) {
+      const priorityBadge = tc.priority === 'high' || tc.priority === 'critical' ? '🔴 **HIGH**' : tc.priority === 'medium' ? '🟡 **MEDIUM**' : '⚪ **LOW**';
+      const statusBadge = tc.automation?.status === 'ready' ? '🟢 `READY`' : '🟡 `MANUAL`';
+
+      md += `### #${index + 1}. \`${tc.id}\`: ${tc.title}\n\n`;
+      md += `- **Objective:** ${tc.objective}\n`;
+      md += `- **Priority:** ${priorityBadge} | **Type:** \`${tc.type.toUpperCase()}\` | **Status:** ${statusBadge}\n`;
+      md += `- **Requirements:** \`${tc.requirementIds.join(', ') || '-'}\`\n`;
+
+      if (tc.preconditions.length > 0) {
+        md += `- **Preconditions:** ${tc.preconditions.map((p) => p.description).join('; ')}\n`;
+      }
+      if (tc.dataNeeds.length > 0) {
+        md += `- **Test Data:** ${tc.dataNeeds.map((d) => d.description).join('; ')}\n`;
+      }
+
+      md += '\n';
 
       if (tc.steps.length > 0) {
-        md += '**Steps:**\n\n';
-        md += '| Order | Action | Target |\n';
-        md += '|-------|--------|--------|\n';
-        for (const step of tc.steps) {
-          md += `| ${  step.order  } | ${  step.action  } | ${  step.target || '-'  } |\n`;
-        }
+        md += '| Step | Action | Execution Target | Input Value | Expected Result |\n';
+        md += '|:----:|:-------|:-----------------|:------------|:----------------|\n';
+
+        tc.steps.forEach((step, sIdx) => {
+          const correspondingExpected = tc.expectedResults[sIdx]?.description
+            || (sIdx === tc.steps.length - 1 ? tc.expectedResults.map((e) => `[${e.verificationType.toUpperCase()}] ${e.description}`).join('<br>') : '-');
+          const target = step.target ? `\`${step.target}\`` : '-';
+          const input = step.input ? `\`${step.input}\`` : '-';
+
+          md += `| ${step.order} | **${step.action}** | ${target} | ${input} | ${correspondingExpected} |\n`;
+        });
         md += '\n';
       }
 
-      if (tc.expectedResults.length > 0) {
-        md += '**Expected Results:**\n\n';
-        for (const er of tc.expectedResults) {
-          md += `- [${  er.verificationType  }] ${  er.description  }\n`;
-        }
-        md += '\n';
-      }
+      md += '---\n\n';
     }
 
     fs.mkdirSync(outDir, { recursive: true });
@@ -75,14 +87,14 @@ export class MarkdownExporter implements TestOutputExporter {
     fs.writeFileSync(filePath, md, 'utf8');
 
     return {
-      artifactId: `artifact-md-${  testPlanFingerprint.slice(0, 12)}`,
+      artifactId: `artifact-markdown-${testPlanFingerprint.slice(0, 12)}`,
       format: 'markdown',
       kind: 'test-case-export',
       path: filePath,
       testPlanFingerprint,
       testCaseIds,
       createdAt: new Date().toISOString(),
-      generatorVersion: '1.0.0',
+      generatorVersion: '1.1.0',
       status: 'created',
     };
   }
