@@ -56,11 +56,11 @@ Tokens are read from the process environment and are not persisted into TIRAI wo
 
 ## What the installer does
 
-1. Verifies Node.js >= 20 and npm.
+1. Verifies Node.js >= 20, npm, and curl.
 2. Resolves the latest GitHub Release, or the version supplied through `TIRAI_VERSION`.
-3. Downloads the `tirai-cli-*.tgz` release asset.
-4. Downloads and verifies the `.sha256` asset when available.
-5. Installs TIRAI using `npm install --global`.
+3. Downloads the `tirai-cli-*.tgz` release package directly using authenticated or public browser download URLs.
+4. Verifies the SHA256 checksum against `.sha256` asset when available.
+5. Installs TIRAI globally using `npm install --global`.
 6. Verifies `tirai --version`.
 
 ## Publishing a release

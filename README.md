@@ -309,10 +309,10 @@ All source connectors converge into the same downstream canonical pipeline.
 | Format | Description |
 |---|---|
 | JSON | Canonical machine-readable output, full fidelity |
-| Excel (.xlsx) | Multi-sheet workbook with Test Cases, Steps, Expected Results, Data Needs, Summary |
-| Markdown | Git-friendly readable tables and sections |
-| PDF | Printable document with all test case details |
-| DOCX/Word | Editable document for stakeholders |
+| Excel (`.xlsx`) | Professional unified workbook: primary Test Cases sheet with navy header (`#1F4E79`), zebra striping, thin borders, freeze panes, auto-filters, and status badges (`READY`/`MANUAL`); companion Summary & Quality KPI dashboard and Traceability Matrix. |
+| Markdown (`.md`) | Git-friendly readable Full Test Matrix aligning step actions, targets, inputs, and expected outcomes with visual priority/status badges. |
+| PDF (`.pdf`) | Publication-ready technical report cards with top banner, executive summary box, and dual-font segment rendering supporting full Unicode (Vietnamese diacritics and Japanese CJK). |
+| DOCX/Word (`.docx`) | Formatted document with structured test matrix tables, shaded category headers, and default `Segoe UI` typography. |
 
 Export never executes tests and never mutates canonical IR.
 
