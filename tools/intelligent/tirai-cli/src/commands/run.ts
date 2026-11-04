@@ -129,15 +129,25 @@ async function waitForServerReady(url: string | undefined, child: ChildProcess, 
     await new Promise((r) => setTimeout(r, 1000));
     return;
   }
+  let ready = false;
   while (Date.now() - start < timeoutMs) {
-    if (child.exitCode !== null) return;
+    if (child.exitCode !== null) {
+      throw new CliError('INFRA_ERROR', `E2E server process exited prematurely with code ${child.exitCode}`);
+    }
     try {
       const resp = await fetch(url, { signal: AbortSignal.timeout(1000) });
-      if (resp.status < 500) return;
+      if (resp.status < 500) {
+        ready = true;
+        break;
+      }
     } catch {
       // ignore network errors during boot
     }
     await new Promise((r) => setTimeout(r, 250));
+  }
+
+  if (!ready) {
+    throw new CliError('INFRA_ERROR', `E2E server did not become ready at ${url} within ${timeoutMs}ms.`);
   }
 }
 
@@ -146,6 +156,7 @@ async function startServer(
   cwd: string,
   env: Record<string, string>,
   checkUrl?: string,
+  timeoutMs = 30000,
 ): Promise<ChildProcess | null> {
   if (!startCommand) return null;
   const parts = parseCommandArgs(startCommand);
@@ -158,7 +169,7 @@ async function startServer(
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
-  await waitForServerReady(checkUrl, child, 30000);
+  await waitForServerReady(checkUrl, child, timeoutMs);
 
   if (child.exitCode !== null) {
     const cmdStr = Array.isArray(startCommand) ? startCommand.join(' ') : startCommand;
@@ -273,7 +284,8 @@ export async function runRun(opts: RunOptions): Promise<number> {
     } catch {
       // ignore
     }
-    server = await startServer(config.e2e.startCommand, paths.root, env, config.e2e.baseUrl);
+    const serverTimeout = Number((config.e2e as unknown as { serverTimeoutMs?: number })?.serverTimeoutMs) || 30000;
+    server = await startServer(config.e2e.startCommand, paths.root, env, config.e2e.baseUrl, serverTimeout);
   }
 
   let e2eStatus: string | undefined;

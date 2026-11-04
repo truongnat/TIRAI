@@ -112,15 +112,30 @@ export function isFieldDefTable(header: string[], rows: string[][]): boolean {
 
 export function isRuleDefTable(header: string[], rows: string[][]): boolean {
   const h = header.join(' ').toLowerCase();
-  const hasRuleKeywords =
-    h.includes('rule') ||
+
+  // Guard against revision history and document metadata tables
+  const isHistoryOrMeta =
+    h.includes('revision') ||
+    h.includes('history') ||
+    h.includes('履歴') ||
+    h.includes('version') ||
+    h.includes('changelog') ||
+    (h.includes('date') && h.includes('change')) ||
+    (h.includes('date') && h.includes('author')) ||
+    (h.includes('date') && h.includes('check')) ||
+    (h.includes('日付') && (h.includes('更新') || h.includes('変更')));
+  if (isHistoryOrMeta) return false;
+
+  const hasExplicitConditionHeader =
     h.includes('condition') ||
-    h.includes('check') ||
-    h.includes('quy tắc') ||
+    h.includes('rule') ||
     h.includes('điều kiện') ||
-    h.includes('チェック') ||
-    h.includes('タイミング');
-  const hasMessageKeywords =
+    h.includes('quy tắc') ||
+    h.includes('条件') ||
+    h.includes('タイミング') ||
+    h.includes('チェック仕様');
+
+  const hasExplicitMessageHeader =
     h.includes('message') ||
     h.includes('mã lỗi') ||
     h.includes('メッセージ') ||
@@ -131,8 +146,8 @@ export function isRuleDefTable(header: string[], rows: string[][]): boolean {
     r.some((cell) => /^[WIEZ]\w*\d{3,}/.test(cell) || /^(err|msg|val|warn|wz|ez|iz)[-_]?\d+/i.test(cell)),
   );
 
-  // Require error code pattern OR dual signal (condition column AND message column)
-  return (hasRuleKeywords && hasMessageKeywords) || (hasRuleKeywords && hasErrorCodePattern);
+  // Require error code pattern OR dual signal (explicit condition header AND message header)
+  return (hasExplicitConditionHeader && hasExplicitMessageHeader) || (hasExplicitConditionHeader && hasErrorCodePattern);
 }
 
 export function isActionDefTable(header: string[], rows: string[][]): boolean {

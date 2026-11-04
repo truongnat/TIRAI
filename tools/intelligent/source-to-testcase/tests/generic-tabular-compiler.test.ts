@@ -68,6 +68,14 @@ describe('Generic Tabular Compiler & Edge-Case Engine', () => {
           [['1.0', '2026-05-01', 'QA Team', 'Approved for production']],
         ),
       ).toBe(false);
+
+      // Noise table: Revision history with "Date", "Change", "Check", "Message" columns must NOT be detected as rule table
+      expect(
+        isRuleDefTable(
+          ['No', 'Date', 'Change', 'Check', 'Message'],
+          [['1', '2026-05-01', 'Update spec', 'QA Team', 'Approved']],
+        ),
+      ).toBe(false);
     });
 
     it('detects user action and event tables', () => {
