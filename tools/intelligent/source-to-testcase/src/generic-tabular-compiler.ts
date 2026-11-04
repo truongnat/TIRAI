@@ -7,20 +7,18 @@
 // from any structured tabular specification (English, Japanese, Vietnamese, etc.)
 // with 100% provenance and ZERO AI calls.
 
-import type { CanonicalContextChunk, CanonicalSourceDocument } from 'source-ingestion';
+import type { CanonicalSourceDocument } from 'source-ingestion';
 import type {
   SemanticIR,
   SemanticSection,
   SemanticEntity,
   SemanticFlow,
   SemanticRule,
-  SemanticAttribute,
   ProvenanceReference as SemanticProvenanceReference,
 } from 'semantic-analyzer';
 import type {
   RequirementIR,
   Requirement,
-  RequirementType,
 } from 'requirement-builder';
 import type {
   TestPlanIR,
@@ -91,7 +89,7 @@ function makeProvenance(contextId: string, sheet?: string): SemanticProvenanceRe
 // Morphology & Column Classification (Language-Agnostic)
 // ---------------------------------------------------------------------------
 
-function isFieldDefTable(header: string[], rows: string[][]): boolean {
+export function isFieldDefTable(header: string[], rows: string[][]): boolean {
   const h = header.join(' ').toLowerCase();
   const hasTypeOrCtrl =
     h.includes('type') ||
@@ -112,26 +110,32 @@ function isFieldDefTable(header: string[], rows: string[][]): boolean {
   return hasTypeOrCtrl && hasRowsWithType;
 }
 
-function isRuleDefTable(header: string[], rows: string[][]): boolean {
+export function isRuleDefTable(header: string[], rows: string[][]): boolean {
   const h = header.join(' ').toLowerCase();
   const hasRuleKeywords =
     h.includes('rule') ||
     h.includes('condition') ||
-    h.includes('message') ||
     h.includes('check') ||
     h.includes('quy tắc') ||
     h.includes('điều kiện') ||
-    h.includes('mã lỗi') ||
     h.includes('チェック') ||
-    h.includes('メッセージ') ||
     h.includes('タイミング');
+  const hasMessageKeywords =
+    h.includes('message') ||
+    h.includes('mã lỗi') ||
+    h.includes('メッセージ') ||
+    h.includes('thông báo') ||
+    h.includes('error');
+
   const hasErrorCodePattern = rows.some((r) =>
     r.some((cell) => /^[WIEZ]\w*\d{3,}/.test(cell) || /^(err|msg|val|warn|wz|ez|iz)[-_]?\d+/i.test(cell)),
   );
-  return hasRuleKeywords && (hasErrorCodePattern || rows.length >= 2);
+
+  // Require error code pattern OR dual signal (condition column AND message column)
+  return (hasRuleKeywords && hasMessageKeywords) || (hasRuleKeywords && hasErrorCodePattern);
 }
 
-function isActionDefTable(header: string[], rows: string[][]): boolean {
+export function isActionDefTable(header: string[], rows: string[][]): boolean {
   const h = header.join(' ').toLowerCase();
   const hasActionKeywords =
     h.includes('event') ||

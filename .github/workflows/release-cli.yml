@@ -26,33 +26,8 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Build CLI workspace dependencies
-        run: |
-          set -euo pipefail
-          for workspace in \
-            tools/deterministic/excel/workbook-inspector \
-            tools/deterministic/excel/cell-layout-extractor \
-            tools/intelligent/excel/context-builder \
-            tools/intelligent/test-planner \
-            tools/intelligent/test-data-planner \
-            tools/intelligent/data-resolver \
-            tools/intelligent/execution-engine \
-            tools/intelligent/test-execution-orchestrator \
-            tools/intelligent/ui-executor \
-            tools/intelligent/agentic-test-executor \
-            tools/intelligent/contract-ir \
-            tools/intelligent/requirement-builder \
-            tools/intelligent/semantic-analyzer \
-            tools/intelligent/source-ingestion \
-            tools/intelligent/api-executor \
-            tools/intelligent/database-executor \
-            tools/intelligent/execution-mapping-builder \
-            tools/intelligent/project-adapter \
-            tools/intelligent/e2e-runner \
-            tools/intelligent/source-to-testcase \
-            tools/intelligent/test-code-generator; do
-            npm run build --workspace="$workspace"
-          done
+      - name: Build all workspaces
+        run: npm run build:all
 
       - name: Verify CLI
         run: npm run check --workspace=tools/intelligent/tirai-cli

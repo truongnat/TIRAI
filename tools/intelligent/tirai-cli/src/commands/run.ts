@@ -111,10 +111,45 @@ function cleanDir(dir: string): void {
   ensureDir(dir);
 }
 
-async function startServer(startCommand: string, cwd: string, env: Record<string, string>): Promise<ChildProcess | null> {
+function parseCommandArgs(input: string | string[]): string[] {
+  if (Array.isArray(input)) return input;
+  const match = input.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g);
+  if (!match) return [];
+  return match.map((arg) => {
+    if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
+      return arg.slice(1, -1);
+    }
+    return arg;
+  });
+}
+
+async function waitForServerReady(url: string | undefined, child: ChildProcess, timeoutMs = 30000): Promise<void> {
+  const start = Date.now();
+  if (!url) {
+    await new Promise((r) => setTimeout(r, 1000));
+    return;
+  }
+  while (Date.now() - start < timeoutMs) {
+    if (child.exitCode !== null) return;
+    try {
+      const resp = await fetch(url, { signal: AbortSignal.timeout(1000) });
+      if (resp.status < 500) return;
+    } catch {
+      // ignore network errors during boot
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
+async function startServer(
+  startCommand: string | string[],
+  cwd: string,
+  env: Record<string, string>,
+  checkUrl?: string,
+): Promise<ChildProcess | null> {
   if (!startCommand) return null;
-  // startCommand is like "node server.mjs" or "npm run dev"
-  const parts = startCommand.split(' ').filter(Boolean);
+  const parts = parseCommandArgs(startCommand);
+  if (parts.length === 0) return null;
   const cmd = parts[0];
   const args = parts.slice(1);
   const child = spawn(cmd, args, {
@@ -122,10 +157,12 @@ async function startServer(startCommand: string, cwd: string, env: Record<string
     env: { ...process.env, ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  // Wait a bit for ready (simple delay + check)
-  await new Promise((r) => setTimeout(r, 2000));
+
+  await waitForServerReady(checkUrl, child, 30000);
+
   if (child.exitCode !== null) {
-    throw new CliError('INFRA_ERROR', `E2E start command failed: ${startCommand} exited ${child.exitCode}`);
+    const cmdStr = Array.isArray(startCommand) ? startCommand.join(' ') : startCommand;
+    throw new CliError('INFRA_ERROR', `E2E start command failed: ${cmdStr} exited ${child.exitCode}`);
   }
   return child;
 }
@@ -236,7 +273,7 @@ export async function runRun(opts: RunOptions): Promise<number> {
     } catch {
       // ignore
     }
-    server = await startServer(config.e2e.startCommand, paths.root, env);
+    server = await startServer(config.e2e.startCommand, paths.root, env, config.e2e.baseUrl);
   }
 
   let e2eStatus: string | undefined;
