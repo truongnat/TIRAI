@@ -301,7 +301,19 @@ export class DOCXExporter implements TestOutputExporter {
       children.push(new Paragraph({ spacing: { after: 240 } }));
     }
 
-    const doc = new Document({ sections: [{ children }] });
+    const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: 'Segoe UI',
+              size: 20, // 10pt
+            },
+          },
+        },
+      },
+      sections: [{ children }],
+    });
     const buffer = await Packer.toBuffer(doc);
 
     fs.mkdirSync(outDir, { recursive: true });

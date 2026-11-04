@@ -1,11 +1,12 @@
 // ---------------------------------------------------------------------------
-// TIRAI — Professional PDF Exporter
+// TIRAI — Professional PDF Exporter with True Unicode Support
 // ---------------------------------------------------------------------------
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
 import type { TestPlanIR, TestCase } from 'test-planner';
 import type { OutputArtifactIR, TestOutputExporter, ExportOptions } from './exporter.js';
 
@@ -23,6 +24,17 @@ function toWinAnsiSafeText(str: string): string {
     });
 }
 
+function findExistingFont(candidates: string[]): string | undefined {
+  for (const c of candidates) {
+    try {
+      if (fs.existsSync(c)) return c;
+    } catch {
+      // ignore
+    }
+  }
+  return undefined;
+}
+
 export class PDFExporter implements TestOutputExporter {
   readonly format = 'pdf';
 
@@ -37,8 +49,57 @@ export class PDFExporter implements TestOutputExporter {
     const testPlanFingerprint = createHash('sha256').update(JSON.stringify(testPlan)).digest('hex');
 
     const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    pdfDoc.registerFontkit(fontkit);
+
+    // Font resolution: resolve system fonts for Vietnamese and Japanese
+    const viFontPath = findExistingFont([
+      '/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf',
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+      '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+    ]);
+    const viBoldFontPath = findExistingFont([
+      '/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf',
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+      '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+    ]);
+
+    const home = process.env.HOME || '';
+    const jpFontPath = findExistingFont([
+      '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf',
+      '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf',
+      path.join(home, '.local/share/fonts/BIZ-UDGothic/BIZUDGothic-Regular.ttf'),
+      '/usr/share/fonts/truetype/noto/NotoSansGothic-Regular.ttf',
+    ]);
+
+    let viFont: PDFFont | null = null;
+    let viBoldFont: PDFFont | null = null;
+    let jpFont: PDFFont | null = null;
+
+    if (viFontPath) {
+      try {
+        viFont = await pdfDoc.embedFont(fs.readFileSync(viFontPath));
+        if (viBoldFontPath) {
+          viBoldFont = await pdfDoc.embedFont(fs.readFileSync(viBoldFontPath));
+        } else {
+          viBoldFont = viFont;
+        }
+      } catch {
+        viFont = null;
+        viBoldFont = null;
+      }
+    }
+
+    if (jpFontPath) {
+      try {
+        jpFont = await pdfDoc.embedFont(fs.readFileSync(jpFontPath));
+      } catch {
+        jpFont = null;
+      }
+    }
+
+    // Fallback standard fonts
+    const stdFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const stdBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
     let page = pdfDoc.addPage([612, 792]);
     let y = 730;
@@ -54,20 +115,63 @@ export class PDFExporter implements TestOutputExporter {
       }
     };
 
+    // Draw text with segment-based dual font rendering for perfect CJK + Vietnamese display
     const drawText = (
       text: string,
       xPos: number,
       opts: { bold?: boolean; size?: number; color?: ReturnType<typeof rgb> } = {},
     ) => {
       checkPageBreak(lineHeight);
-      const safeText = toWinAnsiSafeText(text);
-      page.drawText(safeText, {
-        x: xPos,
-        y,
-        size: opts.size || 9.5,
-        font: opts.bold ? boldFont : font,
-        color: opts.color || rgb(0.15, 0.15, 0.15),
-      });
+      const size = opts.size || 9.5;
+      const color = opts.color || rgb(0.15, 0.15, 0.15);
+
+      if (!viFont) {
+        // Fallback WinAnsi
+        const safeText = toWinAnsiSafeText(text);
+        page.drawText(safeText, {
+          x: xPos,
+          y,
+          size,
+          font: opts.bold ? stdBoldFont : stdFont,
+          color,
+        });
+        y -= lineHeight;
+        return;
+      }
+
+      // Split into CJK vs non-CJK chunks to assign appropriate font without mojibake
+      const regex = /([\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF]+|[^\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF]+)/g;
+      let match: RegExpExecArray | null;
+      let curX = xPos;
+
+      while ((match = regex.exec(text)) !== null) {
+        const chunk = match[1];
+        const isCJK = /[\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\uFF00-\uFFEF\u4E00-\u9FAF]/.test(chunk);
+        const font = (isCJK && jpFont) ? jpFont : (opts.bold && viBoldFont ? viBoldFont : viFont);
+
+        try {
+          page.drawText(chunk, {
+            x: curX,
+            y,
+            size,
+            font,
+            color,
+          });
+          curX += font.widthOfTextAtSize(chunk, size);
+        } catch {
+          // If a rare glyph fails, draw safe fallback
+          const safe = toWinAnsiSafeText(chunk);
+          page.drawText(safe, {
+            x: curX,
+            y,
+            size,
+            font: stdFont,
+            color,
+          });
+          curX += stdFont.widthOfTextAtSize(safe, size);
+        }
+      }
+
       y -= lineHeight;
     };
 
@@ -82,19 +186,21 @@ export class PDFExporter implements TestOutputExporter {
       color: rgb(0.12, 0.31, 0.47), // #1F4E79
     });
 
+    const titleFont = viBoldFont ?? stdBoldFont;
     page.drawText('TIRAI Test Specification & Execution Plan', {
       x: margin + 14,
       y: y + 18,
       size: 15,
-      font: boldFont,
+      font: titleFont,
       color: rgb(1, 1, 1),
     });
 
+    const metaFont = viFont ?? stdFont;
     page.drawText(`Generated: ${new Date().toISOString()}  |  Fingerprint: ${testPlanFingerprint.slice(0, 16)}...`, {
       x: margin + 14,
       y: y + 4,
       size: 8,
-      font,
+      font: metaFont,
       color: rgb(0.85, 0.9, 0.95),
     });
 
@@ -124,8 +230,8 @@ export class PDFExporter implements TestOutputExporter {
     y -= 8;
     drawText('1. Executive Quality Summary', margin + 12, { bold: true, size: 11, color: rgb(0.12, 0.31, 0.47) });
     y -= 2;
-    drawText(`* Total Test Cases: ${totalCases}   |   Total Scenarios: ${totalScenarios}   |   Requirements: ${totalRequirements}`, margin + 12, { size: 9 });
-    drawText(`* Quality Coverage Rate: ${coverageRate}   |   Automation Ready: ${automationReady} / ${totalCases} (100% Deterministic)`, margin + 12, { size: 9, bold: true, color: rgb(0.2, 0.45, 0.2) });
+    drawText(`• Total Test Cases: ${totalCases}   |   Total Scenarios: ${totalScenarios}   |   Requirements: ${totalRequirements}`, margin + 12, { size: 9 });
+    drawText(`• Quality Coverage Rate: ${coverageRate}   |   Automation Ready: ${automationReady} / ${totalCases} (100% Deterministic)`, margin + 12, { size: 9, bold: true, color: rgb(0.2, 0.45, 0.2) });
 
     y -= 28;
 
@@ -175,7 +281,7 @@ export class PDFExporter implements TestOutputExporter {
         y -= 2;
         drawText('Expected Results:', margin + 8, { bold: true, size: 8.5, color: rgb(0.15, 0.4, 0.15) });
         for (const er of tc.expectedResults) {
-          drawText(`  * [${er.verificationType.toUpperCase()}] ${er.description}`, margin + 8, { size: 8.5, color: rgb(0.15, 0.4, 0.15) });
+          drawText(`  • [${er.verificationType.toUpperCase()}] ${er.description}`, margin + 8, { size: 8.5, color: rgb(0.15, 0.4, 0.15) });
         }
       }
 
