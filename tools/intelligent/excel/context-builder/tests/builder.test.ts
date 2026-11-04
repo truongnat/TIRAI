@@ -278,7 +278,7 @@ describe('Integrity', () => {
   });
 
   it('22. golden snapshot – real workbook', async () => {
-    // Use the actual demo-spec.xlsx output
+    // Use the actual demo workbook output
     const realInputDir = join(process.cwd(), 'output', 'excel');
     // Skip if real output doesn't exist
     try {

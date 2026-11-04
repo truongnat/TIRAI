@@ -7,7 +7,7 @@ function input(overrides: Partial<Parameters<typeof runRealAppPreflight>[0]> = {
     allowedOrigins: ['https://example.com'],
     environment: 'non-production',
     mutationDenied: true,
-    credentialRefs: ['secret://demo-app/username', 'secret://demo-app/password'],
+    credentialRefs: ['secret://app/username', 'secret://app/password'],
     resolveCredentialRef: async () => true,
     checkBrowser: async () => true,
     observeLoginPage: async () => ({ observable: true, route: '/login' }),
